@@ -20,7 +20,7 @@ class RssFeed(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STSTUSES, help_text='状态')
+    status = models.CharField(max_length=20, choices=STSTUSES, default='pending', help_text='状态')
     url = models.URLField(help_text="供稿地址")
     # 从 feed 中提取的字段
     title = models.CharField(max_length=200, blank=True, help_text="标题")
@@ -36,9 +36,19 @@ class RssFeed(models.Model):
     etag = models.CharField(max_length=200, blank=True, help_text="HTTP response header ETag")
     last_modified = models.CharField(max_length=200, blank=True,
                                      help_text="HTTP response header Last-Modified")
-    headers = JSONField(blank=True, help_text='HTTP response headers, JSON object')
+    headers = JSONField(null=True, blank=True, help_text='HTTP response headers, JSON object')
     # data from feedparser
-    data = JSONField(blank=True)
+    data = JSONField(null=True, blank=True)
+
+    def asdict(self):
+        return dict(
+            id=self.id,
+            status=self.status,
+            url=self.url,
+            title=self.title,
+            dt_created=self.dt_created,
+            dt_updated=self.dt_updated,
+        )
 
 
 class RssStory(models.Model):
@@ -60,4 +70,4 @@ class RssStory(models.Model):
     summary = models.TextField(blank=True, help_text="摘要或较短的内容")
     content = models.TextField(blank=True, help_text="文章内容")
     # data from feedparser
-    data = JSONField(blank=True)
+    data = JSONField(null=True, blank=True)
