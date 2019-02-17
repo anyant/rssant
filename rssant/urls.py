@@ -18,13 +18,13 @@ from django.urls import path, include
 from rest_framework.schemas import get_schema_view
 from rest_framework.documentation import include_docs_urls
 
-
 from . import views
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
-schema_view = get_schema_view(title=API_TITLE)
 
+schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
+docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
 
 urlpatterns = [
     path('', views.index),
@@ -32,5 +32,5 @@ urlpatterns = [
     path('api/', include('rssant_api.urls')),
     path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/schema/', schema_view),
-    path('api/docs/', include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)),
+    path('api/docs/', docs_view),
 ]

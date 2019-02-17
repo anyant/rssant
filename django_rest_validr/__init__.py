@@ -1,10 +1,72 @@
 import inspect
 import itertools
-from validr import T, Compiler
+import coreapi
+import coreschema
+from validr import T, Compiler, Invalid
 from django.urls import path
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.schemas import AutoSchema
+
+
+def coreschema_from_validr(item):
+    mapping = {
+        'int': coreschema.Integer,
+        'str': coreschema.String,
+        'float': coreschema.Number,
+        'bool': coreschema.Boolean,
+        'date': coreschema.String,
+        'time': coreschema.String,
+        'datetime': coreschema.String,
+        'email': coreschema.String,
+        'ipv4': coreschema.String,
+        'ipv6': coreschema.String,
+        'url': coreschema.String,
+        'uuid': coreschema.String,
+        'phone': coreschema.String,
+        'idcard': coreschema.String,
+        'list': coreschema.Array,
+        'dict': coreschema.Object,
+    }
+    default = item.params.get('default')
+    description = item.params.get('desc')
+    schema_cls = mapping.get(item.validator, coreschema.Anything)
+    return schema_cls(default=default, description=description)
+
+
+class RestViewSchema(AutoSchema):
+    """
+    Overrides `get_link()` to provide Custom Behavior X
+    """
+
+    def __init__(self, method_meta):
+        super(AutoSchema, self).__init__()
+        self._method_meta = method_meta
+
+    def get_manual_fields(self, path, method):
+        f, url, params, returns = self._method_meta[method]
+        if params is None:
+            return []
+        field_schemas = T(params).__schema__.items
+        path_fields = self.get_path_fields(path, method)
+        path_field_names = set(x.name for x in path_fields)
+        fields = []
+        for name, item in field_schemas.items():
+            if name in path_field_names or name in ['id', 'pk']:
+                continue
+            required = not item.params.get('optional', False)
+            if method in ['GET', 'DELETE']:
+                location = 'query'
+            else:
+                location = 'form'
+            field = coreapi.Field(
+                name=name,
+                required=required,
+                location=location,
+                schema=coreschema_from_validr(item)
+            )
+            fields.append(field)
+        return fields
 
 
 class RestRouter:
@@ -34,7 +96,10 @@ class RestRouter:
                     kwargs.update(request.query_params)
                 else:
                     kwargs.update(request.data)
-                kwargs = params(kwargs)
+                try:
+                    kwargs = params(kwargs)
+                except Invalid as ex:
+                    return Response({'message': str(ex)}, status=400)
             ret = f(request, **kwargs)
             if returns is not None:
                 if not isinstance(ret, Response):
@@ -49,14 +114,17 @@ class RestRouter:
 
     def _make_view(self, group):
         method_maps = {}
+        method_meta = {}
         for f, url, methods, params, returns in group:
             for method in methods:
                 if method in method_maps:
                     raise ValueError(f'duplicated method {method} of {url}')
                 m = self._make_method(method, f, params, returns)
                 method_maps[method] = m
+                method_meta[method] = f, url, params, returns
 
         class RestApiView(APIView):
+            schema = RestViewSchema(method_meta)
             if 'GET' in method_maps:
                 get = method_maps['GET']
             if 'POST' in method_maps:
