@@ -19,7 +19,7 @@ from rest_framework.schemas import get_schema_view
 from rest_framework.documentation import include_docs_urls
 from rest_framework_swagger.views import get_swagger_view
 
-from . import views
+from . import views, settings
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
@@ -37,3 +37,7 @@ urlpatterns = [
     path('api/docs/', docs_view),
     path('api/swagger/', swagger_view)
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))

@@ -1,7 +1,7 @@
 from django_rest_validr import RestRouter, T
 
 from rssant_api.models import RssFeed
-
+from rssant_api.tasks import rss
 
 RssFeedSchema = T.dict(
     id=T.int,
@@ -33,6 +33,7 @@ def feed_get(request, pk: T.int) -> RssFeedSchema:
 def feed_create(request, url: T.url) -> RssFeedSchema:
     feed = RssFeed.objects.create(user=request.user, url=url)
     feed.save()
+    rss.find_feed.delay(feed_id=feed.id)
     return feed
 
 
@@ -41,6 +42,7 @@ def feed_update(request, pk: T.int, url: T.url) -> RssFeedSchema:
     feed = RssFeed.objects.get(pk=pk)
     feed.url = url
     feed.save()
+    rss.find_feed.delay(feed_id=feed.id)
     return feed
 
 
