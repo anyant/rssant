@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'django_celery_results',
+    'django_celery_beat',
     'rest_framework',
     'rest_framework_swagger',
     'rssant_api',
@@ -126,3 +128,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# Celery tasks
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    'debug-every-30-seconds': {
+        'task': 'rssant.celery.debug',
+        'schedule': 30.0,
+    }
+}
