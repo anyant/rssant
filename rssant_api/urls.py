@@ -1,8 +1,8 @@
 from django.urls import path, include
 
-from . import views
+from .views.feed import FeedView
 
 app_name = 'rssant_api'
 urlpatterns = [
-    path('', include(views.FeedView.urls)),
+    path('', include(FeedView.urls)),
 ]

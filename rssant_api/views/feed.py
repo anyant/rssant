@@ -1,11 +1,7 @@
-# from rest_framework import serializers
-# from rest_framework.response import Response
-# from rest_framework.views import APIView
 from django_rest_validr import RestRouter, T
 
-from .models import RssFeed
+from rssant_api.models import RssFeed
 
-FeedView = RestRouter()
 
 RssFeedSchema = T.dict(
     id=T.int,
@@ -16,6 +12,8 @@ RssFeedSchema = T.dict(
     dt_updated=T.datetime.optional,
 )
 
+FeedView = RestRouter()
+
 
 @FeedView.get('feed/')
 def feed_list(request) -> T.list(RssFeedSchema):
@@ -25,7 +23,6 @@ def feed_list(request) -> T.list(RssFeedSchema):
 
 
 @FeedView.get('feed/<int:pk>')
-@FeedView.get('feed/<int:pk>/detail')
 def feed_get(request, pk: T.int) -> RssFeedSchema:
     """Feed detail"""
     feed = RssFeed.objects.get(pk=pk)
@@ -35,6 +32,14 @@ def feed_get(request, pk: T.int) -> RssFeedSchema:
 @FeedView.post('feed/')
 def feed_create(request, url: T.url) -> RssFeedSchema:
     feed = RssFeed.objects.create(user=request.user, url=url)
+    feed.save()
+    return feed
+
+
+@FeedView.put('feed/<int:pk>')
+def feed_update(request, pk: T.int, url: T.url) -> RssFeedSchema:
+    feed = RssFeed.objects.get(pk=pk)
+    feed.url = url
     feed.save()
     return feed
 

@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.schemas import get_schema_view
 from rest_framework.documentation import include_docs_urls
+from rest_framework_swagger.views import get_swagger_view
 
 from . import views
 
@@ -25,6 +26,7 @@ API_DESCRIPTION = 'A Web API for RSSAnt.'
 
 schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
 docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
+swagger_view = get_swagger_view(title=API_TITLE)
 
 urlpatterns = [
     path('', views.index),
@@ -33,4 +35,5 @@ urlpatterns = [
     path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/schema/', schema_view),
     path('api/docs/', docs_view),
+    path('api/swagger/', swagger_view)
 ]
