@@ -18,7 +18,6 @@ coreschema==0.0.4
 Django==2.1.7
 django-celery-beat==1.4.0
 django-celery-results==1.0.4
-django-debug-toolbar==1.11
 django-rest-swagger==2.2.0
 django-timezone-field==3.0
 djangorestframework==3.9.1
