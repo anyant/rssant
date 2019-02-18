@@ -45,15 +45,31 @@ class RssFeed(models.Model):
     # data from feedparser
     data = JSONField(**optional)
 
-    def asdict(self):
-        return dict(
+    def to_dict(self, detail=False):
+        ret = dict(
             id=self.id,
+            user=dict(id=self.user.id),
             status=self.status,
             url=self.url,
             title=self.title,
+            link=self.link,
+            author=self.author,
+            icon=self.icon,
+            description=self.description,
+            version=self.version,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
         )
+        if detail:
+            ret.update(
+                user=self.user,
+                encoding=self.encoding,
+                etag=self.etag,
+                last_modified=self.last_modified,
+                headers=self.headers,
+                data=self.data,
+            )
+        return ret
 
 
 class RssStory(models.Model):
@@ -79,3 +95,24 @@ class RssStory(models.Model):
     content = models.TextField(**optional, help_text="文章内容")
     # data from feedparser
     data = JSONField(**optional)
+
+    def to_dict(self, detail=False, data=False):
+        ret = dict(
+            id=self.id,
+            user=dict(id=self.user.id),
+            feed=dict(id=self.feed.id),
+            title=self.title,
+            link=self.link,
+            dt_published=self.dt_published,
+            dt_updated=self.dt_updated,
+        )
+        if detail:
+            ret.update(
+                user=self.user,
+                feed=self.feed,
+                summary=self.summary,
+                content=self.content,
+            )
+        if data:
+            ret.update(data=self.data)
+        return ret

@@ -1,12 +1,24 @@
 import inspect
 import itertools
+from collections import ChainMap
+
 import coreapi
 import coreschema
 from validr import T, Compiler, Invalid
 from django.urls import path
+from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
+
+from .validator import Cursor, VALIDATORS, page_of
+
+
+__all__ = (
+    'page_of',
+    'Cursor',
+    'RestRouter',
+)
 
 
 def coreschema_from_validr(item):
@@ -72,7 +84,7 @@ class RestViewSchema(AutoSchema):
 class RestRouter:
     def __init__(self, name=None):
         self.name = name
-        self._schema_compiler = Compiler()
+        self._schema_compiler = Compiler(validators=VALIDATORS)
         self._routes = []
 
     @property
@@ -92,20 +104,21 @@ class RestRouter:
     def _make_method(method, f, params, returns):
         def rest_method(self, request, format=None, **kwargs):
             if params is not None:
+                maps = [kwargs]
                 if request.method in ['GET', 'DELETE']:
-                    kwargs.update(request.query_params)
+                    maps.append(request.query_params)
                 else:
-                    kwargs.update(request.data)
+                    maps.append(request.data)
                 try:
-                    kwargs = params(kwargs)
+                    kwargs = params(ChainMap(*maps))
                 except Invalid as ex:
                     return Response({'message': str(ex)}, status=400)
             ret = f(request, **kwargs)
             if returns is not None:
-                if not isinstance(ret, Response):
+                if not isinstance(ret, (Response, HttpResponse)):
                     ret = Response(returns(ret))
             elif ret is None:
-                ret = Response()
+                ret = Response(status=204)
             return ret
         rest_method.__name__ = method.lower()
         rest_method.__qualname__ = method.lower()
