@@ -38,10 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'django.contrib.sites',
     'django_celery_results',
     'django_celery_beat',
     'rest_framework',
     'rest_framework_swagger',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
     'rssant_api',
 ]
 
@@ -142,3 +147,12 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 30.0,
     }
 }
+
+
+# Django All Auth
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+SITE_ID = 1

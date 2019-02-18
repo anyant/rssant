@@ -30,6 +30,8 @@ swagger_view = get_swagger_view(title=API_TITLE)
 
 urlpatterns = [
     path('', views.index),
+    path('accounts/profile/', views.accounts_profile),
+    path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('api/', include('rssant_api.urls')),
     path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
