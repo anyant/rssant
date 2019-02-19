@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django_rest_validr import RestRouter, T
+from django_rest_validr import RestRouter, T, Cursor, pagination
 
 from rssant_api.models import RssFeed
 from rssant_api.tasks import rss
@@ -31,17 +31,45 @@ FeedView = RestRouter()
 
 @FeedView.get('feed/')
 @login_required
-def feed_list(request, detail: T.bool.default(False)) -> T.list(RssFeedSchema):
+def feed_list(
+    request,
+    cursor: T.cursor.object.keys('id').optional,
+    size: T.int.min(1).max(100).default(10),
+    detail: T.bool.default(False)
+) -> pagination(RssFeedSchema):
     """Feed list"""
-    feeds = RssFeed.objects.filter(user=request.user).all()
+    q = RssFeed.objects.filter(user=request.user)
+    total = q.count()
+    if cursor:
+        q = q.filter(id__gt=cursor.id)
+    if detail:
+        q = q.select_related('user')
+    else:
+        q = q.defer('feed__data', 'feed__headers')
+    feeds = q.order_by('id')[:size].all()
     feeds = [x.to_dict(detail=detail) for x in feeds]
-    return feeds
+    if len(feeds) >= size:
+        next = Cursor(id=feeds[-1]['id'])
+    else:
+        next = None
+    return dict(
+        previous=cursor,
+        next=next,
+        total=total,
+        size=size,
+        results=feeds,
+    )
 
 
 @FeedView.get('feed/<int:pk>')
 def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> RssFeedSchema:
     """Feed detail"""
-    feed = RssFeed.objects.get(pk=pk)
+    q = RssFeed.objects
+    if detail:
+        q = q.select_related('user')
+    else:
+        q = q.defer('feed__data', 'feed__headers')
+    feed = q.get(pk=pk)
     return feed.to_dict(detail=detail)
 
 

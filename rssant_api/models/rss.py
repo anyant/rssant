@@ -48,7 +48,7 @@ class RssFeed(models.Model):
     def to_dict(self, detail=False):
         ret = dict(
             id=self.id,
-            user=dict(id=self.user.id),
+            user=dict(id=self.user_id),
             status=self.status,
             url=self.url,
             title=self.title,
@@ -99,8 +99,8 @@ class RssStory(models.Model):
     def to_dict(self, detail=False, data=False):
         ret = dict(
             id=self.id,
-            user=dict(id=self.user.id),
-            feed=dict(id=self.feed.id),
+            user=dict(id=self.user_id),
+            feed=dict(id=self.feed_id),
             title=self.title,
             link=self.link,
             dt_published=self.dt_published,

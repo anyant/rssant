@@ -11,11 +11,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
 
-from .validator import Cursor, VALIDATORS, page_of
+from .validator import Cursor, VALIDATORS, pagination
 
 
 __all__ = (
-    'page_of',
+    'pagination',
     'Cursor',
     'RestRouter',
 )
@@ -42,7 +42,7 @@ def coreschema_from_validr(item):
     }
     default = item.params.get('default')
     description = item.params.get('desc')
-    schema_cls = mapping.get(item.validator, coreschema.Anything)
+    schema_cls = mapping.get(item.validator, coreschema.String)
     return schema_cls(default=default, description=description)
 
 
