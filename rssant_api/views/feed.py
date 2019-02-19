@@ -45,7 +45,7 @@ def feed_list(
     if detail:
         q = q.select_related('user')
     else:
-        q = q.defer('feed__data', 'feed__headers')
+        q = q.defer('data', 'headers')
     feeds = q.order_by('id')[:size].all()
     feeds = [x.to_dict(detail=detail) for x in feeds]
     if len(feeds) >= size:
@@ -68,7 +68,7 @@ def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> RssFeedSchema
     if detail:
         q = q.select_related('user')
     else:
-        q = q.defer('feed__data', 'feed__headers')
+        q = q.defer('data', 'headers')
     feed = q.get(pk=pk)
     return feed.to_dict(detail=detail)
 

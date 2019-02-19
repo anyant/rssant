@@ -25,7 +25,7 @@ SECRET_KEY = '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'rssant.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_postgrespool2',
         'NAME': 'rssant',
         'USER': 'rssant',
         'PASSWORD': 'rssant',
@@ -100,6 +100,12 @@ DATABASES = {
     }
 }
 
+# https://github.com/heroku-python/django-postgrespool
+DATABASE_POOL_ARGS = {
+    'max_overflow': 10,
+    'pool_size': 5,
+    'recycle': 300
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

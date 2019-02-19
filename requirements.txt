@@ -20,6 +20,8 @@ Django==2.1.7
 django-allauth==0.38.0
 django-celery-beat==1.4.0
 django-celery-results==1.0.4
+django-debug-toolbar==1.11
+django-postgrespool2==0.2.0
 django-rest-swagger==2.2.0
 django-timezone-field==3.0
 djangorestframework==3.9.1
@@ -56,6 +58,7 @@ setproctitle==1.1.10
 simplejson==3.16.0
 six==1.12.0
 soupsieve==1.8
+SQLAlchemy==1.2.18
 sqlparse==0.2.4
 tabulate==0.8.3
 terminaltables==3.1.0
