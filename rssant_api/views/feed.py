@@ -10,6 +10,7 @@ RssFeedSchema = T.dict(
         id=T.int,
         username=T.str.optional,
     ),
+    status=T.str,
     url=T.url,
     link=T.str.optional,
     author=T.str.optional,

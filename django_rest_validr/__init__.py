@@ -67,6 +67,9 @@ class RestViewSchema(AutoSchema):
             if name in path_field_names or name in ['id', 'pk']:
                 continue
             required = not item.params.get('optional', False)
+            default = item.params.get('default')
+            if not (default is None or default == ''):
+                required = False
             if method in ['GET', 'DELETE']:
                 location = 'query'
             else:
