@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django_rest_validr import RestRouter, T, pagination, Cursor
 
 from rssant_api.models import RssStory
@@ -28,7 +27,6 @@ StoryView = RestRouter()
 
 
 @StoryView.get('story/')
-@login_required
 def story_list(
     request,
     feed_id: T.int.optional,
@@ -69,7 +67,6 @@ def story_list(
 
 
 @StoryView.get('story/<int:pk>')
-@login_required
 def story_get(
     request,
     pk: T.int,

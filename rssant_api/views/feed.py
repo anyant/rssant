@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django_rest_validr import RestRouter, T, Cursor, pagination
 
 from rssant_api.models import RssFeed
@@ -31,7 +30,6 @@ FeedView = RestRouter()
 
 
 @FeedView.get('feed/')
-@login_required
 def feed_list(
     request,
     cursor: T.cursor.object.keys('id').optional,

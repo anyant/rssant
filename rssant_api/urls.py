@@ -8,9 +8,9 @@ from .views.user import UserView
 
 app_name = 'rssant_api'
 urlpatterns = [
-    path('index', index),
-    path('', include(FeedView.urls)),
-    path('', include(StoryView.urls)),
-    path('', include(TaskView.urls)),
-    path('', include(UserView.urls)),
+    path('v1/index', index),
+    path('v1/', include(FeedView.urls)),
+    path('v1/', include(StoryView.urls)),
+    path('v1/', include(TaskView.urls)),
+    path('v1/', include(UserView.urls)),
 ]
