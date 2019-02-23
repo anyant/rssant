@@ -106,7 +106,7 @@ def _save_feed(user_feed, found):
     url_map.save()
 
 
-@task
+@task(name='rssant.tasks.find_feed')
 def find_feed(user_feed_id):
     messages = []
 
