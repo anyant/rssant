@@ -69,7 +69,7 @@ class UserStory(Model):
     dt_favorited = models.DateTimeField(**optional, help_text="标星时间")
 
     @classmethod
-    def sync_unreaded(cls, user_id, user_feed_id=None):
+    def sync_storys(cls, user_id, user_feed_id=None):
         user_id = int(user_id)
         q = UserFeed.objects.filter(user_id=user_id).only('feed_id').distinct()
         if user_feed_id:

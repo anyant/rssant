@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django_rest_validr import RestRouter, T, pagination, Cursor
 
 from rssant_api.models import UserStory
@@ -18,11 +19,17 @@ StorySchema = T.dict(
     dt_updated=T.datetime.optional,
     dt_created=T.datetime.optional,
     dt_synced=T.datetime.optional,
+    is_readed=T.bool.default(False),
+    dt_readed=T.datetime.optional,
+    is_favorited=T.bool.default(False),
+    dt_favorited=T.datetime.optional,
     summary=T.str.optional,
     content=T.str.optional,
 )
 
 StoryView = RestRouter()
+
+STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 
 
 @StoryView.get('story/')
@@ -37,14 +44,14 @@ def story_list(
 ) -> pagination(StorySchema):
     """Story list"""
     user_feed_id = feed_id
-    UserStory.sync_unreaded(user_id=request.user.id, user_feed_id=user_feed_id)
+    UserStory.sync_storys(user_id=request.user.id, user_feed_id=user_feed_id)
     q = UserStory.objects.filter(user=request.user)
     if user_feed_id is not None:
         q = q.filter(user_feed_id=user_feed_id)
     total = q.count()
     q = q.select_related('story')
     if not detail:
-        q = q.defer('story__summary', 'story__content')
+        q = q.defer(*STORY_DETAIL_FEILDS)
     if cursor:
         q = q.filter(id__gt=cursor.id)
     if is_readed is not None:
@@ -75,6 +82,38 @@ def story_get(
     """Story detail"""
     q = UserStory.objects.select_related('feed')
     if not detail:
-        q = q.defer('story__summary', 'story__content')
+        q = q.defer(*STORY_DETAIL_FEILDS)
     story = q.get(user=request.user, pk=pk)
     return story.to_dict(detail=detail)
+
+
+@StoryView.put('story/<int:pk>/readed')
+def story_set_readed(
+    request,
+    pk: T.int,
+    is_readed: T.bool.default(True),
+) -> StorySchema:
+    q = UserStory.objects.select_related('feed')
+    q = q.defer(*STORY_DETAIL_FEILDS)
+    story = q.get(user=request.user, pk=pk)
+    story.is_readed = is_readed
+    if is_readed:
+        story.dt_readed = timezone.now()
+    story.save()
+    return story.to_dict()
+
+
+@StoryView.put('story/<int:pk>/favorited')
+def story_set_favorited(
+    request,
+    pk: T.int,
+    is_favorited: T.bool.default(True),
+) -> StorySchema:
+    q = UserStory.objects.select_related('feed')
+    q = q.defer(*STORY_DETAIL_FEILDS)
+    story = q.get(user=request.user, pk=pk)
+    story.is_favorited = is_favorited
+    if is_favorited:
+        story.dt_favorited = timezone.now()
+    story.save()
+    return story.to_dict()
