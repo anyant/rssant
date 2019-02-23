@@ -1,26 +1,25 @@
 from django_rest_validr import RestRouter, T, pagination, Cursor
 
-from rssant_api.models import RssStory
+from rssant_api.models import UserStory
 
-RssStorySchema = T.dict(
+
+StorySchema = T.dict(
     id=T.int,
     user=T.dict(
         id=T.int,
-        username=T.str.optional,
     ),
     feed=T.dict(
         id=T.int,
-        url=T.url.optional,
-        title=T.str.optional,
-        link=T.str.optional,
     ),
+    unique_id=T.str.optional,
     title=T.str.optional,
     link=T.str.optional,
-    dt_created=T.datetime.optional,
+    dt_published=T.datetime.optional,
     dt_updated=T.datetime.optional,
+    dt_created=T.datetime.optional,
+    dt_synced=T.datetime.optional,
     summary=T.str.optional,
     content=T.str.optional,
-    data=T.dict.optional,
 )
 
 StoryView = RestRouter()
@@ -31,28 +30,29 @@ def story_list(
     request,
     feed_id: T.int.optional,
     detail: T.bool.default(False),
-    data: T.bool.default(False),
+    is_readed: T.bool.optional,
+    is_favorited: T.bool.optional,
     cursor: T.cursor.object.keys('id').optional,
     size: T.int.min(1).max(100).default(10),
-) -> pagination(RssStorySchema):
+) -> pagination(StorySchema):
     """Story list"""
-    q = RssStory.objects.filter(user=request.user)
-    if feed_id is not None:
-        q = q.filter(feed_id=feed_id)
+    user_feed_id = feed_id
+    UserStory.sync_unreaded(user_id=request.user.id, user_feed_id=user_feed_id)
+    q = UserStory.objects.filter(user=request.user)
+    if user_feed_id is not None:
+        q = q.filter(user_feed_id=user_feed_id)
     total = q.count()
-    if detail:
-        q = q.select_related('user', 'feed')
-        q = q.defer('feed__data', 'feed__headers')
-    else:
-        q = q.defer('summary', 'content')
-    if not data:
-        q = q.defer('data')
+    q = q.select_related('story')
+    if not detail:
+        q = q.defer('story__summary', 'story__content')
     if cursor:
         q = q.filter(id__gt=cursor.id)
+    if is_readed is not None:
+        q = q.filter(is_readed=is_readed)
+    if is_favorited is not None:
+        q = q.filter(is_favorited=is_favorited)
     storys = q.order_by('id')[:size].all()
-    if detail:
-        q = q.select_related('user', 'feed')
-    storys = [x.to_dict(detail=detail, data=data) for x in storys]
+    storys = [x.to_dict(detail=detail) for x in storys]
     if len(storys) >= size:
         next = Cursor(id=storys[-1]['id'])
     else:
@@ -71,16 +71,10 @@ def story_get(
     request,
     pk: T.int,
     detail: T.bool.default(False),
-    data: T.bool.default(False)
-) -> RssStorySchema:
+) -> StorySchema:
     """Story detail"""
-    q = RssStory.objects
-    if detail:
-        q = q.select_related('user', 'feed')
-        q = q.defer('feed__data', 'feed__headers')
-    else:
-        q = q.defer('summary', 'content')
-    if not data:
-        q = q.defer('data')
-    Story = q.get(user=request.user, pk=pk)
-    return Story.to_dict(detail=detail, data=data)
+    q = UserStory.objects.select_related('feed')
+    if not detail:
+        q = q.defer('story__summary', 'story__content')
+    story = q.get(user=request.user, pk=pk)
+    return story.to_dict(detail=detail)

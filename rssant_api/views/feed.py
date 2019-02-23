@@ -1,13 +1,12 @@
 from django_rest_validr import RestRouter, T, Cursor, pagination
 
-from rssant_api.models import RssFeed
+from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus
 from rssant_api.tasks import rss
 
-RssFeedSchema = T.dict(
+FeedSchema = T.dict(
     id=T.int,
     user=T.dict(
         id=T.int,
-        username=T.str.optional,
     ),
     status=T.str,
     url=T.url,
@@ -17,16 +16,27 @@ RssFeedSchema = T.dict(
     description=T.str.optional,
     version=T.str.optional,
     title=T.str.optional,
-    dt_created=T.datetime.optional,
     dt_updated=T.datetime.optional,
+    dt_created=T.datetime.optional,
+    dt_checked=T.datetime.optional,
+    dt_synced=T.datetime.optional,
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
-    headers=T.dict.optional,
-    data=T.dict.optional,
+    content_hash_method=T.str.optional,
+    content_hash_value=T.str.optional,
 )
 
 FeedView = RestRouter()
+
+FEED_DETAIL_FIELDS = [
+    'feed__encoding',
+    'feed__etag',
+    'feed__last_modified',
+    'feed__content_length',
+    'feed__content_hash_method',
+    'feed__content_hash_value',
+]
 
 
 @FeedView.get('feed/')
@@ -35,16 +45,15 @@ def feed_list(
     cursor: T.cursor.object.keys('id').optional,
     size: T.int.min(1).max(100).default(10),
     detail: T.bool.default(False)
-) -> pagination(RssFeedSchema):
+) -> pagination(FeedSchema):
     """Feed list"""
-    q = RssFeed.objects.filter(user=request.user)
+    q = UserFeed.objects.filter(user=request.user)
     total = q.count()
+    q = q.select_related('feed')
     if cursor:
         q = q.filter(id__gt=cursor.id)
-    if detail:
-        q = q.select_related('user')
-    else:
-        q = q.defer('data', 'headers')
+    if not detail:
+        q = q.defer(*FEED_DETAIL_FIELDS)
     feeds = q.order_by('id')[:size].all()
     feeds = [x.to_dict(detail=detail) for x in feeds]
     if len(feeds) >= size:
@@ -61,35 +70,40 @@ def feed_list(
 
 
 @FeedView.get('feed/<int:pk>')
-def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> RssFeedSchema:
+def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
     """Feed detail"""
-    q = RssFeed.objects
-    if detail:
-        q = q.select_related('user')
-    else:
-        q = q.defer('data', 'headers')
-    feed = q.get(pk=pk)
+    q = UserFeed.objects.select_related('feed')
+    if not detail:
+        q = q.defer(*FEED_DETAIL_FIELDS)
+    feed = q.get(user=request.user, pk=pk)
     return feed.to_dict(detail=detail)
 
 
 @FeedView.post('feed/')
-def feed_create(request, url: T.url) -> RssFeedSchema:
-    feed = RssFeed.objects.create(user=request.user, url=url)
-    feed.save()
-    rss.find_feed.delay(feed_id=feed.id)
-    return feed
+def feed_create(request, url: T.url) -> FeedSchema:
+    target_url = FeedUrlMap.find_target(url)
+    if target_url:
+        feed = Feed.objects.get(url=target_url)
+        user_feed = UserFeed(
+            user=request.user, feed=feed, url=url, status=FeedStatus.READY.value)
+        user_feed.save()
+        return user_feed.to_dict(detail=True)
+    else:
+        user_feed = UserFeed(user=request.user, url=url)
+        user_feed.save()
+        rss.find_feed.delay(user_feed_id=user_feed.id)
+        return user_feed.to_dict()
 
 
 @FeedView.put('feed/<int:pk>')
-def feed_update(request, pk: T.int, url: T.url) -> RssFeedSchema:
-    feed = RssFeed.objects.get(pk=pk)
-    feed.url = url
+def feed_update(request, pk: T.int, title: T.str.optional) -> FeedSchema:
+    feed = UserFeed.objects.select_related('feed').get(user=request.user, pk=pk)
+    feed.title = title
     feed.save()
-    rss.find_feed.delay(feed_id=feed.id)
-    return feed
+    return feed.to_dict()
 
 
 @FeedView.delete('feed/<int:pk>')
 def feed_delete(request, pk: T.int):
-    feed = RssFeed.objects.get(pk=pk)
+    feed = UserFeed.objects.get(user=request.user, pk=pk)
     feed.delete()

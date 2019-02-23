@@ -12,8 +12,11 @@ UserView = RestRouter()
 
 @UserView.get('user/me')
 def user_me(request) -> UserSchema:
-    social_account = SocialAccount.objects.get(user=request.user)
-    avatar_url = social_account.get_avatar_url()
+    try:
+        social_account = SocialAccount.objects.get(user=request.user)
+        avatar_url = social_account.get_avatar_url()
+    except SocialAccount.DoesNotExist:
+        avatar_url = None
     return dict(
         id=request.user.id,
         username=request.user.username,
