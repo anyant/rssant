@@ -57,7 +57,7 @@ def _save_feed_found(user_feed, found):
     feed.last_modified = found.response.headers.get("Last-Modified")
     feed.encoding = found.response.encoding
     feed.version = found.version
-    feed.status = FeedStatus.READY.value
+    feed.status = FeedStatus.READY
     feed.save()
     return feed
 
@@ -96,7 +96,7 @@ def _save_feed_entries(feed, found):
 
 @transaction.atomic
 def _save_feed(user_feed, found):
-    user_feed.status = FeedStatus.READY.value
+    user_feed.status = FeedStatus.READY
     feed = _save_feed_found(user_feed, found)
     user_feed.feed = feed
     user_feed.save()
@@ -115,13 +115,13 @@ def find_feed(user_feed_id):
         messages.append(msg)
 
     user_feed = UserFeed.objects.get(pk=user_feed_id)
-    user_feed.status = FeedStatus.UPDATING.value
+    user_feed.status = FeedStatus.UPDATING
     user_feed.save()
     start_url = user_feed.url
     finder = FeedFinder(start_url, message_handler=message_handler)
     found = finder.find()
     if not found:
-        user_feed.status = FeedStatus.ERROR.value
+        user_feed.status = FeedStatus.ERROR
         user_feed.save()
         return {'messages': messages}
     _save_feed(user_feed, found)

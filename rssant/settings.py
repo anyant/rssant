@@ -166,6 +166,10 @@ AUTHENTICATION_BACKENDS = (
     'allauth.account.auth_backends.AuthenticationBackend',
 )
 SITE_ID = 1
+SOCIAL_APP_GITHUB = {
+    'client_id': 'a30a7a62fd4a648c9da6',
+    'secret': 'e98cede34ab9badaaab0d30f07c8d989fa11e0ec',
+}
 
 # Email
 

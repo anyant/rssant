@@ -15,11 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 from rest_framework.schemas import get_schema_view
 from rest_framework.documentation import include_docs_urls
 from rest_framework_swagger.views import get_swagger_view
 
-from . import views, settings
+from . import views
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'

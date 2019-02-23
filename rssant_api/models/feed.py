@@ -1,11 +1,9 @@
-import enum
 import base64
 
-from .helper import Model, models, optional, JSONField, User
+from .helper import Model, models, optional, JSONField, User, extract_choices
 
 
-@enum.unique
-class FeedStatus(enum.Enum):
+class FeedStatus:
     """
     1. 用户输入URL，直接匹配到已有的Feed，status=ready
     2. 用户输入URL，无匹配, status=pending
@@ -21,11 +19,10 @@ class FeedStatus(enum.Enum):
     ERROR = 'error'
 
 
-FEED_STATUS_CHOICES = [(x.value, x.value) for x in FeedStatus]
+FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
-@enum.unique
-class FeedHTTPError(enum.Enum):
+class FeedHTTPError:
     HTTP_CONNECTION_ERROR = -501
     HTTP_PROXY_ERROR = -502
     HTTP_TIMEOUT = -503
@@ -46,7 +43,7 @@ class Feed(Model):
 
     url = models.TextField(unique=True, help_text="供稿地址")
     status = models.CharField(
-        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING.value, help_text='状态')
+        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
     # RSS解析内容
     title = models.CharField(max_length=200, **optional, help_text="标题")
     link = models.TextField(**optional, help_text="网站链接")
@@ -110,7 +107,7 @@ class RawFeed(Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["feed", 'status_code',  "dt_created"]),
+            models.Index(fields=["feed", 'status_code', "dt_created"]),
             models.Index(fields=["url", 'status_code', "dt_created"]),
         ]
 
@@ -158,7 +155,7 @@ class UserFeed(Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
     status = models.CharField(
-        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING.value, help_text='状态')
+        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
     url = models.TextField(help_text="用户输入的供稿地址")
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
@@ -175,7 +172,7 @@ class UserFeed(Model):
         )
         if self.title:
             ret.update(title=self.title)
-        if (not self.status) or (self.status != FeedStatus.READY.value):
+        if (not self.status) or (self.status != FeedStatus.READY):
             ret.update(status=self.status)
         return ret
 

@@ -1,8 +1,14 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 
+
+User = get_user_model()
 optional = dict(blank=True, null=True)
+
+
+def extract_choices(cls):
+    return [(v, v)for k, v in vars(cls).items() if k.isupper()]
 
 
 class Model(models.Model):
@@ -32,7 +38,6 @@ class Model(models.Model):
 __all__ = (
     'models',
     'Model',
-    'optional',
     'User',
     'JSONField',
 )

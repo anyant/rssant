@@ -80,12 +80,12 @@ def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
 
 
 @FeedView.post('feed/')
-def feed_create(request, url: T.url) -> FeedSchema:
+def feed_create(request, url: T.url.tolerant) -> FeedSchema:
     target_url = FeedUrlMap.find_target(url)
     if target_url:
         feed = Feed.objects.get(url=target_url)
         user_feed = UserFeed(
-            user=request.user, feed=feed, url=url, status=FeedStatus.READY.value)
+            user=request.user, feed=feed, url=url, status=FeedStatus.READY)
         user_feed.save()
         return user_feed.to_dict(detail=True)
     else:

@@ -1,4 +1,6 @@
-from validr import T, validator, SchemaError, Invalid
+from validr import T, validator, SchemaError, Invalid, builtin_validators
+
+from feedlib.helper import coerce_url
 
 
 def pagination(item):
@@ -88,6 +90,23 @@ def cursor_validator(compiler, keys=None, object=False):
     return validate
 
 
+@validator(string=True)
+def url_validator(*args, tolerant=False, **kwargs):
+    """
+    Args:
+        tolerant: 接受没有scheme的url并尝试修正
+    """
+    _validate_url = builtin_validators['url'].validator(*args, **kwargs)
+
+    def validate(value):
+        if tolerant:
+            value = coerce_url(value)
+        return _validate_url(value)
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
+    'url': url_validator,
 }
