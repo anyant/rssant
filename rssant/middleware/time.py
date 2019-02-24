@@ -1,4 +1,5 @@
 import time
+from django.db import connection
 
 
 class TimeMiddleware:
@@ -8,6 +9,10 @@ class TimeMiddleware:
     def __call__(self, request):
         t_begin = time.time()
         response = self.get_response(request)
-        cost = time.time() - t_begin
-        response['X-Time'] = f'{cost * 1000:.0f}ms'
+        cost = (time.time() - t_begin) * 1000
+        response['X-Time'] = f'{cost:.0f}ms'
+        num_sqls = len(connection.queries)
+        sql_cost = sum(float(x['time']) for x in connection.queries) * 1000
+        sql_time = f'{num_sqls};{sql_cost:.0f}ms'
+        response['X-SQL-Time'] = sql_time
         return response

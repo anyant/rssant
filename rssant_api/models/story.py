@@ -56,7 +56,7 @@ class UserStory(Model):
 
     class Admin:
         display_fields = ['user_id', 'feed_id', 'story_id', 'is_readed', 'is_favorited']
-        search_fields = ['user_id', 'feed_id', 'is_readed', 'is_favorited']
+        search_fields = ['user_feed_id']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     story = models.ForeignKey(Story, on_delete=models.CASCADE)
@@ -69,11 +69,9 @@ class UserStory(Model):
     dt_favorited = models.DateTimeField(**optional, help_text="标星时间")
 
     @classmethod
-    def sync_storys(cls, user_id, user_feed_id=None):
-        user_id = int(user_id)
+    def sync_storys(cls, user_id, user_feed_id=None, limit=200):
         q = UserFeed.objects.filter(user_id=user_id).only('feed_id').distinct()
         if user_feed_id:
-            user_feed_id = int(user_feed_id)
             q = q.filter(id=user_feed_id)
         user_feeds = list(q.all())
         feed_ids = {x.feed_id: x.id for x in user_feeds}
@@ -83,16 +81,15 @@ class UserStory(Model):
         LEFT OUTER JOIN (
             SELECT id, story_id
             FROM rssant_api_userstory
-            WHERE user_id=%s AND feed_id = ANY ('{%s}')
+            WHERE user_id=%s AND feed_id = ANY(%s)
         ) AS userstory
         ON story.id=userstory.story_id
-        WHERE story.feed_id = ANY ('{%s}') AND userstory.id IS NULL
+        WHERE story.feed_id = ANY(%s) AND userstory.id IS NULL
+        LIMIT %s
         """
-        feed_ids_param = ','.join(map(str, feed_ids))
-        # Here is safe to build raw sql to workaround parameter in ANY
-        raw_sql = sql % (user_id, feed_ids_param, feed_ids_param)
+        params = [user_id, list(feed_ids), list(feed_ids), limit]
         with connection.cursor() as cursor:
-            cursor.execute(raw_sql)
+            cursor.execute(sql, params)
             new_user_storys = list(cursor.fetchall())
         # batch insert unreaded storys
         with transaction.atomic():

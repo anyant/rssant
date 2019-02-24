@@ -1,6 +1,7 @@
+from django.db import connection
 from django_rest_validr import RestRouter, T, Cursor, pagination
 
-from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus
+from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
 
 FeedSchema = T.dict(
@@ -16,6 +17,7 @@ FeedSchema = T.dict(
     description=T.str.optional,
     version=T.str.optional,
     title=T.str.optional,
+    num_unread_storys=T.int.optional,
     dt_updated=T.datetime.optional,
     dt_created=T.datetime.optional,
     dt_checked=T.datetime.optional,
@@ -56,6 +58,10 @@ def feed_list(
         q = q.defer(*FEED_DETAIL_FIELDS)
     feeds = q.order_by('id')[:size].all()
     feeds = [x.to_dict(detail=detail) for x in feeds]
+    user_feed_ids = [x['id'] for x in feeds]
+    feed_unread_stats = _get_feed_unread_stats(request.user.id, user_feed_ids)
+    for feed in feeds:
+        feed['num_unread_storys'] = feed_unread_stats.get(feed['id'])
     if len(feeds) >= size:
         next = Cursor(id=feeds[-1]['id'])
     else:
@@ -67,6 +73,23 @@ def feed_list(
         size=size,
         results=feeds,
     )
+
+
+def _get_feed_unread_stats(user_id, user_feed_ids):
+    UserStory.sync_storys(user_id=user_id)
+    sql = """
+    SELECT user_feed_id, count(1) AS count
+    FROM rssant_api_userstory AS userstory
+    WHERE user_id=%s AND user_feed_id = ANY(%s)
+        AND (is_readed IS NULL OR NOT is_readed)
+    GROUP BY user_feed_id
+    """
+    feed_unread_stats = {}
+    with connection.cursor() as cursor:
+        cursor.execute(sql, [user_id, user_feed_ids])
+        for user_feed_id, count in cursor.fetchall():
+            feed_unread_stats[user_feed_id] = count
+    return feed_unread_stats
 
 
 @FeedView.get('feed/<int:pk>')
@@ -81,9 +104,11 @@ def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
 
 @FeedView.post('feed/')
 def feed_create(request, url: T.url.tolerant) -> FeedSchema:
+    feed = None
     target_url = FeedUrlMap.find_target(url)
     if target_url:
-        feed = Feed.objects.get(url=target_url)
+        feed = Feed.objects.filter(url=target_url).first()
+    if feed:
         user_feed = UserFeed(
             user=request.user, feed=feed, url=url, status=FeedStatus.READY)
         user_feed.save()
@@ -92,7 +117,7 @@ def feed_create(request, url: T.url.tolerant) -> FeedSchema:
         user_feed = UserFeed(user=request.user, url=url)
         user_feed.save()
         rss.find_feed.delay(user_feed_id=user_feed.id)
-        return user_feed.to_dict()
+    return user_feed.to_dict()
 
 
 @FeedView.put('feed/<int:pk>')

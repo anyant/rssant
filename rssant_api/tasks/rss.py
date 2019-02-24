@@ -3,6 +3,7 @@ from urllib.parse import unquote
 from celery import shared_task as task
 from django.db import transaction
 from django.utils import timezone
+import requests.exceptions
 
 from feedlib import FeedFinder, FeedReader, FeedParser
 from rssant.celery import LOG
@@ -22,11 +23,26 @@ def _get_url(response):
     return unquote(response.url)
 
 
+def _get_dt_published(data):
+    return data["published_parsed"] or data["updated_parsed"] or None
+
+
+def _get_dt_updated(data):
+    return data["updated_parsed"] or data["published_parsed"] or None
+
+
 def _get_story_unique_id(entry):
     unique_id = entry['id']
     if not unique_id:
         unique_id = entry['link']
     return unique_id
+
+
+def _update_feed_content_info(feed, raw_feed):
+    feed.content_length = raw_feed.content_length
+    feed.content_hash_method = raw_feed.content_hash_method
+    feed.content_hash_value = raw_feed.content_hash_value
+    feed.save()
 
 
 def _create_raw_feed(feed, response):
@@ -43,8 +59,10 @@ def _create_raw_feed(feed, response):
     raw_feed.headers = headers
     raw_feed.content = res.content
     raw_feed.content_length = len(res.content)
-    raw_feed.content_hash_method = None
-    raw_feed.content_hash_value = None
+    if res.content:
+        hash_method, hash_value = raw_feed.compute_content_hash(res.content)
+        raw_feed.content_hash_method = hash_method
+        raw_feed.content_hash_value = hash_value
     raw_feed.save()
     return raw_feed
 
@@ -66,12 +84,8 @@ def _save_feed(feed, parsed):
     feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
     feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
     now = timezone.now()
-    feed.dt_published = (
-        parsed_feed["published_parsed"] or parsed_feed["updated_parsed"]
-    )
-    feed.dt_updated = (
-        parsed_feed["updated_parsed"] or parsed_feed["published_parsed"]
-    )
+    feed.dt_published = _get_dt_published(parsed_feed)
+    feed.dt_updated = _get_dt_updated(parsed_feed)
     feed.dt_checked = feed.dt_synced = now
     feed.etag = _get_etag(res)
     feed.last_modified = _get_last_modified(res)
@@ -118,8 +132,8 @@ def _save_storys(feed, entries):
         story.title = data["title"]
         story.link = unquote(data["link"])
         story.author = data["author"]
-        story.dt_published = data["published_parsed"] or data["updated_parsed"]
-        story.dt_updated = data["updated_parsed"] or data["published_parsed"]
+        story.dt_published = _get_dt_published(data)
+        story.dt_updated = _get_dt_updated(data)
         story.dt_synced = now
         story.save()
     return list(storys.values())
@@ -131,7 +145,8 @@ def _save_found(user_feed, found):
     feed = _create_feed(found)
     user_feed.feed = feed
     user_feed.save()
-    _create_raw_feed(feed, found.response)
+    raw_feed = _create_raw_feed(feed, found.response)
+    _update_feed_content_info(feed, raw_feed)
     _save_storys(feed, found.entries)
     url_map = FeedUrlMap(source=user_feed.url, target=feed.url)
     url_map.save()
@@ -182,17 +197,28 @@ def sync_feed(feed_id):
     feed.save()
     reader = FeedReader()
     LOG.info(f'read feed#{feed_id} url={feed.url}')
-    response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
+    try:
+        response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
+    except requests.exceptions.RequestException:
+        feed.status = FeedStatus.ERROR
+        feed.save()
+        raise
     if 200 <= response.status_code <= 299:
-        LOG.info(f'parse feed#{feed_id} url={feed.url}')
-        parsed = FeedParser.parse_response(response)
+        __, hash_value = feed.compute_content_hash(response.content)
+        if hash_value == feed.content_hash_value:
+            LOG.info(f'feed#{feed_id} url={feed.url} not changed')
+            parsed = None
+        else:
+            LOG.info(f'parse feed#{feed_id} url={feed.url}')
+            parsed = FeedParser.parse_response(response)
     else:
         LOG.info(f'feed#{feed_id} url={feed.url} response={response.status_code}')
         parsed = None
     with transaction.atomic():
-        _create_raw_feed(feed, response)
+        raw_feed = _create_raw_feed(feed, response)
         if parsed:
             _save_feed(feed, parsed)
+            _update_feed_content_info(feed, raw_feed)
             _save_storys(feed, parsed.entries)
         feed.status = FeedStatus.READY
         feed.save()

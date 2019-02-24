@@ -1,4 +1,5 @@
 import base64
+import hashlib
 
 from .helper import Model, models, optional, JSONField, User, extract_choices
 
@@ -31,7 +32,33 @@ class FeedHTTPError:
     HTTP_CHUNKED_ENCODING_ERROR = -506
 
 
-class Feed(Model):
+class ContentHashMixin(models.Model):
+
+    class Meta:
+        abstract = True
+
+    content_hash_method = models.CharField(
+        max_length=20, **optional, help_text='hash method of content')
+    content_hash_value = models.BinaryField(
+        max_length=200, **optional, help_text='hash value of content')
+
+    def compute_content_hash(self, content, method=None):
+        if not method:
+            method = self.content_hash_method
+        if not method:
+            method = 'sha1'
+        h = hashlib.new(method)
+        h.update(content)
+        return method, h.digest()
+
+    @property
+    def content_hash_value_base64(self):
+        if not self.content_hash_value:
+            return None
+        return base64.b64encode(self.content_hash_value).decode()
+
+
+class Feed(Model, ContentHashMixin):
     """订阅的最新数据"""
     class Meta:
         indexes = [
@@ -63,17 +90,6 @@ class Feed(Model):
         max_length=200, **optional, help_text="HTTP response header Last-Modified")
     content_length = models.IntegerField(
         **optional, help_text='length of content')
-    content_hash_method = models.CharField(
-        max_length=20, **optional, help_text='hash method of content')
-    content_hash_value = models.BinaryField(
-        max_length=200, **optional, help_text='hash value of content')
-
-    @property
-    def content_hash_value_base64(self):
-        if self.content_hash_value:
-            return base64.b64encode(self.content_hash_value)
-        else:
-            return None
 
     def to_dict(self, detail=False):
         ret = dict(
@@ -102,7 +118,7 @@ class Feed(Model):
         return ret
 
 
-class RawFeed(Model):
+class RawFeed(Model, ContentHashMixin):
     """订阅的原始数据"""
 
     class Meta:
@@ -127,18 +143,7 @@ class RawFeed(Model):
     content = models.BinaryField(**optional)
     content_length = models.IntegerField(
         **optional, help_text='length of content')
-    content_hash_method = models.CharField(
-        max_length=20, **optional, help_text='hash method of content')
-    content_hash_value = models.BinaryField(
-        max_length=200, **optional, help_text='hash value of content')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
-
-    @property
-    def content_hash_value_base64(self):
-        if self.content_hash_value:
-            return base64.b64encode(self.content_hash_value)
-        else:
-            return None
 
 
 class UserFeed(Model):

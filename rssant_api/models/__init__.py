@@ -3,7 +3,7 @@ from .story import Story, UserStory
 
 __models__ = (
     Feed, RawFeed, UserFeed,
-    Story, UserStory,
+    Story, UserStory, FeedUrlMap,
 )
 
 __all__ = (
