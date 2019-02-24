@@ -1,5 +1,6 @@
 from django.db import connection
 from django_rest_validr import RestRouter, T, Cursor, pagination
+from rest_framework.response import Response
 
 from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
@@ -109,8 +110,10 @@ def feed_create(request, url: T.url.tolerant) -> FeedSchema:
     if target_url:
         feed = Feed.objects.filter(url=target_url).first()
     if feed:
-        user_feed = UserFeed(
-            user=request.user, feed=feed, url=url, status=FeedStatus.READY)
+        user_feed = UserFeed.objects.filter(user=request.user, feed=feed).first()
+        if user_feed:
+            return Response({'message': 'already exists'}, status=400)
+        user_feed = UserFeed(user=request.user, feed=feed, url=url, status=FeedStatus.READY)
         user_feed.save()
         return user_feed.to_dict(detail=True)
     else:

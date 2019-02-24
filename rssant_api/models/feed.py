@@ -23,13 +23,15 @@ class FeedStatus:
 FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
-class FeedHTTPError:
-    HTTP_CONNECTION_ERROR = -501
-    HTTP_PROXY_ERROR = -502
-    HTTP_TIMEOUT = -503
-    HTTP_SSL_ERROR = -504
-    HTTP_TOO_MANY_REDIRECT = -505
-    HTTP_CHUNKED_ENCODING_ERROR = -506
+class FeedRequestError:
+    UNKNOWN_ERROR = -500
+    DNS_ERROR = -501
+    CONNECTION_ERROR = -502
+    PROXY_ERROR = -503
+    TIMEOUT_ERROR = -504
+    SSL_ERROR = -505
+    TOO_MANY_REDIRECT_ERROR = -506
+    CHUNKED_ENCODING_ERROR = -507
 
 
 class ContentHashMixin(models.Model):

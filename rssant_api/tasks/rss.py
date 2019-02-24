@@ -1,13 +1,15 @@
+import ssl
+import socket
 from urllib.parse import unquote
 
 from celery import shared_task as task
-from django.db import transaction
+from django.db import transaction, connection
 from django.utils import timezone
 import requests.exceptions
 
 from feedlib import FeedFinder, FeedReader, FeedParser
 from rssant.celery import LOG
-from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus
+from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedRequestError
 from rssant_api.helper import shorten
 
 
@@ -34,7 +36,7 @@ def _get_dt_updated(data):
 def _get_story_unique_id(entry):
     unique_id = entry['id']
     if not unique_id:
-        unique_id = entry['link']
+        unique_id = unquote(entry['link'])
     return unique_id
 
 
@@ -110,9 +112,7 @@ def _save_storys(feed, entries):
         unique_id = _get_story_unique_id(data)
         if unique_id in storys:
             story = storys[unique_id]
-            LOG.info(f'update story feed_id={feed.id} unique_id={unique_id}')
         else:
-            LOG.info(f'create story feed_id={feed.id} unique_id={unique_id}')
             story = Story(feed=feed, unique_id=unique_id)
             storys[unique_id] = story
         content = ''
@@ -169,25 +169,75 @@ def find_feed(user_feed_id):
     if not found:
         user_feed.status = FeedStatus.ERROR
         user_feed.save()
-        return {'messages': messages}
-    _save_found(user_feed, found)
-    return {'messages': messages}
+    else:
+        _save_found(user_feed, found)
+    return {
+        'user_feed_id': user_feed_id,
+        'start_url': start_url,
+        'messages': messages,
+    }
 
 
 @task(name='rssant.tasks.check_feed')
 def check_feed(seconds=300):
-    dt_before = timezone.now() - timezone.timedelta(seconds=seconds)
-    q = Feed.objects\
-        .filter(dt_checked__lt=dt_before)\
-        .exclude(status__in=(FeedStatus.PENDING, FeedStatus.UPDATING))\
-        .only('id', 'status')
-    feeds = list(q.all())
-    feed_ids = [x.id for x in feeds]
-    for feed in feeds:
-        feed.status = FeedStatus.PENDING
-        feed.save()
-        sync_feed.delay(feed_id=feed.id)
-    return feed_ids
+    now = timezone.now()
+    delta = timezone.timedelta(seconds=seconds)
+    dt_before = now - delta  # 正常检查时间间隔
+    dt_timeout_before = dt_before - delta  # 异常检查时间间隔
+    statuses = [FeedStatus.READY, FeedStatus.ERROR]
+    sql_check = """
+    SELECT id FROM rssant_api_feed AS feed
+    WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
+    ORDER BY id LIMIT 100
+    """
+    sql_update_status = """
+    UPDATE rssant_api_feed
+    SET status=%s, dt_checked=%s
+    WHERE id=ANY(%s)
+    """
+    params = [statuses, dt_before, dt_timeout_before]
+    feed_ids = []
+    with connection.cursor() as cursor:
+        cursor.execute(sql_check, params)
+        for feed_id, in cursor.fetchall():
+            feed_ids.append(feed_id)
+        cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
+    for feed_id in feed_ids:
+        sync_feed.delay(feed_id=feed_id)
+    return dict(feed_ids=feed_ids)
+
+
+def _read_response(feed):
+    reader = FeedReader()
+    response = None
+    try:
+        response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
+    except requests.exceptions.HTTPError as ex:
+        response = ex.response
+    except socket.gaierror:
+        status_code = FeedRequestError.DNS_ERROR
+    except (socket.timeout, TimeoutError, requests.exceptions.ReadTimeout):
+        status_code = FeedRequestError.TIMEOUT_ERROR
+    except (ssl.SSLError, requests.exceptions.SSLError):
+        status_code = FeedRequestError.SSL_ERROR
+    except (ConnectionError, requests.exceptions.ConnectionError):
+        status_code = FeedRequestError.CONNECTION_ERROR
+    except requests.exceptions.TooManyRedirects:
+        status_code = FeedRequestError.TOO_MANY_REDIRECT_ERROR
+    except requests.exceptions.ChunkedEncodingError:
+        status_code = FeedRequestError.CHUNKED_ENCODING_ERROR
+    except Exception as ex:
+        LOG.exception(ex)
+        status_code = FeedRequestError.UNKNOWN_ERROR
+    if response:
+        status_code = response.status_code
+    return status_code, response
+
+
+def _create_raw_feed_no_response(feed, status_code):
+    raw_feed = RawFeed(feed=feed, status_code=status_code)
+    raw_feed.save()
+    return raw_feed
 
 
 @task(name='rssant.tasks.sync_feed')
@@ -195,30 +245,39 @@ def sync_feed(feed_id):
     feed = Feed.objects.get(pk=feed_id)
     feed.status = FeedStatus.UPDATING
     feed.save()
-    reader = FeedReader()
     LOG.info(f'read feed#{feed_id} url={feed.url}')
-    try:
-        response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
-    except requests.exceptions.RequestException:
-        feed.status = FeedStatus.ERROR
-        feed.save()
-        raise
-    if 200 <= response.status_code <= 299:
-        __, hash_value = feed.compute_content_hash(response.content)
-        if hash_value == feed.content_hash_value:
+    status_code, response = _read_response(feed)
+    LOG.info(f'feed#{feed_id} url={feed.url} status_code={status_code}')
+    if response:
+        raw_feed = _create_raw_feed(feed, response)
+    else:
+        raw_feed = _create_raw_feed_no_response(feed, status_code)
+    is_ok = 200 <= status_code <= 299
+    is_ready = 200 <= status_code <= 399
+    parsed = None
+    if is_ok:
+        if raw_feed.content_hash_value == feed.content_hash_value:
             LOG.info(f'feed#{feed_id} url={feed.url} not changed')
-            parsed = None
         else:
             LOG.info(f'parse feed#{feed_id} url={feed.url}')
             parsed = FeedParser.parse_response(response)
-    else:
-        LOG.info(f'feed#{feed_id} url={feed.url} response={response.status_code}')
-        parsed = None
+            if parsed.bozo:
+                is_ready = False
+                LOG.warning(f'failed parse feed#{feed_id} url={feed.url}: {parsed.bozo_exception}')
+    num_storys = 0
     with transaction.atomic():
-        raw_feed = _create_raw_feed(feed, response)
-        if parsed:
+        if parsed and not parsed.bozo:
             _save_feed(feed, parsed)
             _update_feed_content_info(feed, raw_feed)
-            _save_storys(feed, parsed.entries)
-        feed.status = FeedStatus.READY
+            num_storys = len(_save_storys(feed, parsed.entries))
+        if is_ready:
+            feed.status = FeedStatus.READY
+        else:
+            feed.status = FeedStatus.ERROR
         feed.save()
+    return dict(
+        feed_id=feed_id,
+        url=feed.url,
+        status_code=status_code,
+        num_storys=num_storys,
+    )

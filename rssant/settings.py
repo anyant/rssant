@@ -146,15 +146,22 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
+# RSSANT
+
+# 每10分钟检查一次更新
+RSSANT_CHECK_FEED_SECONDS = 10 * 60
+
+
 # Celery tasks
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
-    'debug-every-30-seconds': {
-        'task': 'rssant.celery.debug',
-        'schedule': 30.0,
+    'check-feed-every-10-seconds': {
+        'task': 'rssant.tasks.check_feed',
+        'schedule': 10,
+        'kwargs': {'seconds': RSSANT_CHECK_FEED_SECONDS}
     }
 }
 

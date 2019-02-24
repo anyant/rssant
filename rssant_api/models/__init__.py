@@ -1,4 +1,4 @@
-from .feed import Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedHTTPError
+from .feed import Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedRequestError
 from .story import Story, UserStory
 
 __models__ = (
@@ -12,7 +12,7 @@ __all__ = (
     'UserFeed',
     'FeedUrlMap',
     'FeedStatus',
-    'FeedHTTPError',
+    'FeedRequestError',
     'Story',
     'UserStory',
 )
