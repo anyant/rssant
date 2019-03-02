@@ -210,6 +210,7 @@ def check_feed(seconds=300):
 def _read_response(feed):
     reader = FeedReader()
     response = None
+    status_code = FeedRequestError.UNKNOWN_ERROR
     try:
         response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
     except requests.exceptions.HTTPError as ex:
@@ -228,7 +229,6 @@ def _read_response(feed):
         status_code = FeedRequestError.CHUNKED_ENCODING_ERROR
     except Exception as ex:
         LOG.exception(ex)
-        status_code = FeedRequestError.UNKNOWN_ERROR
     if response:
         status_code = response.status_code
     return status_code, response

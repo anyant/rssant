@@ -1,4 +1,5 @@
 from django.db import connection
+from django.db.models import Q
 from django_rest_validr import RestRouter, T, Cursor, pagination
 from rest_framework.response import Response
 
@@ -45,7 +46,7 @@ FEED_DETAIL_FIELDS = [
 @FeedView.get('feed/')
 def feed_list(
     request,
-    cursor: T.cursor.object.keys('id').optional,
+    cursor: T.cursor.object.keys('id, dt_updated').optional,
     size: T.int.min(1).max(100).default(10),
     detail: T.bool.default(False)
 ) -> pagination(FeedSchema):
@@ -54,17 +55,20 @@ def feed_list(
     total = q.count()
     q = q.select_related('feed')
     if cursor:
-        q = q.filter(id__gt=cursor.id)
+        q_dt_lt = Q(feed__dt_updated__lt=cursor.dt_updated)
+        q_dt_eq = Q(feed__dt_updated=cursor.dt_updated)
+        q = q.filter(q_dt_lt | (q_dt_eq & Q(id__lt=cursor.id)))
     if not detail:
         q = q.defer(*FEED_DETAIL_FIELDS)
-    feeds = q.order_by('id')[:size].all()
+    feeds = q.order_by('-feed__dt_updated', '-id')[:size].all()
     feeds = [x.to_dict(detail=detail) for x in feeds]
     user_feed_ids = [x['id'] for x in feeds]
     feed_unread_stats = _get_feed_unread_stats(request.user.id, user_feed_ids)
     for feed in feeds:
         feed['num_unread_storys'] = feed_unread_stats.get(feed['id'])
     if len(feeds) >= size:
-        next = Cursor(id=feeds[-1]['id'])
+        dt_updated = feeds[-1]['dt_updated']
+        next = Cursor(id=feeds[-1]['id'], dt_updated=dt_updated)
     else:
         next = None
     return dict(

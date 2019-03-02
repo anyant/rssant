@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db.models import Q
 from django_rest_validr import RestRouter, T, pagination, Cursor
 
 from rssant_api.models import UserStory
@@ -39,7 +40,7 @@ def story_list(
     detail: T.bool.default(False),
     is_readed: T.bool.optional,
     is_favorited: T.bool.optional,
-    cursor: T.cursor.object.keys('id').optional,
+    cursor: T.cursor.object.keys('dt_updated, id').optional,
     size: T.int.min(1).max(100).default(10),
 ) -> pagination(StorySchema):
     """Story list"""
@@ -53,15 +54,20 @@ def story_list(
     if not detail:
         q = q.defer(*STORY_DETAIL_FEILDS)
     if cursor:
-        q = q.filter(id__gt=cursor.id)
+        q_dt_gt = Q(story__dt_updated__gt=cursor.dt_updated)
+        q_dt_eq = Q(story__dt_updated=cursor.dt_updated)
+        q = q.filter(q_dt_gt | (q_dt_eq & Q(id__gt=cursor.id)))
     if is_readed is not None:
         q = q.filter(is_readed=is_readed)
     if is_favorited is not None:
         q = q.filter(is_favorited=is_favorited)
-    storys = q.order_by('id')[:size].all()
+    storys = q.order_by('story__dt_updated', 'id')[:size].all()
     storys = [x.to_dict(detail=detail) for x in storys]
     if len(storys) >= size:
-        next = Cursor(id=storys[-1]['id'])
+        dt_updated = storys[-1]['dt_updated']
+        if dt_updated:
+            dt_updated = dt_updated.isoformat()
+        next = Cursor(id=storys[-1]['id'], dt_updated=dt_updated)
     else:
         next = None
     return dict(
