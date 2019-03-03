@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+from .env import EnvConfig
+
+ENV_CONFIG = EnvConfig.load()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +26,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = ENV_CONFIG.debug
 
 ALLOWED_HOSTS = ['*']
 
@@ -42,6 +45,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_celery_results',
     'django_celery_beat',
+    'django_extensions',
     'rest_framework',
     'rest_framework_swagger',
     'allauth',
@@ -92,11 +96,11 @@ WSGI_APPLICATION = 'rssant.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django_postgrespool2',
-        'NAME': 'rssant',
-        'USER': 'rssant',
-        'PASSWORD': 'rssant',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': ENV_CONFIG.pg_db,
+        'USER': ENV_CONFIG.pg_user,
+        'PASSWORD': ENV_CONFIG.pg_password,
+        'HOST': ENV_CONFIG.pg_host,
+        'PORT': ENV_CONFIG.pg_port,
     }
 }
 
@@ -155,7 +159,7 @@ RSSANT_CHECK_FEED_SECONDS = 10 * 60
 # Celery tasks
 
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = ENV_CONFIG.redis_url
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
     'check-feed-every-10-seconds': {
