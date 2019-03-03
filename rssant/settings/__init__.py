@@ -48,10 +48,13 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'rest_framework_swagger',
+    'rest_framework.authtoken',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
+    'rest_auth',
+    'rest_auth.registration',
     'rssant_api',
 ]
 

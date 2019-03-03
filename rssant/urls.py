@@ -21,6 +21,7 @@ from rest_framework.documentation import include_docs_urls
 from rest_framework_swagger.views import get_swagger_view
 
 from . import views
+from . import auth
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
@@ -34,11 +35,12 @@ urlpatterns = [
     path('accounts/profile/', views.accounts_profile),
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
-    path('api/', include('rssant_api.urls')),
-    path('api/auth/', include('rest_framework.urls', namespace='rest_framework')),
-    path('api/schema/', schema_view),
-    path('api/docs/', docs_view),
-    path('api/swagger/', swagger_view)
+    path('docs/v1/', docs_view),
+    path('docs/v1/', include('rest_framework.urls', namespace='rest_framework')),
+    path('docs/v1/schema/', schema_view),
+    path('docs/v1/swagger/', swagger_view),
+    path('api/v1/', include('rssant_api.urls')),
+    path('api/v1/', include(auth.urlpaterns)),
 ]
 
 
