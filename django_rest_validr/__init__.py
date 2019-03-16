@@ -85,8 +85,11 @@ class RestViewSchema(AutoSchema):
 
 
 class RestRouter:
-    def __init__(self, name=None):
+    def __init__(self, name=None, permission_classes=None):
         self.name = name
+        if permission_classes:
+            permission_classes = tuple(permission_classes)
+        self.permission_classes = permission_classes
         self._schema_compiler = Compiler(validators=VALIDATORS)
         self._routes = []
 
@@ -140,7 +143,12 @@ class RestRouter:
                 method_meta[method] = f, url, params, returns
 
         class RestApiView(APIView):
+
+            if self.permission_classes:
+                permission_classes = self.permission_classes
+
             schema = RestViewSchema(method_meta)
+
             if 'GET' in method_maps:
                 get = method_maps['GET']
             if 'POST' in method_maps:

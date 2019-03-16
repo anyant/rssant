@@ -1,3 +1,5 @@
+import logging
+
 from django.db import connection
 from django.db.models import Q
 from django_rest_validr import RestRouter, T, Cursor, pagination
@@ -5,6 +7,10 @@ from rest_framework.response import Response
 
 from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
+
+
+LOG = logging.getLogger(__name__)
+
 
 FeedSchema = T.dict(
     id=T.int,

@@ -32,13 +32,13 @@ swagger_view = get_swagger_view(title=API_TITLE)
 
 urlpatterns = [
     path('', views.index),
-    path('accounts/profile/', views.accounts_profile),
-    path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
     path('docs/v1/', docs_view),
     path('docs/v1/', include('rest_framework.urls', namespace='rest_framework')),
     path('docs/v1/schema/', schema_view),
     path('docs/v1/swagger/', swagger_view),
+    path('api/v1/accounts/profile/', views.accounts_profile),
+    path('api/v1/accounts/', include('allauth.urls')),
     path('api/v1/', include('rssant_api.urls')),
     path('api/v1/', include(auth.urlpaterns)),
 ]
