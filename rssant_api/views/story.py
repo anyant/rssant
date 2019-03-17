@@ -121,5 +121,7 @@ def story_set_favorited(
     story.is_favorited = is_favorited
     if is_favorited:
         story.dt_favorited = timezone.now()
+    else:
+        story.dt_favorited = None
     story.save()
     return story.to_dict()

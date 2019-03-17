@@ -1,4 +1,6 @@
 from validr import T, validator, SchemaError, Invalid, builtin_validators
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 from feedlib.helper import coerce_url
 
@@ -90,6 +92,9 @@ def cursor_validator(compiler, keys=None, object=False):
     return validate
 
 
+_django_validate_url = URLValidator()
+
+
 @validator(string=True)
 def url_validator(*args, tolerant=False, **kwargs):
     """
@@ -101,7 +106,12 @@ def url_validator(*args, tolerant=False, **kwargs):
     def validate(value):
         if tolerant:
             value = coerce_url(value)
-        return _validate_url(value)
+        value = _validate_url(value)
+        try:
+            _django_validate_url(value)
+        except ValidationError as ex:
+            raise Invalid(','.join(ex.messages).rstrip('.'))
+        return value
 
     return validate
 
