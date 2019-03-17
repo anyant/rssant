@@ -109,6 +109,14 @@ def story_set_readed(
     return story.to_dict()
 
 
+@StoryView.put('story/all/readed')
+def story_set_all_readed(
+    request,
+) -> T.dict(num_readed=T.int):
+    num_readed = UserStory.objects.filter(user=request.user).update(is_readed=True)
+    return dict(num_readed=num_readed)
+
+
 @StoryView.put('story/<int:pk>/favorited')
 def story_set_favorited(
     request,

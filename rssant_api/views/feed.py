@@ -141,6 +141,14 @@ def feed_update(request, pk: T.int, title: T.str.optional) -> FeedSchema:
     return feed.to_dict()
 
 
+@FeedView.put('feed/<int:pk>/readed')
+def feed_readed(request, pk: T.int) -> T.dict(num_readed=T.int):
+    num_readed = UserStory.objects\
+        .filter(user=request.user, user_feed_id=pk)\
+        .update(is_readed=True)
+    return dict(num_readed=num_readed)
+
+
 @FeedView.delete('feed/<int:pk>')
 def feed_delete(request, pk: T.int):
     feed = UserFeed.objects.get(user=request.user, pk=pk)
