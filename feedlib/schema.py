@@ -124,6 +124,19 @@ FeedSchema = T.dict(
 )
 
 
+OPMLSchema = T.dict(
+    title=T.str.optional,
+    items=T.list(
+        T.dict(
+            title=T.str.optional,
+            type=T.str.optional,
+            url=T.url.optional,
+        )
+    )
+)
+
+
 _compiler = Compiler()
 validate_feed = _compiler.compile(FeedSchema)
 validate_story = _compiler.compile(StorySchema)
+validate_opml = _compiler.compile(OPMLSchema)

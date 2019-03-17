@@ -80,7 +80,7 @@ class Feed(Model, ContentHashMixin):
     icon = models.TextField(**optional, help_text="网站Logo或图标")
     description = models.TextField(**optional, help_text="描述或小标题")
     version = models.CharField(max_length=200, **optional, help_text="供稿格式/RSS/Atom")
-    dt_updated = models.DateTimeField(**optional, help_text="更新时间")
+    dt_updated = models.DateTimeField(help_text="更新时间")
     # RSS抓取相关的状态
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_checked = models.DateTimeField(**optional, help_text="最近一次检查同步时间")
@@ -168,10 +168,10 @@ class UserFeed(Model):
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
 
     def to_dict(self, detail=False):
-        if self.feed:
+        if self.feed_id:
             ret = self.feed.to_dict(detail=detail)
         else:
-            ret = dict(url=self.url)
+            ret = dict(url=self.url, dt_updated=self.dt_created)
         ret.update(
             id=self.id,
             user=dict(id=self.user_id),
@@ -205,3 +205,18 @@ class FeedUrlMap(Model):
         if url_map:
             return url_map.target
         return None
+
+    @classmethod
+    def find_all_target(cls, source_list):
+        sql = """
+        SELECT DISTINCT ON (source)
+            id, source, target
+        FROM rssant_api_feedurlmap
+        WHERE source = ANY(%s)
+        ORDER BY source, dt_created DESC
+        """
+        url_map = {}
+        items = cls.objects.raw(sql, [source_list])
+        for item in items:
+            url_map[item.source] = item.target
+        return url_map

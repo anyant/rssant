@@ -1,9 +1,12 @@
 import logging
 
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Q
 from django_rest_validr import RestRouter, T, Cursor, pagination
 from rest_framework.response import Response
+from validr import Invalid
+from xml.etree.ElementTree import ParseError
+from feedlib.opml import parse_opml
 
 from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
@@ -60,7 +63,7 @@ def feed_list(
     q = UserFeed.objects.filter(user=request.user)
     total = q.count()
     q = q.select_related('feed')
-    if cursor:
+    if cursor and cursor.dt_updated:
         q_dt_lt = Q(feed__dt_updated__lt=cursor.dt_updated)
         q_dt_eq = Q(feed__dt_updated=cursor.dt_updated)
         q = q.filter(q_dt_lt | (q_dt_eq & Q(id__lt=cursor.id)))
@@ -153,3 +156,48 @@ def feed_readed(request, pk: T.int) -> T.dict(num_readed=T.int):
 def feed_delete(request, pk: T.int):
     feed = UserFeed.objects.get(user=request.user, pk=pk)
     feed.delete()
+
+
+@FeedView.post('feed/opml/')
+def feed_import_opml(request) -> T.dict(feeds=T.list(FeedSchema)):
+    """import feeds from OPML file"""
+    fileobj = request.data.get('file')
+    if not fileobj:
+        return Response(status=400)
+    text = fileobj.read()
+    if not isinstance(text, str):
+        text = text.decode('utf-8')
+    try:
+        result = parse_opml(text)
+    except (Invalid, ParseError) as ex:
+        return Response({'message': str(ex)}, status=400)
+    urls = list(sorted(set([x['url'] for x in result['items']])))
+    # 批量预查询，减少SQL查询数量，显著提高性能
+    feeds = []
+    find_feed_ids = []
+    url_map = FeedUrlMap.find_all_target(urls)
+    feed_map = {}
+    found_feeds = Feed.objects.filter(url__in=set(url_map.values())).all()
+    for x in found_feeds:
+        feed_map[x.url] = x
+    user_feed_map = {}
+    found_user_feeds = UserFeed.objects.filter(user=request.user, feed__in=found_feeds).all()
+    for x in found_user_feeds:
+        user_feed_map[x.feed_id] = x
+    with transaction.atomic():
+        for url in urls:
+            feed = feed_map.get(url_map.get(url))
+            if feed:
+                if feed.id in user_feed_map:
+                    continue
+                user_feed = UserFeed(user=request.user, feed=feed, url=url, status=FeedStatus.READY)
+                user_feed.save()
+                feeds.append(user_feed.to_dict(detail=True))
+            else:
+                user_feed = UserFeed(user=request.user, url=url)
+                user_feed.save()
+                find_feed_ids.append(user_feed.id)
+                feeds.append(user_feed.to_dict())
+    for user_feed_id in find_feed_ids:
+        rss.find_feed.delay(user_feed_id=user_feed_id)
+    return dict(feeds=feeds)

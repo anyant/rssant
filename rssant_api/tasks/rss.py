@@ -30,7 +30,7 @@ def _get_dt_published(data):
 
 
 def _get_dt_updated(data):
-    return data["updated_parsed"] or data["published_parsed"] or None
+    return data["updated_parsed"] or data["published_parsed"] or timezone.now()
 
 
 def _get_story_unique_id(entry):
