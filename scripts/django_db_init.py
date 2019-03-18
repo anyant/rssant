@@ -11,6 +11,8 @@ from allauth.socialaccount.models import SocialApp  # noqa: E402
 from django.contrib.auth import get_user_model  # noqa: E402
 from django.contrib.sites.models import Site  # noqa: E402
 from django.conf import settings  # noqa: E402
+import django.db  # noqa: E402
+from django.db import connection  # noqa: E402
 from allauth.socialaccount.providers.github.provider import GitHubProvider  # noqa: E402
 
 
@@ -18,6 +20,12 @@ User = get_user_model()
 
 
 def main():
+    # create postgres extension
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute('create extension hstore;')
+        except django.db.ProgrammingError:
+            pass  # ignore: already exists
     # create superuser
     User.objects.create_superuser('admin', 'admin@anyant.com', 'admin')
     # update site

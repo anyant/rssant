@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from validr import Invalid
 from xml.etree.ElementTree import ParseError
 from feedlib.opml import parse_opml
+from feedlib.bookmark import parse_bookmark
 
 from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
@@ -158,46 +159,68 @@ def feed_delete(request, pk: T.int):
     feed.delete()
 
 
-@FeedView.post('feed/opml/')
-def feed_import_opml(request) -> T.dict(feeds=T.list(FeedSchema)):
-    """import feeds from OPML file"""
-    fileobj = request.data.get('file')
+def _read_request_file(request, name='file'):
+    fileobj = request.data.get(name)
     if not fileobj:
         return Response(status=400)
     text = fileobj.read()
     if not isinstance(text, str):
         text = text.decode('utf-8')
-    try:
-        result = parse_opml(text)
-    except (Invalid, ParseError) as ex:
-        return Response({'message': str(ex)}, status=400)
-    urls = list(sorted(set([x['url'] for x in result['items']])))
+    return text
+
+
+def _create_feeds_by_urls(user, urls):
     # 批量预查询，减少SQL查询数量，显著提高性能
-    feeds = []
-    find_feed_ids = []
+    if not urls:
+        return []
+    find_feed_objs = []
     url_map = FeedUrlMap.find_all_target(urls)
     feed_map = {}
     found_feeds = Feed.objects.filter(url__in=set(url_map.values())).all()
     for x in found_feeds:
         feed_map[x.url] = x
     user_feed_map = {}
-    found_user_feeds = UserFeed.objects.filter(user=request.user, feed__in=found_feeds).all()
+    found_user_feeds = UserFeed.objects.filter(user=user, feed__in=found_feeds).all()
     for x in found_user_feeds:
         user_feed_map[x.feed_id] = x
+    feeds = []
+    user_feed_bulk_creates = []
     with transaction.atomic():
         for url in urls:
             feed = feed_map.get(url_map.get(url))
             if feed:
                 if feed.id in user_feed_map:
                     continue
-                user_feed = UserFeed(user=request.user, feed=feed, url=url, status=FeedStatus.READY)
-                user_feed.save()
-                feeds.append(user_feed.to_dict(detail=True))
+                user_feed = UserFeed(user=user, feed=feed, url=url, status=FeedStatus.READY)
+                user_feed_bulk_creates.append(user_feed)
             else:
-                user_feed = UserFeed(user=request.user, url=url)
-                user_feed.save()
-                find_feed_ids.append(user_feed.id)
-                feeds.append(user_feed.to_dict())
-    for user_feed_id in find_feed_ids:
-        rss.find_feed.delay(user_feed_id=user_feed_id)
+                user_feed = UserFeed(user=user, url=url)
+                user_feed_bulk_creates.append(user_feed)
+                find_feed_objs.append(user_feed)
+        UserFeed.objects.bulk_create(user_feed_bulk_creates, batch_size=500)
+    find_feed_ids = [(user_feed.id, ) for user_feed in find_feed_objs]
+    rss.find_feed.chunks(find_feed_ids, 10).apply_async()
+    feeds = [x.to_dict() for x in user_feed_bulk_creates]
+    return feeds
+
+
+@FeedView.post('feed/opml/')
+def feed_import_opml(request) -> T.dict(feeds=T.list(FeedSchema).maxlen(5000)):
+    """import feeds from OPML file"""
+    text = _read_request_file(request)
+    try:
+        result = parse_opml(text)
+    except (Invalid, ParseError) as ex:
+        return Response({'message': str(ex)}, status=400)
+    urls = list(sorted(set([x['url'] for x in result['items']])))
+    feeds = _create_feeds_by_urls(request.user, urls)
+    return dict(feeds=feeds)
+
+
+@FeedView.post('feed/bookmark/')
+def feed_import_bookmark(request) -> T.dict(feeds=T.list(FeedSchema).maxlen(5000)):
+    """import feeds from bookmark file"""
+    text = _read_request_file(request)
+    urls = parse_bookmark(text)
+    feeds = _create_feeds_by_urls(request.user, urls)
     return dict(feeds=feeds)

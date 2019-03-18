@@ -2,6 +2,7 @@ import cgi
 from io import BytesIO
 
 import feedparser
+from validr import mark_index
 
 from .schema import validate_feed, validate_story
 
@@ -65,7 +66,10 @@ def _parse(content, headers):
             name = type(ex).__module__ + "." + type(ex).__name__
             bozo_exception = f"{name}: {ex}"
     feed_info = validate_feed(feed.feed)
-    entries = [validate_story(x) for x in feed.entries]
+    entries = []
+    for i, x in enumerate(feed.entries):
+        with mark_index(i):
+            entries.append(validate_story(x))
     version = feed.get("version") or ""
     result = FeedParserResult(
         feed=feed_info,

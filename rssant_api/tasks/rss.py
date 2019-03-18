@@ -108,6 +108,7 @@ def _save_storys(feed, entries):
     q = Story.objects.filter(feed_id=feed.id, unique_id__in=unique_ids)
     for story in q.all():
         storys[story.unique_id] = story
+    bulk_create_storys = []
     for data in entries:
         unique_id = _get_story_unique_id(data)
         if unique_id in storys:
@@ -135,7 +136,8 @@ def _save_storys(feed, entries):
         story.dt_published = _get_dt_published(data)
         story.dt_updated = _get_dt_updated(data)
         story.dt_synced = now
-        story.save()
+        bulk_create_storys.append(story)
+    Story.objects.bulk_create(bulk_create_storys, batch_size=100)
     return list(storys.values())
 
 

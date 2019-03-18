@@ -92,13 +92,15 @@ class UserStory(Model):
             cursor.execute(sql, params)
             new_user_storys = list(cursor.fetchall())
         # batch insert unreaded storys
+        bulk_create_storys = []
         with transaction.atomic():
             for story_id, feed_id in new_user_storys:
                 user_feed_id = feed_ids[feed_id]
                 user_story = UserStory(
                     user_id=user_id, story_id=story_id,
                     feed_id=feed_id, user_feed_id=user_feed_id)
-                user_story.save()
+                bulk_create_storys.append(user_story)
+            UserStory.objects.bulk_create(bulk_create_storys, batch_size=200)
         return len(new_user_storys)
 
     def to_dict(self, detail=False):
