@@ -162,7 +162,7 @@ class FeedFinder:
         message_handler: callable (str) -> None
     """
 
-    def __init__(self, start_url, message_handler=None, max_trys=10, reader=None):
+    def __init__(self, start_url, message_handler=None, max_trys=10, reader=None, validate=True):
         start_url = unquote(coerce_url(start_url))
         self._set_start_url(start_url)
         self.message_handler = message_handler
@@ -173,6 +173,7 @@ class FeedFinder:
         else:
             self._close_reader = False
         self.reader = reader
+        self.validate = validate
         self._links = {start_url: ScoredLink(start_url, 1.0)}
         self._visited = set()
 
@@ -261,7 +262,7 @@ class FeedFinder:
         return self._parse_feed(response)
 
     def _parse_feed(self, response):
-        result = FeedParser.parse_response(response)
+        result = FeedParser.parse_response(response, validate=self.validate)
         if not result.bozo:
             return result
         msg = f"{result.bozo_exception}, (...total {result.bozo} errors)"

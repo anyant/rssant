@@ -43,7 +43,7 @@ def _process_headers(self, headers=None, url=None):
     return headers
 
 
-def _parse(content, headers):
+def _parse(content, headers, validate=True):
     """解析Feed，返回结果可以pickle序列化，便于多进程中使用"""
     stream = BytesIO(content)
     feed = feedparser.parse(stream, response_headers=headers)
@@ -65,11 +65,15 @@ def _parse(content, headers):
         else:
             name = type(ex).__module__ + "." + type(ex).__name__
             bozo_exception = f"{name}: {ex}"
-    feed_info = validate_feed(feed.feed)
-    entries = []
-    for i, x in enumerate(feed.entries):
-        with mark_index(i):
-            entries.append(validate_story(x))
+    if validate:
+        feed_info = validate_feed(feed.feed)
+        entries = []
+        for i, x in enumerate(feed.entries):
+            with mark_index(i):
+                entries.append(validate_story(x))
+    else:
+        feed_info = feed.feed
+        entries = feed.entries
     version = feed.get("version") or ""
     result = FeedParserResult(
         feed=feed_info,
@@ -84,7 +88,7 @@ def _parse(content, headers):
 class FeedParser:
 
     @staticmethod
-    def parse(content, headers=None, url=None):
+    def parse(content, headers=None, url=None, validate=True):
         """解析Feed
 
         Args:
@@ -93,12 +97,12 @@ class FeedParser:
             url (str): 来源URL
         """
         headers = _process_headers(headers, url=url)
-        return _parse(content, headers)
+        return _parse(content, headers, validate=validate)
 
     @staticmethod
-    def parse_response(response):
+    def parse_response(response, validate=True):
         """从requests.Response解析Feed"""
         content, headers = _process_response(response)
-        result = _parse(content, headers)
+        result = _parse(content, headers, validate=validate)
         result.response = response
         return result
