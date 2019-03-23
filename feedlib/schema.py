@@ -23,9 +23,9 @@ CommonInfo = dict(
     title_detail=Detailed.optional.desc("The title of the feed/entry"),
     description=T.str.optional.desc("The description of the feed/entry"),
     published=T.str.optional.desc("The date the feed/entry was published"),
-    published_parsed=T.datetime.optional.desc("The date the feed/entry was published"),
+    published_parsed=T.datetime.object.optional.invalid_to_default.desc("The date the feed/entry was published"),
     updated=T.str.optional.desc("The date the feed/entry was updated"),
-    updated_parsed=T.datetime.optional.desc("The date the feed/entry was updated"),
+    updated_parsed=T.datetime.object.optional.invalid_to_default.desc("The date the feed/entry was updated"),
     author=T.str.optional.desc("The author of this feed/entry"),
     author_detail=UserInfo.optional.desc("Details about the feed/entry author"),
     tags=T.list(
@@ -69,9 +69,9 @@ StorySchema = T.dict(
         )
     ).optional.desc("A list of links to external files associated with this entry"),
     expired=T.str.optional.desc("The date this entry is set to expire"),
-    expired_parsed=T.datetime.optional.desc("The date this entry is set to expire"),
+    expired_parsed=T.datetime.object.optional.invalid_to_default.desc("The date this entry is set to expire"),
     created=T.str.optional.desc("The date this entry was first created (drafted)"),
-    created_parsed=T.datetime.optional.desc(
+    created_parsed=T.datetime.object.optional.invalid_to_default.desc(
         "The date this entry was first created (drafted)"
     ),
 )

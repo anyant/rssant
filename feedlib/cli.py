@@ -1,6 +1,13 @@
 import json
 import click
+
+from django.core.serializers.json import DjangoJSONEncoder
+
 from .finder import FeedFinder
+
+
+def json_pretty(data):
+    return json.dumps(data, cls=DjangoJSONEncoder, indent=4, ensure_ascii=False)
 
 
 @click.group()
@@ -21,10 +28,10 @@ def find(url, raw=False):
     if result:
         print(f"Got: " + str(result.feed)[:300] + "\n")
         print('-' * 79)
-        print(json.dumps(result.feed, indent=4, ensure_ascii=False))
+        print(json_pretty(result.feed))
         for i, story in enumerate(result.entries):
             print('{:03d}{}'.format(i, '-' * 76))
-            print(json.dumps(story, indent=4, ensure_ascii=False))
+            print(json_pretty(story))
     finder.close()
 
 

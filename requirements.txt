@@ -72,6 +72,6 @@ terminaltables==3.1.0
 tornado==5.1.1
 uritemplate==3.0.0
 urllib3==1.24.1
-validr==1.0.6
+validr==1.1.0
 vine==1.2.0
 wcwidth==0.1.7
