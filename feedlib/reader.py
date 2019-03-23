@@ -1,6 +1,6 @@
 import requests
 
-from .helper import resolve_response_encoding
+from common.helper import resolve_response_encoding
 
 
 DEFAULT_USER_AGENT = (

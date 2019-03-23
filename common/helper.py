@@ -19,10 +19,10 @@ def resolve_response_encoding(response):
     response.encoding = encoding
 
 
-def coerce_url(url):
+def coerce_url(url, default_schema='http'):
     url = url.strip()
     if url.startswith("feed://"):
-        return "http://{}".format(url[7:])
+        return "{}://{}".format(default_schema, url[7:])
     if "://" not in url:
-        return "http://{}".format(url)
+        return "{}://{}".format(default_schema, url)
     return url

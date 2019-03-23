@@ -118,7 +118,7 @@ def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
 
 
 @FeedView.post('feed/')
-def feed_create(request, url: T.url.tolerant) -> FeedSchema:
+def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
     feed = None
     target_url = FeedUrlMap.find_target(url)
     if target_url:

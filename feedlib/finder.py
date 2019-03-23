@@ -7,9 +7,10 @@ from urllib.parse import urlsplit, urlunsplit, unquote, urljoin
 from bs4 import BeautifulSoup
 import requests
 
+from common.helper import coerce_url
+
 from .parser import FeedParser
 from .reader import FeedReader
-from .helper import coerce_url
 
 LOG = logging.getLogger(__name__)
 

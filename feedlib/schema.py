@@ -1,4 +1,5 @@
-from validr import T, Compiler
+from validr import T
+from common.validator import compiler
 
 
 # https://github.com/kurtmckee/feedparser
@@ -136,7 +137,6 @@ OPMLSchema = T.dict(
 )
 
 
-_compiler = Compiler()
-validate_feed = _compiler.compile(FeedSchema)
-validate_story = _compiler.compile(StorySchema)
-validate_opml = _compiler.compile(OPMLSchema)
+validate_feed = compiler.compile(FeedSchema)
+validate_story = compiler.compile(StorySchema)
+validate_opml = compiler.compile(OPMLSchema)

@@ -11,7 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
 
-from .validator import Cursor, VALIDATORS, pagination
+from common.cursor import Cursor
+from common.validator import VALIDATORS, pagination
 
 
 __all__ = (
