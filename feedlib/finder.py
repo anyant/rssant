@@ -1,7 +1,6 @@
 import logging
 import cgi
-import socket
-import ssl
+import http
 from urllib.parse import urlsplit, urlunsplit, unquote, urljoin
 
 from bs4 import BeautifulSoup
@@ -10,7 +9,8 @@ import requests
 from common.helper import coerce_url
 
 from .parser import FeedParser
-from .reader import FeedReader
+from .reader import FeedReader, FeedResponseStatus
+
 
 LOG = logging.getLogger(__name__)
 
@@ -195,34 +195,21 @@ class FeedFinder:
 
     def _read(self, url, current_try):
         self._visited.add(url)
-        try:
-            res = self.reader.read(url)
-            if current_try == 0 and res.history:
-                # 发生了重定向，重新设置start_url
-                url = unquote(res.url)
-                self._log(f'resolve redirect, set start url to {url}')
-                self._set_start_url(url)
-            return res
-        except requests.exceptions.HTTPError as ex:
-            self._log(str(ex))
-        except (
-            socket.gaierror,
-            socket.timeout,
-            TimeoutError,
-            ConnectionError,
-            ssl.SSLError,
-            requests.exceptions.SSLError,
-            requests.exceptions.Timeout,
-            requests.exceptions.ReadTimeout,
-            requests.exceptions.ConnectionError,
-        ) as ex:
-            msg = type(ex).__name__ + ': ' + str(ex)
-            self._log(f"{msg} when request {url!r}")
-        except Exception as ex:
-            msg = f"Error raised when request {url!r}"
-            LOG.error(msg, exc_info=ex)
+        status, res = self.reader.read(url)
+        is_ok = status == requests.codes.ok
+        if is_ok and current_try == 0 and res.history:
+            # 发生了重定向，重新设置start_url
+            url = unquote(res.url)
+            self._log(f'resolve redirect, set start url to {url}')
+            self._set_start_url(url)
+        if not is_ok:
+            if status < 0:
+                error_name = FeedResponseStatus(status).name
+            else:
+                error_name = http.HTTPStatus(status).name
+            msg = '{} {} when request {!r}'.format(status, error_name, url)
             self._log(msg)
-        return None
+        return status, res
 
     def _parse(self, response):
         content_type = response.headers.get('content-type', '').lower()
@@ -392,13 +379,16 @@ class FeedFinder:
                 self._log(f"No more candidate url")
                 break
             self._log(f"#{current_try} try {url}")
-            res = self._read(url, current_try)
-            if res is None:
+            status, res = self._read(url, current_try)
+            shoud_abort = status not in {200, 404}
+            if shoud_abort:
+                self._log('The url is unable to connect or likely not contain feed, abort!')
+                break
+            is_ok = status == requests.codes.ok
+            if not is_ok:
                 if current_try == 0 and not self._links:
-                    self._log(
-                        f'{url} not reachable or not contain links, '
-                        f'will guess some links from it'
-                    )
+                    msg = f'{url} not contain links, will guess some links from it'
+                    self._log(msg)
                     self._guess_links()
                 continue
             result = self._parse(res)

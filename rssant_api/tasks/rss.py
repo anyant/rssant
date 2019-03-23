@@ -1,15 +1,12 @@
-import ssl
-import socket
 from urllib.parse import unquote
 
 from celery import shared_task as task
 from django.db import transaction, connection
 from django.utils import timezone
-import requests.exceptions
 
 from feedlib import FeedFinder, FeedReader, FeedParser
 from rssant.celery import LOG
-from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedRequestError
+from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus
 from rssant_api.helper import shorten
 
 
@@ -98,8 +95,12 @@ def _save_feed(feed, parsed):
     return feed
 
 
-def _create_feed(parsed):
-    return _save_feed(Feed(), parsed)
+def _create_or_update_feed(parsed):
+    url = _get_url(parsed.response)
+    feed = Feed.objects.get(url=url)
+    if feed is None:
+        feed = Feed()
+    return _save_feed(feed, parsed)
 
 
 def _save_storys(feed, entries):
@@ -136,7 +137,10 @@ def _save_storys(feed, entries):
         story.dt_published = _get_dt_published(data)
         story.dt_updated = _get_dt_updated(data)
         story.dt_synced = now
-        bulk_create_storys.append(story)
+        if unique_id in storys:
+            story.save()
+        else:
+            bulk_create_storys.append(story)
     Story.objects.bulk_create(bulk_create_storys, batch_size=100)
     return list(storys.values())
 
@@ -144,9 +148,17 @@ def _save_storys(feed, entries):
 @transaction.atomic
 def _save_found(user_feed, found):
     user_feed.status = FeedStatus.READY
-    feed = _create_feed(found)
-    user_feed.feed = feed
-    user_feed.save()
+    feed = _create_or_update_feed(found)
+    user_feed_exists = UserFeed.objects.get(user_id=user_feed.user_id, feed_id=feed.id)
+    if user_feed_exists:
+        LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
+            user_feed_exists.id, user_feed.user_id, feed.id
+        ))
+        user_feed.status = FeedStatus.ERROR
+        user_feed.save()
+    else:
+        user_feed.feed = feed
+        user_feed.save()
     raw_feed = _create_raw_feed(feed, found.response)
     _update_feed_content_info(feed, raw_feed)
     _save_storys(feed, found.entries)
@@ -211,28 +223,8 @@ def check_feed(seconds=300):
 
 def _read_response(feed):
     reader = FeedReader()
-    response = None
-    status_code = FeedRequestError.UNKNOWN_ERROR
-    try:
-        response = reader.read(feed.url, etag=feed.etag, last_modified=feed.last_modified)
-    except requests.exceptions.HTTPError as ex:
-        response = ex.response
-    except socket.gaierror:
-        status_code = FeedRequestError.DNS_ERROR
-    except (socket.timeout, TimeoutError, requests.exceptions.ReadTimeout):
-        status_code = FeedRequestError.TIMEOUT_ERROR
-    except (ssl.SSLError, requests.exceptions.SSLError):
-        status_code = FeedRequestError.SSL_ERROR
-    except (ConnectionError, requests.exceptions.ConnectionError):
-        status_code = FeedRequestError.CONNECTION_ERROR
-    except requests.exceptions.TooManyRedirects:
-        status_code = FeedRequestError.TOO_MANY_REDIRECT_ERROR
-    except requests.exceptions.ChunkedEncodingError:
-        status_code = FeedRequestError.CHUNKED_ENCODING_ERROR
-    except Exception as ex:
-        LOG.exception(ex)
-    if response:
-        status_code = response.status_code
+    status_code, response = reader.read(
+        feed.url, etag=feed.etag, last_modified=feed.last_modified)
     return status_code, response
 
 

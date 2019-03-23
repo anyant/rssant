@@ -1,6 +1,7 @@
 amqp==2.4.1
 anyjson==0.3.3
 apistar==0.6.0
+arrow==0.13.1
 Babel==2.6.0
 beautifulsoup4==4.7.1
 billiard==3.5.0.2
@@ -49,6 +50,8 @@ prompt-toolkit==2.0.8
 psycopg2==2.7.7
 psycopg2-binary==2.7.7
 Pygments==2.3.1
+pyinstrument==3.0.1
+pyinstrument-cext==0.2.0
 PyJWT==1.7.1
 pyparsing==2.3.1
 python-crontab==2.3.6

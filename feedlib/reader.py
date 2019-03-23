@@ -1,3 +1,7 @@
+import enum
+import socket
+import ssl
+
 import requests
 
 from common.helper import resolve_response_encoding
@@ -8,6 +12,22 @@ DEFAULT_USER_AGENT = (
     'AppleWebKit/537.36 (KHTML, like Gecko) '
     'Chrome/67.0.3396.87 Safari/537.36 RSSAnt/1.0'
 )
+
+
+class FeedResponseStatus(enum.Enum):
+    # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
+    UNKNOWN_ERROR = -100
+    CONNECTION_ERROR = -200
+    PROXY_ERROR = -300
+    RESPONSE_ERROR = -400
+    DNS_ERROR = -201
+    CONNECTION_RESET = -202
+    CONNECTION_TIMEOUT = - 203
+    SSL_ERROR = - 204
+    READ_TIMEOUT = -205
+    TOO_MANY_REDIRECT_ERROR = -401
+    CHUNKED_ENCODING_ERROR = -402
+    CONTENT_DECODING_ERROR = -403
 
 
 class FeedReader:
@@ -21,7 +41,7 @@ class FeedReader:
         self.user_agent = user_agent
         self.request_timeout = request_timeout
 
-    def read(self, url, etag=None, last_modified=None):
+    def _read(self, url, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}
         if etag:
             headers["ETag"] = etag
@@ -33,6 +53,41 @@ class FeedReader:
         response.raise_for_status()
         resolve_response_encoding(response)
         return response
+
+    def read(self, *args, **kwargs):
+        response = None
+        try:
+            response = self._read(*args, **kwargs)
+        except socket.gaierror:
+            status = FeedResponseStatus.DNS_ERROR.value
+        except requests.exceptions.ReadTimeout:
+            status = FeedResponseStatus.READ_TIMEOUT.value
+        except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout):
+            status = FeedResponseStatus.CONNECTION_TIMEOUT.value
+        except (ssl.SSLError, requests.exceptions.SSLError):
+            status = FeedResponseStatus.SSL_ERROR.value
+        except requests.exceptions.ProxyError:
+            status = FeedResponseStatus.PROXY_ERROR.value
+        except (ConnectionError, requests.exceptions.ConnectionError):
+            status = FeedResponseStatus.CONNECTION_RESET.value
+        except requests.exceptions.TooManyRedirects:
+            status = FeedResponseStatus.TOO_MANY_REDIRECT_ERROR.value
+        except requests.exceptions.ChunkedEncodingError:
+            status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
+        except requests.exceptions.ContentDecodingError:
+            status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
+        except requests.HTTPError as ex:
+            response = ex.response
+            status = response.status_code
+        except requests.RequestException as ex:
+            response = ex.response
+            if response is not None:
+                status = response.status_code
+            else:
+                status = FeedResponseStatus.UNKNOWN_ERROR.value
+        else:
+            status = response.status_code
+        return status, response
 
     def __enter__(self):
         return self
