@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 from .env import EnvConfig
+from ..sentry import setup_sentry
 
 ENV_CONFIG = EnvConfig.load()
+setup_sentry(ENV_CONFIG.sentry_dsn)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,7 +49,6 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     'django_extensions',
-    'raven.contrib.django.raven_compat',
     'rest_framework',
     'rest_framework_swagger',
     'rest_framework.authtoken',
@@ -153,10 +154,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-
-
-# Sentry
-RAVEN_CONFIG = {'dsn': ENV_CONFIG.sentry_dsn}
 
 
 # RSSANT

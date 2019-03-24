@@ -1,13 +1,15 @@
 from urllib.parse import unquote
+import logging
 
 from celery import shared_task as task
 from django.db import transaction, connection
 from django.utils import timezone
 
 from feedlib import FeedFinder, FeedReader, FeedParser
-from rssant.celery import LOG
 from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus
 from rssant_api.helper import shorten
+
+LOG = logging.getLogger(__name__)
 
 
 def _get_etag(response):
@@ -33,8 +35,8 @@ def _get_dt_updated(data):
 def _get_story_unique_id(entry):
     unique_id = entry['id']
     if not unique_id:
-        unique_id = unquote(entry['link'])
-    return unique_id
+        unique_id = entry['link']
+    return unquote(unique_id)
 
 
 def _update_feed_content_info(feed, raw_feed):
