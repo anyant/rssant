@@ -1,6 +1,8 @@
 import enum
 import socket
 import ssl
+import ipaddress
+from urllib.parse import urlparse
 
 import requests
 
@@ -14,6 +16,10 @@ DEFAULT_USER_AGENT = (
 )
 
 
+class PrivateAddressError(Exception):
+    """Private IP address"""
+
+
 class FeedResponseStatus(enum.Enum):
     # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
     UNKNOWN_ERROR = -100
@@ -21,6 +27,7 @@ class FeedResponseStatus(enum.Enum):
     PROXY_ERROR = -300
     RESPONSE_ERROR = -400
     DNS_ERROR = -201
+    PRIVATE_ADDRESS_ERROR = -202
     CONNECTION_RESET = -202
     CONNECTION_TIMEOUT = - 203
     SSL_ERROR = - 204
@@ -41,15 +48,33 @@ class FeedReader:
         self.user_agent = user_agent
         self.request_timeout = request_timeout
 
+    def _check_private_ip(self, url):
+        """Prevent request private address, which will attack local network"""
+        hostname = urlparse(url).hostname
+        addrinfo = socket.getaddrinfo(hostname, None)
+        for family, __, __, __, sockaddr in addrinfo:
+            if family == socket.AF_INET:
+                ip, __ = sockaddr
+                ip = ipaddress.IPv4Address(ip)
+            elif family == socket.AF_INET6:
+                ip, __, __, __ = sockaddr
+                ip = ipaddress.IPv6Address(ip)
+            else:
+                continue
+            if ip.is_private:
+                raise PrivateAddressError(ip)
+
     def _read(self, url, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}
         if etag:
             headers["ETag"] = etag
         if last_modified:
             headers["If-Modified-Since"] = last_modified
-        response = self.session.get(
-            url, headers=headers, timeout=self.request_timeout
-        )
+        req = requests.Request('GET', url, headers=headers)
+        prepared = self.session.prepare_request(req)
+        self._check_private_ip(prepared.url)
+        # http://docs.python-requests.org/en/master/user/advanced/#timeouts
+        response = self.session.send(prepared, timeout=(6.5, self.request_timeout))
         response.raise_for_status()
         resolve_response_encoding(response)
         return response
@@ -60,6 +85,8 @@ class FeedReader:
             response = self._read(*args, **kwargs)
         except socket.gaierror:
             status = FeedResponseStatus.DNS_ERROR.value
+        except PrivateAddressError:
+            status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
         except requests.exceptions.ReadTimeout:
             status = FeedResponseStatus.READ_TIMEOUT.value
         except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout):
