@@ -20,6 +20,10 @@ class PrivateAddressError(Exception):
     """Private IP address"""
 
 
+class ContentTooLargeError(Exception):
+    """Content too large"""
+
+
 class FeedResponseStatus(enum.Enum):
     # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
     UNKNOWN_ERROR = -100
@@ -35,10 +39,18 @@ class FeedResponseStatus(enum.Enum):
     TOO_MANY_REDIRECT_ERROR = -401
     CHUNKED_ENCODING_ERROR = -402
     CONTENT_DECODING_ERROR = -403
+    CONTENT_TOO_LARGE_ERROR = -404
 
 
 class FeedReader:
-    def __init__(self, session=None, user_agent=DEFAULT_USER_AGENT, request_timeout=30):
+    def __init__(
+        self,
+        session=None,
+        user_agent=DEFAULT_USER_AGENT,
+        request_timeout=30,
+        max_content_length=10 * 1024 * 1024,
+        allow_private_address=False,
+    ):
         if session is None:
             session = requests.session()
             self._close_session = True
@@ -47,8 +59,10 @@ class FeedReader:
         self.session = session
         self.user_agent = user_agent
         self.request_timeout = request_timeout
+        self.max_content_length = max_content_length
+        self.allow_private_address = allow_private_address
 
-    def _check_private_ip(self, url):
+    def _check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
         hostname = urlparse(url).hostname
         addrinfo = socket.getaddrinfo(hostname, None)
@@ -64,6 +78,24 @@ class FeedReader:
             if ip.is_private:
                 raise PrivateAddressError(ip)
 
+    def _read_content(self, response):
+        content_length = response.headers.get('Content-Length')
+        if content_length:
+            content_length = int(content_length)
+            if content_length > self.max_content_length:
+                msg = 'Content length {} larger than limit {}'.format(
+                    content_length, self.max_content_length)
+                raise ContentTooLargeError(msg)
+        content_length = 0
+        content = []
+        for data in response.iter_content(chunk_size=8 * 1024):
+            content_length += len(data)
+            if content_length > self.max_content_length:
+                msg = 'Content length larger than limit {}'.format(self.max_content_length)
+                raise ContentTooLargeError(msg)
+            content.append(data)
+        response._content = b''.join(content)
+
     def _read(self, url, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}
         if etag:
@@ -72,9 +104,11 @@ class FeedReader:
             headers["If-Modified-Since"] = last_modified
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
-        self._check_private_ip(prepared.url)
+        if not self.allow_private_address:
+            self._check_private_address(prepared.url)
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
-        response = self.session.send(prepared, timeout=(6.5, self.request_timeout))
+        response = self.session.send(prepared, timeout=(6.5, self.request_timeout), stream=True)
+        self._read_content(response)
         response.raise_for_status()
         resolve_response_encoding(response)
         return response
@@ -103,6 +137,8 @@ class FeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except requests.exceptions.ContentDecodingError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
+        except ContentTooLargeError:
+            status = FeedResponseStatus.CONTENT_TOO_LARGE_ERROR.value
         except requests.HTTPError as ex:
             response = ex.response
             status = response.status_code

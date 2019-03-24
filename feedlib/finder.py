@@ -40,6 +40,13 @@ URL_ENDS_NOT_FEED = {
     ".png",
     ".gif",
     ".svg",
+    ".bmp",
+    ".zip",
+    ".gz",
+    ".tgz",
+    ".rar",
+    ".jar",
+    ".iso",
     "manifest.json",
     "opensearch.xml",
 }
@@ -206,7 +213,12 @@ class FeedFinder:
             if status < 0:
                 error_name = FeedResponseStatus(status).name
             else:
-                error_name = http.HTTPStatus(status).name
+                try:
+                    error_name = http.HTTPStatus(status).name
+                except ValueError:
+                    # eg: http://huanggua.sinaapp.com/
+                    # ValueError: 600 is not a valid HTTPStatus
+                    error_name = 'HTTP_ERROR'
             msg = '{} {} when request {!r}'.format(status, error_name, url)
             self._log(msg)
         return status, res

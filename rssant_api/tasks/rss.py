@@ -97,7 +97,7 @@ def _save_feed(feed, parsed):
 
 def _create_or_update_feed(parsed):
     url = _get_url(parsed.response)
-    feed = Feed.objects.get(url=url)
+    feed = Feed.objects.filter(url=url).first()
     if feed is None:
         feed = Feed()
     return _save_feed(feed, parsed)
@@ -149,7 +149,7 @@ def _save_storys(feed, entries):
 def _save_found(user_feed, found):
     user_feed.status = FeedStatus.READY
     feed = _create_or_update_feed(found)
-    user_feed_exists = UserFeed.objects.get(user_id=user_feed.user_id, feed_id=feed.id)
+    user_feed_exists = UserFeed.objects.filter(user_id=user_feed.user_id, feed_id=feed.id).first()
     if user_feed_exists:
         LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
             user_feed_exists.id, user_feed.user_id, feed.id

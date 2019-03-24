@@ -6,6 +6,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from pyinstrument import Profiler
 
 from .finder import FeedFinder
+from .reader import FeedReader
 
 
 def json_pretty(data):
@@ -20,7 +21,7 @@ def cli():
     )
 
 
-def _do_find(url, max_trys, raw, no_content):
+def _do_find(url, max_trys, raw, no_content, allow_private_address):
 
     def message_handler(msg):
         print(msg)
@@ -29,9 +30,13 @@ def _do_find(url, max_trys, raw, no_content):
         if not no_content:
             print(msg)
 
-    finder = FeedFinder(url, max_trys=max_trys, message_handler=message_handler, validate=not raw)
-    with finder:
-        result = finder.find()
+    reader = FeedReader(allow_private_address=allow_private_address)
+    with reader:
+        finder = FeedFinder(
+            url, reader=reader, max_trys=max_trys,
+            message_handler=message_handler, validate=not raw)
+        with finder:
+            result = finder.find()
     if result:
         output(f"Got: " + str(result.feed)[:300] + "\n")
         output('-' * 79)
@@ -47,13 +52,14 @@ def _do_find(url, max_trys, raw, no_content):
 @click.option('--raw', is_flag=True, help='Return raw feed, not validate')
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
-def find(url, max_trys, raw=False, no_content=False, profile=False):
+@click.option('--allow-private-address', is_flag=True, help='Allow private address')
+def find(url, max_trys, raw=False, no_content=False, profile=False, allow_private_address=False):
     if profile:
         no_content = True
         profiler = Profiler()
         profiler.start()
     try:
-        _do_find(url, max_trys, raw, no_content)
+        _do_find(url, max_trys, raw, no_content, allow_private_address=allow_private_address)
     finally:
         if profile:
             profiler.stop()

@@ -111,7 +111,7 @@ DATABASES = {
 
 # https://github.com/heroku-python/django-postgrespool
 DATABASE_POOL_ARGS = {
-    'max_overflow': 10,
+    'max_overflow': 20,
     'pool_size': 5,
     'recycle': 300
 }
@@ -170,6 +170,7 @@ RSSANT_CHECK_FEED_SECONDS = 10 * 60
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = ENV_CONFIG.redis_url
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BEAT_SCHEDULE = {
     'check-feed-every-10-seconds': {
         'task': 'rssant.tasks.check_feed',

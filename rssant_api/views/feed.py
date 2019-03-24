@@ -1,5 +1,6 @@
 import logging
 
+import celery
 from django.db import connection, transaction
 from django.db.models import Q
 from django_rest_validr import RestRouter, T, Cursor, pagination
@@ -198,8 +199,10 @@ def _create_feeds_by_urls(user, urls):
                 user_feed_bulk_creates.append(user_feed)
                 find_feed_objs.append(user_feed)
         UserFeed.objects.bulk_create(user_feed_bulk_creates, batch_size=500)
-    find_feed_ids = [(user_feed.id, ) for user_feed in find_feed_objs]
-    rss.find_feed.chunks(find_feed_ids, 10).apply_async()
+    find_feed_tasks = []
+    for user_feed in find_feed_objs:
+        find_feed_tasks.append(rss.find_feed.s(user_feed.id))
+    celery.group(find_feed_tasks).apply_async()
     feeds = [x.to_dict() for x in user_feed_bulk_creates]
     return feeds
 
