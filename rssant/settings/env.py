@@ -20,6 +20,8 @@ class EnvConfig:
     github_secret = T.str.default('e98cede34ab9badaaab0d30f07c8d989fa11e0ec')
     # sentry
     sentry_dsn = T.str.optional
+    # celery sentry
+    is_celery_process = T.bool.optional
 
     @classmethod
     def load(cls, environ=None):

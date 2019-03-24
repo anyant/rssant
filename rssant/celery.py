@@ -1,6 +1,7 @@
 import os
 from celery import Celery
 from celery.utils.log import get_task_logger
+from rssant.sentry import setup_sentry_celery
 
 LOG = get_task_logger(__name__)
 
@@ -14,6 +15,8 @@ app = Celery('rssant')
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
+
+setup_sentry_celery()
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

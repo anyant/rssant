@@ -11,11 +11,15 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import sys
 from .env import EnvConfig
-from ..sentry import setup_sentry
 
 ENV_CONFIG = EnvConfig.load()
-setup_sentry(ENV_CONFIG.sentry_dsn)
+
+if ENV_CONFIG.is_celery_process is None:
+    IS_CELERY_PROCESS = 'celery' in sys.argv[0]
+else:
+    IS_CELERY_PROCESS = ENV_CONFIG.is_celery_process
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -45,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'django.contrib.sites',
+    'raven.contrib.django.raven_compat',
     'debug_toolbar',
     'django_celery_results',
     'django_celery_beat',
@@ -155,6 +160,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# Sentry, 在celery进程中不要配置django的sentry
+if not IS_CELERY_PROCESS:
+    RAVEN_CONFIG = {
+        'dsn': ENV_CONFIG.sentry_dsn,
+    }
 
 # RSSANT
 
@@ -173,6 +183,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'rssant.tasks.check_feed',
         'schedule': 10,
         'kwargs': {'seconds': RSSANT_CHECK_FEED_SECONDS}
+    },
+    'clean-user-feed-every-10-seconds': {
+        'task': 'rssant.tasks.clean_user_feed',
+        'schedule': 10,
+        'kwargs': {}
     }
 }
 

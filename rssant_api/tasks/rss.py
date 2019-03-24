@@ -1,6 +1,7 @@
 from urllib.parse import unquote
 import logging
 
+import celery
 from celery import shared_task as task
 from django.db import transaction, connection
 from django.utils import timezone
@@ -199,7 +200,7 @@ def check_feed(seconds=300):
     now = timezone.now()
     delta = timezone.timedelta(seconds=seconds)
     dt_before = now - delta  # 正常检查时间间隔
-    dt_timeout_before = dt_before - delta  # 异常检查时间间隔
+    dt_timeout_before = now - 3 * delta  # 异常检查时间间隔
     statuses = [FeedStatus.READY, FeedStatus.ERROR]
     sql_check = """
     SELECT id FROM rssant_api_feed AS feed
@@ -218,8 +219,9 @@ def check_feed(seconds=300):
         for feed_id, in cursor.fetchall():
             feed_ids.append(feed_id)
         cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
-    for feed_id in feed_ids:
-        sync_feed.delay(feed_id=feed_id)
+    LOG.info('found {} feeds need sync'.format(len(feed_ids)))
+    tasks = [sync_feed.s(feed_id=feed_id) for feed_id in feed_ids]
+    celery.group(tasks).apply_async()
     return dict(feed_ids=feed_ids)
 
 
@@ -277,3 +279,47 @@ def sync_feed(feed_id):
         status_code=status_code,
         num_storys=num_storys,
     )
+
+
+def _retry_user_feeds(user_feed_ids):
+    sql_update_status = """
+    UPDATE rssant_api_userfeed
+    SET status=%s, dt_created=%s
+    WHERE id=ANY(%s)
+    """
+    tasks = []
+    for user_feed_id in user_feed_ids:
+        tasks.append(find_feed.s(user_feed_id))
+    with connection.cursor() as cursor:
+        cursor.execute(sql_update_status, [FeedStatus.PENDING, timezone.now(), user_feed_ids])
+    celery.group(tasks).apply_async()
+
+
+@task(name='rssant.tasks.clean_user_feed')
+def clean_user_feed():
+    # 删除所有status=ERROR, 没有feed_id，并且入库时间超过2分钟的订阅
+    q = UserFeed.objects.filter(
+        status=FeedStatus.ERROR,
+        feed_id__isnull=True,
+        dt_created__lt=timezone.now() - timezone.timedelta(seconds=2 * 60)
+    )
+    num_deleted, __ = q.delete()
+    LOG.info('delete {} status=ERROR and feed_id is NULL user feeds'.format(num_deleted))
+    # 重试 status=UPDATING 超过10分钟的订阅
+    q = UserFeed.objects.filter(
+        status=FeedStatus.UPDATING,
+        feed_id__isnull=True,
+        dt_created__lt=timezone.now() - timezone.timedelta(seconds=10 * 60)
+    )
+    user_feed_ids = [x.id for x in q.only('id').all()]
+    LOG.info('retry {} status=UPDATING and feed_id is NULL user feeds'.format(len(user_feed_ids)))
+    _retry_user_feeds(user_feed_ids)
+    # 重试 status=PENDING 超过30分钟的订阅
+    q = UserFeed.objects.filter(
+        status=FeedStatus.PENDING,
+        feed_id__isnull=True,
+        dt_created__lt=timezone.now() - timezone.timedelta(seconds=30 * 60)
+    )
+    user_feed_ids = [x.id for x in q.only('id').all()]
+    LOG.info('retry {} status=PENDING and feed_id is NULL user feeds'.format(len(user_feed_ids)))
+    _retry_user_feeds(user_feed_ids)

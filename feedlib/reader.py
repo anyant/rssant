@@ -62,19 +62,21 @@ class FeedReader:
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
 
-    def _check_private_address(self, url):
-        """Prevent request private address, which will attack local network"""
-        hostname = urlparse(url).hostname
+    def _resolve_hostname(self, hostname):
         addrinfo = socket.getaddrinfo(hostname, None)
         for family, __, __, __, sockaddr in addrinfo:
             if family == socket.AF_INET:
                 ip, __ = sockaddr
-                ip = ipaddress.IPv4Address(ip)
+                yield ip
             elif family == socket.AF_INET6:
                 ip, __, __, __ = sockaddr
-                ip = ipaddress.IPv6Address(ip)
-            else:
-                continue
+                yield ip
+
+    def _check_private_address(self, url):
+        """Prevent request private address, which will attack local network"""
+        hostname = urlparse(url).hostname
+        for ip in self._resolve_hostname(hostname):
+            ip = ipaddress.ip_address(ip)
             if ip.is_private:
                 raise PrivateAddressError(ip)
 
