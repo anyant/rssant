@@ -25,12 +25,18 @@ def _get_url(response):
     return unquote(response.url)
 
 
-def _get_dt_published(data):
-    return data["published_parsed"] or data["updated_parsed"] or None
+def _get_dt_published(data, default=None):
+    t = data["published_parsed"] or data["updated_parsed"] or default
+    if t and t > timezone.now():
+        t = default
+    return t
 
 
-def _get_dt_updated(data):
-    return data["updated_parsed"] or data["published_parsed"] or timezone.now()
+def _get_dt_updated(data, default=None):
+    t = data["updated_parsed"] or data["published_parsed"] or default
+    if t and t > timezone.now():
+        t = default
+    return t
 
 
 def _get_story_unique_id(entry):
@@ -87,7 +93,7 @@ def _save_feed(feed, parsed):
     feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
     now = timezone.now()
     feed.dt_published = _get_dt_published(parsed_feed)
-    feed.dt_updated = _get_dt_updated(parsed_feed)
+    feed.dt_updated = _get_dt_updated(parsed_feed, timezone.now())
     feed.dt_checked = feed.dt_synced = now
     feed.etag = _get_etag(res)
     feed.last_modified = _get_last_modified(res)
@@ -113,6 +119,7 @@ def _save_storys(feed, entries):
     for story in q.all():
         storys[story.unique_id] = story
     bulk_create_storys = []
+    now = timezone.now()
     for data in entries:
         unique_id = _get_story_unique_id(data)
         if unique_id in storys:
@@ -131,14 +138,13 @@ def _save_storys(feed, entries):
         if not summary:
             summary = content
         summary = shorten(summary, width=300)
-        now = timezone.now()
         story.content = content
         story.summary = summary
         story.title = data["title"]
         story.link = unquote(data["link"])
         story.author = data["author"]
         story.dt_published = _get_dt_published(data)
-        story.dt_updated = _get_dt_updated(data)
+        story.dt_updated = _get_dt_updated(data, now)
         story.dt_synced = now
         if unique_id in storys:
             story.save()
