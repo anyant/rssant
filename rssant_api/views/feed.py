@@ -7,9 +7,9 @@ from django_rest_validr import RestRouter, T, Cursor, pagination
 from rest_framework.response import Response
 from validr import Invalid
 from xml.etree.ElementTree import ParseError
-from feedlib.opml import parse_opml
-from feedlib.bookmark import parse_bookmark
 
+from rssant_feedlib.opml import parse_opml
+from rssant_feedlib.bookmark import parse_bookmark
 from rssant_api.models import Feed, UserFeed, FeedUrlMap, FeedStatus, UserStory
 from rssant_api.tasks import rss
 
@@ -38,8 +38,7 @@ FeedSchema = T.dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
-    content_hash_method=T.str.optional,
-    content_hash_value=T.str.optional,
+    content_hash_base64=T.str.optional,
 )
 
 FeedView = RestRouter()
@@ -49,8 +48,7 @@ FEED_DETAIL_FIELDS = [
     'feed__etag',
     'feed__last_modified',
     'feed__content_length',
-    'feed__content_hash_method',
-    'feed__content_hash_value',
+    'feed__content_hash_base64',
 ]
 
 

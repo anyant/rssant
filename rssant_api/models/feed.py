@@ -1,7 +1,4 @@
-import base64
-import hashlib
-
-from .helper import Model, models, optional, JSONField, User, extract_choices
+from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
 
 class FeedStatus:
@@ -21,32 +18,6 @@ class FeedStatus:
 
 
 FEED_STATUS_CHOICES = extract_choices(FeedStatus)
-
-
-class ContentHashMixin(models.Model):
-
-    class Meta:
-        abstract = True
-
-    content_hash_method = models.CharField(
-        max_length=20, **optional, help_text='hash method of content')
-    content_hash_value = models.BinaryField(
-        max_length=200, **optional, help_text='hash value of content')
-
-    def compute_content_hash(self, content, method=None):
-        if not method:
-            method = self.content_hash_method
-        if not method:
-            method = 'sha1'
-        h = hashlib.new(method)
-        h.update(content)
-        return method, h.digest()
-
-    @property
-    def content_hash_value_base64(self):
-        if not self.content_hash_value:
-            return None
-        return base64.b64encode(self.content_hash_value).decode()
 
 
 class Feed(Model, ContentHashMixin):
@@ -103,8 +74,7 @@ class Feed(Model, ContentHashMixin):
                 etag=self.etag,
                 last_modified=self.last_modified,
                 content_length=self.content_length,
-                content_hash_method=self.content_hash_method,
-                content_hash_value=self.content_hash_value_base64,
+                content_hash_base64=self.content_hash_base64,
             )
         return ret
 

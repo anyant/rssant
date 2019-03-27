@@ -1,5 +1,6 @@
 from validr import T
-from common.validator import compiler
+
+from rssant_common.validator import compiler
 
 
 # https://github.com/kurtmckee/feedparser

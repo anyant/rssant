@@ -1,10 +1,10 @@
 from django.db import connection, transaction
 
-from .helper import Model, models, optional, User
+from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
 
 
-class Story(Model):
+class Story(Model, ContentHashMixin):
     """故事"""
 
     class Meta:

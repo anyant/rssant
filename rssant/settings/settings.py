@@ -170,7 +170,7 @@ if not IS_CELERY_PROCESS:
 
 # 每10分钟检查一次更新
 RSSANT_CHECK_FEED_SECONDS = 10 * 60
-
+RSSANT_CONTENT_HASH_METHOD = 'sha1'
 
 # Celery tasks
 

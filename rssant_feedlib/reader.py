@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from common.helper import resolve_response_encoding
+from rssant_common.helper import resolve_response_encoding
 
 
 DEFAULT_USER_AGENT = (

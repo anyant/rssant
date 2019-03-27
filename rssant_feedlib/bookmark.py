@@ -1,10 +1,11 @@
 import re
 from urllib.parse import urlparse, urlunparse, unquote
 
-from validr import T, Compiler, Invalid
-from django_rest_validr import VALIDATORS
+from validr import T, Invalid
 
-compiler = Compiler(validators=VALIDATORS)
+from rssant_common.validator import compiler
+
+
 validate_url = compiler.compile(T.url)
 
 RE_URL = re.compile(
