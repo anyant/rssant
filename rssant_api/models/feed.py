@@ -1,3 +1,5 @@
+import gzip
+
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
 
@@ -101,10 +103,28 @@ class RawFeed(Model, ContentHashMixin):
         max_length=200, **optional, help_text="HTTP response header Last-Modified")
     headers = JSONField(
         **optional, help_text='HTTP response headers, JSON object')
+    is_gzipped = models.BooleanField(
+        **optional, default=False, help_text="is content gzip compressed")
     content = models.BinaryField(**optional)
     content_length = models.IntegerField(
         **optional, help_text='length of content')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
+
+    def set_content(self, content):
+        if content and len(content) >= 1024:
+            self.content = gzip.compress(content, compresslevel=9)
+            self.is_gzipped = True
+        else:
+            self.content = content
+            self.is_gzipped = False
+
+    def get_content(self, decompress=None):
+        if decompress is None:
+            decompress = self.is_gzipped
+        content = self.content
+        if content and decompress:
+            content = gzip.decompress(content)
+        return content
 
 
 class UserFeed(Model):

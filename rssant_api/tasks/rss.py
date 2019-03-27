@@ -91,7 +91,6 @@ def sync_feed(feed_id):
     if not feed.is_modified(content_hash_base64=content_hash_base64):
         LOG.info(f'feed#{feed_id} url={feed.url} not modified by compare content hash!')
         return default_result
-    _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)
     LOG.info(f'parse feed#{feed_id} url={feed.url}')
     parsed = FeedParser.parse_response(response)
     if parsed.bozo:
@@ -99,8 +98,12 @@ def sync_feed(feed_id):
         return default_result
     with transaction.atomic():
         _save_feed(feed, parsed, content_hash_base64)
-        num_storys = len(_save_storys(feed, parsed.entries))
+        num_modified, num_storys = _save_storys(feed, parsed.entries)
         feed.save()
+    if num_modified > 0:
+        _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)
+    else:
+        LOG.info(f'feed#{feed_id} url={feed.url} not modified by compare storys!')
     return dict(
         feed_id=feed_id,
         url=feed.url,
@@ -126,7 +129,8 @@ def clean_user_feed():
         dt_created__lt=timezone.now() - timezone.timedelta(seconds=10 * 60)
     )
     user_feed_ids = [x.id for x in q.only('id').all()]
-    LOG.info('retry {} status=UPDATING and feed_id is NULL user feeds'.format(len(user_feed_ids)))
+    num_retry_updating = len(user_feed_ids)
+    LOG.info('retry {} status=UPDATING and feed_id is NULL user feeds'.format(num_retry_updating))
     _retry_user_feeds(user_feed_ids)
     # 重试 status=PENDING 超过30分钟的订阅
     q = UserFeed.objects.filter(
@@ -135,8 +139,14 @@ def clean_user_feed():
         dt_created__lt=timezone.now() - timezone.timedelta(seconds=30 * 60)
     )
     user_feed_ids = [x.id for x in q.only('id').all()]
-    LOG.info('retry {} status=PENDING and feed_id is NULL user feeds'.format(len(user_feed_ids)))
+    num_retry_pending = len(user_feed_ids)
+    LOG.info('retry {} status=PENDING and feed_id is NULL user feeds'.format(num_retry_pending))
     _retry_user_feeds(user_feed_ids)
+    return dict(
+        num_deleted=num_deleted,
+        num_retry_updating=num_retry_updating,
+        num_retry_pending=num_retry_pending,
+    )
 
 
 @transaction.atomic
@@ -178,7 +188,7 @@ def _create_raw_feed(feed, status_code, response, content_hash_base64=None):
         for k, v in response.headers.items():
             headers[k.lower()] = v
         raw_feed.headers = headers
-        raw_feed.content = response.content
+        raw_feed.set_content(response.content)
         raw_feed.content_length = len(response.content)
     raw_feed.save()
     return raw_feed
@@ -221,6 +231,7 @@ def _save_storys(feed, entries):
     for story in q.all():
         storys[story.unique_id] = story
     bulk_create_storys = []
+    num_modified = 0
     now = timezone.now()
     for data in entries:
         unique_id = _get_story_unique_id(data)
@@ -250,17 +261,19 @@ def _save_storys(feed, entries):
         content_hash_base64 = compute_hash_base64(content, summary, story.title)
         if unique_id in storys:
             if story.is_modified(content_hash_base64=content_hash_base64):
+                num_modified += 1
                 story.save()
             else:
-                msg = ("story#{story.id} feed_id={story.feed_id} link={story.link} "
-                       "not modified by compare content, summary and title!")
+                msg = (f"story#{story.id} feed_id={story.feed_id} link={story.link} "
+                       f"not modified by compare content, summary and title!")
                 LOG.info(msg)
         else:
+            num_modified += 1
             story.content_hash_base64 = content_hash_base64
             storys[unique_id] = story
             bulk_create_storys.append(story)
     Story.objects.bulk_create(bulk_create_storys, batch_size=100)
-    return list(storys.values())
+    return num_modified, len(storys)
 
 
 def _get_etag(response):
