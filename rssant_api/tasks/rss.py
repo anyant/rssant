@@ -262,6 +262,7 @@ def _save_storys(feed, entries):
         if unique_id in storys:
             if story.is_modified(content_hash_base64=content_hash_base64):
                 num_modified += 1
+                story.content_hash_base64 = content_hash_base64
                 story.save()
             else:
                 msg = (f"story#{story.id} feed_id={story.feed_id} link={story.link} "
