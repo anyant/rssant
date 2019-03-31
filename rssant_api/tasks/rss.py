@@ -77,6 +77,8 @@ def sync_feed(feed_id):
     LOG.info(f'read feed#{feed_id} url={feed.url}')
     status_code, response = _read_response(feed)
     LOG.info(f'feed#{feed_id} url={feed.url} status_code={status_code}')
+    feed.status = FeedStatus.READY
+    feed.save()
     default_result = dict(
         feed_id=feed_id,
         url=feed.url,
@@ -97,9 +99,8 @@ def sync_feed(feed_id):
         LOG.warning(f'failed parse feed#{feed_id} url={feed.url}: {parsed.bozo_exception}')
         return default_result
     with transaction.atomic():
-        _save_feed(feed, parsed, content_hash_base64)
         num_modified, num_storys = _save_storys(feed, parsed.entries)
-        feed.save()
+        _save_feed(feed, parsed, content_hash_base64, has_update=num_modified > 0)
     if num_modified > 0:
         _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)
     else:
@@ -194,7 +195,7 @@ def _create_raw_feed(feed, status_code, response, content_hash_base64=None):
     return raw_feed
 
 
-def _save_feed(feed, parsed, content_hash_base64=None):
+def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
     parsed_feed = parsed.feed
     res = parsed.response
     feed.url = _get_url(res)
@@ -211,8 +212,8 @@ def _save_feed(feed, parsed, content_hash_base64=None):
     feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
     feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
     now = timezone.now()
-    feed.dt_published = _get_dt_published(parsed_feed)
-    feed.dt_updated = _get_dt_updated(parsed_feed, timezone.now())
+    if has_update:
+        feed.dt_updated = _get_dt_updated(parsed_feed, now)
     feed.dt_checked = feed.dt_synced = now
     feed.etag = _get_etag(res)
     feed.last_modified = _get_last_modified(res)
