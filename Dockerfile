@@ -16,4 +16,4 @@ COPY . .
 
 EXPOSE 6788
 
-CMD ["/usr/local/bin/gunicorn", "-b", "0.0.0.0:6788", "--threads", "100", "rssant.wsgi"]
+CMD ["/bin/bash"]
