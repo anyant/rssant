@@ -2,9 +2,15 @@ import codecs
 import cchardet
 
 
+def _is_encoding_exists(response):
+    content_type = response.headers.get('content-type')
+    return 'charset' in content_type
+
+
 def resolve_response_encoding(response):
-    encoding = response.encoding
-    if not encoding:
+    if _is_encoding_exists(response) and response.encoding:
+        encoding = response.encoding
+    else:
         # response.apparent_encoding使用chardet检测编码，有些情况会非常慢
         # 换成cchardet实现，性能可以提升100倍
         encoding = cchardet.detect(response.content)['encoding']
