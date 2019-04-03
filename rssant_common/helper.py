@@ -4,7 +4,7 @@ import cchardet
 
 def _is_encoding_exists(response):
     content_type = response.headers.get('content-type')
-    return 'charset' in content_type
+    return content_type and 'charset' in content_type
 
 
 def resolve_response_encoding(response):
