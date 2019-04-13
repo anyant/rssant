@@ -63,7 +63,7 @@ SQLAlchemy==1.2.18
 sqlparse==0.2.4
 tabulate==0.8.3
 terminaltables==3.1.0
-tornado==6.0.2
+tornado==5.1.1
 uritemplate==3.0.0
 urllib3==1.24.1
 validr==1.1.0
