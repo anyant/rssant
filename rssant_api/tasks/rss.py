@@ -199,7 +199,7 @@ def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
     parsed_feed = parsed.feed
     res = parsed.response
     feed.url = _get_url(res)
-    feed.title = parsed_feed["title"]
+    feed.title = shorten(parsed_feed["title"], 200)
     link = parsed_feed["link"]
     if not link.startswith('http'):
         # 有些link属性不是URL，用author_detail的href代替
@@ -208,7 +208,7 @@ def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
         if author_detail:
             link = author_detail['href']
     feed.link = unquote(link)
-    feed.author = parsed_feed["author"]
+    feed.author = shorten(parsed_feed["author"], 200)
     feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
     feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
     now = timezone.now()
@@ -218,7 +218,7 @@ def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
     feed.etag = _get_etag(res)
     feed.last_modified = _get_last_modified(res)
     feed.encoding = res.encoding
-    feed.version = parsed.version
+    feed.version = shorten(parsed.version, 200)
     feed.status = FeedStatus.READY
     feed.content_hash_base64 = content_hash_base64
     feed.save()
@@ -235,7 +235,7 @@ def _save_storys(feed, entries):
     num_modified = 0
     now = timezone.now()
     for data in entries:
-        unique_id = _get_story_unique_id(data)
+        unique_id = shorten(_get_story_unique_id(data), 200)
         if unique_id in storys:
             story = storys[unique_id]
         else:
@@ -253,9 +253,9 @@ def _save_storys(feed, entries):
         summary = shorten(summary, width=300)
         story.content = content
         story.summary = summary
-        story.title = data["title"]
+        story.title = shorten(data["title"], 200)
         story.link = unquote(data["link"])
-        story.author = data["author"]
+        story.author = shorten(data["author"], 200)
         story.dt_published = _get_dt_published(data)
         story.dt_updated = _get_dt_updated(data, now)
         story.dt_synced = now
