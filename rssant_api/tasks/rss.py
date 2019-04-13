@@ -236,7 +236,8 @@ def _save_storys(feed, entries):
     now = timezone.now()
     for data in entries:
         unique_id = shorten(_get_story_unique_id(data), 200)
-        if unique_id in storys:
+        is_story_exist = unique_id in storys
+        if is_story_exist:
             story = storys[unique_id]
         else:
             story = Story(feed=feed, unique_id=unique_id)
@@ -260,7 +261,7 @@ def _save_storys(feed, entries):
         story.dt_updated = _get_dt_updated(data, now)
         story.dt_synced = now
         content_hash_base64 = compute_hash_base64(content, summary, story.title)
-        if unique_id in storys:
+        if is_story_exist:
             if story.is_modified(content_hash_base64=content_hash_base64):
                 num_modified += 1
                 story.content_hash_base64 = content_hash_base64
