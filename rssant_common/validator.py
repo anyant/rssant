@@ -12,13 +12,13 @@ from .helper import coerce_url
 from .cursor import Cursor
 
 
-def pagination(item):
+def pagination(item, maxlen=1024):
     return T.dict(
         previous=T.cursor.optional,
         next=T.cursor.optional,
         total=T.int.optional,
         size=T.int.optional,
-        results=T.list(item)
+        results=T.list(item).maxlen(maxlen),
     )
 
 

@@ -1,16 +1,23 @@
-from django.db import connection, transaction
+from django.utils import timezone
 
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
+
+
+STORY_DETAIL_FEILDS = ['summary', 'content']
+USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 
 
 class Story(Model, ContentHashMixin):
     """故事"""
 
     class Meta:
-        unique_together = ('feed', 'unique_id')
+        unique_together = (
+            ('feed', 'offset'),
+            ('feed', 'unique_id'),
+        )
         indexes = [
-            models.Index(fields=["feed", "dt_updated"]),
+            models.Index(fields=["feed", "offset"]),
             models.Index(fields=["feed", "unique_id"]),
         ]
 
@@ -18,6 +25,7 @@ class Story(Model, ContentHashMixin):
         display_fields = ['feed_id', 'title', 'link']
 
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    offset = models.IntegerField(help_text="Story在Feed中的位置")
     unique_id = models.CharField(max_length=200, help_text="Unique ID")
     title = models.CharField(max_length=200, **optional, help_text="标题")
     link = models.TextField(**optional, help_text="文章链接")
@@ -31,6 +39,7 @@ class Story(Model, ContentHashMixin):
 
     def to_dict(self, detail=False):
         ret = dict(
+            offset=self.offset,
             unique_id=self.unique_id,
             title=self.title,
             link=self.link,
@@ -55,7 +64,7 @@ class UserStory(Model):
         ]
 
     class Admin:
-        display_fields = ['user_id', 'feed_id', 'story_id', 'is_readed', 'is_favorited']
+        display_fields = ['user_id', 'feed_id', 'story_id', 'is_watched', 'is_favorited']
         search_fields = ['user_feed_id']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -63,45 +72,10 @@ class UserStory(Model):
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user_feed = models.ForeignKey(UserFeed, on_delete=models.CASCADE)
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
-    is_readed = models.BooleanField(default=False)
-    dt_readed = models.DateTimeField(**optional, help_text="已读时间")
+    is_watched = models.BooleanField(default=False)
+    dt_watched = models.DateTimeField(**optional, help_text="关注时间")
     is_favorited = models.BooleanField(default=False)
     dt_favorited = models.DateTimeField(**optional, help_text="标星时间")
-
-    @classmethod
-    def sync_storys(cls, user_id, user_feed_id=None, limit=200):
-        q = UserFeed.objects.filter(user_id=user_id).only('feed_id').distinct()
-        if user_feed_id:
-            q = q.filter(id=user_feed_id)
-        user_feeds = list(q.all())
-        feed_ids = {x.feed_id: x.id for x in user_feeds}
-        sql = """
-        SELECT story.id, story.feed_id
-        FROM rssant_api_story AS story
-        LEFT OUTER JOIN (
-            SELECT id, story_id
-            FROM rssant_api_userstory
-            WHERE user_id=%s AND feed_id = ANY(%s)
-        ) AS userstory
-        ON story.id=userstory.story_id
-        WHERE story.feed_id = ANY(%s) AND userstory.id IS NULL
-        LIMIT %s
-        """
-        params = [user_id, list(feed_ids), list(feed_ids), limit]
-        with connection.cursor() as cursor:
-            cursor.execute(sql, params)
-            new_user_storys = list(cursor.fetchall())
-        # batch insert unreaded storys
-        bulk_create_storys = []
-        with transaction.atomic():
-            for story_id, feed_id in new_user_storys:
-                user_feed_id = feed_ids[feed_id]
-                user_story = UserStory(
-                    user_id=user_id, story_id=story_id,
-                    feed_id=feed_id, user_feed_id=user_feed_id)
-                bulk_create_storys.append(user_story)
-            UserStory.objects.bulk_create(bulk_create_storys, batch_size=200)
-        return len(new_user_storys)
 
     def to_dict(self, detail=False):
         ret = self.story.to_dict(detail=detail)
@@ -110,9 +84,68 @@ class UserStory(Model):
             user=dict(id=self.user_id),
             feed=dict(id=self.user_feed_id),
             dt_created=self.dt_created,
-            is_readed=self.is_readed,
+            is_watched=self.is_watched,
             dt_readed=self.dt_readed,
             is_favorited=self.is_favorited,
             dt_favorited=self.dt_favorited
         )
         return ret
+
+    @staticmethod
+    def get_by_pk(pk, user_id=None, detail=False):
+        q = UserStory.objects.select_related('story')
+        if not detail:
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        if user_id is not None:
+            q = q.filter(user_id=user_id)
+        user_story = q.get(pk=pk)
+        return user_story
+
+    @staticmethod
+    def get_by_feed_offset(user_feed_id, offset, user_id=None, detail=False):
+        q = UserStory.objects.select_related('story')
+        if not detail:
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        if user_id is not None:
+            q = q.filter(user_id=user_id)
+        user_story = q.get(user_feed_id=user_feed_id, story__offset=offset)
+        return user_story
+
+    def update_watched(self, is_watched):
+        self.is_watched = is_watched
+        if is_watched:
+            self.dt_watched = timezone.now()
+        self.save()
+
+    def update_favorited(self, is_favorited):
+        self.is_favorited = is_favorited
+        if is_favorited:
+            self.dt_watched = timezone.now()
+        self.save()
+
+    @staticmethod
+    def query_storys_by_feed(user_feed_id, offset=None, user_id=None, size=10, detail=False):
+        user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
+        feed_id = user_feed.feed.id
+        total = user_feed.feed.total_storys
+        if offset is None:
+            offset = user_feed.story_offset
+        q = Story.objects
+        if not detail:
+            q = q.defer(*STORY_DETAIL_FEILDS)
+        q = q.filter(feed_id=feed_id, offset__gte=offset)
+        q = q.order_by('offset')[:size]
+        storys = list(q.all())
+        return total, offset, storys
+
+    @staticmethod
+    def query_by_user(user_id, is_watched=None, is_favorited=None, detail=False):
+        q = UserStory.objects.filter(user_id=user_id)
+        if is_watched is not None:
+            q = q.filter(is_watched=is_watched)
+        if is_favorited is not None:
+            q = q.filter(is_favorited=is_favorited)
+        if not detail:
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        user_storys = list(q.order_by('-dt_created').all())
+        return user_storys
