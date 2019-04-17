@@ -1,6 +1,7 @@
 import gzip
 
 from django.utils import timezone
+from django.db import transaction
 
 from .exceptions import FeedExistsException
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
@@ -26,6 +27,7 @@ FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
 FEED_DETAIL_FIELDS = [
+    'feed__description',
     'feed__encoding',
     'feed__etag',
     'feed__last_modified',
@@ -77,13 +79,13 @@ class Feed(Model, ContentHashMixin):
             link=self.link,
             author=self.author,
             icon=self.icon,
-            description=self.description,
             version=self.version,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
         )
         if detail:
             ret.update(
+                description=self.description,
                 total_storys=self.total_storys,
                 encoding=self.encoding,
                 etag=self.etag,
@@ -175,13 +177,20 @@ class UserFeed(Model):
             id=self.id,
             user=dict(id=self.user_id),
             dt_created=self.dt_created,
+            story_offset=self.story_offset,
         )
-        ret.update(story_offset=self.story_offset)
+        if self.dt_updated:
+            ret.update(dt_updated=self.dt_updated)
         if self.title:
             ret.update(title=self.title)
-        if (not self.status) or (self.status != FeedStatus.READY):
+        if self.status and self.status != FeedStatus.READY:
             ret.update(status=self.status)
         return ret
+
+    def sync_dt_updated(self):
+        if self.feed_id and self.feed.dt_updated != self.dt_updated:
+            self.dt_updated = self.feed.dt_updated
+            self.save()
 
     @property
     def is_ready(self):
@@ -210,14 +219,15 @@ class UserFeed(Model):
             q = q.select_related('feed')
             if not detail:
                 q = q.defer(*FEED_DETAIL_FIELDS)
-            return list(q.all())
+            user_feeds = list(q.all())
+            return len(user_feeds), user_feeds
         hints = {x['id']: x['dt_updated'] for x in hints}
         q = q.only("id", "dt_updated")
         updates = []
         user_feeds = list(q.all())
         total = len(user_feeds)
         for user_feed in user_feeds:
-            if user_feed.id not in hints:
+            if user_feed.id not in hints or not user_feed.dt_updated:
                 updates.append(user_feed.id)
             elif user_feed.dt_updated > hints[user_feed.id]:
                 updates.append(user_feed.id)
@@ -228,6 +238,9 @@ class UserFeed(Model):
         if not detail:
             q = q.defer(*FEED_DETAIL_FIELDS)
         user_feeds = list(q.all())
+        with transaction.atomic():
+            for user_feed in user_feeds:
+                user_feed.sync_dt_updated()
         user_feeds = list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
         return total, user_feeds
 
@@ -255,6 +268,27 @@ class UserFeed(Model):
         self.story_offset = offset
         self.dt_updated = timezone.now()
         self.save()
+
+    def update_title(self, title):
+        self.title = title
+        self.dt_updated = timezone.now()
+        self.save()
+
+    @staticmethod
+    def set_user_all_readed(user_id) -> int:
+        q = UserFeed.objects.select_related('feed')\
+            .filter(user_id=user_id)\
+            .only('id', 'story_offset', 'feed_id', 'feed__total_storys')
+        updates = []
+        for user_feed in q.all():
+            num_unread = user_feed.feed.total_storys - user_feed.story_offset
+            if num_unread > 0:
+                user_feed.story_offset = user_feed.feed.total_storys
+                updates.append(user_feed)
+        with transaction.atomic():
+            for user_feed in updates:
+                user_feed.save()
+        return len(updates)
 
     @staticmethod
     def create_by_url_s(urls, user_id, batch_size=500):

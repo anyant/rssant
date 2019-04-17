@@ -40,10 +40,10 @@ FeedSchema = T.dict(
     title=T.str.optional,
     num_unread_storys=T.int.optional,
     total_storys=T.int.optional,
-    dt_updated=T.datetime.optional,
-    dt_created=T.datetime.optional,
-    dt_checked=T.datetime.optional,
-    dt_synced=T.datetime.optional,
+    dt_updated=T.datetime.object.optional,
+    dt_created=T.datetime.object.optional,
+    dt_checked=T.datetime.object.optional,
+    dt_synced=T.datetime.object.optional,
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
@@ -65,7 +65,7 @@ FEED_DETAIL_FIELDS = [
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id = T.int, dt_updated = T.datetime)),
+    hints: T.list(T.dict(id = T.int, dt_updated = T.datetime.object)).optional,
     detail: T.bool.default(False)
 ) -> pagination(FeedSchema):
     """Feed query"""
@@ -99,9 +99,7 @@ def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
 @FeedView.put('feed/<int:pk>')
 def feed_update(request, pk: T.int, title: T.str.optional) -> FeedSchema:
     user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id)
-    user_feed.title = title
-    user_feed.dt_updated = timezone.now()
-    user_feed.save()
+    user_feed.update_title(title)
     return user_feed.to_dict()
 
 
@@ -115,14 +113,14 @@ def feed_set_readed(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSc
 
 
 @FeedView.put('feed/all/readed')
-def feed_set_all_readed(request):
-    pass
+def feed_set_all_readed(request) -> T.dict(num_updated=T.int):
+    num_updated = UserFeed.set_user_all_readed(user_id=request.user.id)
+    return dict(num_updated=num_updated)
 
 
 @FeedView.delete('feed/<int:pk>')
 def feed_delete(request, pk: T.int):
-    user_feed = UserFeed.objects.get(user=request.user, pk=pk)
-    user_feed.delete()
+    UserFeed.delete_by_pk(pk, user_id=request.user.id)
 
 
 def _read_request_file(request, name='file'):
@@ -167,7 +165,7 @@ def feed_import_opml(request) -> pagination(FeedSchema, maxlen=5000):
 
 
 @FeedView.get('feed/opml')
-def feed_export_opml(request):
+def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
     user_feeds = UserFeed.query_by_user(request.user.id, show_pending=True)
     user_feeds = [x.to_dict() for x in user_feeds]
@@ -177,7 +175,8 @@ def feed_export_opml(request):
     tmpl = Template(filename=OPML_TEMPLATE_PATH)
     content = tmpl.render(feeds=user_feeds)
     response = HttpResponse(content, content_type='text/xml')
-    response['Content-Disposition'] = 'attachment;filename="rssant.opml"'
+    if download:
+        response['Content-Disposition'] = 'attachment;filename="rssant.opml"'
     return response
 
 
