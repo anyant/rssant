@@ -2,7 +2,6 @@ import logging
 import os.path
 
 import celery
-from django.utils import timezone
 from django.http.response import HttpResponse
 from django_rest_validr import RestRouter, T, pagination
 from rest_framework.response import Response

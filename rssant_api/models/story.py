@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import transaction
 
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
@@ -55,12 +56,64 @@ class Story(Model, ContentHashMixin):
             )
         return ret
 
+    @staticmethod
+    def bulk_save_by_feed(feed_id, storys, batch_size=100):
+        with transaction.atomic():
+            feed = Feed.objects.select_for_update().only('id', 'total_storys').get(pk=feed_id)
+            offset = feed.total_storys
+            unique_ids = [x['unique_id'] for x in storys]
+            story_objects = {}
+            q = Story.objects.filter(feed_id=feed_id, unique_id__in=unique_ids)
+            for story in q.all():
+                story_objects[story.unique_id] = story
+            new_story_objects = []
+            num_modified = 0
+            now = timezone.now()
+            for data in storys:
+                unique_id = data['unique_id']
+                content_hash_base64 = data['content_hash_base64']
+                is_story_exist = unique_id in story_objects
+                if is_story_exist:
+                    story = story_objects[unique_id]
+                    if not story.is_modified(content_hash_base64):
+                        continue
+                else:
+                    story = Story(feed_id=feed_id, unique_id=unique_id, offset=offset)
+                story.content_hash_base64 = content_hash_base64
+                story.content = data['content']
+                story.summary = data['summary']
+                story.title = data["title"]
+                story.link = data["link"]
+                story.author = data["author"]
+                story.dt_published = data['dt_published']
+                story.dt_updated = data['dt_updated']
+                story.dt_synced = now
+                if is_story_exist:
+                    story.save()
+                else:
+                    story_objects[unique_id] = story
+                    new_story_objects.append(story)
+                    offset += 1
+                num_modified += 1
+            Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
+            feed.total_storys = offset
+            feed.save()
+            return num_modified
+
+    @staticmethod
+    def get_by_offset(feed_id, offset, detail=False):
+        q = Story.objects.filter(feed_id=feed_id, offset=offset)
+        if not detail:
+            q = q.defer(*STORY_DETAIL_FEILDS)
+        return q.get()
+
 
 class UserStory(Model):
     class Meta:
         unique_together = ('user', 'story')
         indexes = [
-            models.Index(fields=["user", "feed", "story"]),
+            models.Index(fields=["user_feed", "offset"]),
+            models.Index(fields=["user", "story"]),
         ]
 
     class Admin:
@@ -71,6 +124,7 @@ class UserStory(Model):
     story = models.ForeignKey(Story, on_delete=models.CASCADE)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     user_feed = models.ForeignKey(UserFeed, on_delete=models.CASCADE)
+    offset = models.IntegerField(help_text="Story在Feed中的位置")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     is_watched = models.BooleanField(default=False)
     dt_watched = models.DateTimeField(**optional, help_text="关注时间")
@@ -85,7 +139,7 @@ class UserStory(Model):
             feed=dict(id=self.user_feed_id),
             dt_created=self.dt_created,
             is_watched=self.is_watched,
-            dt_readed=self.dt_readed,
+            dt_watched=self.dt_watched,
             is_favorited=self.is_favorited,
             dt_favorited=self.dt_favorited
         )
@@ -102,13 +156,42 @@ class UserStory(Model):
         return user_story
 
     @staticmethod
-    def get_by_feed_offset(user_feed_id, offset, user_id=None, detail=False):
+    def get_by_offset(user_feed_id, offset, user_id=None, detail=False):
         q = UserStory.objects.select_related('story')
-        if not detail:
-            q = q.defer(*USER_STORY_DETAIL_FEILDS)
         if user_id is not None:
             q = q.filter(user_id=user_id)
-        user_story = q.get(user_feed_id=user_feed_id, story__offset=offset)
+        if not detail:
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        user_story = q.get(user_feed_id=user_feed_id, offset=offset)
+        return user_story
+
+    @staticmethod
+    def get_story_by_offset(user_feed_id, offset, user_id=None, detail=False):
+        try:
+            user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
+        except UserFeed.DoesNotExist as ex:
+            raise UserStory.DoesNotExist from ex
+        feed_id = user_feed.feed_id
+        try:
+            story = Story.get_by_offset(feed_id, offset)
+        except Story.DoesNotExist as ex:
+            raise UserStory.DoesNotExist from ex
+        return story
+
+    @staticmethod
+    def get_or_create_by_offset(user_feed_id, offset, user_id=None, detail=False):
+        try:
+            user_story = UserStory.get_by_offset(
+                user_feed_id, offset, user_id=user_id, detail=detail)
+        except UserStory.DoesNotExist:
+            user_story = None
+        if not user_story:
+            user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
+            story = Story.get_by_offset(user_feed.feed_id, offset, detail=detail)
+            user_story = UserStory(
+                user_feed=user_feed, story=story, user_id=user_feed.user_id,
+                feed_id=user_feed.feed_id, offset=story.offset)
+            user_story.save()
         return user_story
 
     def update_watched(self, is_watched):

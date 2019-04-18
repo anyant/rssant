@@ -34,6 +34,8 @@ cchardet==2.1.4
 validr==1.1.0
 Click==7.0
 PyYAML==3.13
+Mako==1.0.9
+tqdm==4.31.1
 
 raven==6.10.0
 pyinstrument==3.0.1

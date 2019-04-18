@@ -142,6 +142,40 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+if not IS_CELERY_PROCESS:
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            "rssant": {
+                "format": "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
+            }
+        },
+        'handlers': {
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'rssant'
+            },
+        },
+        'loggers': {
+            'rssant': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+            'rssant_api': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+            'scripts': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+        },
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

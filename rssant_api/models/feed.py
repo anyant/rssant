@@ -1,7 +1,7 @@
 import gzip
 
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, connection
 
 from .exceptions import FeedExistsException
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
@@ -96,6 +96,41 @@ class Feed(Model, ContentHashMixin):
                 dt_synced=self.dt_synced,
             )
         return ret
+
+    @staticmethod
+    def get_first_by_url(url):
+        return Feed.objects.filter(url=url).first()
+
+    @staticmethod
+    def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=100):
+        """
+        outdate_seconds: 正常检查时间间隔
+        timeout_seconds: 异常检查时间间隔
+        """
+        if not timeout_seconds:
+            timeout_seconds = 3 * outdate_seconds
+        now = timezone.now()
+        dt_outdate_before = now - timezone.timedelta(seconds=outdate_seconds)
+        dt_timeout_before = now - timezone.timedelta(seconds=timeout_seconds)
+        statuses = [FeedStatus.READY, FeedStatus.ERROR]
+        sql_check = """
+        SELECT id FROM rssant_api_feed AS feed
+        WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
+        ORDER BY id LIMIT %s
+        """
+        sql_update_status = """
+        UPDATE rssant_api_feed
+        SET status=%s, dt_checked=%s
+        WHERE id=ANY(%s)
+        """
+        params = [statuses, dt_outdate_before, dt_timeout_before, limit]
+        feed_ids = []
+        with connection.cursor() as cursor:
+            cursor.execute(sql_check, params)
+            for feed_id, in cursor.fetchall():
+                feed_ids.append(feed_id)
+            cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
+        return feed_ids
 
 
 class RawFeed(Model, ContentHashMixin):
@@ -207,6 +242,10 @@ class UserFeed(Model):
         return user_feed
 
     @staticmethod
+    def get_first_by_user_and_feed(user_id, feed_id):
+        return UserFeed.objects.filter(user_id=user_id, feed_id=feed_id).first()
+
+    @staticmethod
     def query_by_user(user_id, hints=None, detail=False, show_pending=False):
         """获取用户所有的订阅，支持增量查询
 
@@ -257,6 +296,7 @@ class UserFeed(Model):
             user_feed = UserFeed(user_id=user_id, feed=feed, url=url, status=FeedStatus.READY)
         else:
             user_feed = UserFeed(user_id=user_id, url=url)
+        user_feed.save()
         return user_feed
 
     @staticmethod
@@ -320,6 +360,34 @@ class UserFeed(Model):
         user_feeds = found_user_feeds + user_feed_bulk_creates
         user_feeds = list(sorted(user_feeds, key=lambda x: x.url))
         return user_feeds
+
+    @staticmethod
+    def bulk_set_pending(user_feed_ids):
+        sql_update_status = """
+        UPDATE rssant_api_userfeed
+        SET status=%s, dt_updated=%s
+        WHERE id=ANY(%s)
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql_update_status, [FeedStatus.PENDING, timezone.now(), user_feed_ids])
+
+    @staticmethod
+    def delete_isolated_by_status(status, survival_seconds=None):
+        q = UserFeed.objects.filter(status=status, feed_id__isnull=True)
+        if survival_seconds:
+            deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
+            q = q.filter(dt_created__lt=deadline)
+        num_deleted, __ = q.delete()
+        return num_deleted
+
+    @staticmethod
+    def query_isolated_ids_by_status(status, survival_seconds=None):
+        q = UserFeed.objects.filter(status=status, feed_id__isnull=True)
+        if survival_seconds:
+            deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
+            q = q.filter(dt_created__lt=deadline)
+        user_feed_ids = [x.id for x in q.only('id').all()]
+        return user_feed_ids
 
 
 class FeedUrlMap(Model):

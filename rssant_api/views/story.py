@@ -1,6 +1,9 @@
-from django_rest_validr import RestRouter, T, pagination
+from django.db import transaction
 
-from rssant_api.models import UserStory
+from django_rest_validr import RestRouter, T, pagination
+from rest_framework.response import Response
+
+from rssant_api.models import UserFeed, UserStory
 
 
 StorySchema = T.dict(
@@ -41,12 +44,15 @@ def story_query_by_feed(
 ) -> pagination(StorySchema):
     """Story list"""
     user_feed_id = feed_id
-    total, offset, storys = UserStory.query_storys_by_feed(
-        user_feed_id=user_feed_id, user_id=request.user.id,
-        offset=offset, size=size, detail=detail)
+    try:
+        total, offset, storys = UserStory.query_storys_by_feed(
+            user_feed_id=user_feed_id, user_id=request.user.id,
+            offset=offset, size=size, detail=detail)
+    except UserFeed.DoesNotExist:
+        return Response({"message": "feed does not exist"}, status=400)
     storys = [x.to_dict(detail=detail) for x in storys]
     for x in storys:
-        x.update(feed=dict(id=user_feed_id))
+        x.update(feed=dict(id=user_feed_id), user=request.user)
     return dict(
         total=total,
         size=len(storys),
@@ -54,16 +60,22 @@ def story_query_by_feed(
     )
 
 
-@StoryView.get('story/')
-def story_get_by_feed_offset(
+@StoryView.get('story/<int:feed_id>:<int:offset>')
+def story_get_by_offset(
     request,
     feed_id: T.int,
     offset: T.int.min(0).optional,
     detail: T.bool.default(False),
 ) -> StorySchema:
     """Story detail"""
-    user_story = UserStory.get_by_feed_offset(feed_id, offset, user_id=request.user.id)
-    return user_story.to_dict(detail=detail)
+    try:
+        story = UserStory.get_story_by_offset(
+            feed_id, offset, user_id=request.user.id, detail=detail)
+    except UserStory.DoesNotExist:
+        return Response({"message": "does not exist"}, status=400)
+    story = story.to_dict(detail=detail)
+    story.update(feed=dict(id=feed_id), user=request.user)
+    return story
 
 
 @StoryView.get('story/favorited')
@@ -96,25 +108,27 @@ def story_query_watched(
     )
 
 
-@StoryView.put('story/<int:pk>/watched')
+@StoryView.put('story/<int:feed_id>:<int:offset>/watched')
 def story_set_watched(
     request,
     feed_id: T.int,
     offset: T.int.min(0).optional,
     is_watched: T.bool.default(True),
 ) -> StorySchema:
-    user_story = UserStory.get_by_feed_offset(feed_id, offset, user_id=request.user.id)
-    user_story.update_watched(is_watched)
+    with transaction.atomic():
+        user_story = UserStory.get_or_create_by_offset(feed_id, offset, user_id=request.user.id)
+        user_story.update_watched(is_watched)
     return user_story.to_dict()
 
 
-@StoryView.put('story/<int:pk>/favorited')
+@StoryView.put('story/<int:feed_id>:<int:offset>/favorited')
 def story_set_favorited(
     request,
     feed_id: T.int,
     offset: T.int.min(0).optional,
     is_favorited: T.bool.default(True),
 ) -> StorySchema:
-    user_story = UserStory.get_by_feed_offset(feed_id, offset, user_id=request.user.id)
-    user_story.update_favorited(is_favorited)
+    with transaction.atomic():
+        user_story = UserStory.get_or_create_by_offset(feed_id, offset, user_id=request.user.id)
+        user_story.update_favorited(is_favorited)
     return user_story.to_dict()

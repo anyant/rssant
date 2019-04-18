@@ -3,7 +3,7 @@ import logging
 
 import celery
 from celery import shared_task as task
-from django.db import transaction, connection
+from django.db import transaction
 from django.utils import timezone
 
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
@@ -23,7 +23,7 @@ def find_feed(user_feed_id):
         LOG.info(msg)
         messages.append(msg)
 
-    user_feed = UserFeed.objects.get(pk=user_feed_id)
+    user_feed = UserFeed.get_by_pk(user_feed_id)
     user_feed.status = FeedStatus.UPDATING
     user_feed.save()
     start_url = user_feed.url
@@ -43,28 +43,7 @@ def find_feed(user_feed_id):
 
 @task(name='rssant.tasks.check_feed')
 def check_feed(seconds=300):
-    now = timezone.now()
-    delta = timezone.timedelta(seconds=seconds)
-    dt_before = now - delta  # 正常检查时间间隔
-    dt_timeout_before = now - 3 * delta  # 异常检查时间间隔
-    statuses = [FeedStatus.READY, FeedStatus.ERROR]
-    sql_check = """
-    SELECT id FROM rssant_api_feed AS feed
-    WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
-    ORDER BY id LIMIT 100
-    """
-    sql_update_status = """
-    UPDATE rssant_api_feed
-    SET status=%s, dt_checked=%s
-    WHERE id=ANY(%s)
-    """
-    params = [statuses, dt_before, dt_timeout_before]
-    feed_ids = []
-    with connection.cursor() as cursor:
-        cursor.execute(sql_check, params)
-        for feed_id, in cursor.fetchall():
-            feed_ids.append(feed_id)
-        cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
+    feed_ids = Feed.take_outdated(seconds)
     LOG.info('found {} feeds need sync'.format(len(feed_ids)))
     tasks = [sync_feed.s(feed_id=feed_id) for feed_id in feed_ids]
     celery.group(tasks).apply_async()
@@ -90,7 +69,7 @@ def sync_feed(feed_id):
             _create_raw_feed(feed, status_code, response)
         return default_result
     content_hash_base64 = compute_hash_base64(response.content)
-    if not feed.is_modified(content_hash_base64=content_hash_base64):
+    if not feed.is_modified(content_hash_base64):
         LOG.info(f'feed#{feed_id} url={feed.url} not modified by compare content hash!')
         return default_result
     LOG.info(f'parse feed#{feed_id} url={feed.url}')
@@ -98,9 +77,8 @@ def sync_feed(feed_id):
     if parsed.bozo:
         LOG.warning(f'failed parse feed#{feed_id} url={feed.url}: {parsed.bozo_exception}')
         return default_result
-    with transaction.atomic():
-        num_modified, num_storys = _save_storys(feed, parsed.entries)
-        _save_feed(feed, parsed, content_hash_base64, has_update=num_modified > 0)
+    num_modified, num_storys = _save_storys(feed, parsed.entries)
+    _save_feed(feed, parsed, content_hash_base64, has_update=num_modified > 0)
     if num_modified > 0:
         _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)
     else:
@@ -116,30 +94,18 @@ def sync_feed(feed_id):
 @task(name='rssant.tasks.clean_user_feed')
 def clean_user_feed():
     # 删除所有status=ERROR, 没有feed_id，并且入库时间超过2分钟的订阅
-    q = UserFeed.objects.filter(
-        status=FeedStatus.ERROR,
-        feed_id__isnull=True,
-        dt_created__lt=timezone.now() - timezone.timedelta(seconds=2 * 60)
-    )
-    num_deleted, __ = q.delete()
+    num_deleted = UserFeed.delete_isolated_by_status(
+        FeedStatus.ERROR, survival_seconds=2 * 60)
     LOG.info('delete {} status=ERROR and feed_id is NULL user feeds'.format(num_deleted))
     # 重试 status=UPDATING 超过10分钟的订阅
-    q = UserFeed.objects.filter(
-        status=FeedStatus.UPDATING,
-        feed_id__isnull=True,
-        dt_created__lt=timezone.now() - timezone.timedelta(seconds=10 * 60)
-    )
-    user_feed_ids = [x.id for x in q.only('id').all()]
+    user_feed_ids = UserFeed.query_isolated_ids_by_status(
+        FeedStatus.UPDATING, survival_seconds=10 * 60)
     num_retry_updating = len(user_feed_ids)
     LOG.info('retry {} status=UPDATING and feed_id is NULL user feeds'.format(num_retry_updating))
     _retry_user_feeds(user_feed_ids)
     # 重试 status=PENDING 超过30分钟的订阅
-    q = UserFeed.objects.filter(
-        status=FeedStatus.PENDING,
-        feed_id__isnull=True,
-        dt_created__lt=timezone.now() - timezone.timedelta(seconds=30 * 60)
-    )
-    user_feed_ids = [x.id for x in q.only('id').all()]
+    user_feed_ids = UserFeed.query_isolated_ids_by_status(
+        FeedStatus.PENDING, survival_seconds=30 * 60)
     num_retry_pending = len(user_feed_ids)
     LOG.info('retry {} status=PENDING and feed_id is NULL user feeds'.format(num_retry_pending))
     _retry_user_feeds(user_feed_ids)
@@ -153,14 +119,14 @@ def clean_user_feed():
 @transaction.atomic
 def _save_found(user_feed, parsed):
     url = _get_url(parsed.response)
-    feed = Feed.objects.filter(url=url).first()
+    feed = Feed.get_first_by_url(url)
     if feed is None:
         feed = Feed()
     content_hash_base64 = compute_hash_base64(parsed.response.content)
     _save_feed(feed, parsed, content_hash_base64=content_hash_base64)
     _create_raw_feed(feed, parsed.response.status_code, parsed.response,
                      content_hash_base64=feed.content_hash_base64)
-    user_feed_exists = UserFeed.objects.filter(user_id=user_feed.user_id, feed_id=feed.id).first()
+    user_feed_exists = UserFeed.get_first_by_user_and_feed(user_feed.user_id, feed.id)
     if user_feed_exists:
         LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
             user_feed_exists.id, user_feed.user_id, feed.id
@@ -226,21 +192,11 @@ def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
 
 
 def _save_storys(feed, entries):
-    unique_ids = [_get_story_unique_id(x) for x in entries]
-    storys = {}
-    q = Story.objects.filter(feed_id=feed.id, unique_id__in=unique_ids)
-    for story in q.all():
-        storys[story.unique_id] = story
-    bulk_create_storys = []
-    num_modified = 0
+    storys = []
     now = timezone.now()
     for data in entries:
-        unique_id = shorten(_get_story_unique_id(data), 200)
-        is_story_exist = unique_id in storys
-        if is_story_exist:
-            story = storys[unique_id]
-        else:
-            story = Story(feed=feed, unique_id=unique_id)
+        story = {}
+        story['unique_id'] = shorten(_get_story_unique_id(data), 200)
         content = ''
         if data["content"]:
             content = "\n<br/>\n".join([x["value"] for x in data["content"]])
@@ -248,34 +204,23 @@ def _save_storys(feed, entries):
             content = data["description"]
         if not content:
             content = data["summary"]
+        story['content'] = content
         summary = data["summary"]
         if not summary:
             summary = content
         summary = shorten(summary, width=300)
-        story.content = content
-        story.summary = summary
-        story.title = shorten(data["title"], 200)
-        story.link = unquote(data["link"])
-        story.author = shorten(data["author"], 200)
-        story.dt_published = _get_dt_published(data)
-        story.dt_updated = _get_dt_updated(data, now)
-        story.dt_synced = now
-        content_hash_base64 = compute_hash_base64(content, summary, story.title)
-        if is_story_exist:
-            if story.is_modified(content_hash_base64=content_hash_base64):
-                num_modified += 1
-                story.content_hash_base64 = content_hash_base64
-                story.save()
-            else:
-                msg = (f"story#{story.id} feed_id={story.feed_id} link={story.link} "
-                       f"not modified by compare content, summary and title!")
-                LOG.info(msg)
-        else:
-            num_modified += 1
-            story.content_hash_base64 = content_hash_base64
-            storys[unique_id] = story
-            bulk_create_storys.append(story)
-    Story.objects.bulk_create(bulk_create_storys, batch_size=100)
+        story['summary'] = summary
+        title = shorten(data["title"], 200)
+        content_hash_base64 = compute_hash_base64(content, summary, title)
+        story['title'] = title
+        story['content_hash_base64'] = content_hash_base64
+        story['link'] = unquote(data["link"])
+        story['author'] = shorten(data["author"], 200)
+        story['dt_published'] = _get_dt_published(data)
+        story['dt_updated'] = _get_dt_updated(data, now)
+        storys.append(story)
+    num_modified = Story.bulk_save_by_feed(feed.id, storys)
+    LOG.info('feed#%s save storys total=%s num_modified=%s', feed.id, len(storys), num_modified)
     return num_modified, len(storys)
 
 
@@ -320,14 +265,8 @@ def _read_response(feed):
 
 
 def _retry_user_feeds(user_feed_ids):
-    sql_update_status = """
-    UPDATE rssant_api_userfeed
-    SET status=%s, dt_created=%s
-    WHERE id=ANY(%s)
-    """
     tasks = []
     for user_feed_id in user_feed_ids:
         tasks.append(find_feed.s(user_feed_id))
-    with connection.cursor() as cursor:
-        cursor.execute(sql_update_status, [FeedStatus.PENDING, timezone.now(), user_feed_ids])
+    UserFeed.bulk_set_pending(user_feed_ids)
     celery.group(tasks).apply_async()

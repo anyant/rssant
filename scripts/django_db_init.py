@@ -1,25 +1,16 @@
-#!/usr/bin/env python
-import os
-import sys
-sys.path.insert(0, os.getcwd())
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-
-import django  # noqa: E402
-django.setup()
-
-from allauth.socialaccount.models import SocialApp  # noqa: E402
-from django.contrib.auth import get_user_model  # noqa: E402
-from django.contrib.sites.models import Site  # noqa: E402
-from django.conf import settings  # noqa: E402
-import django.db  # noqa: E402
-from django.db import connection  # noqa: E402
-from allauth.socialaccount.providers.github.provider import GitHubProvider  # noqa: E402
+import django.db
+from django.db import connection
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sites.models import Site
+from allauth.socialaccount.models import SocialApp
+from allauth.socialaccount.providers.github.provider import GitHubProvider
 
 
 User = get_user_model()
 
 
-def main():
+def run():
     # create postgres extension
     with connection.cursor() as cursor:
         try:
@@ -42,7 +33,3 @@ def main():
     social_app.save()
     social_app.sites.add(site)
     social_app.save()
-
-
-if __name__ == "__main__":
-    main()

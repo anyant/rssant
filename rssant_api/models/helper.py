@@ -44,13 +44,12 @@ class ContentHashMixin(models.Model):
     content_hash_base64 = models.CharField(
         max_length=200, **optional, help_text='base64 hash value of content')
 
-    def is_modified(self, *fields, content_hash_base64=None):
-        if content_hash_base64:
+    def is_modified(self, content_hash_base64=None, fields=None):
+        if content_hash_base64 is None and fields:
+            content_hash_base64 = compute_hash_base64(*fields)
+        if content_hash_base64 is not None:
             return content_hash_base64 != self.content_hash_base64
-        if not self.content_hash_base64:
-            return True
-        content_hash_base64 = compute_hash_base64(*fields)
-        return content_hash_base64 != self.content_hash_base64
+        return True
 
 
 __all__ = (
