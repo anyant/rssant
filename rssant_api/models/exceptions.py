@@ -1,4 +1,4 @@
-class RssantModelException:
+class RssantModelException(Exception):
     """Base exception for rssant API models"""
 
 

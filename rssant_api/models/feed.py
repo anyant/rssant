@@ -197,6 +197,7 @@ class UserFeed(Model):
     url = models.TextField(help_text="用户输入的供稿地址")
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     story_offset = models.IntegerField(**optional, default=0, help_text="story offset")
+    is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
@@ -252,20 +253,24 @@ class UserFeed(Model):
         hints: T.list(T.dict(id=T.int, dt_updated=T.datetime))
         """
         q = UserFeed.objects.filter(user_id=user_id)
-        if not show_pending:
-            q = q.exclude(status=FeedStatus.PENDING)
         if not hints:
             q = q.select_related('feed')
             if not detail:
                 q = q.defer(*FEED_DETAIL_FIELDS)
             user_feeds = list(q.all())
-            return len(user_feeds), user_feeds
+            return len(user_feeds), user_feeds, []
         hints = {x['id']: x['dt_updated'] for x in hints}
         q = q.only("id", "dt_updated")
+        user_feeds_map = {}
+        for user_feed in q.all():
+            user_feeds_map[user_feed.id] = user_feed
+        total = len(user_feeds_map)
+        deteted_ids = []
+        for user_feed_id in hints:
+            if user_feed_id not in user_feeds_map:
+                deteted_ids.append(user_feed_id)
         updates = []
-        user_feeds = list(q.all())
-        total = len(user_feeds)
-        for user_feed in user_feeds:
+        for user_feed in user_feeds_map.values():
             if user_feed.id not in hints or not user_feed.dt_updated:
                 updates.append(user_feed.id)
             elif user_feed.dt_updated > hints[user_feed.id]:
@@ -281,7 +286,7 @@ class UserFeed(Model):
             for user_feed in user_feeds:
                 user_feed.sync_dt_updated()
         user_feeds = list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
-        return total, user_feeds
+        return total, user_feeds, deteted_ids
 
     @staticmethod
     def create_by_url(url, user_id):
@@ -315,7 +320,7 @@ class UserFeed(Model):
         self.save()
 
     @staticmethod
-    def set_user_all_readed(user_id) -> int:
+    def set_all_readed_by_user(user_id) -> int:
         q = UserFeed.objects.select_related('feed')\
             .filter(user_id=user_id)\
             .only('id', 'story_offset', 'feed_id', 'feed__total_storys')
@@ -331,7 +336,7 @@ class UserFeed(Model):
         return len(updates)
 
     @staticmethod
-    def create_by_url_s(urls, user_id, batch_size=500):
+    def create_by_url_s(urls, user_id, batch_size=500, is_from_bookmark=False):
         # 批量预查询，减少SQL查询数量，显著提高性能
         if not urls:
             return []
@@ -354,7 +359,7 @@ class UserFeed(Model):
                 user_feed = UserFeed(user_id=user_id, feed=feed, url=url, status=FeedStatus.READY)
                 user_feed_bulk_creates.append(user_feed)
             else:
-                user_feed = UserFeed(user_id=user_id, url=url)
+                user_feed = UserFeed(user_id=user_id, url=url, is_from_bookmark=is_from_bookmark)
                 user_feed_bulk_creates.append(user_feed)
         UserFeed.objects.bulk_create(user_feed_bulk_creates, batch_size=batch_size)
         user_feeds = found_user_feeds + user_feed_bulk_creates

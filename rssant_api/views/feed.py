@@ -66,14 +66,23 @@ def feed_query(
     request,
     hints: T.list(T.dict(id = T.int, dt_updated = T.datetime.object)).optional,
     detail: T.bool.default(False)
-) -> pagination(FeedSchema):
+) -> T.dict(
+    total=T.int.optional,
+    size=T.int.optional,
+    results=T.list(FeedSchema),
+    deleted_size=T.int.optional,
+    deleted_ids=T.list(T.int),
+):
     """Feed query"""
-    total, user_feeds = UserFeed.query_by_user(user_id=request.user, hints=hints, detail=detail)
+    total, user_feeds, deleted_ids = UserFeed.query_by_user(
+        user_id=request.user, hints=hints, detail=detail)
     user_feeds = [x.to_dict(detail=detail) for x in user_feeds]
     return dict(
         total=total,
         size=len(user_feeds),
         results=user_feeds,
+        deleted_size=len(deleted_ids),
+        deleted_ids=deleted_ids,
     )
 
 
@@ -113,7 +122,7 @@ def feed_set_readed(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSc
 
 @FeedView.put('feed/all/readed')
 def feed_set_all_readed(request) -> T.dict(num_updated=T.int):
-    num_updated = UserFeed.set_user_all_readed(user_id=request.user.id)
+    num_updated = UserFeed.set_all_readed_by_user(user_id=request.user.id)
     return dict(num_updated=num_updated)
 
 
@@ -132,7 +141,7 @@ def _read_request_file(request, name='file'):
     return text
 
 
-def _create_feeds_by_urls(user, urls):
+def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
     user_feeds = UserFeed.create_by_url_s(urls, user_id=user.id)
     readys = []
     find_feed_tasks = []
@@ -184,7 +193,7 @@ def feed_import_bookmark(request) -> pagination(FeedSchema, maxlen=5000):
     """import feeds from bookmark file"""
     text = _read_request_file(request)
     urls = parse_bookmark(text)
-    user_feeds, readys = _create_feeds_by_urls(request.user, urls)
+    user_feeds, readys = _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)
     readys = [x.to_dict() for x in readys]
     return dict(
         total=len(user_feeds),

@@ -30,8 +30,11 @@ def find_feed(user_feed_id):
     finder = FeedFinder(start_url, message_handler=message_handler)
     found = finder.find()
     if not found:
-        user_feed.status = FeedStatus.ERROR
-        user_feed.save()
+        if user_feed.is_from_bookmark:
+            user_feed.delete()
+        else:
+            user_feed.status = FeedStatus.ERROR
+            user_feed.save()
     else:
         _save_found(user_feed, found)
     return {
@@ -139,8 +142,11 @@ def _save_found(user_feed, parsed):
         user_feed.feed = feed
         user_feed.save()
     _save_storys(feed, parsed.entries)
-    url_map = FeedUrlMap(source=user_feed.url, target=feed.url)
-    url_map.save()
+    FeedUrlMap(source=user_feed.url, target=feed.url).save()
+    if feed.link != user_feed.url:
+        FeedUrlMap(source=feed.link, target=feed.url).save()
+    if feed.url != user_feed.url:
+        FeedUrlMap(source=feed.url, target=feed.url).save()
 
 
 def _create_raw_feed(feed, status_code, response, content_hash_base64=None):
