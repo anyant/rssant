@@ -78,6 +78,7 @@ def sync_feed(feed_id):
         LOG.warning(f'failed parse feed#{feed_id} url={feed.url}: {parsed.bozo_exception}')
         return default_result
     num_modified, num_storys = _save_storys(feed, parsed.entries)
+    feed.refresh_from_db()
     _save_feed(feed, parsed, content_hash_base64, has_update=num_modified > 0)
     if num_modified > 0:
         _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)

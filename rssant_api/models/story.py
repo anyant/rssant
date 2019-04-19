@@ -79,6 +79,9 @@ class Story(Model, ContentHashMixin):
                         continue
                 else:
                     story = Story(feed_id=feed_id, unique_id=unique_id, offset=offset)
+                    story_objects[unique_id] = story
+                    new_story_objects.append(story)
+                    offset += 1
                 story.content_hash_base64 = content_hash_base64
                 story.content = data['content']
                 story.summary = data['summary']
@@ -90,10 +93,6 @@ class Story(Model, ContentHashMixin):
                 story.dt_synced = now
                 if is_story_exist:
                     story.save()
-                else:
-                    story_objects[unique_id] = story
-                    new_story_objects.append(story)
-                    offset += 1
                 num_modified += 1
             Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
             feed.total_storys = offset
