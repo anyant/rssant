@@ -121,8 +121,8 @@ def feed_set_readed(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSc
 
 
 @FeedView.put('feed/all/readed')
-def feed_set_all_readed(request) -> T.dict(num_updated=T.int):
-    num_updated = UserFeed.set_all_readed_by_user(user_id=request.user.id)
+def feed_set_all_readed(request, ids: T.list(T.int).optional) -> T.dict(num_updated=T.int):
+    num_updated = UserFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
     return dict(num_updated=num_updated)
 
 

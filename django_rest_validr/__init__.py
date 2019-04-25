@@ -1,4 +1,5 @@
 import inspect
+import time
 import itertools
 from collections import ChainMap
 
@@ -110,22 +111,36 @@ class RestRouter:
     @staticmethod
     def _make_method(method, f, params, returns):
         def rest_method(self, request, format=None, **kwargs):
+            ret = None
+            validr_cost = 0
             if params is not None:
                 maps = [kwargs]
                 if request.method in ['GET', 'DELETE']:
                     maps.append(request.query_params)
                 else:
                     maps.append(request.data)
+                t_begin = time.time()
                 try:
                     kwargs = params(ChainMap(*maps))
                 except Invalid as ex:
-                    return Response({'message': str(ex)}, status=400)
-            ret = f(request, **kwargs)
+                    ret = Response({'message': str(ex)}, status=400)
+                validr_cost += time.time() - t_begin
+            t_begin = time.time()
+            if ret is None:
+                ret = f(request, **kwargs)
+            api_cost = time.time() - t_begin
             if returns is not None:
                 if not isinstance(ret, (Response, HttpResponse)):
-                    ret = Response(returns(ret))
+                    t_begin = time.time()
+                    ret = returns(ret)
+                    validr_cost += time.time() - t_begin
+                    ret = Response(ret)
             elif ret is None:
                 ret = Response(status=204)
+            if validr_cost > 0:
+                ret['X-Validr-Time'] = '{:.0f}ms'.format(validr_cost * 1000)
+            if api_cost > 0:
+                ret['X-API-Time'] = '{:.0f}ms'.format(api_cost * 1000)
             return ret
         rest_method.__name__ = method.lower()
         rest_method.__qualname__ = method.lower()

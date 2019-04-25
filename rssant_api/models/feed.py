@@ -80,13 +80,13 @@ class Feed(Model, ContentHashMixin):
             author=self.author,
             icon=self.icon,
             version=self.version,
+            total_storys=self.total_storys,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
         )
         if detail:
             ret.update(
                 description=self.description,
-                total_storys=self.total_storys,
                 encoding=self.encoding,
                 etag=self.etag,
                 last_modified=self.last_modified,
@@ -204,9 +204,8 @@ class UserFeed(Model):
     def to_dict(self, detail=False):
         if self.feed_id:
             ret = self.feed.to_dict(detail=detail)
-            if detail:
-                num_unread_storys = self.feed.total_storys - self.story_offset
-                ret.update(num_unread_storys=num_unread_storys)
+            num_unread_storys = self.feed.total_storys - self.story_offset
+            ret.update(num_unread_storys=num_unread_storys)
         else:
             ret = dict(url=self.url, dt_updated=self.dt_updated)
         ret.update(
@@ -224,9 +223,10 @@ class UserFeed(Model):
         return ret
 
     def sync_dt_updated(self):
-        if self.feed_id and self.feed.dt_updated != self.dt_updated:
-            self.dt_updated = self.feed.dt_updated
-            self.save()
+        if self.feed_id and self.feed.dt_updated:
+            if (not self.dt_updated) or self.feed.dt_updated > self.dt_updated:
+                self.dt_updated = self.feed.dt_updated
+                self.save()
 
     @property
     def is_ready(self):
@@ -252,15 +252,26 @@ class UserFeed(Model):
 
         hints: T.list(T.dict(id=T.int, dt_updated=T.datetime))
         """
-        q = UserFeed.objects.filter(user_id=user_id)
+
+        def sync_user_feeds_dt_updated(user_feeds):
+            with transaction.atomic():
+                for user_feed in user_feeds:
+                    user_feed.sync_dt_updated()
+
+        def sort_user_feeds(user_feeds):
+            return list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
+
+        q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
         if not hints:
-            q = q.select_related('feed')
             if not detail:
                 q = q.defer(*FEED_DETAIL_FIELDS)
             user_feeds = list(q.all())
+            sync_user_feeds_dt_updated(user_feeds)
+            user_feeds = sort_user_feeds(user_feeds)
             return len(user_feeds), user_feeds, []
+
         hints = {x['id']: x['dt_updated'] for x in hints}
-        q = q.only("id", "dt_updated")
+        q = q.only("id", 'feed_id', 'feed__dt_updated')
         user_feeds_map = {}
         for user_feed in q.all():
             user_feeds_map[user_feed.id] = user_feed
@@ -271,9 +282,10 @@ class UserFeed(Model):
                 deteted_ids.append(user_feed_id)
         updates = []
         for user_feed in user_feeds_map.values():
-            if user_feed.id not in hints or not user_feed.dt_updated:
+            dt_updated = user_feed.feed.dt_updated
+            if user_feed.id not in hints or not dt_updated:
                 updates.append(user_feed.id)
-            elif user_feed.dt_updated > hints[user_feed.id]:
+            elif dt_updated > hints[user_feed.id]:
                 updates.append(user_feed.id)
         q = UserFeed.objects.filter(user_id=user_id, id__in=updates)
         if not show_pending:
@@ -282,10 +294,8 @@ class UserFeed(Model):
         if not detail:
             q = q.defer(*FEED_DETAIL_FIELDS)
         user_feeds = list(q.all())
-        with transaction.atomic():
-            for user_feed in user_feeds:
-                user_feed.sync_dt_updated()
-        user_feeds = list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
+        sync_user_feeds_dt_updated(user_feeds)
+        user_feeds = sort_user_feeds(user_feeds)
         return total, user_feeds, deteted_ids
 
     @staticmethod
@@ -320,9 +330,13 @@ class UserFeed(Model):
         self.save()
 
     @staticmethod
-    def set_all_readed_by_user(user_id) -> int:
-        q = UserFeed.objects.select_related('feed')\
-            .filter(user_id=user_id)\
+    def set_all_readed_by_user(user_id, ids=None) -> int:
+        if ids is not None and not ids:
+            return 0
+        q = UserFeed.objects.filter(user_id=user_id)
+        if ids is not None:
+            q = q.filter(id__in=ids)
+        q = q.select_related('feed')\
             .only('id', 'story_offset', 'feed_id', 'feed__total_storys')
         updates = []
         for user_feed in q.all():
