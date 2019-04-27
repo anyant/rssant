@@ -1,5 +1,7 @@
 from django.utils import timezone
-from django.db import transaction
+from django.db import transaction, connection
+from django.db.models import F
+from html2text import HTML2Text
 
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
@@ -7,6 +9,12 @@ from .feed import Feed, UserFeed
 
 STORY_DETAIL_FEILDS = ['summary', 'content']
 USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
+
+
+def convert_summary(summary):
+    h = HTML2Text()
+    h.ignore_links = True
+    return h.handle(summary or "")
 
 
 class Story(Model, ContentHashMixin):
@@ -51,7 +59,7 @@ class Story(Model, ContentHashMixin):
         )
         if detail:
             ret.update(
-                summary=self.summary,
+                summary=convert_summary(self.summary),
                 content=self.content,
             )
         return ret
@@ -105,6 +113,35 @@ class Story(Model, ContentHashMixin):
         if not detail:
             q = q.defer(*STORY_DETAIL_FEILDS)
         return q.get()
+
+    @staticmethod
+    def query_dt_first_story_published(feed_ids):
+        if not feed_ids:
+            return {}
+        q = Story.objects.filter(feed_id__in=feed_ids, offset=0)\
+            .only('id', 'feed_id', 'dt_published')
+        date_maps = {}
+        for story in q.all():
+            date_maps[story.feed_id] = story.dt_published
+        return date_maps
+
+    @staticmethod
+    def query_dt_last_story_published(feed_ids):
+        if not feed_ids:
+            return {}
+        sql = """
+        SELECT feed_id, story.dt_updated AS dt_published
+        FROM rssant_api_feed AS feed
+        JOIN rssant_api_story AS story
+            ON story.feed_id=feed.id AND story.offset=(feed.total_storys-1)
+        WHERE feed_id=ANY(%s)
+        """
+        date_maps = {}
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [feed_ids])
+            for feed_id, dt_published in cursor.fetchall():
+                date_maps[feed_id] = dt_published
+        return date_maps
 
 
 class UserStory(Model):
