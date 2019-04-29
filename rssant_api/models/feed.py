@@ -69,7 +69,16 @@ class Feed(Model, ContentHashMixin):
     content_length = models.IntegerField(
         **optional, help_text='length of content')
     # 其他
-    total_storys = models.IntegerField(**optional, default=0, help_text="Total storys")
+    total_storys = models.IntegerField(
+        **optional, default=0, help_text="Number of total storys")
+    story_publish_period = models.IntegerField(
+        **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
+    offset_early_story = models.IntegerField(
+        **optional, help_text="最老或18个月前发布的story的offset")
+    dt_early_story_published = models.DateTimeField(
+        **optional, help_text="最老或18个月前发布的story的发布时间")
+    dt_latest_story_published = models.DateTimeField(
+        **optional, help_text="最新的story发布时间")
 
     def to_dict(self, detail=False):
         ret = dict(
@@ -83,6 +92,10 @@ class Feed(Model, ContentHashMixin):
             total_storys=self.total_storys,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
+            story_publish_period=self.story_publish_period,
+            offset_early_story=self.offset_early_story,
+            dt_early_story_published=self.dt_early_story_published,
+            dt_latest_story_published=self.dt_latest_story_published,
         )
         if detail:
             ret.update(
@@ -206,6 +219,8 @@ class UserFeed(Model):
             ret = self.feed.to_dict(detail=detail)
             num_unread_storys = self.feed.total_storys - self.story_offset
             ret.update(num_unread_storys=num_unread_storys)
+            if self.dt_updated and self.feed.dt_updated and self.dt_updated > self.feed.dt_updated:
+                ret.update(dt_updated=self.dt_updated)
         else:
             ret = dict(url=self.url, dt_updated=self.dt_updated)
         ret.update(
@@ -214,19 +229,11 @@ class UserFeed(Model):
             dt_created=self.dt_created,
             story_offset=self.story_offset,
         )
-        if self.dt_updated:
-            ret.update(dt_updated=self.dt_updated)
         if self.title:
             ret.update(title=self.title)
         if self.status and self.status != FeedStatus.READY:
             ret.update(status=self.status)
         return ret
-
-    def sync_dt_updated(self):
-        if self.feed_id and self.feed.dt_updated:
-            if (not self.dt_updated) or self.feed.dt_updated > self.dt_updated:
-                self.dt_updated = self.feed.dt_updated
-                self.save()
 
     @property
     def is_ready(self):
@@ -243,6 +250,16 @@ class UserFeed(Model):
         return user_feed
 
     @staticmethod
+    def query_by_pk_s(pks, user_id=None, detail=False):
+        q = UserFeed.objects.select_related('feed')
+        if not detail:
+            q = q.defer(*FEED_DETAIL_FIELDS)
+        if user_id is not None:
+            q = q.filter(user_id=user_id)
+        user_feeds = q.filter(pk__in=pks)
+        return user_feeds
+
+    @staticmethod
     def get_first_by_user_and_feed(user_id, feed_id):
         return UserFeed.objects.filter(user_id=user_id, feed_id=feed_id).first()
 
@@ -253,11 +270,6 @@ class UserFeed(Model):
         hints: T.list(T.dict(id=T.int, dt_updated=T.datetime))
         """
 
-        def sync_user_feeds_dt_updated(user_feeds):
-            with transaction.atomic():
-                for user_feed in user_feeds:
-                    user_feed.sync_dt_updated()
-
         def sort_user_feeds(user_feeds):
             return list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
 
@@ -266,7 +278,6 @@ class UserFeed(Model):
             if not detail:
                 q = q.defer(*FEED_DETAIL_FIELDS)
             user_feeds = list(q.all())
-            sync_user_feeds_dt_updated(user_feeds)
             user_feeds = sort_user_feeds(user_feeds)
             return len(user_feeds), user_feeds, []
 
@@ -294,7 +305,6 @@ class UserFeed(Model):
         if not detail:
             q = q.defer(*FEED_DETAIL_FIELDS)
         user_feeds = list(q.all())
-        sync_user_feeds_dt_updated(user_feeds)
         user_feeds = sort_user_feeds(user_feeds)
         return total, user_feeds, deteted_ids
 

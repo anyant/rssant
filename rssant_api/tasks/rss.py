@@ -223,7 +223,7 @@ def _save_storys(feed, entries):
         story['content_hash_base64'] = content_hash_base64
         story['link'] = unquote(data["link"])
         story['author'] = shorten(data["author"], 200)
-        story['dt_published'] = _get_dt_published(data)
+        story['dt_published'] = _get_dt_published(data, now)
         story['dt_updated'] = _get_dt_updated(data, now)
         storys.append(story)
     num_modified = Story.bulk_save_by_feed(feed.id, storys)

@@ -60,6 +60,29 @@ def story_query_by_feed(
     )
 
 
+@StoryView.post('story/recent')
+def story_query_recent_by_feed_s(
+    request,
+    feed_ids: T.list(T.int),
+    days: T.int.min(1).max(30).default(14),
+    detail: T.bool.default(False),
+) -> pagination(StorySchema):
+    user_feed_ids = feed_ids
+    storys, feed_id_map = UserStory.query_recent_storys_by_feed_s(
+        user_feed_ids=user_feed_ids, user_id=request.user.id,
+        days=days, detail=detail)
+    story_dicts = []
+    for story in storys:
+        d = story.to_dict(detail=detail)
+        d.update(feed=dict(id=feed_id_map[story.feed_id]), user=request.user)
+        story_dicts.append(d)
+    return dict(
+        total=len(story_dicts),
+        size=len(story_dicts),
+        results=story_dicts,
+    )
+
+
 @StoryView.get('story/<int:feed_id>:<int:offset>')
 def story_get_by_offset(
     request,

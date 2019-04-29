@@ -13,7 +13,7 @@ from mako.template import Template
 from rssant_feedlib.opml import parse_opml
 from rssant_feedlib.bookmark import parse_bookmark
 from rssant_api.models.exceptions import FeedExistsException
-from rssant_api.models import UserFeed, Story
+from rssant_api.models import UserFeed
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
 
@@ -47,8 +47,10 @@ FeedSchema = T.dict(
     etag=T.str.optional,
     last_modified=T.str.optional,
     content_hash_base64=T.str.optional,
-    dt_first_story_published=T.datetime.object.optional,
-    dt_last_story_published=T.datetime.object.optional,
+    story_publish_period=T.int.min(0).optional,
+    offset_early_story=T.int.min(0).optional,
+    dt_early_story_published=T.datetime.object.optional,
+    dt_latest_story_published=T.datetime.object.optional,
 )
 
 FeedView = RestRouter()
@@ -78,17 +80,7 @@ def feed_query(
     """Feed query"""
     total, user_feeds, deleted_ids = UserFeed.query_by_user(
         user_id=request.user, hints=hints, detail=detail)
-    feed_ids = [x.feed_id for x in user_feeds]
-    dt_first_story_published_maps = Story.query_dt_first_story_published(feed_ids)
-    dt_last_story_published_maps = Story.query_dt_last_story_published(feed_ids)
-    user_feed_dicts = []
-    for x in user_feeds:
-        d = x.to_dict(detail=detail)
-        dt_first_story_published = dt_first_story_published_maps.get(x.feed_id)
-        d.update(dt_first_story_published=dt_first_story_published)
-        dt_last_story_published = dt_last_story_published_maps.get(x.feed_id)
-        d.update(dt_last_story_published=dt_last_story_published)
-        user_feed_dicts.append(d)
+    user_feed_dicts = [x.to_dict(detail=detail) for x in user_feeds]
     return dict(
         total=total,
         size=len(user_feed_dicts),

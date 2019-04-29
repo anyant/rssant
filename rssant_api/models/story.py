@@ -1,11 +1,11 @@
 from django.utils import timezone
-from django.db import transaction, connection
-from django.db.models import F
+from django.db import transaction
 from html2text import HTML2Text
 
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
 
+MONTH_18 = timezone.timedelta(days=18 * 30)
 
 STORY_DETAIL_FEILDS = ['summary', 'content']
 USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
@@ -27,6 +27,7 @@ class Story(Model, ContentHashMixin):
         )
         indexes = [
             models.Index(fields=["feed", "offset"]),
+            models.Index(fields=["feed", "dt_published"]),
             models.Index(fields=["feed", "unique_id"]),
         ]
 
@@ -36,10 +37,10 @@ class Story(Model, ContentHashMixin):
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     offset = models.IntegerField(help_text="Story在Feed中的位置")
     unique_id = models.CharField(max_length=200, help_text="Unique ID")
-    title = models.CharField(max_length=200, **optional, help_text="标题")
-    link = models.TextField(**optional, help_text="文章链接")
+    title = models.CharField(max_length=200, help_text="标题")
+    link = models.TextField(help_text="文章链接")
     author = models.CharField(max_length=200, **optional, help_text='作者')
-    dt_published = models.DateTimeField(**optional, help_text="发布时间")
+    dt_published = models.DateTimeField(help_text="发布时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_synced = models.DateTimeField(**optional, help_text="最近一次同步时间")
@@ -65,7 +66,18 @@ class Story(Model, ContentHashMixin):
         return ret
 
     @staticmethod
+    def get_by_offset(feed_id, offset, detail=False):
+        q = Story.objects.filter(feed_id=feed_id, offset=offset)
+        if not detail:
+            q = q.defer(*STORY_DETAIL_FEILDS)
+        return q.get()
+
+    @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100):
+        if not storys:
+            return 0
+        # 先排序，分配offset时保证offset和dt_published顺序一致
+        storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
         with transaction.atomic():
             feed = Feed.objects.select_for_update().only('id', 'total_storys').get(pk=feed_id)
             offset = feed.total_storys
@@ -96,52 +108,59 @@ class Story(Model, ContentHashMixin):
                 story.title = data["title"]
                 story.link = data["link"]
                 story.author = data["author"]
-                story.dt_published = data['dt_published']
+                # 发布时间只第一次赋值，不更新
+                if not story.dt_published:
+                    story.dt_published = data['dt_published']
                 story.dt_updated = data['dt_updated']
                 story.dt_synced = now
                 if is_story_exist:
                     story.save()
                 num_modified += 1
-            Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
-            feed.total_storys = offset
-            feed.save()
+            if new_story_objects:
+                Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
+                Story._update_feed_story_publish_period(
+                    feed, total_storys=offset, latest_story=new_story_objects[-1])
             return num_modified
 
     @staticmethod
-    def get_by_offset(feed_id, offset, detail=False):
-        q = Story.objects.filter(feed_id=feed_id, offset=offset)
-        if not detail:
-            q = q.defer(*STORY_DETAIL_FEILDS)
-        return q.get()
+    def _update_feed_story_publish_period(feed, total_storys, latest_story):
+        feed.total_storys = total_storys
+        dt_latest_story_published = latest_story.dt_published
+        feed.dt_latest_story_published = dt_latest_story_published
+        dt_18_months_ago = dt_latest_story_published - MONTH_18
+        early_story = Story.objects\
+            .only('id', 'offset', 'dt_published')\
+            .filter(feed_id=feed.id, dt_published__lte=dt_18_months_ago)\
+            .order_by('-dt_published')\
+            .first()
+        if not early_story:
+            early_story = Story.objects\
+                .only('id', 'offset', 'dt_published')\
+                .filter(feed_id=feed.id, offset=0)\
+                .first()
+        if early_story:
+            offset_early_story = early_story.offset
+            dt_early_story_published = early_story.dt_published
+            dt_published_days = (dt_latest_story_published - dt_early_story_published).days
+            num_published_storys = total_storys - offset_early_story
+            assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
+            story_publish_period = int(max(dt_published_days, 7) / num_published_storys)
+            feed.offset_early_story = offset_early_story
+            feed.dt_early_story_published = dt_early_story_published
+            feed.story_publish_period = story_publish_period
+        feed.save()
 
     @staticmethod
-    def query_dt_first_story_published(feed_ids):
-        if not feed_ids:
-            return {}
-        q = Story.objects.filter(feed_id__in=feed_ids, offset=0)\
-            .only('id', 'feed_id', 'dt_published')
-        date_maps = {}
-        for story in q.all():
-            date_maps[story.feed_id] = story.dt_published
-        return date_maps
-
-    @staticmethod
-    def query_dt_last_story_published(feed_ids):
-        if not feed_ids:
-            return {}
-        sql = """
-        SELECT feed_id, story.dt_updated AS dt_published
-        FROM rssant_api_feed AS feed
-        JOIN rssant_api_story AS story
-            ON story.feed_id=feed.id AND story.offset=(feed.total_storys-1)
-        WHERE feed_id=ANY(%s)
-        """
-        date_maps = {}
-        with connection.cursor() as cursor:
-            cursor.execute(sql, [feed_ids])
-            for feed_id, dt_published in cursor.fetchall():
-                date_maps[feed_id] = dt_published
-        return date_maps
+    def update_feed_story_publish_period(feed_id):
+        with transaction.atomic():
+            feed = Feed.objects.select_for_update().only('id', 'total_storys').get(pk=feed_id)
+            if feed.total_storys <= 0:
+                return
+            latest_story = Story.objects\
+                .only('id', 'offset', 'dt_published')\
+                .get(feed_id=feed.id, offset=feed.total_storys - 1)
+            Story._update_feed_story_publish_period(
+                feed, total_storys=feed.total_storys, latest_story=latest_story)
 
 
 class UserStory(Model):
@@ -256,6 +275,18 @@ class UserStory(Model):
         q = q.order_by('offset')[:size]
         storys = list(q.all())
         return total, offset, storys
+
+    @staticmethod
+    def query_recent_storys_by_feed_s(user_feed_ids, days=14, user_id=None, detail=False):
+        user_feeds = UserFeed.query_by_pk_s(user_feed_ids, user_id=user_id)
+        feed_id_map = {x.feed_id: x.id for x in user_feeds}
+        dt_begin = timezone.now() - timezone.timedelta(days=days)
+        q = Story.objects.filter(feed_id__in=list(feed_id_map))\
+            .filter(dt_published__gte=dt_begin)
+        if not detail:
+            q = q.defer(*STORY_DETAIL_FEILDS)
+        storys = list(q.order_by('dt_published').all())
+        return storys, feed_id_map
 
     @staticmethod
     def query_by_user(user_id, is_watched=None, is_favorited=None, detail=False):
