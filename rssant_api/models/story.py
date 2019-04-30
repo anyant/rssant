@@ -144,7 +144,7 @@ class Story(Model, ContentHashMixin):
             dt_published_days = (dt_latest_story_published - dt_early_story_published).days
             num_published_storys = total_storys - offset_early_story
             assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
-            story_publish_period = int(max(dt_published_days, 7) / num_published_storys)
+            story_publish_period = round(max(dt_published_days, 7) / num_published_storys)
             feed.offset_early_story = offset_early_story
             feed.dt_early_story_published = dt_early_story_published
             feed.story_publish_period = story_publish_period
