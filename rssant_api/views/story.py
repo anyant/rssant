@@ -83,7 +83,7 @@ def story_query_recent_by_feed_s(
     )
 
 
-@StoryView.get('story/<int:feed_id>:<int:offset>')
+@StoryView.get('story/<int:feed_id>-<int:offset>')
 def story_get_by_offset(
     request,
     feed_id: T.int,

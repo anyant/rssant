@@ -295,7 +295,11 @@ class UserFeed(Model):
                 deteted_ids.append(user_feed_id)
         updates = []
         for user_feed in user_feeds_map.values():
-            dt_updated = user_feed.feed.dt_updated
+            dt_updated = None
+            if user_feed.feed_id:
+                dt_updated = user_feed.feed.dt_updated
+            if not dt_updated:
+                dt_updated = user_feed.dt_updated or user_feed.dt_created
             if user_feed.id not in hints or not dt_updated:
                 updates.append(user_feed.id)
             elif dt_updated > hints[user_feed.id]:
