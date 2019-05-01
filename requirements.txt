@@ -29,6 +29,7 @@ email-validator==1.0.3
 feedparser==5.2.1
 flower==0.9.2
 gunicorn==19.9.0
+html2text==2018.1.9
 humanize==0.5.1
 idna==2.8
 itypes==1.1.0

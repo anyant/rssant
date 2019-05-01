@@ -47,6 +47,7 @@ FeedSchema = T.dict(
     etag=T.str.optional,
     last_modified=T.str.optional,
     content_hash_base64=T.str.optional,
+    story_offset=T.int.min(0).optional,
     story_publish_period=T.int.min(0).optional,
     offset_early_story=T.int.min(0).optional,
     dt_early_story_published=T.datetime.object.optional,
@@ -93,7 +94,10 @@ def feed_query(
 @FeedView.get('feed/<int:pk>')
 def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
     """Feed detail"""
-    user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id, detail=detail)
+    try:
+        user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id, detail=detail)
+    except UserFeed.DoesNotExist:
+        return Response({"message": "feed does not exist"}, status=400)
     return user_feed.to_dict(detail=detail)
 
 
@@ -115,8 +119,8 @@ def feed_update(request, pk: T.int, title: T.str.optional) -> FeedSchema:
     return user_feed.to_dict()
 
 
-@FeedView.put('feed/<int:pk>/readed')
-def feed_set_readed(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSchema:
+@FeedView.put('feed/<int:pk>/offset')
+def feed_set_offset(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSchema:
     user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id, detail=True)
     if offset > user_feed.feed.total_storys:
         return Response({'message': 'offset too large'}, status=400)
