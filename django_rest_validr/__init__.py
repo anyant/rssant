@@ -109,6 +109,16 @@ class RestRouter:
         return urls
 
     @staticmethod
+    def _response_from_invalid(ex):
+        return Response({
+            'description': str(ex),
+            'position': ex.position,
+            'message': ex.message,
+            'field': ex.field,
+            'value': ex.value,
+        }, status=400)
+
+    @staticmethod
     def _make_method(method, f, params, returns):
         def rest_method(self, request, format=None, **kwargs):
             ret = None
@@ -123,7 +133,7 @@ class RestRouter:
                 try:
                     kwargs = params(ChainMap(*maps))
                 except Invalid as ex:
-                    ret = Response({'message': str(ex)}, status=400)
+                    ret = RestRouter._response_from_invalid(ex)
                 validr_cost += time.time() - t_begin
             t_begin = time.time()
             if ret is None:

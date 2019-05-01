@@ -229,6 +229,8 @@ class UserFeed(Model):
             dt_created=self.dt_created,
             story_offset=self.story_offset,
         )
+        if not ret.get('dt_updated'):
+            ret['dt_updated'] = self.dt_created
         if self.title:
             ret.update(title=self.title)
         if self.status and self.status != FeedStatus.READY:
@@ -271,7 +273,7 @@ class UserFeed(Model):
         """
 
         def sort_user_feeds(user_feeds):
-            return list(sorted(user_feeds, key=lambda x: (x.dt_updated, x.id), reverse=True))
+            return list(sorted(user_feeds, key=lambda x: (bool(x.dt_updated), x.dt_updated, x.id), reverse=True))
 
         q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
         if not hints:
