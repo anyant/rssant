@@ -277,7 +277,7 @@ class UserStory(Model):
         return total, offset, storys
 
     @staticmethod
-    def query_recent_storys_by_feed_s(user_feed_ids, days=14, user_id=None, detail=False):
+    def query_recent_storys_by_feed_s(user_feed_ids, days=14, limit=300, user_id=None, detail=False):
         user_feeds = UserFeed.query_by_pk_s(user_feed_ids, user_id=user_id)
         feed_id_map = {x.feed_id: x.id for x in user_feeds}
         dt_begin = timezone.now() - timezone.timedelta(days=days)
@@ -285,7 +285,8 @@ class UserStory(Model):
             .filter(dt_published__gte=dt_begin)
         if not detail:
             q = q.defer(*STORY_DETAIL_FEILDS)
-        storys = list(q.order_by('dt_published').all())
+        q = q.order_by('-dt_published')[:limit]
+        storys = list(q.all())
         return storys, feed_id_map
 
     @staticmethod
