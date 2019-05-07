@@ -17,6 +17,16 @@ def convert_summary(summary):
     return h.handle(summary or "")
 
 
+FEED_STORY_PUBLISH_PERIOD_FIELDS = [
+    'id',
+    'total_storys',
+    'story_publish_period',
+    'offset_early_story',
+    'dt_early_story_published',
+    'dt_latest_story_published',
+]
+
+
 class Story(Model, ContentHashMixin):
     """故事"""
 
@@ -32,7 +42,7 @@ class Story(Model, ContentHashMixin):
         ]
 
     class Admin:
-        display_fields = ['feed_id', 'title', 'link']
+        display_fields = ['feed_id', 'offset', 'title', 'link']
 
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
     offset = models.IntegerField(help_text="Story在Feed中的位置")
@@ -79,7 +89,9 @@ class Story(Model, ContentHashMixin):
         # 先排序，分配offset时保证offset和dt_published顺序一致
         storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
         with transaction.atomic():
-            feed = Feed.objects.select_for_update().only('id', 'total_storys').get(pk=feed_id)
+            feed = Feed.objects.select_for_update()\
+                .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+                .get(pk=feed_id)
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
             story_objects = {}
@@ -130,8 +142,8 @@ class Story(Model, ContentHashMixin):
         dt_18_months_ago = dt_latest_story_published - MONTH_18
         early_story = Story.objects\
             .only('id', 'offset', 'dt_published')\
-            .filter(feed_id=feed.id, dt_published__lte=dt_18_months_ago)\
-            .order_by('-dt_published')\
+            .filter(feed_id=feed.id, dt_published__gte=dt_18_months_ago)\
+            .order_by('dt_published')\
             .first()
         if not early_story:
             early_story = Story.objects\
@@ -153,7 +165,9 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def update_feed_story_publish_period(feed_id):
         with transaction.atomic():
-            feed = Feed.objects.select_for_update().only('id', 'total_storys').get(pk=feed_id)
+            feed = Feed.objects.select_for_update()\
+                .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+                .get(pk=feed_id)
             if feed.total_storys <= 0:
                 return
             latest_story = Story.objects\
