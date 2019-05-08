@@ -6,6 +6,7 @@ from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
 
 MONTH_18 = timezone.timedelta(days=18 * 30)
+ONE_MONTH = timezone.timedelta(days=30)
 
 STORY_DETAIL_FEILDS = ['summary', 'content']
 USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
@@ -130,16 +131,59 @@ class Story(Model, ContentHashMixin):
                 num_modified += 1
             if new_story_objects:
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
+                early_dt_published = new_story_objects[0].dt_published
+                num_reallocate = Story._reallocate_offset(feed.id, early_dt_published)
                 Story._update_feed_story_publish_period(
                     feed, total_storys=offset, latest_story=new_story_objects[-1])
-            return num_modified
+            else:
+                num_reallocate = 0
+            return num_modified, num_reallocate
+
+    @staticmethod
+    def _reallocate_offset(feed_id, early_dt_published=None):
+        if early_dt_published:
+            should_reallocate = timezone.now() - early_dt_published > ONE_MONTH
+            if not should_reallocate:
+                return 0
+        early_story_offset = 0
+        if early_dt_published:
+            # 找出第一个比early_dt_published更早的story
+            early_story = Story.objects\
+                .only('id', 'offset')\
+                .filter(feed_id=feed_id, dt_published__lt=early_dt_published)\
+                .order_by('-dt_published')\
+                .first()
+            if early_story:
+                early_story_offset = early_story.offset
+        # 所有可能需要重排的story
+        q = Story.objects.filter(feed_id=feed_id)\
+            .only('id', 'offset', 'dt_published', 'unique_id')\
+            .filter(offset__gte=early_story_offset)\
+            .order_by('dt_published', 'unique_id')
+        storys = list(q.all())
+        updates = []
+        for offset, story in enumerate(storys):
+            offset = offset + early_story_offset
+            if story.offset != offset:
+                # 需要重排，先将 offset 变负数，避免违反 (feed_id, offset) unique 约束
+                story.offset = -offset - 1
+                story.save()
+                updates.append(story)
+        for story in updates:
+            story.offset = -(story.offset + 1)
+            story.save()
+        return len(updates)
+
+    @staticmethod
+    def reallocate_offset(feed_id, early_dt_published=None):
+        with transaction.atomic():
+            return Story._reallocate_offset(feed_id, early_dt_published=early_dt_published)
 
     @staticmethod
     def _update_feed_story_publish_period(feed, total_storys, latest_story):
-        feed.total_storys = total_storys
         dt_latest_story_published = latest_story.dt_published
-        feed.dt_latest_story_published = dt_latest_story_published
         dt_18_months_ago = dt_latest_story_published - MONTH_18
+        # 找出第一个比dt_18_months_ago更晚的story
         early_story = Story.objects\
             .only('id', 'offset', 'dt_published')\
             .filter(feed_id=feed.id, dt_published__gte=dt_18_months_ago)\
@@ -149,18 +193,24 @@ class Story(Model, ContentHashMixin):
             early_story = Story.objects\
                 .only('id', 'offset', 'dt_published')\
                 .filter(feed_id=feed.id, offset=0)\
-                .first()
-        if early_story:
-            offset_early_story = early_story.offset
-            dt_early_story_published = early_story.dt_published
-            dt_published_days = (dt_latest_story_published - dt_early_story_published).days
-            num_published_storys = total_storys - offset_early_story
-            assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
-            story_publish_period = round(max(dt_published_days, 7) / num_published_storys)
-            feed.offset_early_story = offset_early_story
-            feed.dt_early_story_published = dt_early_story_published
-            feed.story_publish_period = story_publish_period
+                .get()
+        offset_early_story = early_story.offset
+        dt_early_story_published = early_story.dt_published
+        dt_published_days = (dt_latest_story_published - dt_early_story_published).days
+        num_published_storys = total_storys - offset_early_story
+        assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
+        story_publish_period = round(max(dt_published_days, 7) / num_published_storys)
+        is_updated = (
+            (feed.offset_early_story != offset_early_story)
+            or (feed.total_storys != total_storys)
+        )
+        feed.total_storys = total_storys
+        feed.offset_early_story = offset_early_story
+        feed.dt_latest_story_published = dt_latest_story_published
+        feed.dt_early_story_published = dt_early_story_published
+        feed.story_publish_period = story_publish_period
         feed.save()
+        return is_updated
 
     @staticmethod
     def update_feed_story_publish_period(feed_id):
@@ -169,12 +219,23 @@ class Story(Model, ContentHashMixin):
                 .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
                 .get(pk=feed_id)
             if feed.total_storys <= 0:
-                return
+                return False  # is_updated
             latest_story = Story.objects\
                 .only('id', 'offset', 'dt_published')\
                 .get(feed_id=feed.id, offset=feed.total_storys - 1)
-            Story._update_feed_story_publish_period(
+            return Story._update_feed_story_publish_period(
                 feed, total_storys=feed.total_storys, latest_story=latest_story)
+
+    @staticmethod
+    def fix_feed_total_storys(feed_id):
+        with transaction.atomic():
+            feed = Feed.objects.only('id', 'total_storys').get(pk=feed_id)
+            total_storys = Story.objects.filter(feed_id=feed_id).count()
+            if feed.total_storys != total_storys:
+                feed.total_storys = total_storys
+                feed.save()
+                return True
+            return False
 
 
 class UserStory(Model):

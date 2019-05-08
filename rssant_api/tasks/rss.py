@@ -226,8 +226,11 @@ def _save_storys(feed, entries):
         story['dt_published'] = _get_dt_published(data, now)
         story['dt_updated'] = _get_dt_updated(data, now)
         storys.append(story)
-    num_modified = Story.bulk_save_by_feed(feed.id, storys)
-    LOG.info('feed#%s save storys total=%s num_modified=%s', feed.id, len(storys), num_modified)
+    num_modified, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
+    LOG.info(
+        'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
+        feed.id, len(storys), num_modified, num_reallocate
+    )
     return num_modified, len(storys)
 
 

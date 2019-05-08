@@ -111,6 +111,10 @@ class Feed(Model, ContentHashMixin):
         return ret
 
     @staticmethod
+    def get_by_pk(feed_id):
+        return Feed.objects.get(pk=feed_id)
+
+    @staticmethod
     def get_first_by_url(url):
         return Feed.objects.filter(url=url).first()
 
