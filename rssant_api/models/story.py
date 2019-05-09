@@ -86,7 +86,7 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100):
         if not storys:
-            return 0
+            return 0, 0  # num_modified, num_reallocate
         # 先排序，分配offset时保证offset和dt_published顺序一致
         storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
         with transaction.atomic():
