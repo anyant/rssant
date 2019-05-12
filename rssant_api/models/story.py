@@ -1,5 +1,5 @@
 from django.utils import timezone
-from django.db import transaction
+from django.db import connection, transaction
 from html2text import HTML2Text
 
 from .helper import Model, ContentHashMixin, models, optional, User
@@ -133,8 +133,7 @@ class Story(Model, ContentHashMixin):
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
                 early_dt_published = new_story_objects[0].dt_published
                 num_reallocate = Story._reallocate_offset(feed.id, early_dt_published)
-                Story._update_feed_story_publish_period(
-                    feed, total_storys=offset, latest_story=new_story_objects[-1])
+                Story._update_feed_story_publish_period(feed, total_storys=offset)
             else:
                 num_reallocate = 0
             return num_modified, num_reallocate
@@ -180,7 +179,12 @@ class Story(Model, ContentHashMixin):
             return Story._reallocate_offset(feed_id, early_dt_published=early_dt_published)
 
     @staticmethod
-    def _update_feed_story_publish_period(feed, total_storys, latest_story):
+    def _update_feed_story_publish_period(feed, total_storys):
+        if total_storys <= 0:
+            return False  # is_updated
+        latest_story = Story.objects\
+            .only('id', 'offset', 'dt_published')\
+            .get(feed_id=feed.id, offset=total_storys - 1)
         dt_latest_story_published = latest_story.dt_published
         dt_18_months_ago = dt_latest_story_published - MONTH_18
         # 找出第一个比dt_18_months_ago更晚的story
@@ -201,8 +205,8 @@ class Story(Model, ContentHashMixin):
         assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
         story_publish_period = round(max(dt_published_days, 7) / num_published_storys)
         is_updated = (
-            (feed.offset_early_story != offset_early_story)
-            or (feed.total_storys != total_storys)
+            (feed.offset_early_story != offset_early_story) or
+            (feed.total_storys != total_storys)
         )
         feed.total_storys = total_storys
         feed.offset_early_story = offset_early_story
@@ -218,13 +222,8 @@ class Story(Model, ContentHashMixin):
             feed = Feed.objects.select_for_update()\
                 .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
                 .get(pk=feed_id)
-            if feed.total_storys <= 0:
-                return False  # is_updated
-            latest_story = Story.objects\
-                .only('id', 'offset', 'dt_published')\
-                .get(feed_id=feed.id, offset=feed.total_storys - 1)
             return Story._update_feed_story_publish_period(
-                feed, total_storys=feed.total_storys, latest_story=latest_story)
+                feed, total_storys=feed.total_storys)
 
     @staticmethod
     def fix_feed_total_storys(feed_id):
@@ -236,6 +235,23 @@ class Story(Model, ContentHashMixin):
                 feed.save()
                 return True
             return False
+
+    @staticmethod
+    def query_feed_incorrect_total_storys():
+        sql = """
+        SELECT id, total_storys, correct_total_storys
+        FROM rssant_api_feed AS current
+        JOIN (
+            SELECT feed_id, count(1) AS correct_total_storys
+            FROM rssant_api_story
+            GROUP BY feed_id
+        ) AS correct
+        ON current.id=correct.feed_id
+        WHERE total_storys!=correct_total_storys
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            return list(cursor.fetchall())
 
 
 class UserStory(Model):

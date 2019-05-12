@@ -6,6 +6,7 @@ django-allauth==0.38.0
 django-rest-auth==0.9.3
 django-rest-swagger==2.2.0
 django-timezone-field==3.0
+django-click==2.1.0
 
 psycopg2==2.7.7
 psycopg2-binary==2.7.7

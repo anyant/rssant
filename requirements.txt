@@ -17,6 +17,7 @@ Django==2.1.7
 django-allauth==0.38.0
 django-celery-beat==1.4.0
 django-celery-results==1.0.4
+django-click==2.1.0
 django-debug-toolbar==1.11
 django-extensions==2.1.6
 django-postgrespool2==0.2.0

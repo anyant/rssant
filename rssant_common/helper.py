@@ -1,5 +1,20 @@
 import codecs
 import cchardet
+from terminaltables import AsciiTable
+
+
+def format_table(rows, *, header=None, border=True):
+    table_data = []
+    if header:
+        table_data.append(list(header))
+    elif rows:
+        table_data.append([f'#{i}' for i in range(len(rows[0]))])
+    table_data.extend(rows)
+    table = AsciiTable(table_data)
+    if not border:
+        table.inner_column_border = False
+        table.outer_border = False
+    return table.table
 
 
 def _is_encoding_exists(response):
