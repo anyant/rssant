@@ -1,10 +1,14 @@
 import gzip
+from collections import namedtuple
 
 from django.utils import timezone
 from django.db import transaction, connection
 
 from .exceptions import FeedExistsException
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
+
+
+FeedUnionId = namedtuple('FeedUnionId', 'feed_id, user_feed_id')
 
 
 class FeedStatus:
@@ -115,6 +119,10 @@ class Feed(Model, ContentHashMixin):
         return Feed.objects.get(pk=feed_id)
 
     @staticmethod
+    def get_by_unionid(feed_unionid, detail=False):
+        return UserFeed.get_by_pk(feed_unionid.feed_id)
+
+    @staticmethod
     def get_first_by_url(url):
         return Feed.objects.filter(url=url).first()
 
@@ -205,7 +213,7 @@ class UserFeed(Model):
         ]
 
     class Admin:
-        display_fields = ['user_id', 'feed_id', 'status', 'url']
+        display_fields = ['unionid', 'user_id', 'feed_id', 'status', 'url']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
@@ -228,7 +236,7 @@ class UserFeed(Model):
         else:
             ret = dict(url=self.url, dt_updated=self.dt_updated)
         ret.update(
-            id=self.id,
+            id=self.unionid,
             user=dict(id=self.user_id),
             dt_created=self.dt_created,
             story_offset=self.story_offset,
@@ -240,6 +248,10 @@ class UserFeed(Model):
         if self.status and self.status != FeedStatus.READY:
             ret.update(status=self.status)
         return ret
+
+    @property
+    def unionid(self):
+        return FeedUnionId(self.feed_id or 0, self.id)
 
     @property
     def is_ready(self):
@@ -254,6 +266,10 @@ class UserFeed(Model):
             q = q.filter(user_id=user_id)
         user_feed = q.get(pk=pk)
         return user_feed
+
+    @staticmethod
+    def get_by_unionid(feed_unionid, user_id=None, detail=False):
+        return UserFeed.get_by_pk(feed_unionid.user_feed_id, user_id=user_id, detail=detail)
 
     @staticmethod
     def query_by_pk_s(pks, user_id=None, detail=False):
@@ -273,7 +289,7 @@ class UserFeed(Model):
     def query_by_user(user_id, hints=None, detail=False, show_pending=False):
         """获取用户所有的订阅，支持增量查询
 
-        hints: T.list(T.dict(id=T.int, dt_updated=T.datetime))
+        hints: T.list(T.dict(id=T.unionid, dt_updated=T.datetime))
         """
 
         def sort_user_feeds(user_feeds):
@@ -287,7 +303,7 @@ class UserFeed(Model):
             user_feeds = sort_user_feeds(user_feeds)
             return len(user_feeds), user_feeds, []
 
-        hints = {x['id']: x['dt_updated'] for x in hints}
+        hints = {x['id'].user_feed_id: x['dt_updated'] for x in hints}
         q = q.only("id", 'feed_id', 'feed__dt_updated')
         user_feeds_map = {}
         for user_feed in q.all():
@@ -338,6 +354,10 @@ class UserFeed(Model):
     def delete_by_pk(pk, user_id=None):
         user_feed = UserFeed.get_by_pk(pk, user_id=user_id)
         user_feed.delete()
+
+    @staticmethod
+    def delete_by_unionid(feed_unionid, user_id=None):
+        UserFeed.delete_by_pk(feed_unionid.user_feed_id)
 
     def update_story_offset(self, offset):
         self.story_offset = offset

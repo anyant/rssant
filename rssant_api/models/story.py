@@ -1,12 +1,16 @@
+from collections import namedtuple
+
 from django.utils import timezone
 from django.db import connection, transaction
 from html2text import HTML2Text
 
 from .helper import Model, ContentHashMixin, models, optional, User
-from .feed import Feed, UserFeed
+from .feed import Feed, UserFeed, FeedUnionId
 
 MONTH_18 = timezone.timedelta(days=18 * 30)
 ONE_MONTH = timezone.timedelta(days=30)
+
+StoryUnionId = namedtuple('StoryUnionId', 'feed_id, user_feed_id, offset')
 
 STORY_DETAIL_FEILDS = ['summary', 'content']
 USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
@@ -75,6 +79,14 @@ class Story(Model, ContentHashMixin):
                 content=self.content,
             )
         return ret
+
+    @staticmethod
+    def get_by_unionid(story_unionid, detail=False):
+        return Story.get_by_offset(story_unionid.feed_id, story_unionid.offset, detail=detail)
+
+    @staticmethod
+    def get_by_feed_unionid_offset(feed_unionid, offset, detail=False):
+        return Story.get_by_offset(feed_unionid.feed_id, offset, detail=detail)
 
     @staticmethod
     def get_by_offset(feed_id, offset, detail=False):
@@ -263,7 +275,7 @@ class UserStory(Model):
         ]
 
     class Admin:
-        display_fields = ['user_id', 'feed_id', 'story_id', 'is_watched', 'is_favorited']
+        display_fields = ['unionid', 'user_id', 'feed_id', 'story_id', 'is_watched', 'is_favorited']
         search_fields = ['user_feed_id']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -280,9 +292,9 @@ class UserStory(Model):
     def to_dict(self, detail=False):
         ret = self.story.to_dict(detail=detail)
         ret.update(
-            id=self.id,
+            id=self.unionid,
             user=dict(id=self.user_id),
-            feed=dict(id=self.user_feed_id),
+            feed=dict(id=FeedUnionId(self.feed_id, self.user_feed_id)),
             dt_created=self.dt_created,
             is_watched=self.is_watched,
             dt_watched=self.dt_watched,
@@ -290,6 +302,10 @@ class UserStory(Model):
             dt_favorited=self.dt_favorited
         )
         return ret
+
+    @property
+    def unionid(self):
+        return StoryUnionId(self.feed_id, self.user_feed_id, self.offset)
 
     @staticmethod
     def get_by_pk(pk, user_id=None, detail=False):
@@ -300,6 +316,14 @@ class UserStory(Model):
             q = q.filter(user_id=user_id)
         user_story = q.get(pk=pk)
         return user_story
+
+    @staticmethod
+    def get_by_unionid(story_unionid, user_id=None, detail=False):
+        return UserStory.get_by_offset(story_unionid.user_feed_id, story_unionid.offset, user_id=user_id, detail=detail)
+
+    @staticmethod
+    def get_by_feed_unionid_offset(feed_unionid, offset, user_id=None, detail=False):
+        return UserStory.get_by_offset(feed_unionid.user_feed_id, offset, user_id=user_id, detail=detail)
 
     @staticmethod
     def get_by_offset(user_feed_id, offset, user_id=None, detail=False):

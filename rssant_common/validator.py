@@ -1,5 +1,6 @@
 import datetime
 import time
+from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
 from validr import T, validator, SchemaError, Invalid, Compiler
@@ -10,6 +11,7 @@ from django.utils.dateparse import parse_datetime
 
 from .helper import coerce_url
 from .cursor import Cursor
+from . import unionid
 
 
 def pagination(item, maxlen=1024):
@@ -97,10 +99,29 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
     return validate
 
 
+@validator(accept=(str, object), output=(str, object))
+def unionid_validator(compiler, items, output_object=False):
+    unionid_class = namedtuple('ValidrUnionId', items)
+
+    def validate(value):
+        try:
+            if isinstance(value, str):
+                value = unionid.decode(value)
+            if output_object:
+                return unionid_class(*value)
+            else:
+                return unionid.encode(*value)
+        except (unionid.UnionIdError, TypeError, ValueError) as ex:
+            raise Invalid('invalid unionid, {}'.format(str(ex))) from ex
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
     'datetime': datetime_validator,
+    'unionid': unionid_validator,
 }
 
 

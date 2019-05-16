@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 
 FeedSchema = T.dict(
-    id=T.int,
+    id=T.unionid('feed_id, user_feed_id'),
     user=T.dict(
         id=T.int,
     ),
@@ -54,6 +54,9 @@ FeedSchema = T.dict(
     dt_latest_story_published=T.datetime.object.optional,
 )
 
+T_feed_unionid = T.unionid('feed_id, user_feed_id').object
+
+
 FeedView = RestRouter()
 
 FEED_DETAIL_FIELDS = [
@@ -69,7 +72,7 @@ FEED_DETAIL_FIELDS = [
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id = T.int, dt_updated = T.datetime.object)).optional,
+    hints: T.list(T.dict(id = T_feed_unionid, dt_updated = T.datetime.object)).optional,
     detail: T.bool.default(False)
 ) -> T.dict(
     total=T.int.optional,
@@ -91,11 +94,11 @@ def feed_query(
     )
 
 
-@FeedView.get('feed/<int:pk>')
-def feed_get(request, pk: T.int, detail: T.bool.default(False)) -> FeedSchema:
+@FeedView.get('feed/<str:feed_unionid>')
+def feed_get(request, feed_unionid: T_feed_unionid, detail: T.bool.default(False)) -> FeedSchema:
     """Feed detail"""
     try:
-        user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id, detail=detail)
+        user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id, detail=detail)
     except UserFeed.DoesNotExist:
         return Response({"message": "feed does not exist"}, status=400)
     return user_feed.to_dict(detail=detail)
@@ -112,16 +115,16 @@ def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
     return user_feed.to_dict()
 
 
-@FeedView.put('feed/<int:pk>')
-def feed_update(request, pk: T.int, title: T.str.optional) -> FeedSchema:
-    user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id)
+@FeedView.put('feed/<str:feed_unionid>')
+def feed_update(request, feed_unionid: T_feed_unionid, title: T.str.optional) -> FeedSchema:
+    user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id)
     user_feed.update_title(title)
     return user_feed.to_dict()
 
 
-@FeedView.put('feed/<int:pk>/offset')
-def feed_set_offset(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSchema:
-    user_feed = UserFeed.get_by_pk(pk, user_id=request.user.id, detail=True)
+@FeedView.put('feed/<str:feed_unionid>/offset')
+def feed_set_offset(request, feed_unionid: T_feed_unionid, offset: T.int.min(0).optional) -> FeedSchema:
+    user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id, detail=True)
     if offset > user_feed.feed.total_storys:
         return Response({'message': 'offset too large'}, status=400)
     user_feed.update_story_offset(offset)
@@ -129,14 +132,15 @@ def feed_set_offset(request, pk: T.int, offset: T.int.min(0).optional) -> FeedSc
 
 
 @FeedView.put('feed/all/readed')
-def feed_set_all_readed(request, ids: T.list(T.int).optional) -> T.dict(num_updated=T.int):
+def feed_set_all_readed(request, ids: T.list(T_feed_unionid).optional) -> T.dict(num_updated=T.int):
+    ids = [x.user_feed_id for x in ids]
     num_updated = UserFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
     return dict(num_updated=num_updated)
 
 
-@FeedView.delete('feed/<int:pk>')
-def feed_delete(request, pk: T.int):
-    UserFeed.delete_by_pk(pk, user_id=request.user.id)
+@FeedView.delete('feed/<str:feed_unionid>')
+def feed_delete(request, feed_unionid: T_feed_unionid):
+    UserFeed.delete_by_unionid(feed_unionid, user_id=request.user.id)
 
 
 def _read_request_file(request, name='file'):

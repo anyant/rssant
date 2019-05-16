@@ -100,12 +100,19 @@ class RestRouter:
         def key_func(r):
             f, url, methods, params, returns = r
             return url
-        urls = []
+        urls_map = {}
         routes = sorted(self._routes, key=key_func)
         groups = itertools.groupby(routes, key=key_func)
         for url, group in groups:
             view = self._make_view(list(group))
-            urls.append(path(url, view))
+            urls_map[url] = path(url, view)
+        # keep urls same order with self._routes
+        urls = []
+        urls_added = set()
+        for f, url, methods, params, returns in self._routes:
+            if url not in urls_added:
+                urls.append(urls_map[url])
+                urls_added.add(url)
         return urls
 
     @staticmethod
