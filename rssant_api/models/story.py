@@ -102,8 +102,8 @@ class Story(Model, ContentHashMixin):
         # 先排序，分配offset时保证offset和dt_published顺序一致
         storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
         with transaction.atomic():
-            feed = Feed.objects.select_for_update()\
-                .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+            feed = Feed.objects\
+                .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
                 .get(pk=feed_id)
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
@@ -168,7 +168,7 @@ class Story(Model, ContentHashMixin):
                 early_story_offset = early_story.offset
         # 所有可能需要重排的story
         q = Story.objects.filter(feed_id=feed_id)\
-            .only('id', 'offset', 'dt_published', 'unique_id')\
+            .only('_version', 'id', 'offset', 'dt_published', 'unique_id')\
             .filter(offset__gte=early_story_offset)\
             .order_by('dt_published', 'unique_id')
         storys = list(q.all())
@@ -231,8 +231,8 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def update_feed_story_publish_period(feed_id):
         with transaction.atomic():
-            feed = Feed.objects.select_for_update()\
-                .only(*FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+            feed = Feed.objects\
+                .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
                 .get(pk=feed_id)
             return Story._update_feed_story_publish_period(
                 feed, total_storys=feed.total_storys)
@@ -240,7 +240,7 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def fix_feed_total_storys(feed_id):
         with transaction.atomic():
-            feed = Feed.objects.only('id', 'total_storys').get(pk=feed_id)
+            feed = Feed.objects.only('_version', 'id', 'total_storys').get(pk=feed_id)
             total_storys = Story.objects.filter(feed_id=feed_id).count()
             if feed.total_storys != total_storys:
                 feed.total_storys = total_storys

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
+# https://github.com/gavinwahl/django-optimistic-lock
+from ool import VersionField, VersionedMixin, ConcurrentUpdate as ConcurrentUpdateError
 
 from rssant.helper.content_hash import compute_hash_base64
 
@@ -12,11 +14,12 @@ def extract_choices(cls):
     return [(v, v)for k, v in vars(cls).items() if k.isupper()]
 
 
-class Model(models.Model):
+class Model(VersionedMixin, models.Model):
 
     class Meta:
         abstract = True
 
+    _version = VersionField()
     _created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     _updated = models.DateTimeField(auto_now=True, help_text="更新时间")
 
@@ -58,4 +61,5 @@ __all__ = (
     'User',
     'JSONField',
     'ContentHashMixin',
+    'ConcurrentUpdateError',
 )

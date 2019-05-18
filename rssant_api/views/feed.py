@@ -12,7 +12,7 @@ from mako.template import Template
 
 from rssant_feedlib.opml import parse_opml
 from rssant_feedlib.bookmark import parse_bookmark
-from rssant_api.models.exceptions import FeedExistsException
+from rssant_api.models.errors import FeedExistsError
 from rssant_api.models import UserFeed
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
@@ -108,7 +108,7 @@ def feed_get(request, feed_unionid: T_feed_unionid, detail: T.bool.default(False
 def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
     try:
         user_feed = UserFeed.create_by_url(url, user_id=request.user.id)
-    except FeedExistsException:
+    except FeedExistsError:
         return Response({'message': 'already exists'}, status=400)
     if not user_feed.is_ready:
         rss.find_feed.delay(user_feed_id=user_feed.id)

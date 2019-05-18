@@ -4,7 +4,7 @@ from collections import namedtuple
 from django.utils import timezone
 from django.db import transaction, connection
 
-from .exceptions import FeedExistsException
+from .errors import FeedExistsError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
 
@@ -345,7 +345,7 @@ class UserFeed(Model):
         if feed:
             user_feed = UserFeed.objects.filter(user_id=user_id, feed=feed).first()
             if user_feed:
-                raise FeedExistsException('already exists')
+                raise FeedExistsError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed, url=url, status=FeedStatus.READY)
         else:
             user_feed = UserFeed(user_id=user_id, url=url)
@@ -379,7 +379,7 @@ class UserFeed(Model):
         if ids is not None:
             q = q.filter(id__in=ids)
         q = q.select_related('feed')\
-            .only('id', 'story_offset', 'feed_id', 'feed__total_storys')
+            .only('_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys')
         updates = []
         for user_feed in q.all():
             num_unread = user_feed.feed.total_storys - user_feed.story_offset
