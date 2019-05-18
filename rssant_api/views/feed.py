@@ -77,7 +77,7 @@ def feed_query(
 ) -> T.dict(
     total=T.int.optional,
     size=T.int.optional,
-    results=T.list(FeedSchema),
+    results=T.list(FeedSchema).maxlen(5000),
     deleted_size=T.int.optional,
     deleted_ids=T.list(T.int),
 ):
@@ -94,7 +94,7 @@ def feed_query(
     )
 
 
-@FeedView.get('feed/<str:feed_unionid>')
+@FeedView.get('feed/<slug:feed_unionid>')
 def feed_get(request, feed_unionid: T_feed_unionid, detail: T.bool.default(False)) -> FeedSchema:
     """Feed detail"""
     try:
@@ -115,14 +115,14 @@ def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
     return user_feed.to_dict()
 
 
-@FeedView.put('feed/<str:feed_unionid>')
+@FeedView.put('feed/<slug:feed_unionid>')
 def feed_update(request, feed_unionid: T_feed_unionid, title: T.str.optional) -> FeedSchema:
     user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id)
     user_feed.update_title(title)
     return user_feed.to_dict()
 
 
-@FeedView.put('feed/<str:feed_unionid>/offset')
+@FeedView.put('feed/<slug:feed_unionid>/offset')
 def feed_set_offset(request, feed_unionid: T_feed_unionid, offset: T.int.min(0).optional) -> FeedSchema:
     user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id, detail=True)
     if offset > user_feed.feed.total_storys:
@@ -138,7 +138,7 @@ def feed_set_all_readed(request, ids: T.list(T_feed_unionid).optional) -> T.dict
     return dict(num_updated=num_updated)
 
 
-@FeedView.delete('feed/<str:feed_unionid>')
+@FeedView.delete('feed/<slug:feed_unionid>')
 def feed_delete(request, feed_unionid: T_feed_unionid):
     UserFeed.delete_by_unionid(feed_unionid, user_id=request.user.id)
 
@@ -162,7 +162,11 @@ def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
             find_feed_tasks.append(rss.find_feed.s(user_feed.id))
         else:
             readys.append(user_feed)
-    celery.group(find_feed_tasks).apply_async()
+    # https://docs.celeryproject.org/en/latest/faq.html#does-celery-support-task-priorities
+    # https://docs.celeryproject.org/en/latest/userguide/calling.html#routing-options
+    # https://docs.celeryproject.org/en/latest/userguide/calling.html#advanced-options
+    queue = 'bookmark' if is_from_bookmark else 'batch'
+    celery.group(find_feed_tasks).apply_async(queue=queue)
     return user_feeds, readys
 
 

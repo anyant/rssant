@@ -90,7 +90,7 @@ def story_query_recent_by_feed_s(
     )
 
 
-@StoryView.get('story/<str:feed_unionid>-<int:offset>')
+@StoryView.get('story/<slug:feed_unionid>-<int:offset>')
 def story_get_by_offset(
     request,
     feed_unionid: T_feed_unionid,
@@ -139,7 +139,7 @@ def story_query_watched(
     )
 
 
-@StoryView.put('story/<str:feed_unionid>-<int:offset>/watched')
+@StoryView.put('story/<slug:feed_unionid>-<int:offset>/watched')
 def story_set_watched(
     request,
     feed_unionid: T_feed_unionid,
@@ -153,7 +153,7 @@ def story_set_watched(
     return user_story.to_dict()
 
 
-@StoryView.put('story/<str:feed_unionid>-<int:offset>/favorited')
+@StoryView.put('story/<slug:feed_unionid>-<int:offset>/favorited')
 def story_set_favorited(
     request,
     feed_unionid: T_feed_unionid,

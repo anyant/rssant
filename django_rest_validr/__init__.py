@@ -107,13 +107,18 @@ class RestRouter:
             view = self._make_view(list(group))
             urls_map[url] = path(url, view)
         # keep urls same order with self._routes
+        # and constant url should priority then path argument
         urls = []
+        urls_priority = []
         urls_added = set()
         for f, url, methods, params, returns in self._routes:
             if url not in urls_added:
-                urls.append(urls_map[url])
                 urls_added.add(url)
-        return urls
+                if '<' in url and ':' in url and '>' in url:
+                    urls.append(urls_map[url])
+                else:
+                    urls_priority.append(urls_map[url])
+        return urls_priority + urls
 
     @staticmethod
     def _response_from_invalid(ex):

@@ -299,6 +299,8 @@ class UserFeed(Model):
         if not hints:
             if not detail:
                 q = q.defer(*FEED_DETAIL_FIELDS)
+            if not show_pending:
+                q = q.exclude(status=FeedStatus.PENDING)
             user_feeds = list(q.all())
             user_feeds = sort_user_feeds(user_feeds)
             return len(user_feeds), user_feeds, []
