@@ -59,6 +59,7 @@ def sync_feed(feed_id):
     LOG.info(f'read feed#{feed_id} url={feed.url}')
     status_code, response = _read_response(feed)
     LOG.info(f'feed#{feed_id} url={feed.url} status_code={status_code}')
+    feed.refresh_from_db()
     feed.status = FeedStatus.READY
     feed.save()
     default_result = dict(
