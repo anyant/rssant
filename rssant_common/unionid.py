@@ -126,12 +126,19 @@ if __name__ == "__main__":
     numbers_random = tuple(numbers_random)
     print('total {} numbers'.format(len(numbers)))
 
-    def _debug_decode(data, expect):
+    def _debug_decode(data, expect=None):
         try:
             return decode(data)
         except UnionIdDecodeError:
             print('data={} expect={}'.format(data, expect))
             raise
+
+    def test_order():
+        nums = tuple(sorted(numbers))
+        datas = tuple(sorted(encode(x) for x in numbers))
+        data_nums = tuple(_debug_decode(x)[0] for x in datas)
+        assert nums == data_nums, (nums, data_nums)
+    test_order()
 
     def test_n(n):
         for i in range(len(numbers) - n):
