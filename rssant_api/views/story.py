@@ -1,15 +1,14 @@
-from django.db import transaction
-
 from django_rest_validr import RestRouter, T, pagination
 from rest_framework.response import Response
 
-from rssant_api.models import UserFeed, UserStory, FeedUnionId, StoryUnionId
-
+from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
+from rssant_api.models import UnionStory
+from .helper import check_unionid
 
 StorySchema = T.dict(
-    id=T.unionid('feed_id, user_feed_id, offset'),
+    id=T.story_unionid,
     feed=T.dict(
-        id=T.unionid('feed_id, user_feed_id'),
+        id=T.feed_unionid,
     ),
     offset=T.int,
     user=T.dict(
@@ -29,8 +28,6 @@ StorySchema = T.dict(
     summary=T.str.optional,
     content=T.str.optional,
 )
-T_feed_unionid = T.unionid('feed_id, user_feed_id').object
-T_story_unionid = T.unionid('feed_id, user_feed_id, offset').object
 
 
 StoryView = RestRouter()
@@ -41,72 +38,61 @@ STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 @StoryView.get('story/query')
 def story_query_by_feed(
     request,
-    feed_id: T_feed_unionid,
+    feed_id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     size: T.int.min(1).max(100).default(10),
     detail: T.bool.default(False),
 ) -> pagination(StorySchema):
     """Story list"""
-    user_feed_id = feed_id.user_feed_id
+    check_unionid(request, feed_id)
     try:
-        total, offset, storys = UserStory.query_storys_by_feed(
-            user_feed_id=user_feed_id, user_id=request.user.id,
-            offset=offset, size=size, detail=detail)
-    except UserFeed.DoesNotExist:
+        total, offset, storys = UnionStory.query_by_feed(
+            feed_unionid=feed_id, offset=offset, size=size, detail=detail)
+    except FeedNotFoundError:
         return Response({"message": "feed does not exist"}, status=400)
-    storys = [x.to_dict(detail=detail) for x in storys]
-    for x in storys:
-        syory_unionid = StoryUnionId(feed_id.feed_id, feed_id.user_feed_id, x['offset'])
-        x.update(id=syory_unionid, feed=dict(id=feed_id), user=request.user)
+    storys = [x.to_dict() for x in storys]
     return dict(
         total=total,
+        offset=offset,
         size=len(storys),
         results=storys,
     )
 
 
 @StoryView.post('story/recent')
-def story_query_recent_by_feed_s(
+def story_query_recent(
     request,
-    feed_ids: T.list(T_feed_unionid),
+    feed_ids: T.list(T.feed_unionid.object),
     days: T.int.min(1).max(30).default(14),
     detail: T.bool.default(False),
 ) -> pagination(StorySchema):
-    user_feed_ids = [x.user_feed_id for x in feed_ids]
-    storys, feed_id_map = UserStory.query_recent_storys_by_feed_s(
-        user_feed_ids=user_feed_ids, user_id=request.user.id,
+    check_unionid(request, feed_ids)
+    storys = UnionStory.query_recent_by_user(
+        user_id=request.user.id,
+        feed_unionids=feed_ids,
         days=days, detail=detail)
-    story_dicts = []
-    for story in storys:
-        d = story.to_dict(detail=detail)
-        story_unionid = StoryUnionId(story.feed_id, feed_id_map[story.feed_id], story.offset)
-        feed_unionid = FeedUnionId(story.feed_id, feed_id_map[story.feed_id])
-        d.update(id=story_unionid, feed=dict(id=feed_unionid), user=request.user)
-        story_dicts.append(d)
+    storys = [x.to_dict() for x in storys]
     return dict(
-        total=len(story_dicts),
-        size=len(story_dicts),
-        results=story_dicts,
+        total=len(storys),
+        size=len(storys),
+        results=storys,
     )
 
 
 @StoryView.get('story/<slug:feed_unionid>-<int:offset>')
 def story_get_by_offset(
     request,
-    feed_unionid: T_feed_unionid,
+    feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     detail: T.bool.default(False),
 ) -> StorySchema:
     """Story detail"""
+    check_unionid(request, feed_unionid)
     try:
-        story = UserStory.get_story_by_offset(
-            feed_unionid.user_feed_id, offset, user_id=request.user.id, detail=detail)
-    except UserStory.DoesNotExist:
+        story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=detail)
+    except StoryNotFoundError:
         return Response({"message": "does not exist"}, status=400)
-    story = story.to_dict(detail=detail)
-    story_unionid = StoryUnionId(feed_unionid.feed_id, feed_unionid.user_feed_id, story['offset'])
-    story.update(id=story_unionid, feed=dict(id=feed_unionid), user=request.user)
-    return story
+    return story.to_dict()
 
 
 @StoryView.get('story/favorited')
@@ -115,12 +101,12 @@ def story_query_favorited(
     detail: T.bool.default(False),
 ) -> pagination(StorySchema):
     """Query favorited storys"""
-    user_storys = UserStory.query_by_user(user_id=request.user.id, is_favorited=True, detail=detail)
-    user_storys = [x.to_dict(detail=detail) for x in user_storys]
+    storys = UnionStory.query_favorited(user_id=request.user.id, detail=detail)
+    storys = [x.to_dict() for x in storys]
     return dict(
-        total=len(user_storys),
-        size=len(user_storys),
-        results=user_storys,
+        total=len(storys),
+        size=len(storys),
+        results=storys,
     )
 
 
@@ -130,38 +116,34 @@ def story_query_watched(
     detail: T.bool.default(False),
 ) -> pagination(StorySchema):
     """Query watched storys"""
-    user_storys = UserStory.query_by_user(user_id=request.user.id, is_watched=True, detail=detail)
-    user_storys = [x.to_dict(detail=detail) for x in user_storys]
+    storys = UnionStory.query_watched(user_id=request.user.id, detail=detail)
+    storys = [x.to_dict() for x in storys]
     return dict(
-        total=len(user_storys),
-        size=len(user_storys),
-        results=user_storys,
+        total=len(storys),
+        size=len(storys),
+        results=storys,
     )
 
 
 @StoryView.put('story/<slug:feed_unionid>-<int:offset>/watched')
 def story_set_watched(
     request,
-    feed_unionid: T_feed_unionid,
+    feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     is_watched: T.bool.default(True),
 ) -> StorySchema:
-    with transaction.atomic():
-        user_story = UserStory.get_or_create_by_offset(
-            feed_unionid.feed_id, offset, user_id=request.user.id)
-        user_story.update_watched(is_watched)
-    return user_story.to_dict()
+    check_unionid(request, feed_unionid)
+    story = UnionStory.set_watched_by_feed_offset(feed_unionid, offset, is_watched=is_watched)
+    return story.to_dict()
 
 
 @StoryView.put('story/<slug:feed_unionid>-<int:offset>/favorited')
 def story_set_favorited(
     request,
-    feed_unionid: T_feed_unionid,
+    feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     is_favorited: T.bool.default(True),
 ) -> StorySchema:
-    with transaction.atomic():
-        user_story = UserStory.get_or_create_by_offset(
-            feed_unionid.feed_id, offset, user_id=request.user.id)
-        user_story.update_favorited(is_favorited)
-    return user_story.to_dict()
+    check_unionid(request, feed_unionid)
+    story = UnionStory.set_favorited_by_feed_offset(feed_unionid, offset, is_favorited=is_favorited)
+    return story.to_dict()

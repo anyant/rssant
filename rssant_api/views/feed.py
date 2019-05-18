@@ -12,11 +12,12 @@ from mako.template import Template
 
 from rssant_feedlib.opml import parse_opml
 from rssant_feedlib.bookmark import parse_bookmark
-from rssant_api.models.errors import FeedExistsError
-from rssant_api.models import UserFeed
+from rssant_api.models.errors import FeedExistsError, FeedStoryOffsetError
+from rssant_api.models import UnionFeed
+from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
-
+from .helper import check_unionid
 
 OPML_TEMPLATE_PATH = os.path.join(BASE_DIR, 'rssant_api', 'resources', 'opml.mako')
 
@@ -25,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 FeedSchema = T.dict(
-    id=T.unionid('feed_id, user_feed_id'),
+    id=T.feed_unionid,
     user=T.dict(
         id=T.int,
     ),
@@ -54,25 +55,29 @@ FeedSchema = T.dict(
     dt_latest_story_published=T.datetime.object.optional,
 )
 
-T_feed_unionid = T.unionid('feed_id, user_feed_id').object
+FeedCreationSchema = T.dict(
+    id=T.int,
+    user=T.dict(
+        id=T.int,
+    ),
+    feed=T.dict(
+        id=T.feed_unionid.optional,
+    ).optional,
+    status=T.str,
+    url=T.url,
+    dt_updated=T.datetime.object.optional,
+    dt_created=T.datetime.object.optional,
+)
 
 
 FeedView = RestRouter()
-
-FEED_DETAIL_FIELDS = [
-    'feed__encoding',
-    'feed__etag',
-    'feed__last_modified',
-    'feed__content_length',
-    'feed__content_hash_base64',
-]
 
 
 @FeedView.get('feed/query')
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id = T_feed_unionid, dt_updated = T.datetime.object)).optional,
+    hints: T.list(T.dict(id = T.feed_unionid.object, dt_updated = T.datetime.object)).optional,
     detail: T.bool.default(False)
 ) -> T.dict(
     total=T.int.optional,
@@ -82,65 +87,75 @@ def feed_query(
     deleted_ids=T.list(T.int),
 ):
     """Feed query"""
-    total, user_feeds, deleted_ids = UserFeed.query_by_user(
-        user_id=request.user, hints=hints, detail=detail)
-    user_feed_dicts = [x.to_dict(detail=detail) for x in user_feeds]
+    check_unionid(request, [x['id'] for x in hints])
+    total, feeds, deleted_ids = UnionFeed.query_by_user(
+        user_id=request.user.id, hints=hints, detail=detail)
+    feeds = [x.to_dict() for x in feeds]
     return dict(
         total=total,
-        size=len(user_feed_dicts),
-        results=user_feed_dicts,
+        size=len(feeds),
+        results=feeds,
         deleted_size=len(deleted_ids),
         deleted_ids=deleted_ids,
     )
 
 
 @FeedView.get('feed/<slug:feed_unionid>')
-def feed_get(request, feed_unionid: T_feed_unionid, detail: T.bool.default(False)) -> FeedSchema:
+def feed_get(request, feed_unionid: T.feed_unionid.object, detail: T.bool.default(False)) -> FeedSchema:
     """Feed detail"""
+    check_unionid(request, feed_unionid)
     try:
-        user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id, detail=detail)
-    except UserFeed.DoesNotExist:
+        feed = UnionFeed.get_by_id(feed_unionid, detail=detail)
+    except FeedNotFoundError:
         return Response({"message": "feed does not exist"}, status=400)
-    return user_feed.to_dict(detail=detail)
+    return feed.to_dict()
 
 
 @FeedView.post('feed/')
-def feed_create(request, url: T.url.default_schema('http')) -> FeedSchema:
+def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
+    feed=FeedSchema.optional,
+    feed_creation=FeedCreationSchema.optional,
+):
     try:
-        user_feed = UserFeed.create_by_url(url, user_id=request.user.id)
+        feed, feed_creation = UnionFeed.create_by_url(url, user_id=request.user.id)
     except FeedExistsError:
         return Response({'message': 'already exists'}, status=400)
-    if not user_feed.is_ready:
-        rss.find_feed.delay(user_feed_id=user_feed.id)
-    return user_feed.to_dict()
+    if feed_creation:
+        rss.find_feed.delay(feed_creation.id)
+    return dict(
+        feed=feed.to_dict(),
+        feed_creation=feed_creation.to_dict(),
+    )
 
 
 @FeedView.put('feed/<slug:feed_unionid>')
-def feed_update(request, feed_unionid: T_feed_unionid, title: T.str.optional) -> FeedSchema:
-    user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id)
-    user_feed.update_title(title)
-    return user_feed.to_dict()
+def feed_update(request, feed_unionid: T.feed_unionid.object, title: T.str.optional) -> FeedSchema:
+    check_unionid(request, feed_unionid)
+    feed = UnionFeed.set_title(feed_unionid, title)
+    return feed.to_dict()
 
 
 @FeedView.put('feed/<slug:feed_unionid>/offset')
-def feed_set_offset(request, feed_unionid: T_feed_unionid, offset: T.int.min(0).optional) -> FeedSchema:
-    user_feed = UserFeed.get_by_unionid(feed_unionid, user_id=request.user.id, detail=True)
-    if offset > user_feed.feed.total_storys:
-        return Response({'message': 'offset too large'}, status=400)
-    user_feed.update_story_offset(offset)
-    return user_feed.to_dict()
+def feed_set_offset(request, feed_unionid: T.feed_unionid.object, offset: T.int.min(0).optional) -> FeedSchema:
+    check_unionid(request, feed_unionid)
+    try:
+        feed = UnionFeed.set_story_offset(feed_unionid, offset)
+    except FeedStoryOffsetError as ex:
+        return Response({'message': str(ex)}, status=400)
+    return feed.to_dict()
 
 
 @FeedView.put('feed/all/readed')
-def feed_set_all_readed(request, ids: T.list(T_feed_unionid).optional) -> T.dict(num_updated=T.int):
-    ids = [x.user_feed_id for x in ids]
-    num_updated = UserFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
+def feed_set_all_readed(request, ids: T.list(T.feed_unionid.object).optional) -> T.dict(num_updated=T.int):
+    check_unionid(request, ids)
+    num_updated = UnionFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
     return dict(num_updated=num_updated)
 
 
 @FeedView.delete('feed/<slug:feed_unionid>')
-def feed_delete(request, feed_unionid: T_feed_unionid):
-    UserFeed.delete_by_unionid(feed_unionid, user_id=request.user.id)
+def feed_delete(request, feed_unionid: T.feed_unionid.object):
+    check_unionid(request, feed_unionid)
+    UnionFeed.delete_by_id(feed_unionid)
 
 
 def _read_request_file(request, name='file'):
@@ -154,20 +169,16 @@ def _read_request_file(request, name='file'):
 
 
 def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
-    user_feeds = UserFeed.create_by_url_s(urls, user_id=user.id)
-    readys = []
+    feeds, feed_creations = UnionFeed.create_by_url_s(urls=urls, user_id=user.id)
     find_feed_tasks = []
-    for user_feed in user_feeds:
-        if not user_feed.is_ready:
-            find_feed_tasks.append(rss.find_feed.s(user_feed.id))
-        else:
-            readys.append(user_feed)
+    for feed_creation in feed_creations:
+        find_feed_tasks.append(rss.find_feed.s(feed_creation.id))
     # https://docs.celeryproject.org/en/latest/faq.html#does-celery-support-task-priorities
     # https://docs.celeryproject.org/en/latest/userguide/calling.html#routing-options
     # https://docs.celeryproject.org/en/latest/userguide/calling.html#advanced-options
     queue = 'bookmark' if is_from_bookmark else 'batch'
     celery.group(find_feed_tasks).apply_async(queue=queue)
-    return user_feeds, readys
+    return feeds, feed_creations
 
 
 @FeedView.post('feed/opml')
@@ -179,25 +190,25 @@ def feed_import_opml(request) -> pagination(FeedSchema, maxlen=5000):
     except (Invalid, ParseError) as ex:
         return Response({'message': str(ex)}, status=400)
     urls = list(sorted(set([x['url'] for x in result['items']])))
-    user_feeds, readys = _create_feeds_by_urls(request.user, urls)
-    readys = [x.to_dict() for x in readys]
+    feeds, feed_creations = _create_feeds_by_urls(request.user, urls)
+    feeds = [x.to_dict() for x in feeds]
     return dict(
-        total=len(user_feeds),
-        size=len(readys),
-        results=readys
+        total=len(feeds),
+        size=len(feeds),
+        results=feeds
     )
 
 
 @FeedView.get('feed/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
-    user_feeds = UserFeed.query_by_user(request.user.id, show_pending=True)
-    user_feeds = [x.to_dict() for x in user_feeds]
-    for user_feed in user_feeds:
+    feeds = UnionFeed.query_by_user(request.user.id)
+    feeds = [x.to_dict() for x in feeds]
+    for user_feed in feeds:
         for field in ['title', 'link', 'url', 'version']:
             user_feed[field] = xml_escape(user_feed[field] or '')
     tmpl = Template(filename=OPML_TEMPLATE_PATH)
-    content = tmpl.render(feeds=user_feeds)
+    content = tmpl.render(feeds=feeds)
     response = HttpResponse(content, content_type='text/xml')
     if download:
         response['Content-Disposition'] = 'attachment;filename="rssant.opml"'
@@ -209,10 +220,10 @@ def feed_import_bookmark(request) -> pagination(FeedSchema, maxlen=5000):
     """import feeds from bookmark file"""
     text = _read_request_file(request)
     urls = parse_bookmark(text)
-    user_feeds, readys = _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)
-    readys = [x.to_dict() for x in readys]
+    feeds, feed_creations = _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)
+    feeds = [x.to_dict() for x in feeds]
     return dict(
-        total=len(user_feeds),
-        size=len(readys),
-        results=readys
+        total=len(feeds),
+        size=len(feeds),
+        results=feeds
     )

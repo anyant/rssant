@@ -1,16 +1,16 @@
-from collections import namedtuple
-
 from django.utils import timezone
 from django.db import connection, transaction
 from html2text import HTML2Text
+from cached_property import cached_property
 
+from rssant_common.validator import StoryUnionId, FeedUnionId
 from .helper import Model, ContentHashMixin, models, optional, User
-from .feed import Feed, UserFeed, FeedUnionId
+from .feed import Feed, UserFeed
+from .errors import FeedNotFoundError, StoryNotFoundError
 
 MONTH_18 = timezone.timedelta(days=18 * 30)
 ONE_MONTH = timezone.timedelta(days=30)
 
-StoryUnionId = namedtuple('StoryUnionId', 'feed_id, user_feed_id, offset')
 
 STORY_DETAIL_FEILDS = ['summary', 'content']
 USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
@@ -61,32 +61,6 @@ class Story(Model, ContentHashMixin):
     dt_synced = models.DateTimeField(**optional, help_text="最近一次同步时间")
     summary = models.TextField(**optional, help_text="摘要或较短的内容")
     content = models.TextField(**optional, help_text="文章内容")
-
-    def to_dict(self, detail=False):
-        ret = dict(
-            offset=self.offset,
-            unique_id=self.unique_id,
-            title=self.title,
-            link=self.link,
-            dt_published=self.dt_published,
-            dt_updated=self.dt_updated,
-            dt_created=self.dt_created,
-            dt_synced=self.dt_synced,
-        )
-        if detail:
-            ret.update(
-                summary=convert_summary(self.summary),
-                content=self.content,
-            )
-        return ret
-
-    @staticmethod
-    def get_by_unionid(story_unionid, detail=False):
-        return Story.get_by_offset(story_unionid.feed_id, story_unionid.offset, detail=detail)
-
-    @staticmethod
-    def get_by_feed_unionid_offset(feed_unionid, offset, detail=False):
-        return Story.get_by_offset(feed_unionid.feed_id, offset, detail=detail)
 
     @staticmethod
     def get_by_offset(feed_id, offset, detail=False):
@@ -215,7 +189,7 @@ class Story(Model, ContentHashMixin):
         dt_published_days = (dt_latest_story_published - dt_early_story_published).days
         num_published_storys = total_storys - offset_early_story
         assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
-        story_publish_period = round(max(dt_published_days, 7) / num_published_storys)
+        story_publish_period = round(max(dt_published_days, 1) / num_published_storys)
         is_updated = (
             (feed.offset_early_story != offset_early_story) or
             (feed.total_storys != total_storys)
@@ -268,14 +242,18 @@ class Story(Model, ContentHashMixin):
 
 class UserStory(Model):
     class Meta:
-        unique_together = ('user', 'story')
+        unique_together = [
+            ('user', 'story'),
+            ('user_feed', 'offset'),
+            ('user', 'feed', 'offset'),
+        ]
         indexes = [
-            models.Index(fields=["user_feed", "offset"]),
-            models.Index(fields=["user", "story"]),
+            models.Index(fields=["user", "feed", "offset"]),
+            models.Index(fields=["user", "feed", "story"]),
         ]
 
     class Admin:
-        display_fields = ['unionid', 'user_id', 'feed_id', 'story_id', 'is_watched', 'is_favorited']
+        display_fields = ['user_id', 'feed_id', 'story_id', 'is_watched', 'is_favorited']
         search_fields = ['user_feed_id']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -289,24 +267,6 @@ class UserStory(Model):
     is_favorited = models.BooleanField(default=False)
     dt_favorited = models.DateTimeField(**optional, help_text="标星时间")
 
-    def to_dict(self, detail=False):
-        ret = self.story.to_dict(detail=detail)
-        ret.update(
-            id=self.unionid,
-            user=dict(id=self.user_id),
-            feed=dict(id=FeedUnionId(self.feed_id, self.user_feed_id)),
-            dt_created=self.dt_created,
-            is_watched=self.is_watched,
-            dt_watched=self.dt_watched,
-            is_favorited=self.is_favorited,
-            dt_favorited=self.dt_favorited
-        )
-        return ret
-
-    @property
-    def unionid(self):
-        return StoryUnionId(self.feed_id, self.user_feed_id, self.offset)
-
     @staticmethod
     def get_by_pk(pk, user_id=None, detail=False):
         q = UserStory.objects.select_related('story')
@@ -318,100 +278,299 @@ class UserStory(Model):
         return user_story
 
     @staticmethod
-    def get_by_unionid(story_unionid, user_id=None, detail=False):
-        return UserStory.get_by_offset(story_unionid.user_feed_id, story_unionid.offset, user_id=user_id, detail=detail)
-
-    @staticmethod
-    def get_by_feed_unionid_offset(feed_unionid, offset, user_id=None, detail=False):
-        return UserStory.get_by_offset(feed_unionid.user_feed_id, offset, user_id=user_id, detail=detail)
-
-    @staticmethod
-    def get_by_offset(user_feed_id, offset, user_id=None, detail=False):
+    def get_by_offset(user_id, feed_id, offset, detail=False):
         q = UserStory.objects.select_related('story')
-        if user_id is not None:
-            q = q.filter(user_id=user_id)
+        q = q.filter(user_id=user_id, feed_id=feed_id, offset=offset)
         if not detail:
             q = q.defer(*USER_STORY_DETAIL_FEILDS)
-        user_story = q.get(user_feed_id=user_feed_id, offset=offset)
+        user_story = q.get()
         return user_story
 
-    @staticmethod
-    def get_story_by_offset(user_feed_id, offset, user_id=None, detail=False):
-        try:
-            user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
-        except UserFeed.DoesNotExist as ex:
-            raise UserStory.DoesNotExist from ex
-        feed_id = user_feed.feed_id
-        try:
-            story = Story.get_by_offset(feed_id, offset)
-        except Story.DoesNotExist as ex:
-            raise UserStory.DoesNotExist from ex
-        return story
+
+class UnionStory:
+
+    def __init__(self, story, *, user_id, user_feed_id, user_story=None, detail=False):
+        self._story = story
+        self._user_id = user_id
+        self._user_feed_id = user_feed_id
+        self._user_story = user_story
+        self._detail = detail
+
+    @cached_property
+    def id(self):
+        return StoryUnionId(self._user_id, self._story.feed_id, self._story.offset)
+
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @cached_property
+    def feed_id(self):
+        return FeedUnionId(self._user_id, self._story.feed_id)
+
+    @property
+    def offset(self):
+        return self._story.offset
+
+    @property
+    def unique_id(self):
+        return self._story.unique_id
+
+    @property
+    def title(self):
+        return self._story.title
+
+    @property
+    def link(self):
+        return self._story.link
+
+    @property
+    def dt_published(self):
+        return self._story.dt_published
+
+    @property
+    def dt_updated(self):
+        return self._story.dt_updated
+
+    @property
+    def dt_created(self):
+        return self._story.dt_created
+
+    @property
+    def dt_synced(self):
+        return self._story.dt_synced
+
+    @property
+    def is_watched(self):
+        if not self._user_story:
+            return False
+        return self._user_story.is_watched
+
+    @property
+    def dt_watched(self):
+        if not self._user_story:
+            return None
+        return self._user_story.dt_watched
+
+    @property
+    def is_favorited(self):
+        if not self._user_story:
+            return False
+        return self._user_story.is_favorited
+
+    @property
+    def dt_favorited(self):
+        if not self._user_story:
+            return None
+        return self._user_story.dt_favorited
+
+    @property
+    def summary(self):
+        return self._story.summary
+
+    @property
+    def content(self):
+        return self._story.content
+
+    def to_dict(self):
+        ret = dict(
+            id=self.id,
+            user=dict(id=self.user_id),
+            feed=dict(id=self.feed_id),
+            offset=self.offset,
+            unique_id=self.unique_id,
+            title=self.title,
+            link=self.link,
+            dt_published=self.dt_published,
+            dt_updated=self.dt_updated,
+            dt_created=self.dt_created,
+            dt_synced=self.dt_synced,
+            is_watched=self.is_watched,
+            dt_watched=self.dt_watched,
+            is_favorited=self.is_favorited,
+            dt_favorited=self.dt_favorited,
+        )
+        if self._detail:
+            ret.update(
+                summary=self.summary,
+                content=self.content,
+            )
+        return ret
 
     @staticmethod
-    def get_or_create_by_offset(user_feed_id, offset, user_id=None, detail=False):
+    def _check_user_feed_by_story_unionid(story_unionid):
+        user_id, feed_id, offset = story_unionid
+        q = UserFeed.objects.only('id').filter(user_id=user_id, feed_id=feed_id)
         try:
-            user_story = UserStory.get_by_offset(
-                user_feed_id, offset, user_id=user_id, detail=detail)
+            user_feed = q.get()
+        except UserFeed.DoesNotExist:
+            raise StoryNotFoundError()
+        return user_feed.id
+
+    @staticmethod
+    def get_by_id(story_unionid, detail=False):
+        user_feed_id = UnionStory._check_story_unionid(story_unionid)
+        user_id, feed_id, offset = story_unionid
+        q = UserStory.objects.select_related('story')
+        q = q.filter(user_id=user_id, feed_id=feed_id, offset=offset)
+        if not detail:
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        try:
+            user_story = q.get()
         except UserStory.DoesNotExist:
             user_story = None
-        if not user_story:
-            user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
-            story = Story.get_by_offset(user_feed.feed_id, offset, detail=detail)
-            user_story = UserStory(
-                user_feed=user_feed, story=story, user_id=user_feed.user_id,
-                feed_id=user_feed.feed_id, offset=story.offset)
-            user_story.save()
-        return user_story
-
-    def update_watched(self, is_watched):
-        self.is_watched = is_watched
-        if is_watched:
-            self.dt_watched = timezone.now()
-        self.save()
-
-    def update_favorited(self, is_favorited):
-        self.is_favorited = is_favorited
-        if is_favorited:
-            self.dt_watched = timezone.now()
-        self.save()
+            try:
+                story = Story.get_by_offset(feed_id, offset, detail=detail)
+            except Story.DoesNotExist:
+                raise StoryNotFoundError()
+        else:
+            story = user_story.story
+        return UnionStory(
+            story,
+            user_id=user_id,
+            user_feed_id=user_feed_id,
+            user_story=user_story,
+            detail=detail
+        )
 
     @staticmethod
-    def query_storys_by_feed(user_feed_id, offset=None, user_id=None, size=10, detail=False):
-        user_feed = UserFeed.get_by_pk(user_feed_id, user_id=user_id)
-        feed_id = user_feed.feed.id
+    def get_by_feed_offset(feed_unionid, offset, detail=False):
+        story_unionid = StoryUnionId(*feed_unionid, offset)
+        return UnionStory.get_by_id(story_unionid)
+
+    @staticmethod
+    def _merge_storys(storys, user_storys, *, user_id, user_feeds=None, detail=False):
+        user_storys_map = {x.story_id: x for x in user_storys}
+        if user_feeds:
+            user_feeds_map = {x.feed_id: x.id for x in user_feeds}
+        else:
+            user_feeds_map = {x.feed_id: x.user_feed_id for x in user_storys}
+        ret = []
+        for story in storys:
+            user_story = user_storys_map.get(story.id)
+            user_feed_id = user_feeds_map.get(story.feed_id)
+            ret.append(UnionStory(
+                story,
+                user_id=user_id,
+                user_feed_id=user_feed_id,
+                user_story=user_story,
+                detail=detail
+            ))
+        return ret
+
+    @staticmethod
+    def query_by_feed(feed_unionid, offset=None, size=10, detail=False):
+        user_id, feed_id = feed_unionid
+        q = UserFeed.objects.select_related('feed')\
+            .filter(user_id=user_id, feed_id=feed_id)\
+            .only('id', 'story_offset', 'feed_id', 'feed__id', 'feed__total_storys')
+        try:
+            user_feed = q.get()
+        except UserFeed.DoesNotExist as ex:
+            raise FeedNotFoundError() from ex
         total = user_feed.feed.total_storys
         if offset is None:
             offset = user_feed.story_offset
-        q = Story.objects
+        q = Story.objects.filter(feed_id=feed_id, offset__gte=offset)
         if not detail:
             q = q.defer(*STORY_DETAIL_FEILDS)
-        q = q.filter(feed_id=feed_id, offset__gte=offset)
         q = q.order_by('offset')[:size]
         storys = list(q.all())
-        return total, offset, storys
+        story_ids = [x.id for x in storys]
+        q = UserStory.objects.filter(user_id=user_id, feed_id=feed_id, story_id__in=story_ids)
+        q = q.exclude(is_favorited=False, is_watched=False)
+        user_storys = list(q.all())
+        ret = UnionStory._merge_storys(
+            storys, user_storys, user_feeds=[user_feed], user_id=user_id, detail=detail)
+        return total, offset, ret
 
     @staticmethod
-    def query_recent_storys_by_feed_s(user_feed_ids, days=14, limit=300, user_id=None, detail=False):
-        user_feeds = UserFeed.query_by_pk_s(user_feed_ids, user_id=user_id)
-        feed_id_map = {x.feed_id: x.id for x in user_feeds}
+    def query_recent_by_user(user_id, feed_unionids=None, days=14, limit=300, detail=False):
+        if feed_unionids:
+            feed_ids = [x.feed_id for x in feed_unionids]
+            q = UserFeed.objects.only('id', 'feed_id')\
+                .filter(user_id=user_id, feed_id__in=feed_ids)
+            user_feeds = list(q.all())
+        else:
+            q = UserFeed.objects.only('id', 'feed_id')\
+                .filter(user_id=user_id)
+            user_feeds = list(q.all())
+        feed_ids = [x.feed_id for x in q.all()]
         dt_begin = timezone.now() - timezone.timedelta(days=days)
-        q = Story.objects.filter(feed_id__in=list(feed_id_map))\
+        q = Story.objects.filter(feed_id__in=feed_ids)\
             .filter(dt_published__gte=dt_begin)
         if not detail:
             q = q.defer(*STORY_DETAIL_FEILDS)
         q = q.order_by('-dt_published')[:limit]
         storys = list(q.all())
-        return storys, feed_id_map
+        story_ids = [x.id for x in storys]
+        q = UserStory.objects.filter(user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids)
+        q = q.exclude(is_favorited=False, is_watched=False)
+        user_storys = list(q.all())
+        union_storys = UnionStory._merge_storys(
+            storys, user_storys, user_feeds=user_feeds, user_id=user_id, detail=detail)
+        return union_storys
 
     @staticmethod
-    def query_by_user(user_id, is_watched=None, is_favorited=None, detail=False):
-        q = UserStory.objects.filter(user_id=user_id)
-        if is_watched is not None:
-            q = q.filter(is_watched=is_watched)
+    def _query_by_tag(user_id, is_favorited=None, is_watched=None, detail=False):
+        q = UserStory.objects.select_related('story').filter(user_id=user_id)
+        if not detail:
+            q = q.defer(*STORY_DETAIL_FEILDS)
         if is_favorited is not None:
             q = q.filter(is_favorited=is_favorited)
-        if not detail:
-            q = q.defer(*USER_STORY_DETAIL_FEILDS)
-        user_storys = list(q.order_by('-dt_created').all())
-        return user_storys
+        if is_watched is not None:
+            q = q.filter(is_watched=is_watched)
+        user_storys = list(q.all())
+        storys = [x.story for x in user_storys]
+        union_storys = UnionStory._merge_storys(storys, user_storys, user_id=user_id, detail=detail)
+        return union_storys
+
+    @staticmethod
+    def query_favorited(user_id, detail=False):
+        return UnionStory._query_by_tag(user_id, is_favorited=True, detail=detail)
+
+    @staticmethod
+    def query_watched(user_id, detail=False):
+        return UnionStory._query_by_tag(user_id, is_watched=True, detail=detail)
+
+    @staticmethod
+    def _set_tag_by_id(story_unionid, is_favorited=None, is_watched=None):
+        union_story = UnionStory.get_by_id(story_unionid)
+        user_feed_id = union_story._user_feed_id
+        user_story = union_story.user_story
+        if user_story is None:
+            user_id, feed_id, offset = story_unionid
+            user_story = UserStory(
+                user_id=user_id,
+                feed_id=feed_id,
+                user_feed_id=user_feed_id,
+                story_id=union_story.story.id,
+                offset=union_story.story.offset
+            )
+        if is_favorited is not None:
+            user_story.is_favorited = user_story
+            user_story.dt_favorited = timezone.now()
+        if is_watched is not None:
+            user_story.is_watched = user_story
+            user_story.dt_watched = timezone.now()
+        user_story.save()
+        union_story._user_story = user_story
+        return union_story
+
+    @staticmethod
+    def set_favorited_by_id(story_unionid, is_favorited):
+        return UnionStory._set_tag_by_id(story_unionid, is_favorited=is_favorited)
+
+    @staticmethod
+    def set_watched_by_id(story_unionid, is_watched):
+        return UnionStory._set_tag_by_id(story_unionid, is_watched=is_watched)
+
+    @staticmethod
+    def set_favorited_by_feed_offset(feed_unionid, offset, is_favorited):
+        story_unionid = StoryUnionId(*feed_unionid, offset)
+        return UnionStory.set_favorited_by_id(story_unionid, is_favorited=is_favorited)
+
+    @staticmethod
+    def set_watched_by_feed_offset(feed_unionid, offset, is_watched):
+        story_unionid = StoryUnionId(*feed_unionid, offset)
+        return UnionStory.set_watched_by_id(story_unionid, is_watched=is_watched)

@@ -1,14 +1,12 @@
 import gzip
-from collections import namedtuple
 
 from django.utils import timezone
 from django.db import transaction, connection
+from cached_property import cached_property
 
-from .errors import FeedExistsError
+from rssant_common.validator import FeedUnionId
+from .errors import FeedExistsError, FeedStoryOffsetError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
-
-
-FeedUnionId = namedtuple('FeedUnionId', 'feed_id, user_feed_id')
 
 
 class FeedStatus:
@@ -213,49 +211,23 @@ class UserFeed(Model):
         ]
 
     class Admin:
-        display_fields = ['unionid', 'user_id', 'feed_id', 'status', 'url']
+        display_fields = ['user_id', 'feed_id', 'status', 'url']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
-    status = models.CharField(
-        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
-    url = models.TextField(help_text="用户输入的供稿地址")
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     story_offset = models.IntegerField(**optional, default=0, help_text="story offset")
     is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
-    def to_dict(self, detail=False):
-        if self.feed_id:
-            ret = self.feed.to_dict(detail=detail)
-            num_unread_storys = self.feed.total_storys - self.story_offset
-            ret.update(num_unread_storys=num_unread_storys)
-            if self.dt_updated and self.feed.dt_updated and self.dt_updated > self.feed.dt_updated:
-                ret.update(dt_updated=self.dt_updated)
-        else:
-            ret = dict(url=self.url, dt_updated=self.dt_updated)
-        ret.update(
-            id=self.unionid,
-            user=dict(id=self.user_id),
-            dt_created=self.dt_created,
-            story_offset=self.story_offset,
-        )
-        if not ret.get('dt_updated'):
-            ret['dt_updated'] = self.dt_created
-        if self.title:
-            ret.update(title=self.title)
-        if self.status and self.status != FeedStatus.READY:
-            ret.update(status=self.status)
-        return ret
+    @property
+    def status(self):
+        return self._feed.status
 
     @property
-    def unionid(self):
-        return FeedUnionId(self.feed_id or 0, self.id)
-
-    @property
-    def is_ready(self):
-        return self.status and self.status == FeedStatus.READY
+    def url(self):
+        return self._feed.url
 
     @staticmethod
     def get_by_pk(pk, user_id=None, detail=False):
@@ -268,191 +240,65 @@ class UserFeed(Model):
         return user_feed
 
     @staticmethod
-    def get_by_unionid(feed_unionid, user_id=None, detail=False):
-        return UserFeed.get_by_pk(feed_unionid.user_feed_id, user_id=user_id, detail=detail)
-
-    @staticmethod
-    def query_by_pk_s(pks, user_id=None, detail=False):
-        q = UserFeed.objects.select_related('feed')
-        if not detail:
-            q = q.defer(*FEED_DETAIL_FIELDS)
-        if user_id is not None:
-            q = q.filter(user_id=user_id)
-        user_feeds = q.filter(pk__in=pks)
-        return user_feeds
-
-    @staticmethod
     def get_first_by_user_and_feed(user_id, feed_id):
         return UserFeed.objects.filter(user_id=user_id, feed_id=feed_id).first()
 
-    @staticmethod
-    def query_by_user(user_id, hints=None, detail=False, show_pending=False):
-        """获取用户所有的订阅，支持增量查询
 
-        hints: T.list(T.dict(id=T.unionid, dt_updated=T.datetime))
-        """
+class FeedCreation(Model):
+    """订阅创建信息"""
 
-        def sort_user_feeds(user_feeds):
-            return list(sorted(user_feeds, key=lambda x: (bool(x.dt_updated), x.dt_updated, x.id), reverse=True))
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'dt_created']),
+        ]
 
-        q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
-        if not hints:
-            if not detail:
-                q = q.defer(*FEED_DETAIL_FIELDS)
-            if not show_pending:
-                q = q.exclude(status=FeedStatus.PENDING)
-            user_feeds = list(q.all())
-            user_feeds = sort_user_feeds(user_feeds)
-            return len(user_feeds), user_feeds, []
+    class Admin:
+        display_fields = ['user_id', 'feed_id', 'status', 'url', 'is_from_bookmark', 'dt_created']
 
-        hints = {x['id'].user_feed_id: x['dt_updated'] for x in hints}
-        q = q.only("id", 'feed_id', 'feed__dt_updated')
-        user_feeds_map = {}
-        for user_feed in q.all():
-            user_feeds_map[user_feed.id] = user_feed
-        total = len(user_feeds_map)
-        deteted_ids = []
-        for user_feed_id in hints:
-            if user_feed_id not in user_feeds_map:
-                deteted_ids.append(user_feed_id)
-        updates = []
-        for user_feed in user_feeds_map.values():
-            dt_updated = None
-            if user_feed.feed_id:
-                dt_updated = user_feed.feed.dt_updated
-            if not dt_updated:
-                dt_updated = user_feed.dt_updated or user_feed.dt_created
-            if user_feed.id not in hints or not dt_updated:
-                updates.append(user_feed.id)
-            elif dt_updated > hints[user_feed.id]:
-                updates.append(user_feed.id)
-        q = UserFeed.objects.filter(user_id=user_id, id__in=updates)
-        if not show_pending:
-            q = q.exclude(status=FeedStatus.PENDING)
-        q = q.select_related('feed')
-        if not detail:
-            q = q.defer(*FEED_DETAIL_FIELDS)
-        user_feeds = list(q.all())
-        user_feeds = sort_user_feeds(user_feeds)
-        return total, user_feeds, deteted_ids
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    feed = models.ForeignKey(Feed, **optional, on_delete=models.CASCADE)
+    url = models.TextField(help_text="用户输入的供稿地址")
+    is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
+    status = models.CharField(
+        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
+    dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
+    dt_updated = models.DateTimeField(**optional, help_text="更新时间")
+
+    def to_dict(self):
+        feed_unionid = None
+        if self.feed_id:
+            feed_unionid = FeedUnionId(self.user_id, self.feed_id)
+        return dict(
+            id=self.id,
+            user=dict(id=self.user_id),
+            feed=dict(id=feed_unionid),
+            url=self.url,
+            is_from_bookmark=self.is_from_bookmark,
+            status=self.status,
+            dt_created=self.dt_created,
+            dt_updated=self.dt_updated,
+        )
 
     @staticmethod
-    def create_by_url(url, user_id):
-        feed = None
-        target_url = FeedUrlMap.find_target(url)
-        if target_url:
-            feed = Feed.objects.filter(url=target_url).first()
-        if feed:
-            user_feed = UserFeed.objects.filter(user_id=user_id, feed=feed).first()
-            if user_feed:
-                raise FeedExistsError('already exists')
-            user_feed = UserFeed(user_id=user_id, feed=feed, url=url, status=FeedStatus.READY)
-        else:
-            user_feed = UserFeed(user_id=user_id, url=url)
-        user_feed.save()
-        return user_feed
+    def bulk_set_pending(feed_creation_ids):
+        q = FeedCreation.objects.filter(id__in=feed_creation_ids)
+        return q.update(status=FeedStatus.PENDING, dt_updated=timezone.now())
 
     @staticmethod
-    def delete_by_pk(pk, user_id=None):
-        user_feed = UserFeed.get_by_pk(pk, user_id=user_id)
-        user_feed.delete()
-
-    @staticmethod
-    def delete_by_unionid(feed_unionid, user_id=None):
-        UserFeed.delete_by_pk(feed_unionid.user_feed_id)
-
-    def update_story_offset(self, offset):
-        self.story_offset = offset
-        self.dt_updated = timezone.now()
-        self.save()
-
-    def update_title(self, title):
-        self.title = title
-        self.dt_updated = timezone.now()
-        self.save()
-
-    @staticmethod
-    def set_all_readed_by_user(user_id, ids=None) -> int:
-        if ids is not None and not ids:
-            return 0
-        q = UserFeed.objects.filter(user_id=user_id)
-        if ids is not None:
-            q = q.filter(id__in=ids)
-        q = q.select_related('feed')\
-            .only('_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys')
-        updates = []
-        for user_feed in q.all():
-            num_unread = user_feed.feed.total_storys - user_feed.story_offset
-            if num_unread > 0:
-                user_feed.story_offset = user_feed.feed.total_storys
-                updates.append(user_feed)
-        with transaction.atomic():
-            for user_feed in updates:
-                user_feed.save()
-        return len(updates)
-
-    @staticmethod
-    def create_by_url_s(urls, user_id, batch_size=500, is_from_bookmark=False):
-        # 批量预查询，减少SQL查询数量，显著提高性能
-        if not urls:
-            return []
-        url_map = FeedUrlMap.find_all_target(urls)
-        feed_map = {}
-        found_feeds = Feed.objects.filter(url__in=set(url_map.values())).all()
-        for x in found_feeds:
-            feed_map[x.url] = x
-        user_feed_map = {}
-        found_user_feeds = list(UserFeed.objects.filter(
-            user_id=user_id, feed__in=found_feeds).all())
-        for x in found_user_feeds:
-            user_feed_map[x.feed_id] = x
-        user_feed_bulk_creates = []
-        for url in urls:
-            feed = feed_map.get(url_map.get(url))
-            if feed:
-                if feed.id in user_feed_map:
-                    continue
-                user_feed = UserFeed(user_id=user_id, feed=feed, url=url, status=FeedStatus.READY)
-                user_feed_bulk_creates.append(user_feed)
-            else:
-                user_feed = UserFeed(user_id=user_id, url=url, is_from_bookmark=is_from_bookmark)
-                user_feed_bulk_creates.append(user_feed)
-        UserFeed.objects.bulk_create(user_feed_bulk_creates, batch_size=batch_size)
-        user_feeds = found_user_feeds + user_feed_bulk_creates
-        user_feeds = list(sorted(user_feeds, key=lambda x: x.url))
-        return user_feeds
-
-    @staticmethod
-    def bulk_set_pending(user_feed_ids):
-        sql_update_status = """
-        UPDATE rssant_api_userfeed
-        SET status=%s, dt_updated=%s
-        WHERE id=ANY(%s)
-        """
-        with connection.cursor() as cursor:
-            cursor.execute(sql_update_status, [FeedStatus.PENDING, timezone.now(), user_feed_ids])
-
-    @staticmethod
-    def delete_isolated_by_status(status, survival_seconds=None):
-        q = UserFeed.objects.filter(status=status, feed_id__isnull=True)
+    def delete_by_status(status, survival_seconds=None):
+        q = UserFeed.objects.filter(status=status)
         if survival_seconds:
             deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
             q = q.filter(dt_created__lt=deadline)
         num_deleted, __ = q.delete()
         return num_deleted
 
-    @staticmethod
-    def query_isolated_ids_by_status(status, survival_seconds=None):
-        q = UserFeed.objects.filter(status=status, feed_id__isnull=True)
-        if survival_seconds:
-            deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
-            q = q.filter(dt_created__lt=deadline)
-        user_feed_ids = [x.id for x in q.only('id').all()]
-        return user_feed_ids
-
 
 class FeedUrlMap(Model):
     """起始 URL 到 Feed URL 直接关联，用于加速FeedFinder"""
+
+    NOT_FOUND = 'NOT_FOUND'  # 特殊Target
+
     class Meta:
         indexes = [
             models.Index(fields=["source", "dt_created"]),
@@ -487,3 +333,313 @@ class FeedUrlMap(Model):
         for item in items:
             url_map[item.source] = item.target
         return url_map
+
+
+class UnionFeed:
+    def __init__(self, feed, user_feed, detail=False):
+        self._feed = feed
+        self._user_feed = user_feed
+        self._detail = detail
+
+    @cached_property
+    def id(self):
+        return FeedUnionId(self._user_feed.user_id, self._feed.id)
+
+    @property
+    def user_id(self):
+        return self._user_feed.user_id
+
+    @property
+    def status(self):
+        return self._feed.status
+
+    @property
+    def is_ready(self):
+        return self.status and self.status == FeedStatus.READY
+
+    @property
+    def url(self):
+        return self._feed.url
+
+    @property
+    def title(self):
+        if self._user_feed.title:
+            return self._user_feed.title
+        return self._feed.title
+
+    @property
+    def link(self):
+        return self._feed.link
+
+    @property
+    def author(self):
+        return self._feed.author
+
+    @property
+    def icon(self):
+        return self._feed.icon
+
+    @property
+    def version(self):
+        return self._feed.version
+
+    @property
+    def total_storys(self):
+        return self._feed.total_storys
+
+    @property
+    def story_offset(self):
+        return self._user_feed.story_offset
+
+    @property
+    def num_unread_storys(self):
+        return self._feed.total_storys - self._user_feed.story_offset
+
+    @property
+    def dt_updated(self):
+        if not (self._user_feed.dt_updated and self._feed.dt_updated):
+            return None
+        if self._user_feed.dt_updated > self._feed.dt_updated:
+            return self._user_feed.dt_updated
+        return self._feed.dt_updated
+
+    @property
+    def dt_created(self):
+        if self._user_feed.dt_created:
+            return self._user_feed.dt_created
+        return self._feed.dt_created
+
+    @property
+    def story_publish_period(self):
+        return self._feed.story_publish_period
+
+    @property
+    def offset_early_story(self):
+        return self._feed.offset_early_story
+
+    @property
+    def dt_early_story_published(self):
+        return self._feed.dt_early_story_published
+
+    @property
+    def dt_latest_story_published(self):
+        return self._feed.dt_latest_story_published
+
+    @property
+    def description(self):
+        return self._feed.description
+
+    @property
+    def encoding(self):
+        return self._feed.encoding
+
+    @property
+    def etag(self):
+        return self._feed.etag
+
+    @property
+    def last_modified(self):
+        return self._feed.last_modified
+
+    @property
+    def content_length(self):
+        return self._feed.content_length
+
+    @property
+    def content_hash_base64(self):
+        return self._feed.content_hash_base64
+
+    @property
+    def dt_checked(self):
+        return self._feed.dt_checked
+
+    @property
+    def dt_synced(self):
+        return self._feed.dt_synced
+
+    def to_dict(self):
+        ret = dict(
+            id=self.id,
+            user=dict(id=self.user_id),
+            status=self.status,
+            url=self.url,
+            title=self.title,
+            link=self.link,
+            author=self.author,
+            icon=self.icon,
+            version=self.version,
+            total_storys=self.total_storys,
+            story_offset=self.story_offset,
+            num_unread_storys=self.num_unread_storys,
+            story_publish_period=self.story_publish_period,
+            offset_early_story=self.offset_early_story,
+            dt_updated=self.dt_updated,
+            dt_created=self.dt_created,
+            dt_early_story_published=self.dt_early_story_published,
+            dt_latest_story_published=self.dt_latest_story_published,
+        )
+        if self._detail:
+            ret.update(
+                description=self.description,
+                encoding=self.encoding,
+                etag=self.etag,
+                last_modified=self.last_modified,
+                content_length=self.content_length,
+                content_hash_base64=self.content_hash_base64,
+                dt_checked=self.dt_checked,
+                dt_synced=self.dt_synced,
+            )
+        return ret
+
+    @staticmethod
+    def get_by_id(feed_unionid, detail=False):
+        user_id, feed_id = feed_unionid
+        q = UserFeed.objects.select_related('feed')
+        q = q.filter(user_id=user_id, feed_id=feed_id)
+        if not detail:
+            q = q.defer(*FEED_DETAIL_FIELDS)
+        user_feed = q.get()
+        return UnionFeed(user_feed.feed, user_feed, detail=detail)
+
+    @staticmethod
+    def _merge_user_feeds(user_feeds, detail=False):
+        def sort_union_feeds(x):
+            return (bool(x.dt_updated), x.dt_updated, x.id)
+        union_feeds = []
+        for user_feed in user_feeds:
+            union_feeds.append(UnionFeed(user_feed.feed, user_feed, detail=detail))
+        return list(sorted(union_feeds, key=sort_union_feeds, reverse=True))
+
+    @staticmethod
+    def query_by_user(user_id, hints=None, detail=False):
+        """获取用户所有的订阅，支持增量查询
+
+        hints: T.list(T.dict(id=T.unionid, dt_updated=T.datetime))
+        """
+        if not hints:
+            q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
+            if not detail:
+                q = q.defer(*FEED_DETAIL_FIELDS)
+            union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
+            return len(union_feeds), union_feeds, []
+        hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
+        q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
+        q = q.only("id", 'feed_id', 'feed__dt_updated')
+        user_feeds = list(q.all())
+        total = len(user_feeds)
+        feed_ids = {user_feed.feed_id for user_feed in user_feeds}
+        deteted_ids = []
+        for feed_id in set(hints) - feed_ids:
+            deteted_ids.append(FeedUnionId(user_id, feed_id))
+        updates = []
+        for user_feed in user_feeds:
+            feed_id = user_feed.id
+            dt_updated = user_feed.feed.dt_updated
+            if feed_id not in hints or not dt_updated:
+                updates.append(feed_id)
+            elif dt_updated > hints[feed_id]:
+                updates.append(feed_id)
+        q = UserFeed.objects.select_related('feed')\
+            .filter(user_id=user_id, feed_id__in=updates)
+        if not detail:
+            q = q.defer(*FEED_DETAIL_FIELDS)
+        union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
+        return total, union_feeds, deteted_ids
+
+    @staticmethod
+    def delete_by_id(feed_unionid):
+        user_id, feed_id = feed_unionid
+        user_feed = UserFeed.objects.only('id').get(user_id=user_id, feed_id=feed_id)
+        user_feed.delete()
+
+    @staticmethod
+    def set_story_offset(feed_unionid, offset):
+        union_feed = UnionFeed.get_by_id(feed_unionid)
+        if not offset:
+            offset = union_feed.total_storys
+        if offset > union_feed.total_storys:
+            raise FeedStoryOffsetError('offset too large')
+        user_feed = union_feed._user_feed
+        user_feed.story_offset = offset
+        user_feed.dt_updated = timezone.now()
+        user_feed.save()
+        return union_feed
+
+    @staticmethod
+    def set_title(feed_unionid, title):
+        union_feed = UnionFeed.get_by_id(feed_unionid)
+        user_feed = union_feed._user_feed
+        user_feed.title = title
+        user_feed.dt_updated = timezone.now()
+        user_feed.save()
+        return union_feed
+
+    @staticmethod
+    def set_all_readed_by_user(user_id, ids=None) -> int:
+        if ids is not None and not ids:
+            return 0
+        q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
+        feed_ids = [x.feed_id for x in ids]
+        if ids is not None:
+            q = q.filter(feed_id__in=feed_ids)
+        q = q.only('_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys')
+        updates = []
+        for user_feed in q.all():
+            num_unread = user_feed.feed.total_storys - user_feed.story_offset
+            if num_unread > 0:
+                user_feed.story_offset = user_feed.feed.total_storys
+                updates.append(user_feed)
+        with transaction.atomic():
+            for user_feed in updates:
+                user_feed.save()
+        return len(updates)
+
+    @staticmethod
+    def create_by_url(user_id, url):
+        feed = None
+        target = FeedUrlMap.find_target(url)
+        if target and target != FeedUrlMap.NOT_FOUND:
+            feed = Feed.objects.filter(url=target).first()
+        if feed:
+            user_feed = UserFeed.objects.filter(user_id=user_id, feed=feed).first()
+            if user_feed:
+                raise FeedExistsError('already exists')
+            user_feed = UserFeed(user_id=user_id, feed=feed)
+            user_feed.save()
+            return UnionFeed(feed, user_feed), None
+        else:
+            feed_creation = FeedCreation(user_id=user_id, url=url)
+            feed_creation.save()
+            return None, feed_creation
+
+    @staticmethod
+    def create_by_url_s(user_id, urls, batch_size=500, is_from_bookmark=False):
+        # 批量预查询，减少SQL查询数量，显著提高性能
+        if not urls:
+            return []
+        url_map = {}
+        for url, target in FeedUrlMap.find_all_target(urls).items():
+            if target != FeedUrlMap.NOT_FOUND:
+                url_map[url] = target
+        found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
+        feed_map = {x.url: x for x in found_feeds}
+        user_feed_map = {}
+        q = UserFeed.objects.filter(user_id=user_id, feed__in=found_feeds).all()
+        user_feed_map = {x.feed_id: x for x in q.all()}
+        new_user_feeds = []
+        feed_creations = []
+        for url in url_map.keys():
+            feed = feed_map.get(url_map.get(url))
+            if feed:
+                if feed.id in user_feed_map:
+                    continue
+                user_feed = UserFeed(user_id=user_id, feed=feed)
+                new_user_feeds.append(user_feed)
+            else:
+                feed_creation = FeedCreation(
+                    user_id=user_id, url=url, is_from_bookmark=is_from_bookmark)
+                feed_creations.append(feed_creation)
+        UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
+        FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
+        union_feeds = UnionFeed._merge_user_feeds(new_user_feeds)
+        return union_feeds, feed_creations

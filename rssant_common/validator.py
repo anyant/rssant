@@ -99,29 +99,33 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
     return validate
 
 
-@validator(accept=(str, object), output=(str, object))
-def unionid_validator(compiler, items, output_object=False):
-    unionid_class = namedtuple('ValidrUnionId', items)
+FeedUnionId = namedtuple('FeedUnionId', 'user_id, feed_id')
+StoryUnionId = namedtuple('StoryUnionId', 'user_id, feed_id, offset')
 
-    def validate(value):
-        try:
-            if isinstance(value, str):
-                value = unionid.decode(value)
-            if output_object:
-                return unionid_class(*value)
-            else:
-                return unionid.encode(*value)
-        except (unionid.UnionIdError, TypeError, ValueError) as ex:
-            raise Invalid('invalid unionid, {}'.format(str(ex))) from ex
 
-    return validate
+def create_unionid_validator(tuple_class):
+    @validator(accept=(str, object), output=(str, object))
+    def unionid_validator(compiler, output_object=False):
+        def validate(value):
+            try:
+                if isinstance(value, str):
+                    value = unionid.decode(value)
+                if output_object:
+                    return tuple_class(*value)
+                else:
+                    return unionid.encode(*value)
+            except (unionid.UnionIdError, TypeError, ValueError) as ex:
+                raise Invalid('invalid unionid, {}'.format(str(ex))) from ex
+        return validate
+    return unionid_validator
 
 
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
     'datetime': datetime_validator,
-    'unionid': unionid_validator,
+    'feed_unionid': create_unionid_validator(FeedUnionId),
+    'story_unionid': create_unionid_validator(StoryUnionId),
 }
 
 

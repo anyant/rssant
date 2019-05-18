@@ -1,5 +1,5 @@
-from .feed import Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedUnionId
-from .story import Story, UserStory, StoryUnionId
+from .feed import Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedUnionId, UnionFeed
+from .story import Story, UserStory, StoryUnionId, UnionStory
 
 __models__ = (
     Feed, RawFeed, UserFeed,
@@ -13,7 +13,9 @@ __all__ = (
     'FeedUrlMap',
     'FeedStatus',
     'FeedUnionId',
+    'UnionFeed',
     'Story',
     'UserStory',
     'StoryUnionId',
+    'UnionStory',
 )
