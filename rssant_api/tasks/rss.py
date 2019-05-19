@@ -130,7 +130,7 @@ def _save_found(feed_creation, parsed):
     url = _get_url(parsed.response)
     feed = Feed.get_first_by_url(url)
     if not feed:
-        feed = Feed(url=url, status=FeedStatus.READY)
+        feed = Feed(url=url, status=FeedStatus.READY, dt_updated=timezone.now())
         feed.save()
     feed_creation.feed_id = feed.id
     feed_creation.save()
