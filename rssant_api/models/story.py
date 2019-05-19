@@ -364,9 +364,9 @@ class UnionStory:
             return None
         return self._user_story.dt_favorited
 
-    @property
+    @cached_property
     def summary(self):
-        return self._story.summary
+        return convert_summary(self._story.summary)
 
     @property
     def content(self):
@@ -436,7 +436,7 @@ class UnionStory:
     @staticmethod
     def get_by_feed_offset(feed_unionid, offset, detail=False):
         story_unionid = StoryUnionId(*feed_unionid, offset)
-        return UnionStory.get_by_id(story_unionid)
+        return UnionStory.get_by_id(story_unionid, detail=detail)
 
     @staticmethod
     def _merge_storys(storys, user_storys, *, user_id, user_feeds=None, detail=False):
@@ -515,7 +515,7 @@ class UnionStory:
     def _query_by_tag(user_id, is_favorited=None, is_watched=None, detail=False):
         q = UserStory.objects.select_related('story').filter(user_id=user_id)
         if not detail:
-            q = q.defer(*STORY_DETAIL_FEILDS)
+            q = q.defer(*USER_STORY_DETAIL_FEILDS)
         if is_favorited is not None:
             q = q.filter(is_favorited=is_favorited)
         if is_watched is not None:
@@ -537,21 +537,21 @@ class UnionStory:
     def _set_tag_by_id(story_unionid, is_favorited=None, is_watched=None):
         union_story = UnionStory.get_by_id(story_unionid)
         user_feed_id = union_story._user_feed_id
-        user_story = union_story.user_story
+        user_story = union_story._user_story
         if user_story is None:
             user_id, feed_id, offset = story_unionid
             user_story = UserStory(
                 user_id=user_id,
                 feed_id=feed_id,
                 user_feed_id=user_feed_id,
-                story_id=union_story.story.id,
-                offset=union_story.story.offset
+                story_id=union_story._story.id,
+                offset=union_story._story.offset
             )
         if is_favorited is not None:
-            user_story.is_favorited = user_story
+            user_story.is_favorited = is_favorited
             user_story.dt_favorited = timezone.now()
         if is_watched is not None:
-            user_story.is_watched = user_story
+            user_story.is_watched = is_watched
             user_story.dt_watched = timezone.now()
         user_story.save()
         union_story._user_story = user_story

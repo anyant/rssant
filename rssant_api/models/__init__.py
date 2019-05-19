@@ -2,7 +2,7 @@ from .feed import FeedCreation, Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus,
 from .story import Story, UserStory, StoryUnionId, UnionStory
 
 __models__ = (
-    Feed, RawFeed, UserFeed,
+    FeedCreation, Feed, RawFeed, UserFeed,
     Story, UserStory, FeedUrlMap,
 )
 

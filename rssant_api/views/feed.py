@@ -64,6 +64,7 @@ FeedCreationSchema = T.dict(
     feed_id=T.feed_unionid.optional,
     status=T.str,
     url=T.url,
+    message=T.str.optional,
     dt_updated=T.datetime.object.optional,
     dt_created=T.datetime.object.optional,
 )
@@ -130,21 +131,21 @@ def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
 
 
 @FeedView.get('feed/creation/<int:pk>')
-def feed_get_creation(request, pk: T.int) -> FeedCreationSchema:
+def feed_get_creation(request, pk: T.int, detail: T.bool.default(False)) -> FeedCreationSchema:
     try:
-        feed_creation = FeedCreation.get_by_pk(pk, user_id=request.user.id)
+        feed_creation = FeedCreation.get_by_pk(pk, user_id=request.user.id, detail=detail)
     except FeedCreation.DoesNotExist:
         return Response({'message': 'feed creation does not exist'}, status=400)
-    return feed_creation.to_dict()
+    return feed_creation.to_dict(detail=detail)
 
 
 @FeedView.get('feed/creation')
-def feed_query_creation(request) -> T.dict(
+def feed_query_creation(request, detail: T.bool.default(False)) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
     feed_creations=T.list(FeedCreationSchema),
 ):
-    feed_creations = FeedCreation.query_by_user(request.user.id)
+    feed_creations = FeedCreation.query_by_user(request.user.id, detail=detail)
     feed_creations = [x.to_dict() for x in feed_creations]
     return dict(
         total=len(feed_creations),

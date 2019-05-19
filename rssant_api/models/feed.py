@@ -236,6 +236,9 @@ class UserFeed(Model):
         return user_feed
 
 
+FEED_CREATION_DETAIL_FIELDS = ['message']
+
+
 class FeedCreation(Model):
     """订阅创建信息"""
 
@@ -261,7 +264,7 @@ class FeedCreation(Model):
     def is_ready(self):
         return bool(self.feed_id and self.status and self.status == FeedStatus.READY)
 
-    def to_dict(self):
+    def to_dict(self, detail=False):
         ret = dict(
             id=self.id,
             user=dict(id=self.user_id),
@@ -269,26 +272,35 @@ class FeedCreation(Model):
             url=self.url,
             is_from_bookmark=self.is_from_bookmark,
             status=self.status,
-            message=self.message,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
+            feed_unionid=None,
         )
         if self.feed_id:
             feed_unionid = FeedUnionId(self.user_id, self.feed_id)
             ret.update(feed_id=feed_unionid)
+        if detail:
+            ret.update(message=self.message)
         return ret
 
     @staticmethod
-    def get_by_pk(pk, user_id=None):
+    def get_by_pk(pk, user_id=None, detail=False):
         q = FeedCreation.objects
         if user_id is not None:
             q = q.filter(user_id=user_id)
+        if not detail:
+            q = q.defer(*FEED_CREATION_DETAIL_FIELDS)
         return q.get(pk=pk)
 
     @staticmethod
-    def query_by_user(user_id):
+    def query_by_user(user_id, limit=100, detail=False):
         q = FeedCreation.objects.filter(user_id=user_id)
-        return list(q.order_by('-dt_created').all())
+        if not detail:
+            q = q.defer(*FEED_CREATION_DETAIL_FIELDS)
+        q = q.order_by('-dt_created')
+        if limit:
+            q = q[:limit]
+        return list(q.all())
 
     @staticmethod
     def bulk_set_pending(feed_creation_ids):
