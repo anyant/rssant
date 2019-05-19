@@ -363,7 +363,7 @@ class FeedUrlMap(Model):
         ORDER BY source, dt_created DESC
         """
         url_map = {}
-        items = cls.objects.raw(sql, [source_list])
+        items = cls.objects.raw(sql, [list(source_list)])
         for item in items:
             url_map[item.source] = item.target
         return url_map
@@ -654,9 +654,12 @@ class UnionFeed:
         # 批量预查询，减少SQL查询数量，显著提高性能
         if not urls:
             return []
+        urls = set(urls)
         url_map = {}
         for url, target in FeedUrlMap.find_all_target(urls).items():
-            if target != FeedUrlMap.NOT_FOUND:
+            if target == FeedUrlMap.NOT_FOUND:
+                urls.discard(url)
+            else:
                 url_map[url] = target
         found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
         feed_map = {x.url: x for x in found_feeds}
@@ -665,7 +668,7 @@ class UnionFeed:
         user_feed_map = {x.feed_id: x for x in q.all()}
         new_user_feeds = []
         feed_creations = []
-        for url in url_map.keys():
+        for url in urls:
             feed = feed_map.get(url_map.get(url))
             if feed:
                 if feed.id in user_feed_map:

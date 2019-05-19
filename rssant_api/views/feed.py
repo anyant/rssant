@@ -237,7 +237,7 @@ def feed_import_opml(request) -> FeedImportResultSchema:
 @FeedView.get('feed/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
-    feeds = UnionFeed.query_by_user(request.user.id)
+    total, feeds, __ = UnionFeed.query_by_user(request.user.id)
     feeds = [x.to_dict() for x in feeds]
     for user_feed in feeds:
         for field in ['title', 'link', 'url', 'version']:
