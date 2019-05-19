@@ -13,11 +13,10 @@ from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
 
 from rssant_common.cursor import Cursor
-from rssant_common.validator import VALIDATORS, pagination
+from rssant_common.validator import VALIDATORS
 
 
 __all__ = (
-    'pagination',
     'Cursor',
     'RestRouter',
 )

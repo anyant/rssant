@@ -5,7 +5,7 @@ class RssantModelError(Exception):
     """Base exception for rssant API models"""
 
 
-class FeedExistsError(RssantModelError):
+class FeedExistError(RssantModelError):
     """Feed already exists"""
 
 
@@ -24,7 +24,7 @@ class FeedStoryOffsetError(RssantModelError):
 __all__ = (
     'ConcurrentUpdateError',
     'RssantModelError',
-    'FeedExistsError',
+    'FeedExistError',
     'FeedNotFoundError',
     'StoryNotFoundError',
     'FeedStoryOffsetError',

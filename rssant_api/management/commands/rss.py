@@ -1,11 +1,12 @@
 import logging
 
 import tqdm
-from django.db import transaction
+from django.db import transaction, connection
 import djclick as click
 
 from rssant_api.models import Feed, Story
 from rssant_common.helper import format_table
+from rssant_common import unionid
 from rssant_api.tasks import rss
 
 
@@ -72,3 +73,31 @@ def update_feed_story_publish_period(feeds=None):
 def sync_feed(feed_id):
     async_result = rss.sync_feed.delay(feed_id=feed_id)
     LOG.info(f'celery task id {async_result.id}')
+
+
+@main.command()
+@click.argument('unionid_text')
+def decode_unionid(unionid_text):
+    numbers = unionid.decode(unionid_text)
+    if len(numbers) == 3:
+        click.echo('user_id={} feed_id={} offset={}'.format(*numbers))
+    elif len(numbers) == 2:
+        click.echo('user_id={} feed_id={}'.format(*numbers))
+    else:
+        click.echo(numbers)
+
+
+@main.command()
+def clean_celery_tables():
+    sql = """
+    truncate
+    django_celery_beat_crontabschedule,
+    django_celery_beat_intervalschedule,
+    django_celery_beat_solarschedule,
+    django_celery_beat_periodictask,
+    django_celery_beat_periodictasks,
+    django_celery_results_taskresult;
+    """
+    LOG.info('truncate django_celery_* tables')
+    with connection.cursor() as cursor:
+        cursor.execute(sql)

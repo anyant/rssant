@@ -222,9 +222,9 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 10,
         'kwargs': {'seconds': RSSANT_CHECK_FEED_SECONDS}
     },
-    'clean-user-feed-every-10-seconds': {
-        'task': 'rssant.tasks.clean_user_feed',
-        'schedule': 10,
+    'clean-feed-creation-every-60-seconds': {
+        'task': 'rssant.tasks.clean_feed_creation',
+        'schedule': 60,
         'kwargs': {}
     }
 }

@@ -1,4 +1,4 @@
-from .feed import Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedUnionId, UnionFeed
+from .feed import FeedCreation, Feed, RawFeed, UserFeed, FeedUrlMap, FeedStatus, FeedUnionId, UnionFeed
 from .story import Story, UserStory, StoryUnionId, UnionStory
 
 __models__ = (
@@ -7,6 +7,7 @@ __models__ = (
 )
 
 __all__ = (
+    'FeedCreation',
     'Feed',
     'RawFeed',
     'UserFeed',

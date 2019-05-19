@@ -3,7 +3,7 @@ import os.path
 
 import celery
 from django.http.response import HttpResponse
-from django_rest_validr import RestRouter, T, pagination
+from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 from validr import Invalid
 from xml.etree.ElementTree import ParseError
@@ -12,8 +12,8 @@ from mako.template import Template
 
 from rssant_feedlib.opml import parse_opml
 from rssant_feedlib.bookmark import parse_bookmark
-from rssant_api.models.errors import FeedExistsError, FeedStoryOffsetError
-from rssant_api.models import UnionFeed
+from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
+from rssant_api.models import UnionFeed, FeedCreation
 from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
@@ -60,9 +60,8 @@ FeedCreationSchema = T.dict(
     user=T.dict(
         id=T.int,
     ),
-    feed=T.dict(
-        id=T.feed_unionid.optional,
-    ).optional,
+    is_ready=T.bool,
+    feed_id=T.feed_unionid.optional,
     status=T.str,
     url=T.url,
     dt_updated=T.datetime.object.optional,
@@ -82,7 +81,7 @@ def feed_query(
 ) -> T.dict(
     total=T.int.optional,
     size=T.int.optional,
-    results=T.list(FeedSchema).maxlen(5000),
+    feeds=T.list(FeedSchema).maxlen(5000),
     deleted_size=T.int.optional,
     deleted_ids=T.list(T.int),
 ):
@@ -94,7 +93,7 @@ def feed_query(
     return dict(
         total=total,
         size=len(feeds),
-        results=feeds,
+        feeds=feeds,
         deleted_size=len(deleted_ids),
         deleted_ids=deleted_ids,
     )
@@ -111,20 +110,46 @@ def feed_get(request, feed_unionid: T.feed_unionid.object, detail: T.bool.defaul
     return feed.to_dict()
 
 
-@FeedView.post('feed/')
+@FeedView.post('feed/creation')
 def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
+    is_ready=T.bool,
     feed=FeedSchema.optional,
     feed_creation=FeedCreationSchema.optional,
 ):
     try:
-        feed, feed_creation = UnionFeed.create_by_url(url, user_id=request.user.id)
-    except FeedExistsError:
+        feed, feed_creation = UnionFeed.create_by_url(url=url, user_id=request.user.id)
+    except FeedExistError:
         return Response({'message': 'already exists'}, status=400)
     if feed_creation:
         rss.find_feed.delay(feed_creation.id)
     return dict(
-        feed=feed.to_dict(),
-        feed_creation=feed_creation.to_dict(),
+        is_ready=bool(feed),
+        feed=feed.to_dict() if feed else None,
+        feed_creation=feed_creation.to_dict() if feed_creation else None,
+    )
+
+
+@FeedView.get('feed/creation/<int:pk>')
+def feed_get_creation(request, pk: T.int) -> FeedCreationSchema:
+    try:
+        feed_creation = FeedCreation.get_by_pk(pk, user_id=request.user.id)
+    except FeedCreation.DoesNotExist:
+        return Response({'message': 'feed creation does not exist'}, status=400)
+    return feed_creation.to_dict()
+
+
+@FeedView.get('feed/creation')
+def feed_query_creation(request) -> T.dict(
+    total=T.int.min(0),
+    size=T.int.min(0),
+    feed_creations=T.list(FeedCreationSchema),
+):
+    feed_creations = FeedCreation.query_by_user(request.user.id)
+    feed_creations = [x.to_dict() for x in feed_creations]
+    return dict(
+        total=len(feed_creations),
+        size=len(feed_creations),
+        feed_creations=feed_creations,
     )
 
 
@@ -178,11 +203,26 @@ def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
     # https://docs.celeryproject.org/en/latest/userguide/calling.html#advanced-options
     queue = 'bookmark' if is_from_bookmark else 'batch'
     celery.group(find_feed_tasks).apply_async(queue=queue)
-    return feeds, feed_creations
+    feeds = [x.to_dict() for x in feeds]
+    feed_creations = [x.to_dict() for x in feed_creations]
+    return dict(
+        num_feeds=len(feeds),
+        feeds=feeds,
+        num_feed_creations=len(feed_creations),
+        feed_creations=feed_creations,
+    )
+
+
+FeedImportResultSchema = T.dict(
+    num_feeds=T.int.min(0).optional,
+    feeds=T.list(FeedSchema).maxlen(5000),
+    num_feed_creations=T.int.min(0).optional,
+    feed_creations=T.list(FeedCreationSchema).maxlen(5000),
+)
 
 
 @FeedView.post('feed/opml')
-def feed_import_opml(request) -> pagination(FeedSchema, maxlen=5000):
+def feed_import_opml(request) -> FeedImportResultSchema:
     """import feeds from OPML file"""
     text = _read_request_file(request)
     try:
@@ -190,13 +230,7 @@ def feed_import_opml(request) -> pagination(FeedSchema, maxlen=5000):
     except (Invalid, ParseError) as ex:
         return Response({'message': str(ex)}, status=400)
     urls = list(sorted(set([x['url'] for x in result['items']])))
-    feeds, feed_creations = _create_feeds_by_urls(request.user, urls)
-    feeds = [x.to_dict() for x in feeds]
-    return dict(
-        total=len(feeds),
-        size=len(feeds),
-        results=feeds
-    )
+    return _create_feeds_by_urls(request.user, urls)
 
 
 @FeedView.get('feed/opml')
@@ -216,14 +250,8 @@ def feed_export_opml(request, download: T.bool.default(False)):
 
 
 @FeedView.post('feed/bookmark')
-def feed_import_bookmark(request) -> pagination(FeedSchema, maxlen=5000):
+def feed_import_bookmark(request) -> FeedImportResultSchema:
     """import feeds from bookmark file"""
     text = _read_request_file(request)
     urls = parse_bookmark(text)
-    feeds, feed_creations = _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)
-    feeds = [x.to_dict() for x in feeds]
-    return dict(
-        total=len(feeds),
-        size=len(feeds),
-        results=feeds
-    )
+    return _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)

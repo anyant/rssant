@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
 from rssant.helper.content_hash import compute_hash_base64
-from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus
+from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_api.helper import shorten
 
 
@@ -16,29 +16,34 @@ LOG = logging.getLogger(__name__)
 
 
 @task(name='rssant.tasks.find_feed')
-def find_feed(user_feed_id):
+def find_feed(feed_creation_id):
     messages = []
 
     def message_handler(msg):
         LOG.info(msg)
         messages.append(msg)
 
-    user_feed = UserFeed.get_by_pk(user_feed_id)
-    user_feed.status = FeedStatus.UPDATING
-    user_feed.save()
-    start_url = user_feed.url
+    feed_creation = FeedCreation.get_by_pk(feed_creation_id)
+    feed_creation.status = FeedStatus.UPDATING
+    feed_creation.save()
+
+    start_url = feed_creation.url
     finder = FeedFinder(start_url, message_handler=message_handler)
     found = finder.find()
+
+    feed_creation.refresh_from_db()
+    feed_creation.message = '\n\n'.join(messages)
+    feed_creation.dt_updated = timezone.now()
     if not found:
-        if user_feed.is_from_bookmark:
-            user_feed.delete()
-        else:
-            user_feed.status = FeedStatus.ERROR
-            user_feed.save()
+        feed_creation.status = FeedStatus.ERROR
+        feed_creation.save()
+        FeedUrlMap(source=start_url, target=FeedUrlMap.NOT_FOUND).save()
     else:
-        _save_found(user_feed, found)
+        feed_creation.status = FeedStatus.READY
+        feed_creation.save()
+        _save_found(feed_creation, found)
     return {
-        'user_feed_id': user_feed_id,
+        'user_id': feed_creation.user_id,
         'start_url': start_url,
         'messages': messages,
     }
@@ -55,7 +60,7 @@ def check_feed(seconds=300):
 
 @task(name='rssant.tasks.sync_feed')
 def sync_feed(feed_id):
-    feed = Feed.objects.get(pk=feed_id)
+    feed = Feed.get_by_pk(feed_id)
     LOG.info(f'read feed#{feed_id} url={feed.url}')
     status_code, response = _read_response(feed)
     LOG.info(f'feed#{feed_id} url={feed.url} status_code={status_code}')
@@ -96,24 +101,23 @@ def sync_feed(feed_id):
     )
 
 
-@task(name='rssant.tasks.clean_user_feed')
-def clean_user_feed():
-    # 删除所有status=ERROR, 没有feed_id，并且入库时间超过2分钟的订阅
-    num_deleted = UserFeed.delete_isolated_by_status(
-        FeedStatus.ERROR, survival_seconds=2 * 60)
-    LOG.info('delete {} status=ERROR and feed_id is NULL user feeds'.format(num_deleted))
+@task(name='rssant.tasks.clean_feed_creation')
+def clean_feed_creation():
+    # 删除所有status=ERROR, 没有feed_id，并且入库时间超过2小时的订阅创建信息
+    num_deleted = FeedCreation.delete_by_status(survival_seconds=2 * 60 * 60)
+    LOG.info('delete {} old feed creations'.format(num_deleted))
     # 重试 status=UPDATING 超过10分钟的订阅
-    user_feed_ids = UserFeed.query_isolated_ids_by_status(
+    feed_creation_ids = FeedCreation.query_ids_by_status(
         FeedStatus.UPDATING, survival_seconds=10 * 60)
-    num_retry_updating = len(user_feed_ids)
-    LOG.info('retry {} status=UPDATING and feed_id is NULL user feeds'.format(num_retry_updating))
-    _retry_user_feeds(user_feed_ids)
+    num_retry_updating = len(feed_creation_ids)
+    LOG.info('retry {} status=UPDATING feed creations'.format(num_retry_updating))
+    _retry_feed_creations(feed_creation_ids)
     # 重试 status=PENDING 超过30分钟的订阅
-    user_feed_ids = UserFeed.query_isolated_ids_by_status(
+    feed_creation_ids = FeedCreation.query_ids_by_status(
         FeedStatus.PENDING, survival_seconds=30 * 60)
-    num_retry_pending = len(user_feed_ids)
-    LOG.info('retry {} status=PENDING and feed_id is NULL user feeds'.format(num_retry_pending))
-    _retry_user_feeds(user_feed_ids)
+    num_retry_pending = len(feed_creation_ids)
+    LOG.info('retry {} status=PENDING feed creations'.format(num_retry_pending))
+    _retry_feed_creations(feed_creation_ids)
     return dict(
         num_deleted=num_deleted,
         num_retry_updating=num_retry_updating,
@@ -122,31 +126,35 @@ def clean_user_feed():
 
 
 @transaction.atomic
-def _save_found(user_feed, parsed):
+def _save_found(feed_creation, parsed):
     url = _get_url(parsed.response)
     feed = Feed.get_first_by_url(url)
-    if feed is None:
-        feed = Feed()
+    if not feed:
+        feed = Feed(url=url, status=FeedStatus.READY)
+        feed.save()
+    feed_creation.feed_id = feed.id
+    feed_creation.save()
+    user_feed = UserFeed.objects.filter(user_id=feed_creation.user_id, feed_id=feed.id).first()
+    if user_feed:
+        LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
+            user_feed.id, feed_creation.user_id, feed.id
+        ))
+    else:
+        user_feed = UserFeed(
+            user_id=feed_creation.user_id,
+            feed_id=feed.id,
+            is_from_bookmark=feed_creation.is_from_bookmark,
+        )
+        user_feed.save()
     content_hash_base64 = compute_hash_base64(parsed.response.content)
     _save_feed(feed, parsed, content_hash_base64=content_hash_base64)
     _create_raw_feed(feed, parsed.response.status_code, parsed.response,
                      content_hash_base64=feed.content_hash_base64)
-    user_feed_exists = UserFeed.get_first_by_user_and_feed(user_feed.user_id, feed.id)
-    if user_feed_exists:
-        LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
-            user_feed_exists.id, user_feed.user_id, feed.id
-        ))
-        user_feed.status = FeedStatus.ERROR
-        user_feed.save()
-    else:
-        user_feed.status = FeedStatus.READY
-        user_feed.feed = feed
-        user_feed.save()
     _save_storys(feed, parsed.entries)
-    FeedUrlMap(source=user_feed.url, target=feed.url).save()
-    if feed.link != user_feed.url:
+    FeedUrlMap(source=feed_creation.url, target=feed.url).save()
+    if feed.link != feed_creation.url:
         FeedUrlMap(source=feed.link, target=feed.url).save()
-    if feed.url != user_feed.url:
+    if feed.url != feed_creation.url:
         FeedUrlMap(source=feed.url, target=feed.url).save()
 
 
@@ -275,9 +283,9 @@ def _read_response(feed):
     return status_code, response
 
 
-def _retry_user_feeds(user_feed_ids):
+def _retry_feed_creations(feed_creation_ids):
     tasks = []
-    for user_feed_id in user_feed_ids:
-        tasks.append(find_feed.s(user_feed_id))
-    UserFeed.bulk_set_pending(user_feed_ids)
+    for feed_creation_id in feed_creation_ids:
+        tasks.append(find_feed.s(feed_creation_id))
+    FeedCreation.bulk_set_pending(feed_creation_ids)
     celery.group(tasks).apply_async()

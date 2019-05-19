@@ -1,4 +1,4 @@
-from django_rest_validr import RestRouter, T, pagination
+from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 
 from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
@@ -29,6 +29,12 @@ StorySchema = T.dict(
     content=T.str.optional,
 )
 
+StoryResultSchema = T.dict(
+    total=T.int.optional,
+    size=T.int.optional,
+    offset=T.int.optional,
+    storys=T.list(StorySchema).maxlen(5000),
+)
 
 StoryView = RestRouter()
 
@@ -42,7 +48,7 @@ def story_query_by_feed(
     offset: T.int.min(0).optional,
     size: T.int.min(1).max(100).default(10),
     detail: T.bool.default(False),
-) -> pagination(StorySchema):
+) -> StoryResultSchema:
     """Story list"""
     check_unionid(request, feed_id)
     try:
@@ -55,7 +61,7 @@ def story_query_by_feed(
         total=total,
         offset=offset,
         size=len(storys),
-        results=storys,
+        storys=storys,
     )
 
 
@@ -65,7 +71,7 @@ def story_query_recent(
     feed_ids: T.list(T.feed_unionid.object),
     days: T.int.min(1).max(30).default(14),
     detail: T.bool.default(False),
-) -> pagination(StorySchema):
+) -> StoryResultSchema:
     check_unionid(request, feed_ids)
     storys = UnionStory.query_recent_by_user(
         user_id=request.user.id,
@@ -75,7 +81,7 @@ def story_query_recent(
     return dict(
         total=len(storys),
         size=len(storys),
-        results=storys,
+        storys=storys,
     )
 
 
@@ -99,14 +105,14 @@ def story_get_by_offset(
 def story_query_favorited(
     request,
     detail: T.bool.default(False),
-) -> pagination(StorySchema):
+) -> StoryResultSchema:
     """Query favorited storys"""
     storys = UnionStory.query_favorited(user_id=request.user.id, detail=detail)
     storys = [x.to_dict() for x in storys]
     return dict(
         total=len(storys),
         size=len(storys),
-        results=storys,
+        storys=storys,
     )
 
 
@@ -114,14 +120,14 @@ def story_query_favorited(
 def story_query_watched(
     request,
     detail: T.bool.default(False),
-) -> pagination(StorySchema):
+) -> StoryResultSchema:
     """Query watched storys"""
     storys = UnionStory.query_watched(user_id=request.user.id, detail=detail)
     storys = [x.to_dict() for x in storys]
     return dict(
         total=len(storys),
         size=len(storys),
-        results=storys,
+        storys=storys,
     )
 
 

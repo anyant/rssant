@@ -409,7 +409,7 @@ class UnionStory:
 
     @staticmethod
     def get_by_id(story_unionid, detail=False):
-        user_feed_id = UnionStory._check_story_unionid(story_unionid)
+        user_feed_id = UnionStory._check_user_feed_by_story_unionid(story_unionid)
         user_id, feed_id, offset = story_unionid
         q = UserStory.objects.select_related('story')
         q = q.filter(user_id=user_id, feed_id=feed_id, offset=offset)

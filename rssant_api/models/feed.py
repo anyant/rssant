@@ -5,7 +5,7 @@ from django.db import transaction, connection
 from cached_property import cached_property
 
 from rssant_common.validator import FeedUnionId
-from .errors import FeedExistsError, FeedStoryOffsetError
+from .errors import FeedExistError, FeedStoryOffsetError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
 
@@ -115,10 +115,6 @@ class Feed(Model, ContentHashMixin):
     @staticmethod
     def get_by_pk(feed_id):
         return Feed.objects.get(pk=feed_id)
-
-    @staticmethod
-    def get_by_unionid(feed_unionid, detail=False):
-        return UserFeed.get_by_pk(feed_unionid.feed_id)
 
     @staticmethod
     def get_first_by_url(url):
@@ -239,10 +235,6 @@ class UserFeed(Model):
         user_feed = q.get(pk=pk)
         return user_feed
 
-    @staticmethod
-    def get_first_by_user_and_feed(user_id, feed_id):
-        return UserFeed.objects.filter(user_id=user_id, feed_id=feed_id).first()
-
 
 class FeedCreation(Model):
     """订阅创建信息"""
@@ -261,23 +253,42 @@ class FeedCreation(Model):
     is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
     status = models.CharField(
         max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
+    message = models.TextField(help_text="查找订阅的日志信息")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
+    @property
+    def is_ready(self):
+        return bool(self.feed_id and self.status and self.status == FeedStatus.READY)
+
     def to_dict(self):
-        feed_unionid = None
-        if self.feed_id:
-            feed_unionid = FeedUnionId(self.user_id, self.feed_id)
-        return dict(
+        ret = dict(
             id=self.id,
             user=dict(id=self.user_id),
-            feed=dict(id=feed_unionid),
+            is_ready=self.is_ready,
             url=self.url,
             is_from_bookmark=self.is_from_bookmark,
             status=self.status,
+            message=self.message,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
         )
+        if self.feed_id:
+            feed_unionid = FeedUnionId(self.user_id, self.feed_id)
+            ret.update(feed_id=feed_unionid)
+        return ret
+
+    @staticmethod
+    def get_by_pk(pk, user_id=None):
+        q = FeedCreation.objects
+        if user_id is not None:
+            q = q.filter(user_id=user_id)
+        return q.get(pk=pk)
+
+    @staticmethod
+    def query_by_user(user_id):
+        q = FeedCreation.objects.filter(user_id=user_id)
+        return list(q.order_by('-dt_created').all())
 
     @staticmethod
     def bulk_set_pending(feed_creation_ids):
@@ -285,19 +296,30 @@ class FeedCreation(Model):
         return q.update(status=FeedStatus.PENDING, dt_updated=timezone.now())
 
     @staticmethod
-    def delete_by_status(status, survival_seconds=None):
-        q = UserFeed.objects.filter(status=status)
+    def delete_by_status(status=None, survival_seconds=None):
+        q = FeedCreation.objects
+        if status:
+            q = q.filter(status=status)
         if survival_seconds:
             deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
             q = q.filter(dt_created__lt=deadline)
         num_deleted, __ = q.delete()
         return num_deleted
 
+    @staticmethod
+    def query_ids_by_status(status, survival_seconds=None):
+        q = FeedCreation.objects.filter(status=status)
+        if survival_seconds:
+            deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
+            q = q.filter(dt_created__lt=deadline)
+        feed_creation_ids = [x.id for x in q.only('id').all()]
+        return feed_creation_ids
+
 
 class FeedUrlMap(Model):
     """起始 URL 到 Feed URL 直接关联，用于加速FeedFinder"""
 
-    NOT_FOUND = 'NOT_FOUND'  # 特殊Target
+    NOT_FOUND = '#'  # 特殊Target
 
     class Meta:
         indexes = [
@@ -355,7 +377,7 @@ class UnionFeed:
 
     @property
     def is_ready(self):
-        return self.status and self.status == FeedStatus.READY
+        return bool(self.status and self.status == FeedStatus.READY)
 
     @property
     def url(self):
@@ -397,11 +419,13 @@ class UnionFeed:
 
     @property
     def dt_updated(self):
-        if not (self._user_feed.dt_updated and self._feed.dt_updated):
-            return None
-        if self._user_feed.dt_updated > self._feed.dt_updated:
-            return self._user_feed.dt_updated
-        return self._feed.dt_updated
+        if self._user_feed.dt_updated and self._feed.dt_updated:
+            if self._user_feed.dt_updated > self._feed.dt_updated:
+                return self._user_feed.dt_updated
+            else:
+                return self._feed.dt_updated
+        else:
+            return self._user_feed.dt_updated or self._feed.dt_updated
 
     @property
     def dt_created(self):
@@ -461,6 +485,7 @@ class UnionFeed:
         ret = dict(
             id=self.id,
             user=dict(id=self.user_id),
+            is_ready=self.is_ready,
             status=self.status,
             url=self.url,
             title=self.title,
@@ -595,7 +620,7 @@ class UnionFeed:
         return len(updates)
 
     @staticmethod
-    def create_by_url(user_id, url):
+    def create_by_url(*, user_id, url):
         feed = None
         target = FeedUrlMap.find_target(url)
         if target and target != FeedUrlMap.NOT_FOUND:
@@ -603,7 +628,7 @@ class UnionFeed:
         if feed:
             user_feed = UserFeed.objects.filter(user_id=user_id, feed=feed).first()
             if user_feed:
-                raise FeedExistsError('already exists')
+                raise FeedExistError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed)
             user_feed.save()
             return UnionFeed(feed, user_feed), None
@@ -613,7 +638,7 @@ class UnionFeed:
             return None, feed_creation
 
     @staticmethod
-    def create_by_url_s(user_id, urls, batch_size=500, is_from_bookmark=False):
+    def create_by_url_s(*, user_id, urls, batch_size=500, is_from_bookmark=False):
         # 批量预查询，减少SQL查询数量，显著提高性能
         if not urls:
             return []

@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
-from validr import T, validator, SchemaError, Invalid, Compiler
+from validr import validator, SchemaError, Invalid, Compiler
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -12,16 +12,6 @@ from django.utils.dateparse import parse_datetime
 from .helper import coerce_url
 from .cursor import Cursor
 from . import unionid
-
-
-def pagination(item, maxlen=1024):
-    return T.dict(
-        previous=T.cursor.optional,
-        next=T.cursor.optional,
-        total=T.int.optional,
-        size=T.int.optional,
-        results=T.list(item).maxlen(maxlen),
-    )
 
 
 @validator(accept=(str, object), output=(str, object))
