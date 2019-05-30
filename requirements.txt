@@ -53,6 +53,7 @@ pyinstrument-cext==0.2.0
 pyparsing==2.4.0
 python-crontab==2.3.6
 python-dateutil==2.8.0
+python-dotenv==0.10.2
 python3-openid==3.1.0
 pytz==2019.1
 PyYAML==3.13

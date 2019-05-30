@@ -13,10 +13,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 import sys
 from os.path import dirname, abspath
-from .env import EnvConfig
+from .env import load_env_config
 
-ENV_CONFIG = EnvConfig.load()
-
+ENV_CONFIG = load_env_config()
 if ENV_CONFIG.is_celery_process is None:
     IS_CELERY_PROCESS = 'celery' in sys.argv[0]
 else:
@@ -199,7 +198,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'data', 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Sentry, 在celery进程中不要配置django的sentry
-if not IS_CELERY_PROCESS:
+if not IS_CELERY_PROCESS and ENV_CONFIG.sentry_enable:
     RAVEN_CONFIG = {
         'dsn': ENV_CONFIG.sentry_dsn,
     }
@@ -231,6 +230,8 @@ CELERY_BEAT_SCHEDULE = {
 
 
 # Django All Auth
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_SUBJECT_PREFIX = '[蚁阅]'
 LOGIN_REDIRECT_URL = '/'
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
@@ -241,10 +242,22 @@ SOCIAL_APP_GITHUB = {
     'client_id': ENV_CONFIG.github_client_id,
     'secret': ENV_CONFIG.github_secret,
 }
+ACCOUNT_ADAPTER = 'rssant.auth.RssantAccountAdapter'
 
 # Email
-
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_SUBJECT_PREFIX = '[蚁阅]'
+if not ENV_CONFIG.smtp_enable:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_TIMEOUT = 30
+    EMAIL_HOST = ENV_CONFIG.smtp_host
+    EMAIL_PORT = ENV_CONFIG.smtp_port
+    EMAIL_HOST_USER = ENV_CONFIG.smtp_username
+    EMAIL_HOST_PASSWORD = ENV_CONFIG.smtp_password
+    EMAIL_USE_SSL = ENV_CONFIG.smtp_use_ssl
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+    SERVER_EMAIL = EMAIL_HOST_USER
 
 # Django REST
 REST_FRAMEWORK = {

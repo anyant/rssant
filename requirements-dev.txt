@@ -39,6 +39,7 @@ PyYAML==3.13
 Mako==1.0.9
 tqdm==4.31.1
 cached-property==1.5.1
+python-dotenv==0.10.2
 
 raven==6.10.0
 pyinstrument==3.0.1

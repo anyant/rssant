@@ -1,11 +1,18 @@
-import os
-from validr import T, modelclass, fields
+import os.path
+import typing
+
+from dotenv import load_dotenv
+from validr import T, modelclass, fields, Invalid
+
+
+EnvConfig = typing.TypeVar('EnvConfig')
 
 
 @modelclass
 class EnvConfig:
 
     debug = T.bool.default(True).desc('debug')
+    root_url = T.url.default('http://127.0.0.1:6789')
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     # postgres database
     pg_host = T.str.default('127.0.0.1').desc('postgres host')
@@ -19,16 +26,36 @@ class EnvConfig:
     github_client_id = T.str.default('a30a7a62fd4a648c9da6')
     github_secret = T.str.default('e98cede34ab9badaaab0d30f07c8d989fa11e0ec')
     # sentry
+    sentry_enable = T.bool.default(False)
     sentry_dsn = T.str.optional
     # celery sentry
     is_celery_process = T.bool.optional
+    # email smtp
+    smtp_enable = T.bool.default(False)
+    smtp_host = T.str.optional
+    smtp_port = T.int.min(0).optional
+    smtp_username = T.str.optional
+    smtp_password = T.str.optional
+    smtp_use_ssl = T.bool.default(False)
 
-    @classmethod
-    def load(cls, environ=None):
-        if environ is None:
-            environ = os.environ
-        configs = {}
-        for name in fields(cls):
-            key = ('RSSANT_' + name).upper()
-            configs[name] = environ.get(key, None)
-        return cls(configs)
+    def __post_init__(self):
+        if self.sentry_enable and not self.sentry_dsn:
+            raise Invalid('sentry_dsn is required when sentry_enable=True')
+        if self.smtp_enable:
+            if not self.smtp_host:
+                raise Invalid('smtp_host is required when smtp_enable=True')
+            if not self.smtp_port:
+                raise Invalid('smtp_port is required when smtp_enable=True')
+
+
+def load_env_config() -> EnvConfig:
+    envfile_path = os.getenv('RSSANT_CONFIG')
+    if envfile_path:
+        envfile_path = os.path.abspath(os.path.expanduser(envfile_path))
+        print(f'* Load envfile at {envfile_path}')
+        load_dotenv(envfile_path)
+    configs = {}
+    for name in fields(EnvConfig):
+        key = ('RSSANT_' + name).upper()
+        configs[name] = os.environ.get(key, None)
+    return EnvConfig(configs)

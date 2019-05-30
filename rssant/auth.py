@@ -1,5 +1,6 @@
 from django.urls import path, include
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
+from allauth.account.adapter import DefaultAccountAdapter
 from rest_auth.registration.views import SocialConnectView
 from rest_auth.registration.views import SocialLoginView
 from rest_auth.registration.views import (
@@ -13,6 +14,10 @@ class GitHubLogin(SocialLoginView):
 
 class GitHubConnect(SocialConnectView):
     adapter_class = GitHubOAuth2Adapter
+
+
+class RssantAccountAdapter(DefaultAccountAdapter):
+    """RSSAnt Account Adapter"""
 
 
 urlpaterns = [
