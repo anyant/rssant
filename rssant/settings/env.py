@@ -23,8 +23,8 @@ class EnvConfig:
     # celery redis
     redis_url = T.str.default('redis://127.0.0.1:6379/0').desc('redis url')
     # github login
-    github_client_id = T.str.default('a30a7a62fd4a648c9da6')
-    github_secret = T.str.default('e98cede34ab9badaaab0d30f07c8d989fa11e0ec')
+    github_client_id = T.str.optional
+    github_secret = T.str.optional
     # sentry
     sentry_enable = T.bool.default(False)
     sentry_dsn = T.str.optional

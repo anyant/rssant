@@ -236,6 +236,10 @@ CELERY_BEAT_SCHEDULE = {
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"  # "mandatory", "optional", or "none"
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[蚁阅]'
+if ENV_CONFIG.root_url.startswith('https'):
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
+else:
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http'
 LOGIN_REDIRECT_URL = '/'
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
