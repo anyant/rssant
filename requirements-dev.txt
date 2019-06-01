@@ -32,6 +32,7 @@ bs4==0.0.1
 beautifulsoup4==4.7.1
 chardet==3.0.4
 cchardet==2.1.4
+pynliner==0.8.0
 
 validr==1.1.0
 Click==7.0

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import sys
+import os.path
 from os.path import dirname, abspath
 from .env import load_env_config
 
@@ -86,7 +87,9 @@ ROOT_URLCONF = 'rssant.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -231,6 +234,7 @@ CELERY_BEAT_SCHEDULE = {
 
 # Django All Auth
 ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # "mandatory", "optional", or "none"
 ACCOUNT_EMAIL_SUBJECT_PREFIX = '[蚁阅]'
 LOGIN_REDIRECT_URL = '/'
 AUTHENTICATION_BACKENDS = (

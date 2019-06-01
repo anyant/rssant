@@ -13,6 +13,7 @@ Click==7.0
 configobj==5.0.6
 coreapi==2.3.3
 coreschema==0.0.4
+cssutils==1.0.2
 defusedxml==0.5.0
 Django==2.1.7
 django-allauth==0.38.0
@@ -50,6 +51,7 @@ psycopg2-binary==2.7.7
 Pygments==2.3.1
 pyinstrument==3.0.1
 pyinstrument-cext==0.2.0
+pynliner==0.8.0
 pyparsing==2.4.0
 python-crontab==2.3.6
 python-dateutil==2.8.0

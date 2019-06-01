@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>欢迎注册蚁阅，请验证您的邮箱</title>
+    <style>
+        body {
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            color: #353535;
+        }
+
+        .container {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            line-height: 140% !important;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table td {
+            border-collapse: collapse;
+        }
+
+        img {
+            outline: none;
+            text-decoration: none;
+            -ms-interpolation-mode: bicubic;
+        }
+
+        a img {
+            border: none;
+        }
+
+        .row td {
+            padding: 8px 0 0 0;
+        }
+
+        .row-message td {
+            padding-top: 24px;
+        }
+
+        .row-link td {
+            padding-top: 14px;
+        }
+
+        .row-link-info td {
+            padding-top: 16px;
+        }
+
+        .row-ignore-info td {
+            padding-top: 24px;
+        }
+
+        .row-sign td {
+            padding-top: 24px;
+        }
+
+        .row-divider td {
+            padding-top: 16px;
+        }
+
+        .row-divider .divider {
+            padding: 0;
+            height: 1px;
+            background: #ECECEC;
+        }
+
+        .row-homepage td {
+            padding-top: 16px;
+        }
+
+        .row-email td {
+            padding-top: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <table cellpadding="0" cellspacing="0" class="container">
+        <tr class="row row-welcome">
+            <td>感谢您注册蚁阅！</td>
+        </tr>
+        <tr class="row row-message">
+            <td>我们收到 "{{ username }}" 使用此邮箱申请注册蚁阅。请点击以下链接验证您的邮箱:</td>
+        </tr>
+        <tr class="row row-link">
+            <td><a href="{{ link }}">{{ link }}</a></td>
+        </tr>
+        <tr class="row row-link-info">
+            <td>如果无法点击此链接，你可以复制该地址，并粘贴到浏览器的地址栏中访问。</td>
+        </tr>
+        <tr class="row row-ignore-info">
+            <td>如果你并未发出此请求，请忽略此邮件，无需采取进一步操作。</td>
+        </tr>
+        <tr class="row row-divider">
+            <td>
+                <div class="divider"></div>
+            </td>
+        </tr>
+        <tr class="row row-homepage">
+            <td>蚁阅官网: <a href="https://rss.anyant.com">https://rss.anyant.com</a></td>
+        </tr>
+        <tr class="row row-email">
+            <td>蚁阅官方邮件: guyskk@qq.com</td>
+        </tr>
+        <tr class="row row-end">
+            <td></td>
+        </tr>
+    </table>
+</body>
+
+</html>
