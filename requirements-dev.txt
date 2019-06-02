@@ -33,8 +33,11 @@ beautifulsoup4==4.7.1
 chardet==3.0.4
 cchardet==2.1.4
 pynliner==0.8.0
+aiodns==2.0.0
+aiohttp==3.5.4
+aiohttp-devtools==0.13
 
-validr==1.1.0
+validr==1.1.1
 Click==7.0
 PyYAML==3.13
 Mako==1.0.9
