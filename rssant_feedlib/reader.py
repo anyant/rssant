@@ -9,10 +9,16 @@ import requests
 from rssant_common.helper import resolve_response_encoding
 
 
-DEFAULT_USER_AGENT = (
+DEFAULT_RSSANT_USER_AGENT = (
     'Mozilla/5.0 (X11; Linux x86_64) '
     'AppleWebKit/537.36 (KHTML, like Gecko) '
     'Chrome/67.0.3396.87 Safari/537.36 RSSAnt/1.0'
+)
+
+
+DEFAULT_USER_AGENT = (
+    'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) '
+    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Mobile Safari/537.36'
 )
 
 

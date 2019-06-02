@@ -36,6 +36,7 @@ pynliner==0.8.0
 aiodns==2.0.0
 aiohttp==3.5.4
 aiohttp-devtools==0.13
+aiojobs==0.2.2
 
 validr==1.1.1
 Click==7.0

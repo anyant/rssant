@@ -1,3 +1,4 @@
+import json
 import inspect
 from collections import ChainMap
 
@@ -40,7 +41,10 @@ class ValidrRouteTableDef(RouteTableDef):
                 if request.method in ['GET', 'DELETE']:
                     maps.append(request.query)
                 else:
-                    maps.append(await request.json())
+                    try:
+                        maps.append(await request.json())
+                    except json.JSONDecodeError:
+                        return json_response({"message": 'Invalid JSON'}, status=400)
                 try:
                     kwargs = params(ChainMap(*maps))
                 except Invalid as ex:
