@@ -37,6 +37,7 @@ aiodns==2.0.0
 aiohttp==3.5.4
 aiohttp-devtools==0.13
 aiojobs==0.2.2
+Brotli==1.0.7
 
 validr==1.1.1
 Click==7.0

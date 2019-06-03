@@ -34,7 +34,6 @@ class AsyncFeedReader:
             self.resolver = aiodns.DNSResolver(loop=asyncio.get_event_loop())
         if self.session is None:
             self.session = aiohttp.ClientSession(
-                raise_for_status=True,
                 read_timeout=self.request_timeout,
                 conn_timeout=self.request_timeout,
             )
@@ -63,10 +62,7 @@ class AsyncFeedReader:
                 raise ContentTooLargeError(msg)
         content_length = 0
         content = []
-        while True:
-            chunk = await response.content.read(8 * 1024)
-            if not chunk:
-                break
+        async for chunk in response.content.iter_chunked(8 * 1024):
             content_length += len(chunk)
             if content_length > self.max_content_length:
                 msg = 'Content length larger than limit {}'.format(self.max_content_length)
@@ -80,8 +76,10 @@ class AsyncFeedReader:
         response.rssant_content = content
         response.rssant_text = text
 
-    async def _read(self, url, etag=None, last_modified=None, referer=None, ignore_content=False):
-        headers = {'User-Agent': self.user_agent}
+    async def _read(self, url, etag=None, last_modified=None, referer=None, headers=None, ignore_content=False):
+        if headers is None:
+            headers = {}
+        headers['User-Agent'] = self.user_agent
         if etag:
             headers["ETag"] = etag
         if last_modified:

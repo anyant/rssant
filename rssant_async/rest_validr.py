@@ -37,7 +37,7 @@ class ValidrRouteTableDef(RouteTableDef):
         async def wrapped(request, **kwargs):
             ret = None
             if params is not None:
-                maps = [kwargs]
+                maps = [kwargs, request.match_info]
                 if request.method in ['GET', 'DELETE']:
                     maps.append(request.query)
                 else:

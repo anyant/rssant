@@ -8,6 +8,7 @@ attrs==19.1.0
 Babel==2.6.0
 beautifulsoup4==4.7.1
 billiard==3.5.0.2
+Brotli==1.0.7
 bs4==0.0.1
 cached-property==1.5.1
 cchardet==2.1.4

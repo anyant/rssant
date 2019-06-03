@@ -2,14 +2,16 @@ from validr import T
 from aiohttp.web import json_response
 from aiojobs.aiohttp import spawn
 
+from rssant_common.image_url import decode_image_url, ImageUrlDecodeError
 from .rest_validr import ValidrRouteTableDef
 from .tasks import STORYS_BUFFER, fetch_story, detect_story_images
+from .image_proxy import image_proxy
 
 
 routes = ValidrRouteTableDef()
 
 
-@routes.post('/task/fetch_storys')
+@routes.post('/async/fetch_storys')
 async def api_fetch_storys(
     request,
     storys: T.list(T.dict(id = T.str, url = T.url)).unique,
@@ -20,7 +22,7 @@ async def api_fetch_storys(
     return {'message': 'OK'}
 
 
-@routes.get('/task/get_story')
+@routes.get('/async/get_story')
 async def api_get_story(
     request,
     id: T.str,
@@ -37,7 +39,7 @@ async def api_get_story(
     return story
 
 
-@routes.post('/task/detect_story_images')
+@routes.post('/async/detect_story_images')
 async def api_detect_story_images(
     request,
     story: T.dict(id = T.str, url = T.url),
@@ -51,4 +53,9 @@ async def api_detect_story_images(
 
 @routes.get('/image/{image}')
 async def proxy_story_image(request, image: T.str):
-    pass
+    try:
+        image_url = decode_image_url(image)
+    except ImageUrlDecodeError as ex:
+        return json_response({'message': str(ex)}, status=400)
+    response = await image_proxy(request, image_url['url'], image_url['referer'])
+    return response
