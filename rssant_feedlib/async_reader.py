@@ -1,6 +1,7 @@
 import socket
 import ssl
 import asyncio
+import concurrent.futures
 import ipaddress
 from urllib.parse import urlparse
 
@@ -101,9 +102,10 @@ class AsyncFeedReader:
             status = FeedResponseStatus.DNS_ERROR.value
         except PrivateAddressError:
             status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
-        except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError):
+        except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,
+                asyncio.TimeoutError, concurrent.futures.TimeoutError):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
-        except (ssl.SSLError, aiohttp.ClientSSLError):
+        except (ssl.SSLError, ssl.CertificateError, aiohttp.ClientSSLError):
             status = FeedResponseStatus.SSL_ERROR.value
         except aiohttp.ClientProxyConnectionError:
             status = FeedResponseStatus.PROXY_ERROR.value

@@ -72,7 +72,7 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100):
         if not storys:
-            return 0, 0  # num_modified, num_reallocate
+            return [], 0  # modified_story_objects, num_reallocate
         # 先排序，分配offset时保证offset和dt_published顺序一致
         storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
         with transaction.atomic():
@@ -86,7 +86,7 @@ class Story(Model, ContentHashMixin):
             for story in q.all():
                 story_objects[story.unique_id] = story
             new_story_objects = []
-            num_modified = 0
+            modified_story_objects = []
             now = timezone.now()
             for data in storys:
                 unique_id = data['unique_id']
@@ -114,7 +114,7 @@ class Story(Model, ContentHashMixin):
                 story.dt_synced = now
                 if is_story_exist:
                     story.save()
-                num_modified += 1
+                modified_story_objects.append(story)
             if new_story_objects:
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
                 early_dt_published = new_story_objects[0].dt_published
@@ -122,7 +122,7 @@ class Story(Model, ContentHashMixin):
                 Story._update_feed_story_publish_period(feed, total_storys=offset)
             else:
                 num_reallocate = 0
-            return num_modified, num_reallocate
+            return modified_story_objects, num_reallocate
 
     @staticmethod
     def _reallocate_offset(feed_id, early_dt_published=None):

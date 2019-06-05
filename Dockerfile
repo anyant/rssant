@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com
 COPY . .
 RUN python3 manage.py collectstatic
 
-EXPOSE 6788
+EXPOSE 6788 6786
 
 CMD ["/bin/bash"]

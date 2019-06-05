@@ -1,18 +1,15 @@
 import os.path
-import typing
 
 from dotenv import load_dotenv
 from validr import T, modelclass, fields, Invalid
 
 
-EnvConfig = typing.TypeVar('EnvConfig')
-
-
 @modelclass
 class EnvConfig:
-
     debug = T.bool.default(True).desc('debug')
     root_url = T.url.default('http://127.0.0.1:6789')
+    async_url_prefix = T.url.default('http://127.0.0.1:6786/api/v1')
+    async_callback_url_prefix = T.url.default('http://127.0.0.1:6788/api/v1')
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     # postgres database
     pg_host = T.str.default('127.0.0.1').desc('postgres host')

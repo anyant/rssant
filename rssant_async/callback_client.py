@@ -32,7 +32,7 @@ class CallbackClient:
             return
         await self._async_init()
         async with self.session.post(callback_url, json=data) as r:
-            return r
+            return await r.json()
 
     async def _close(self):
         if self.session:
@@ -46,4 +46,8 @@ class CallbackClient:
     @classmethod
     async def send(cls, callback_url, data):
         client = cls._get_instance()
-        await client._send(callback_url, data)
+        try:
+            await client._send(callback_url, data)
+        except Exception as ex:
+            LOG.info(f'send callback {callback_url} failed: {ex}')
+            raise

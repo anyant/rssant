@@ -133,7 +133,7 @@ class FeedReader:
             status = FeedResponseStatus.READ_TIMEOUT.value
         except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
-        except (ssl.SSLError, requests.exceptions.SSLError):
+        except (ssl.SSLError, ssl.CertificateError, requests.exceptions.SSLError):
             status = FeedResponseStatus.SSL_ERROR.value
         except requests.exceptions.ProxyError:
             status = FeedResponseStatus.PROXY_ERROR.value

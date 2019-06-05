@@ -1,5 +1,7 @@
 import logging
+import time
 import asyncio
+import concurrent.futures
 from collections import OrderedDict
 
 from rssant_feedlib.async_reader import AsyncFeedReader
@@ -59,7 +61,12 @@ async def detect_story_images(story_id, story_url, image_urls, callback_url=None
         futs = []
         for url in image_urls:
             futs.append(asyncio.ensure_future(_read(url)))
-        results = await asyncio.gather(*futs)
+        t_begin = time.time()
+        try:
+            results = await asyncio.gather(*futs)
+        except (TimeoutError, concurrent.futures.TimeoutError):
+            results = [fut.result() for fut in futs if fut.done()]
+        cost_ms = (time.time() - t_begin) * 1000
     num_ok = num_error = 0
     images = []
     for url, status in results:
@@ -69,7 +76,8 @@ async def detect_story_images(story_id, story_url, image_urls, callback_url=None
             num_error += 1
         images.append(dict(url=url, status=status))
     LOG.info(f'detect story images story_id={story_id} '
-             f'num_images={len(image_urls)} finished, ok={num_ok} error={num_error}')
+             f'num_images={len(image_urls)} finished, '
+             f'ok={num_ok} error={num_error} cost={cost_ms:.0f}ms')
     await CallbackClient.send(callback_url, {
         'story': {'id': story_id, 'url': story_url},
         'images': images

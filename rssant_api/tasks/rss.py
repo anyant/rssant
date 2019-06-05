@@ -10,6 +10,8 @@ from rssant_feedlib import FeedFinder, FeedReader, FeedParser
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_api.helper import shorten
+from rssant_common.helper import pretty_format_json
+from rssant_common.async_client import async_client
 
 
 LOG = logging.getLogger(__name__)
@@ -125,6 +127,33 @@ def clean_feed_creation():
     )
 
 
+import re
+
+RE_URL = re.compile(
+    r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"  # noqa
+)
+
+
+@task(name='rssant.tasks.process_story_webpage')
+def process_story_webpage(story_id):
+    story = async_client.get_story(story_id)
+    LOG.info(f'fetch story#{story_id} status={story["status"]}')
+    if not story['status'] == 200:
+        return
+    tmp_urls = set()
+    for match in RE_URL.finditer(story['text']):
+        tmp_urls.add(match.group(0).strip())
+    LOG.info(f'found story#{story_id} {len(tmp_urls)} images')
+    async_client.detect_story_images(
+        story_id, story['url'], tmp_urls, callback='/async_callback/story_images')
+
+
+@task(name='rssant.tasks.process_story_images')
+def process_story_images(story_id, story_url, images):
+    images_text = pretty_format_json(images)
+    LOG.info(f'detect story#{story_id} url={story_url} images:\n{images_text}')
+
+
 @transaction.atomic
 def _save_found(feed_creation, parsed):
     url = _get_url(parsed.response)
@@ -235,12 +264,15 @@ def _save_storys(feed, entries):
         story['dt_published'] = _get_dt_published(data, now)
         story['dt_updated'] = _get_dt_updated(data, now)
         storys.append(story)
-    num_modified, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
+    modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
     LOG.info(
         'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
-        feed.id, len(storys), num_modified, num_reallocate
+        feed.id, len(storys), len(modified_storys), num_reallocate
     )
-    return num_modified, len(storys)
+    need_fetch_storys = [{'id': str(x.id), 'url': x.link} for x in modified_storys]
+    if need_fetch_storys:
+        async_client.fetch_storys(need_fetch_storys, '/async_callback/story')
+    return len(modified_storys), len(storys)
 
 
 def _get_etag(response):
