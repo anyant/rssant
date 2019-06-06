@@ -219,11 +219,11 @@ class UserFeed(Model):
 
     @property
     def status(self):
-        return self._feed.status
+        return self.feed.status
 
     @property
     def url(self):
-        return self._feed.url
+        return self.feed.url
 
     @staticmethod
     def get_by_pk(pk, user_id=None, detail=False):
