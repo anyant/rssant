@@ -1,16 +1,15 @@
 import os
 import logging
 
+import django
 from aiohttp import web
 from aiojobs.aiohttp import setup as setup_aiojobs
 
-import rssant.settings  # noqa
 from .views import routes
 from .callback_client import CallbackClient
 
-# You must either define the environment variable DJANGO_SETTINGS_MODULE or
-# call settings.configure() before accessing settings.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
+django.setup()
 
 LOG_FORMAT = "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)

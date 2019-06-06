@@ -167,7 +167,7 @@ IMAGE_REFERER_DENY_STATUS = set([400, 401, 403, 404])
 def process_story_images(story_id, story_url, images):
     image_replaces = {}
     for img in images:
-        if img['status'] in IMAGE_REFERER_DENY_STATUS or True:
+        if img['status'] in IMAGE_REFERER_DENY_STATUS:
             new_url_data = encode_image_url(img['url'], story_url)
             image_replaces[img['url']] = '/api/v1/image/{}'.format(new_url_data)
     LOG.info(f'detect story#{story_id} {story_url} '
