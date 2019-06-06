@@ -1,8 +1,8 @@
 from django.utils import timezone
 from django.db import connection, transaction
-from html2text import HTML2Text
 from cached_property import cached_property
 
+from rssant_feedlib.processor import story_html_to_text
 from rssant_common.validator import StoryUnionId, FeedUnionId
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
@@ -17,9 +17,7 @@ USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 
 
 def convert_summary(summary):
-    h = HTML2Text()
-    h.ignore_links = True
-    return h.handle(summary or "")
+    return story_html_to_text(summary)
 
 
 FEED_STORY_PUBLISH_PERIOD_FIELDS = [

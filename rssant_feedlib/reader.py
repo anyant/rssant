@@ -78,7 +78,7 @@ class FeedReader:
                 ip, __, __, __ = sockaddr
                 yield ip
 
-    def _check_private_address(self, url):
+    def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
         hostname = urlparse(url).hostname
         for ip in self._resolve_hostname(hostname):
@@ -113,7 +113,7 @@ class FeedReader:
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
         if not self.allow_private_address:
-            self._check_private_address(prepared.url)
+            self.check_private_address(prepared.url)
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
         response = self.session.send(prepared, timeout=(6.5, self.request_timeout), stream=True)
         self._read_content(response)

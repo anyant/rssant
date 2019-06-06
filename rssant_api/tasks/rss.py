@@ -5,12 +5,14 @@ import celery
 from celery import shared_task as task
 from django.db import transaction
 from django.utils import timezone
+from readability import Document as ReadabilityDocument
 
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
+from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_api.helper import shorten
-from rssant_common.helper import pretty_format_json
+from rssant_common.image_url import encode_image_url
 from rssant_common.async_client import async_client
 
 
@@ -127,31 +129,55 @@ def clean_feed_creation():
     )
 
 
-import re
-
-RE_URL = re.compile(
-    r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"  # noqa
-)
-
-
 @task(name='rssant.tasks.process_story_webpage')
 def process_story_webpage(story_id):
+    # https://github.com/dragnet-org/dragnet
+    # https://github.com/misja/python-boilerpipe
+    # https://github.com/dalab/web2text
+    # https://github.com/grangier/python-goose
+    # https://github.com/buriy/python-readability
+    # https://github.com/codelucas/newspaper
     story = async_client.get_story(story_id)
-    LOG.info(f'fetch story#{story_id} status={story["status"]}')
+    story_url = story['url']
+    LOG.info(f'fetch story#{story_id} {story_url} status={story["status"]}')
     if not story['status'] == 200:
         return
-    tmp_urls = set()
-    for match in RE_URL.finditer(story['text']):
-        tmp_urls.add(match.group(0).strip())
-    LOG.info(f'found story#{story_id} {len(tmp_urls)} images')
-    async_client.detect_story_images(
-        story_id, story['url'], tmp_urls, callback='/async_callback/story_images')
+    doc = ReadabilityDocument(story['text'])
+    content = doc.summary()
+    with transaction.atomic():
+        story = Story.objects.get(pk=story_id)
+        story.link = story_url
+        story.content = content
+        story.save()
+    processer = StoryImageProcessor(story_url, content)
+    image_indexs = processer.parse()
+    img_urls = {x.value for x in image_indexs}
+    LOG.info(f'found story#{story_id} {story_url} has {len(img_urls)} images')
+    if img_urls:
+        async_client.detect_story_images(
+            story_id, story_url, img_urls,
+            callback='/async_callback/story_images'
+        )
+
+
+IMAGE_REFERER_DENY_STATUS = set([400, 401, 403, 404])
 
 
 @task(name='rssant.tasks.process_story_images')
 def process_story_images(story_id, story_url, images):
-    images_text = pretty_format_json(images)
-    LOG.info(f'detect story#{story_id} url={story_url} images:\n{images_text}')
+    image_replaces = {}
+    for img in images:
+        if img['status'] in IMAGE_REFERER_DENY_STATUS or True:
+            new_url_data = encode_image_url(img['url'], story_url)
+            image_replaces[img['url']] = '/api/v1/image/{}'.format(new_url_data)
+    LOG.info(f'detect story#{story_id} {story_url} '
+             f'has {len(image_replaces)} referer deny images')
+    story = Story.objects.get(pk=story_id)
+    processor = StoryImageProcessor(story_url, story.content)
+    image_indexs = processor.parse()
+    content = processor.process(image_indexs, image_replaces)
+    story.content = content
+    story.save()
 
 
 @transaction.atomic
@@ -269,8 +295,13 @@ def _save_storys(feed, entries):
         'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
         feed.id, len(storys), len(modified_storys), num_reallocate
     )
-    need_fetch_storys = [{'id': str(x.id), 'url': x.link} for x in modified_storys]
+    need_fetch_storys = []
+    for story in modified_storys:
+        story_text = story_html_to_text(story.content)
+        if len(story_text) < 1000:
+            need_fetch_storys.append({'id': str(story.id), 'url': story.link})
     if need_fetch_storys:
+        LOG.info('feed#%s need fetch %s storys', feed.id, len(need_fetch_storys))
         async_client.fetch_storys(need_fetch_storys, '/async_callback/story')
     return len(modified_storys), len(storys)
 

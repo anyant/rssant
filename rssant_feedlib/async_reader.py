@@ -42,11 +42,16 @@ class AsyncFeedReader:
     async def _resolve_hostname(self, hostname):
         addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)
         # https://pycares.readthedocs.io/en/latest/channel.html#pycares.Channel.query
-        host, ttl = addrinfo
-        yield host
+        # extra type ares_host_result: addresses, aliases, name
+        if getattr(addrinfo, 'addresses', None):
+            for ip in addrinfo.addresses:
+                yield ip
+        elif getattr(addrinfo, 'host'):
+            yield addrinfo.host
 
-    async def _check_private_address(self, url):
+    async def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
+        await self._async_init()
         hostname = urlparse(url).hostname
         async for ip in self._resolve_hostname(hostname):
             ip = ipaddress.ip_address(ip)
@@ -88,6 +93,8 @@ class AsyncFeedReader:
         if referer:
             headers["Referer"] = referer
         await self._async_init()
+        if not self.allow_private_address:
+            await self.check_private_address(url)
         async with self.session.get(url, headers=headers) as response:
             response.raise_for_status()
             if not ignore_content:
@@ -105,11 +112,13 @@ class AsyncFeedReader:
         except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,
                 asyncio.TimeoutError, concurrent.futures.TimeoutError):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
-        except (ssl.SSLError, ssl.CertificateError, aiohttp.ClientSSLError):
+        except (ssl.SSLError, ssl.CertificateError,
+                aiohttp.ClientSSLError, aiohttp.ServerFingerprintMismatch):
             status = FeedResponseStatus.SSL_ERROR.value
         except aiohttp.ClientProxyConnectionError:
             status = FeedResponseStatus.PROXY_ERROR.value
-        except (ConnectionError, aiohttp.ServerDisconnectedError, aiohttp.ServerConnectionError):
+        except (ConnectionError, aiohttp.ServerDisconnectedError,
+                aiohttp.ServerConnectionError):
             status = FeedResponseStatus.CONNECTION_RESET.value
         except aiohttp.ClientPayloadError:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value

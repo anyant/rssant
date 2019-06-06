@@ -10,7 +10,7 @@ def setup_sentry_celery():
     # https://github.com/getsentry/raven-python/issues/1189
     # https://github.com/getsentry/sentry-python/issues/273
     from rssant.settings import IS_CELERY_PROCESS, ENV_CONFIG
-    if not IS_CELERY_PROCESS:
+    if not IS_CELERY_PROCESS or not ENV_CONFIG.sentry_enable:
         return
     sentry_dsn = ENV_CONFIG.sentry_dsn
     if sentry_dsn:

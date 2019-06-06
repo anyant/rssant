@@ -38,6 +38,10 @@ aiohttp==3.5.4
 aiohttp-devtools==0.13
 aiojobs==0.2.2
 Brotli==1.0.7
+html2text==2018.1.9
+readability-lxml==0.7.1
+lxml==4.3.3
+newspaper3k==0.2.8
 
 validr==1.1.1
 Click==7.0
