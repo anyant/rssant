@@ -15,7 +15,7 @@ routes = ValidrRouteTableDef()
 async def api_fetch_storys(
     request,
     storys: T.list(T.dict(id = T.str, url = T.url)).unique,
-    callback: T.url.optional,
+    callback: T.str.optional,
 ) -> T.dict(message=T.str):
     for s in storys:
         await spawn(request, fetch_story(s['id'], s['url'], callback))
@@ -44,7 +44,7 @@ async def api_detect_story_images(
     request,
     story: T.dict(id = T.str, url = T.url),
     images: T.list(T.dict(url = T.url)).unique,
-    callback: T.url.optional,
+    callback: T.str.optional,
 ) -> T.dict(message=T.str):
     images_urls = [x['url'] for x in images]
     await spawn(request, detect_story_images(story['id'], story['url'], images_urls, callback))

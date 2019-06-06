@@ -302,7 +302,10 @@ def _save_storys(feed, entries):
             need_fetch_storys.append({'id': str(story.id), 'url': story.link})
     if need_fetch_storys:
         LOG.info('feed#%s need fetch %s storys', feed.id, len(need_fetch_storys))
-        async_client.fetch_storys(need_fetch_storys, '/async_callback/story')
+        try:
+            async_client.fetch_storys(need_fetch_storys, '/async_callback/story')
+        except Exception as ex:
+            LOG.exception(f'async_client.fetch_storys failed: {ex}', exc_info=ex)
     return len(modified_storys), len(storys)
 
 
