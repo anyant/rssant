@@ -35,7 +35,7 @@ class RssantAsyncClient:
     def detect_story_images(self, story_id, story_url, image_urls, callback):
         images = [{'url': url} for url in image_urls]
         response = self.session.post(self._get_url('/async/detect_story_images'), json={
-            'story': {'id': story_id, 'url': story_url},
+            'story': {'id': str(story_id), 'url': story_url},
             'images': images,
             'callback': self._get_callback(callback),
         })

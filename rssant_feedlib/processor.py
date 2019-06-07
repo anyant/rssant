@@ -28,7 +28,7 @@ class StoryImageProcessor:
             match = RE_IMG.search(content, pos=pos)
             if not match:
                 break
-            img_url = self.fix_relative_url(match.group(1))
+            img_url = self.fix_relative_url(match.group(1).strip())
             idx = StoryImageIndexItem(*match.span(1), img_url)
             image_indexs.append(idx)
             pos = match.end(1)

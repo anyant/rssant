@@ -76,6 +76,15 @@ def sync_feed(feed_id):
 
 
 @main.command()
+@click.argument('feed-id')
+def refresh_feed_storys(feed_id):
+    feed = Feed.objects.get(pk=feed_id)
+    storys = list(Story.objects.filter(feed_id=feed_id).order_by('offset').all())
+    LOG.info(f'refresh_feed_storys feed_id={feed_id} num_storys={len(storys)}')
+    rss.fetch_feed_storys(feed, storys)
+
+
+@main.command()
 @click.argument('unionid_text')
 def decode_unionid(unionid_text):
     numbers = unionid.decode(unionid_text)

@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 from readability import Document as ReadabilityDocument
 
-from rssant_feedlib import FeedFinder, FeedReader, FeedParser
+from rssant_feedlib import FeedFinder, FeedReader, FeedParser, processor
 from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
@@ -149,6 +149,10 @@ def process_story_webpage(story_id):
         story.link = story_url
         story.content = content
         story.save()
+    detect_story_images(story_id, story_url, content)
+
+
+def detect_story_images(story_id, story_url, content):
     processer = StoryImageProcessor(story_url, content)
     image_indexs = processer.parse()
     img_urls = {x.value for x in image_indexs}
@@ -295,18 +299,36 @@ def _save_storys(feed, entries):
         'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
         feed.id, len(storys), len(modified_storys), num_reallocate
     )
+    fetch_feed_storys(modified_storys)
+    return len(modified_storys), len(storys)
+
+
+def fetch_feed_storys(feed, storys):
     need_fetch_storys = []
-    for story in modified_storys:
-        story_text = story_html_to_text(story.content)
-        if len(story_text) < 1000:
-            need_fetch_storys.append({'id': str(story.id), 'url': story.link})
+    normal_storys = []
+    if _is_feed_need_fetch_storys(feed):
+        for story in storys:
+            story_text = story_html_to_text(story.content)
+            if len(story_text) < 1000:
+                need_fetch_storys.append({'id': str(story.id), 'url': story.link})
+            else:
+                normal_storys.append(story)
     if need_fetch_storys:
         LOG.info('feed#%s need fetch %s storys', feed.id, len(need_fetch_storys))
         try:
             async_client.fetch_storys(need_fetch_storys, '/async_callback/story')
         except Exception as ex:
             LOG.exception(f'async_client.fetch_storys failed: {ex}', exc_info=ex)
-    return len(modified_storys), len(storys)
+    for story in normal_storys:
+        detect_story_images(str(story.id), story.link, story.content)
+
+
+def _is_feed_need_fetch_storys(feed):
+    checkers = [processor.is_v2ex, processor.is_hacknews, processor.is_github, processor.is_pypi]
+    for check in checkers:
+        if check(feed.url):
+            return False
+    return True
 
 
 def _get_etag(response):

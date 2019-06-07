@@ -61,7 +61,18 @@ samsung.com
 accuweather.com
 goo.gl
 sm.cn
+meituan.com
+dianping.com
+qunar.com
+ctrip.com
+readthedocs.io
+readthedocs.org
+blog.csdn.net
+toutiao.com
 github.com
+stackoverflow.com
+pypi.org
+v2ex.com/member
 """
 
 
