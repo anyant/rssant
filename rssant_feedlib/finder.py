@@ -331,7 +331,7 @@ class FeedFinder:
         for key in URL_ENDS_NOT_FEED:
             if lower_path.endswith(key):
                 return None
-        url = urlunsplit((scheme, netloc, path, query, fragment))
+        url = urlunsplit((scheme, netloc, path, query, None))
         return self._score_link(url, lower_path, link_rel, link_type)
 
     def _score_link(self, url, path, link_rel, link_type):
