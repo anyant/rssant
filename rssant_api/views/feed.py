@@ -107,7 +107,7 @@ def feed_get(request, feed_unionid: T.feed_unionid.object, detail: T.bool.defaul
     try:
         feed = UnionFeed.get_by_id(feed_unionid, detail=detail)
     except FeedNotFoundError:
-        return Response({"message": "feed does not exist"}, status=400)
+        return Response({"message": "订阅不存在"}, status=400)
     return feed.to_dict()
 
 
@@ -181,7 +181,10 @@ def feed_set_all_readed(request, ids: T.list(T.feed_unionid.object).optional) ->
 @FeedView.delete('feed/<slug:feed_unionid>')
 def feed_delete(request, feed_unionid: T.feed_unionid.object):
     check_unionid(request, feed_unionid)
-    UnionFeed.delete_by_id(feed_unionid)
+    try:
+        UnionFeed.delete_by_id(feed_unionid)
+    except FeedNotFoundError:
+        return Response({"message": "订阅不存在"}, status=400)
 
 
 def _read_request_file(request, name='file'):

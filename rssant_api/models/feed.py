@@ -5,7 +5,7 @@ from django.db import transaction, connection
 from cached_property import cached_property
 
 from rssant_common.validator import FeedUnionId
-from .errors import FeedExistError, FeedStoryOffsetError
+from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
 
@@ -535,7 +535,10 @@ class UnionFeed:
         q = q.filter(user_id=user_id, feed_id=feed_id)
         if not detail:
             q = q.defer(*FEED_DETAIL_FIELDS)
-        user_feed = q.get()
+        try:
+            user_feed = q.get()
+        except UserFeed.DoesNotExist as ex:
+            raise FeedNotFoundError(str(ex)) from ex
         return UnionFeed(user_feed.feed, user_feed, detail=detail)
 
     @staticmethod
@@ -586,7 +589,10 @@ class UnionFeed:
     @staticmethod
     def delete_by_id(feed_unionid):
         user_id, feed_id = feed_unionid
-        user_feed = UserFeed.objects.only('id').get(user_id=user_id, feed_id=feed_id)
+        try:
+            user_feed = UserFeed.objects.only('id').get(user_id=user_id, feed_id=feed_id)
+        except UserFeed.DoesNotExist as ex:
+            raise FeedNotFoundError(str(ex)) from ex
         user_feed.delete()
 
     @staticmethod
