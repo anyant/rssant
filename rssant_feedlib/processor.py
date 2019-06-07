@@ -3,12 +3,37 @@ from collections import namedtuple
 from urllib.parse import urljoin
 from html2text import HTML2Text
 
-RE_IMG = re.compile(r'<img\s*.*?\s*src="([^"]+?)"', re.I | re.M)
+RE_IMG = re.compile(
+    r'(?:<img\s*.*?\s*src="([^"]+?)")|'
+    r'(?:<source\s*.*?\s*srcset="([^"]+?)")',
+    re.I | re.M)
 
 StoryImageIndexItem = namedtuple('StoryImageIndexItem', 'pos, endpos, value')
 
 
 class StoryImageProcessor:
+    """
+    >>> content = '''
+    ... <picture class="kg-image lightness-target">
+    ...     <source srcset="/abc.webp" type="image/webp">
+    ...     <source
+    ...     srcset="/abc.jpg
+    ...         " type="image/jpeg">
+    ...     <img src="/abc.jpg" alt="Design System实践">
+    ... </picture>
+    ... '''
+    >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
+    >>> image_indexs = processor.parse()
+    >>> len(image_indexs)
+    3
+    >>> image_indexs[0].value
+    'https://rss.anyant.com/abc.webp'
+    >>> image_indexs[1].value
+    'https://rss.anyant.com/abc.jpg'
+    >>> image_indexs[2].value
+    'https://rss.anyant.com/abc.jpg'
+    """
+
     def __init__(self, story_url, content):
         self.story_url = story_url
         self.content = content
@@ -28,10 +53,12 @@ class StoryImageProcessor:
             match = RE_IMG.search(content, pos=pos)
             if not match:
                 break
-            img_url = self.fix_relative_url(match.group(1).strip())
-            idx = StoryImageIndexItem(*match.span(1), img_url)
+            img_src, source_srcset = match.groups()
+            img_url = self.fix_relative_url((img_src or source_srcset).strip())
+            startpos, endpos = match.span(1) if img_src else match.span(2)
+            idx = StoryImageIndexItem(startpos, endpos, img_url)
             image_indexs.append(idx)
-            pos = match.end(1)
+            pos = endpos
         return image_indexs
 
     def process(self, image_indexs, images) -> str:

@@ -303,13 +303,13 @@ def _save_storys(feed, entries):
     return len(modified_storys), len(storys)
 
 
-def fetch_feed_storys(feed, storys):
+def fetch_feed_storys(feed, storys, is_refresh=False):
     need_fetch_storys = []
     normal_storys = []
     if _is_feed_need_fetch_storys(feed):
         for story in storys:
             story_text = story_html_to_text(story.content)
-            if len(story_text) < 1000:
+            if is_refresh or len(story_text) < 1000:
                 need_fetch_storys.append({'id': str(story.id), 'url': story.link})
             else:
                 normal_storys.append(story)
@@ -320,7 +320,8 @@ def fetch_feed_storys(feed, storys):
         except Exception as ex:
             LOG.exception(f'async_client.fetch_storys failed: {ex}', exc_info=ex)
     for story in normal_storys:
-        detect_story_images(str(story.id), story.link, story.content)
+        if not is_refresh:
+            detect_story_images(str(story.id), story.link, story.content)
 
 
 def _is_feed_need_fetch_storys(feed):

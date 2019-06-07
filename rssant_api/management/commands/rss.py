@@ -81,7 +81,7 @@ def refresh_feed_storys(feed_id):
     feed = Feed.objects.get(pk=feed_id)
     storys = list(Story.objects.filter(feed_id=feed_id).order_by('offset').all())
     LOG.info(f'refresh_feed_storys feed_id={feed_id} num_storys={len(storys)}')
-    rss.fetch_feed_storys(feed, storys)
+    rss.fetch_feed_storys(feed, storys, is_refresh=True)
 
 
 @main.command()
