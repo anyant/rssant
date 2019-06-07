@@ -299,7 +299,7 @@ def _save_storys(feed, entries):
         'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
         feed.id, len(storys), len(modified_storys), num_reallocate
     )
-    fetch_feed_storys(modified_storys)
+    fetch_feed_storys(feed, modified_storys)
     return len(modified_storys), len(storys)
 
 
