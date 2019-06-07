@@ -42,18 +42,21 @@ html2text==2018.1.9
 readability-lxml==0.7.1
 lxml==4.3.3
 newspaper3k==0.2.8
-
 validr==1.1.1
+
 Click==7.0
 PyYAML==3.13
 Mako==1.0.9
 tqdm==4.31.1
 cached-property==1.5.1
 python-dotenv==0.10.2
-
 raven==6.10.0
-pyinstrument==3.0.1
-pyinstrument-cext==0.2.0
 
 whitenoise==4.1.2
 gunicorn==19.9.0
+
+pyinstrument==3.0.1
+pyinstrument-cext==0.2.0
+pytest==4.6.2
+pytest-cov==2.7.1
+coverage==4.5.3

@@ -1,3 +1,13 @@
+"""
+>>> url = 'https://static.darmau.com/2019/06/figma.jpg'
+>>> referer = 'https://www.darmau.com/figma-for-design-system/'
+>>> encoded = encode_image_url(url, referer)
+>>> decoded = decode_image_url(encoded)
+>>> decoded['url'] == url
+True
+>>> decoded['referer'] == referer
+True
+"""
 import base64
 import json
 import brotli

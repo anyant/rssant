@@ -1,5 +1,17 @@
 """
 UnionId Encode and Decode
+
+>>> decode(encode(1)) == (1,)
+True
+>>> numbers = [0, 1, 2, 3, 12345, 67890]
+>>> decode(encode(*numbers)) == tuple(numbers)
+True
+>>> numbers = [N2_MAX, N4_MAX, N7_MAX, N10_MAX, N13_MAX]
+>>> decode(encode(*numbers)) == tuple(numbers)
+True
+>>> numbers = [x - 1 for x in numbers]
+>>> decode(encode(*numbers)) == tuple(numbers)
+True
 """
 
 UNION_ID_CHARS = b'0123456789abcdefghkmnpqrstuvwxyz'
