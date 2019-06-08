@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 import pynliner
 from html2text import html2text
 
-from rssant.settings import BASE_DIR
+from rssant.settings import BASE_DIR, ENV_CONFIG
 
 LOG = logging.getLogger(__name__)
 
@@ -25,6 +25,10 @@ class EmailTemplate:
 
     def send(self, sender, receiver, context):
         LOG.info(f'send email subject={self.subject!r} to {receiver}')
+        context.update(
+            rssant_url=ENV_CONFIG.root_url,
+            rssant_email=ENV_CONFIG.smtp_username,
+        )
         context = Context(context)
         text = self.text_template.render(context)
         html = self.html_template.render(context)
