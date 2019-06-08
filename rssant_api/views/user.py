@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import AuthenticationFailed
 from allauth.socialaccount.models import SocialAccount
 
 
@@ -44,15 +45,19 @@ def user_login(
                 return Response(status=403)
             return serialize_user(request.user)
         return Response(status=401)
+    error_message = {'message': '用户名或密码错误'}
     if '@' in account:
-        tmp_user = User.objects.get(email=account)
+        tmp_user = User.objects.filter(email=account).first()
         if tmp_user:
             username = tmp_user.username
         else:
-            return Response({'message': 'email not exists'}, status=401)
+            return Response(error_message, status=401)
     else:
         username = account
-    user = django_auth.authenticate(username=username, password=password)
+    try:
+        user = django_auth.authenticate(username=username, password=password)
+    except AuthenticationFailed:
+        return Response(error_message, status=401)
     if not user or not user.is_authenticated:
         return Response(status=401)
     if not user.is_active:
