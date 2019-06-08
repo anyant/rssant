@@ -251,6 +251,9 @@ SOCIAL_APP_GITHUB = {
     'secret': ENV_CONFIG.github_secret,
 }
 ACCOUNT_ADAPTER = 'rssant.auth.RssantAccountAdapter'
+REST_AUTH_SERIALIZERS = {
+    'PASSWORD_RESET_SERIALIZER': 'rssant.auth_serializer.RssantPasswordResetSerializer'
+}
 
 # Email
 EMAIL_SUBJECT_PREFIX = '[蚁阅]'
