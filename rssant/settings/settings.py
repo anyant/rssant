@@ -259,6 +259,7 @@ REST_AUTH_SERIALIZERS = {
 EMAIL_SUBJECT_PREFIX = '[蚁阅]'
 if not ENV_CONFIG.smtp_enable:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = None
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
     EMAIL_TIMEOUT = 30
