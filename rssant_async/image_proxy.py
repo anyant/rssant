@@ -1,5 +1,6 @@
 import logging
 
+import yarl
 import aiohttp
 from aiohttp.web import StreamResponse, json_response
 
@@ -18,33 +19,69 @@ PROXY_RESPONSE_HEADERS = [
 ]
 
 
-async def image_proxy(request, url, referer):
-    LOG.info(f'proxy image {url} referer={referer}')
+class ImageProxyError(Exception):
+    def __init__(self, message, status=400):
+        self.message = message
+        self.status = status
+
+    def to_response(self):
+        return json_response({'message': self.message}, status=self.status)
+
+
+async def check_private_address(url):
     async with AsyncFeedReader() as reader:
         try:
             await reader.check_private_address(url)
         except PrivateAddressError:
-            my_response = json_response({'message': 'private address not allowed'}, status=400)
-            return my_response
-    request_timeout = 30
-    headers = {'User-Agent': DEFAULT_USER_AGENT, 'Referer': referer}
-    for h in PROXY_REQUEST_HEADERS:
-        if h in request.headers:
-            headers[h] = request.headers[h]
-    session = aiohttp.ClientSession(
-        auto_decompress=False,
-        read_timeout=request_timeout,
-        conn_timeout=request_timeout,
-    )
+            raise ImageProxyError('private address not allowed')
+
+
+async def get_response(session, url, headers):
     try:
         response = await session.get(url, headers=headers)
     except (OSError, TimeoutError, IOError, aiohttp.ClientError) as ex:
         await session.close()
-        my_response = json_response({'message': str(ex)}, status=400)
-        return my_response
+        raise ImageProxyError(str(ex))
     except Exception:
         await session.close()
         raise
+    if yarl.URL(response.url) != yarl.URL(url):
+        try:
+            await check_private_address(str(response.url))
+        except Exception:
+            await session.close()
+            raise
+    return response
+
+
+REFERER_DENY_STATUS = {401, 403}
+
+
+async def image_proxy(request, url, referer):
+    LOG.info(f'proxy image {url} referer={referer}')
+    try:
+        await check_private_address(url)
+        headers = {'User-Agent': DEFAULT_USER_AGENT}
+        for h in PROXY_REQUEST_HEADERS:
+            if h in request.headers:
+                headers[h] = request.headers[h]
+        referer_headers = {'Referer': referer}
+        referer_headers.update(headers)
+        request_timeout = 30
+        session = aiohttp.ClientSession(
+            auto_decompress=False,
+            read_timeout=request_timeout,
+            conn_timeout=request_timeout,
+        )
+        # 先尝试发带Referer的请求，不行再尝试不带Referer
+        response = await get_response(session, url, referer_headers)
+        if response.status in REFERER_DENY_STATUS:
+            LOG.info(f'proxy image {url} referer={referer} '
+                     f'failed {response.status}, will try without referer')
+            response.close()
+            response = await get_response(session, response.url, headers)
+    except ImageProxyError as ex:
+        return ex.to_response()
     try:
         my_response = StreamResponse(status=response.status)
         # 'Content-Length', 'Content-Type', 'Transfer-Encoding'
