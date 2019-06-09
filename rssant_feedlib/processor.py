@@ -20,6 +20,7 @@ class StoryImageProcessor:
     ...     srcset="/abc.jpg
     ...         " type="image/jpeg">
     ...     <img src="/abc.jpg" alt="Design System实践">
+    ...     <img src="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D" alt="DataURL">
     ... </picture>
     ... '''
     >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
@@ -43,6 +44,9 @@ class StoryImageProcessor:
             url = urljoin(self.story_url, url)
         return url
 
+    def is_data_url(self, url):
+        return url.startswith('data:')
+
     def parse(self) -> [StoryImageIndexItem]:
         if not self.content:
             return
@@ -54,10 +58,12 @@ class StoryImageProcessor:
             if not match:
                 break
             img_src, source_srcset = match.groups()
-            img_url = self.fix_relative_url((img_src or source_srcset).strip())
             startpos, endpos = match.span(1) if img_src else match.span(2)
-            idx = StoryImageIndexItem(startpos, endpos, img_url)
-            image_indexs.append(idx)
+            img_url = (img_src or source_srcset).strip()
+            if not self.is_data_url(img_url):
+                img_url = self.fix_relative_url(img_url)
+                idx = StoryImageIndexItem(startpos, endpos, img_url)
+                image_indexs.append(idx)
             pos = endpos
         return image_indexs
 
