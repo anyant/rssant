@@ -2,13 +2,16 @@ import json
 import codecs
 import cchardet
 from terminaltables import AsciiTable
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 def pretty_format_json(data):
     """
-    >>> assert pretty_format_json({"key": 123})
+    >>> import datetime
+    >>> now = datetime.datetime.now()
+    >>> assert pretty_format_json({"key": 123, "date": now})
     """
-    return json.dumps(data, ensure_ascii=False, indent=4)
+    return json.dumps(data, ensure_ascii=False, indent=4, cls=DjangoJSONEncoder)
 
 
 def format_table(rows, *, header=None, border=True):

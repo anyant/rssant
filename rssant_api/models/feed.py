@@ -659,7 +659,7 @@ class UnionFeed:
     def create_by_url_s(*, user_id, urls, batch_size=500, is_from_bookmark=False):
         # 批量预查询，减少SQL查询数量，显著提高性能
         if not urls:
-            return []
+            return [], []
         urls = set(urls)
         url_map = {}
         for url, target in FeedUrlMap.find_all_target(urls).items():

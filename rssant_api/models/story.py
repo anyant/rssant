@@ -68,11 +68,29 @@ class Story(Model, ContentHashMixin):
         return q.get()
 
     @staticmethod
+    def _dedup_sort_storys(storys):
+        # 去重，排序，分配offset时保证offset和dt_published顺序一致
+        unique_storys = {}
+        for story in storys:
+            unique_id = story['unique_id']
+            if unique_id in unique_storys:
+                is_newer = story['dt_published'] > unique_storys[unique_id]['dt_published']
+                if is_newer:
+                    unique_storys[unique_id] = story
+            else:
+                unique_storys[unique_id] = story
+
+        def key_func(x):
+            return (x['dt_published'], x['unique_id'])
+
+        storys = list(sorted(unique_storys.values(), key=key_func))
+        return storys
+
+    @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100):
         if not storys:
             return [], 0  # modified_story_objects, num_reallocate
-        # 先排序，分配offset时保证offset和dt_published顺序一致
-        storys = list(sorted(storys, key=lambda x: (x['dt_published'], x['unique_id'])))
+        storys = Story._dedup_sort_storys(storys)
         with transaction.atomic():
             feed = Feed.objects\
                 .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
