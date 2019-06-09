@@ -4,7 +4,8 @@ from aiojobs.aiohttp import spawn
 
 from rssant_common.image_url import decode_image_url, ImageUrlDecodeError
 from .rest_validr import ValidrRouteTableDef
-from .tasks import STORYS_BUFFER, fetch_story, detect_story_images
+from .tasks import fetch_story, detect_story_images
+from .redis_dao import REDIS_DAO
 from .image_proxy import image_proxy
 
 
@@ -33,7 +34,7 @@ async def api_get_story(
     encoding=T.str.optional,
     text=T.str.maxlen(10 * 1024 * 1024).optional
 ):
-    story = STORYS_BUFFER.get(id)
+    story = await REDIS_DAO.get_story(id)
     if not story:
         return json_response({'message': 'Not Found'}, status=400)
     return story

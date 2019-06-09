@@ -2,29 +2,13 @@ import logging
 import time
 import asyncio
 import concurrent.futures
-from collections import OrderedDict
 
 from rssant_feedlib.async_reader import AsyncFeedReader
 
 from .callback_client import CallbackClient
-
+from .redis_dao import REDIS_DAO
 
 LOG = logging.getLogger(__name__)
-
-
-class FixSizeOrderedDict(OrderedDict):
-    def __init__(self, *args, maxlen=0, **kwargs):
-        self._maxlen = maxlen
-        super().__init__(*args, **kwargs)
-
-    def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-        if self._maxlen > 0:
-            if len(self) > self._maxlen:
-                self.popitem(False)
-
-
-STORYS_BUFFER = FixSizeOrderedDict(maxlen=10 * 1000)
 
 
 async def fetch_story(id, url, callback_url=None):
@@ -43,7 +27,7 @@ async def fetch_story(id, url, callback_url=None):
             encoding=response.rssant_encoding,
             text=response.rssant_text,
         )
-    STORYS_BUFFER[id] = story
+    await REDIS_DAO.set_story(id, story)
     LOG.info(f'fetch story#{id} url={url} status={status} finished')
     await CallbackClient.send(callback_url, {'id': id, "url": url, "status": status})
 

@@ -7,6 +7,7 @@ from aiojobs.aiohttp import setup as setup_aiojobs
 
 from .views import routes
 from .callback_client import CallbackClient
+from .redis_dao import REDIS_DAO
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
 django.setup()
@@ -19,7 +20,9 @@ api.router.add_routes(routes)
 app = web.Application()
 app.add_subapp('/api/v1', api)
 setup_aiojobs(app, limit=5000, pending_limit=5000)
-app.on_cleanup.append(CallbackClient.close)
+app.on_cleanup.append(lambda app: CallbackClient.close())
+app.on_startup.append(lambda app: REDIS_DAO.init())
+app.on_cleanup.append(lambda app: REDIS_DAO.close())
 
 
 if __name__ == "__main__":
