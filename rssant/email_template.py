@@ -1,5 +1,6 @@
 import logging
 import os.path
+from smtplib import SMTPException
 
 from django.template import Template, Context
 from django.core.mail import send_mail
@@ -32,8 +33,11 @@ class EmailTemplate:
         context = Context(context)
         text = self.text_template.render(context)
         html = self.html_template.render(context)
-        send_mail(self.subject, text, sender, [receiver],
-                  fail_silently=False, html_message=html)
+        try:
+            send_mail(self.subject, text, sender, [receiver],
+                      fail_silently=False, html_message=html)
+        except SMTPException as ex:
+            LOG.exception(f"failed to send email  subject={self.subject!r} to {receiver}: {ex}")
 
 
 EMAIL_CONFIRM_TEMPLATE = EmailTemplate(
