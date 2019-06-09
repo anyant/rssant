@@ -313,7 +313,7 @@ def fetch_feed_storys(feed, storys, is_refresh=False):
     if _is_feed_need_fetch_storys(feed):
         for story in storys:
             story_text = story_html_to_text(story.content)
-            if is_refresh or len(story_text) < 1000:
+            if (is_refresh or len(story_text) < 1000) and story.link:
                 need_fetch_storys.append({'id': str(story.id), 'url': str(yarl.URL(story.link))})
             else:
                 normal_storys.append(story)
