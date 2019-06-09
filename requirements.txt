@@ -1,3 +1,4 @@
+aiocontextvars==0.2.2
 aiodns==2.0.0
 aiohttp==3.5.4
 aiohttp-devtools==0.13
@@ -21,6 +22,7 @@ chardet==3.0.4
 cli-helpers==1.2.0
 Click==7.0
 configobj==5.0.6
+contextvars==2.4
 coreapi==2.3.3
 coreschema==0.0.4
 coverage==4.5.3
@@ -52,6 +54,7 @@ html2text==2018.1.9
 humanize==0.5.1
 idna==2.8
 idna-ssl==1.1.0
+immutables==0.9
 importlib-metadata==0.17
 itypes==1.1.0
 jieba3k==0.35.1
@@ -96,6 +99,7 @@ redis==2.10.6
 requests==2.21.0
 requests-file==1.4.3
 requests-oauthlib==1.2.0
+sentry-sdk==0.9.0
 setproctitle==1.1.10
 simplejson==3.16.0
 six==1.12.0
