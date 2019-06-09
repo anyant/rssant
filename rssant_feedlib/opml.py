@@ -14,7 +14,7 @@ def parse_opml(text):
     else:
         title = ''
     result['title'] = title
-    for node in root.findall('./body/outline'):
+    for node in root.findall('./body//outline'):
         url = node.attrib.get('xmlUrl')
         if not url:
             continue
