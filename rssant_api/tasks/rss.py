@@ -2,6 +2,7 @@ from urllib.parse import unquote
 import logging
 
 import celery
+import yarl
 from celery import shared_task as task
 from django.db import transaction
 from django.utils import timezone
@@ -155,11 +156,11 @@ def process_story_webpage(story_id):
 def detect_story_images(story_id, story_url, content):
     processer = StoryImageProcessor(story_url, content)
     image_indexs = processer.parse()
-    img_urls = {x.value for x in image_indexs}
+    img_urls = {str(yarl.URL(x.value)) for x in image_indexs}
     LOG.info(f'found story#{story_id} {story_url} has {len(img_urls)} images')
     if img_urls:
         async_client.detect_story_images(
-            story_id, story_url, img_urls,
+            story_id, str(yarl.URL(story_url)), img_urls,
             callback='/async_callback/story_images'
         )
 
@@ -176,45 +177,48 @@ def process_story_images(story_id, story_url, images):
             image_replaces[img['url']] = '/api/v1/image/{}'.format(new_url_data)
     LOG.info(f'detect story#{story_id} {story_url} '
              f'has {len(image_replaces)} referer deny images')
-    story = Story.objects.get(pk=story_id)
-    processor = StoryImageProcessor(story_url, story.content)
-    image_indexs = processor.parse()
-    content = processor.process(image_indexs, image_replaces)
-    story.content = content
-    story.save()
+    with transaction.atomic():
+        story = Story.objects.get(pk=story_id)
+        processor = StoryImageProcessor(story_url, story.content)
+        image_indexs = processor.parse()
+        content = processor.process(image_indexs, image_replaces)
+        story.content = content
+        story.save()
 
 
-@transaction.atomic
 def _save_found(feed_creation, parsed):
-    url = _get_url(parsed.response)
-    feed = Feed.get_first_by_url(url)
-    if not feed:
-        feed = Feed(url=url, status=FeedStatus.READY, dt_updated=timezone.now())
-        feed.save()
-    feed_creation.feed_id = feed.id
-    feed_creation.save()
-    user_feed = UserFeed.objects.filter(user_id=feed_creation.user_id, feed_id=feed.id).first()
-    if user_feed:
-        LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
-            user_feed.id, feed_creation.user_id, feed.id
-        ))
-    else:
-        user_feed = UserFeed(
-            user_id=feed_creation.user_id,
-            feed_id=feed.id,
-            is_from_bookmark=feed_creation.is_from_bookmark,
-        )
-        user_feed.save()
-    content_hash_base64 = compute_hash_base64(parsed.response.content)
-    _save_feed(feed, parsed, content_hash_base64=content_hash_base64)
-    _create_raw_feed(feed, parsed.response.status_code, parsed.response,
-                     content_hash_base64=feed.content_hash_base64)
+    with transaction.atomic():
+        url = _get_url(parsed.response)
+        feed = Feed.get_first_by_url(url)
+        if not feed:
+            feed = Feed(url=url, status=FeedStatus.READY, dt_updated=timezone.now())
+            feed.save()
+        feed_creation.feed_id = feed.id
+        feed_creation.save()
+        user_feed = UserFeed.objects.filter(user_id=feed_creation.user_id, feed_id=feed.id).first()
+        if user_feed:
+            LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
+                user_feed.id, feed_creation.user_id, feed.id
+            ))
+        else:
+            user_feed = UserFeed(
+                user_id=feed_creation.user_id,
+                feed_id=feed.id,
+                is_from_bookmark=feed_creation.is_from_bookmark,
+            )
+            user_feed.save()
+        content_hash_base64 = compute_hash_base64(parsed.response.content)
+        _save_feed(feed, parsed, content_hash_base64=content_hash_base64)
+        _create_raw_feed(feed, parsed.response.status_code, parsed.response,
+                         content_hash_base64=feed.content_hash_base64)
+    # 保存storys放在单独的事务中，保证fetch_storys时storys都已提交
     _save_storys(feed, parsed.entries)
-    FeedUrlMap(source=feed_creation.url, target=feed.url).save()
-    if feed.link != feed_creation.url:
-        FeedUrlMap(source=feed.link, target=feed.url).save()
-    if feed.url != feed_creation.url:
-        FeedUrlMap(source=feed.url, target=feed.url).save()
+    with transaction.atomic():
+        FeedUrlMap(source=feed_creation.url, target=feed.url).save()
+        if feed.link != feed_creation.url:
+            FeedUrlMap(source=feed.link, target=feed.url).save()
+        if feed.url != feed_creation.url:
+            FeedUrlMap(source=feed.url, target=feed.url).save()
 
 
 def _create_raw_feed(feed, status_code, response, content_hash_base64=None):
@@ -310,7 +314,7 @@ def fetch_feed_storys(feed, storys, is_refresh=False):
         for story in storys:
             story_text = story_html_to_text(story.content)
             if is_refresh or len(story_text) < 1000:
-                need_fetch_storys.append({'id': str(story.id), 'url': story.link})
+                need_fetch_storys.append({'id': str(story.id), 'url': str(yarl.URL(story.link))})
             else:
                 normal_storys.append(story)
     if need_fetch_storys:
