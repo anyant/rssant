@@ -66,7 +66,7 @@ StorySchema = T.dict(
     enclosures=T.list(
         T.dict(
             type=T.str.optional.desc("The content type of the linked file"),
-            length=T.int.optional.desc("The length of the linked file"),
+            length=T.int.optional.invalid_to_default.desc("The length of the linked file"),
             href=T.str.optional.desc("The URL of the linked file"),
         )
     ).optional.desc("A list of links to external files associated with this entry"),
