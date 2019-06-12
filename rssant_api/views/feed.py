@@ -10,14 +10,15 @@ from xml.etree.ElementTree import ParseError
 from xml.sax.saxutils import escape as xml_escape
 from mako.template import Template
 
-from rssant_feedlib.opml import parse_opml
-from rssant_feedlib.bookmark import parse_bookmark
+from rssant_feedlib.importer import import_feed_from_text
 from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
 from rssant_api.models import UnionFeed, FeedCreation
 from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
 from .helper import check_unionid
+from .errors import RssantAPIException
+
 
 OPML_TEMPLATE_PATH = os.path.join(BASE_DIR, 'rssant_api', 'resources', 'opml.mako')
 
@@ -188,13 +189,13 @@ def feed_delete(request, feed_unionid: T.feed_unionid.object):
 
 
 def _read_request_file(request, name='file'):
-    fileobj = request.data.get(name)
+    fileobj = request.FILES.get(name)
     if not fileobj:
-        return Response(status=400)
+        raise RssantAPIException('file not received')
     text = fileobj.read()
     if not isinstance(text, str):
         text = text.decode('utf-8')
-    return text
+    return text, fileobj.name
 
 
 def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
@@ -228,16 +229,11 @@ FeedImportResultSchema = T.dict(
 @FeedView.post('feed/opml')
 def feed_import_opml(request) -> FeedImportResultSchema:
     """import feeds from OPML file"""
-    text = _read_request_file(request)
-    try:
-        result = parse_opml(text)
-    except (Invalid, ParseError) as ex:
-        return Response({'message': str(ex)}, status=400)
-    urls = list(sorted(set([x['url'] for x in result['items']])))
-    return _create_feeds_by_urls(request.user, urls)
+    return feed_import_file(request)
 
 
 @FeedView.get('feed/opml')
+@FeedView.get('feed/export/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
     total, feeds, __ = UnionFeed.query_by_user(request.user.id)
@@ -256,6 +252,19 @@ def feed_export_opml(request, download: T.bool.default(False)):
 @FeedView.post('feed/bookmark')
 def feed_import_bookmark(request) -> FeedImportResultSchema:
     """import feeds from bookmark file"""
-    text = _read_request_file(request)
-    urls = parse_bookmark(text)
-    return _create_feeds_by_urls(request.user, urls, is_from_bookmark=True)
+    return feed_import_file(request)
+
+
+@FeedView.post('feed/import')
+def feed_import(request, text: T.str) -> FeedImportResultSchema:
+    """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
+    urls = import_feed_from_text(text)
+    is_from_bookmark = len(urls) > 100
+    return _create_feeds_by_urls(request.user, urls, is_from_bookmark=is_from_bookmark)
+
+
+@FeedView.post('feed/import/file')
+def feed_import_file(request) -> FeedImportResultSchema:
+    """从OPML/XML/浏览器书签/含有链接的HTML或文本文件导入订阅"""
+    text, filename = _read_request_file(request)
+    return feed_import(request, text)

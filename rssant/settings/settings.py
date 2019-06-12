@@ -161,6 +161,26 @@ if not IS_CELERY_PROCESS:
             },
         },
         'loggers': {
+            'django_rest_validr': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+            'rssant_feedlib': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+            'rssant_common': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
+            'rssant_async': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': True,
+            },
             'rssant': {
                 'handlers': ['console'],
                 'level': 'INFO',
