@@ -1,5 +1,5 @@
 import os.path
-from rssant_feedlib.opml import parse_opml
+from rssant_feedlib.importer import parse_opml
 
 
 def _read_sample(filename):

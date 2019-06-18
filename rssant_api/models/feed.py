@@ -369,6 +369,33 @@ class FeedUrlMap(Model):
         return url_map
 
 
+class FeedCreateResult:
+    def __init__(self, *, created_feeds, existed_feeds, feed_creations):
+        self.created_feeds = created_feeds
+        self.existed_feeds = existed_feeds
+        self.feed_creations = feed_creations
+
+    @classmethod
+    def empty(cls):
+        return cls(created_feeds=[], existed_feeds=[], feed_creations=[])
+
+    @property
+    def total(self):
+        return self.num_created_feeds + self.num_existed_feeds + self.num_feed_creations
+
+    @property
+    def num_created_feeds(self):
+        return len(self.created_feeds)
+
+    @property
+    def num_existed_feeds(self):
+        return len(self.existed_feeds)
+
+    @property
+    def num_feed_creations(self):
+        return len(self.feed_creations)
+
+
 class UnionFeed:
     def __init__(self, feed, user_feed, detail=False):
         self._feed = feed
@@ -659,7 +686,7 @@ class UnionFeed:
     def create_by_url_s(*, user_id, urls, batch_size=500, is_from_bookmark=False):
         # 批量预查询，减少SQL查询数量，显著提高性能
         if not urls:
-            return [], []
+            return FeedCreateResult.empty()
         urls = set(urls)
         url_map = {}
         for url, target in FeedUrlMap.find_all_target(urls).items():
@@ -669,7 +696,6 @@ class UnionFeed:
                 url_map[url] = target
         found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
         feed_map = {x.url: x for x in found_feeds}
-        user_feed_map = {}
         q = UserFeed.objects.filter(user_id=user_id, feed__in=found_feeds).all()
         user_feed_map = {x.feed_id: x for x in q.all()}
         # 多个url匹配到同一个feed的情况，user_feed只能保存一个，要根据feed_id去重
@@ -692,5 +718,10 @@ class UnionFeed:
             new_user_feeds.append(user_feed)
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
+        existed_feeds = UnionFeed._merge_user_feeds(user_feed_map.values())
         union_feeds = UnionFeed._merge_user_feeds(new_user_feeds)
-        return union_feeds, feed_creations
+        return FeedCreateResult(
+            created_feeds=union_feeds,
+            existed_feeds=existed_feeds,
+            feed_creations=feed_creations,
+        )

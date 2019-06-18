@@ -5,8 +5,6 @@ import celery
 from django.http.response import HttpResponse
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
-from validr import Invalid
-from xml.etree.ElementTree import ParseError
 from xml.sax.saxutils import escape as xml_escape
 from mako.template import Template
 
@@ -194,34 +192,41 @@ def _read_request_file(request, name='file'):
         raise RssantAPIException('file not received')
     text = fileobj.read()
     if not isinstance(text, str):
-        text = text.decode('utf-8')
+        try:
+            text = text.decode('utf-8')
+        except UnicodeDecodeError:
+            raise RssantAPIException('file type or encoding invalid')
     return text, fileobj.name
 
 
 def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
-    feeds, feed_creations = UnionFeed.create_by_url_s(urls=urls, user_id=user.id)
+    result = UnionFeed.create_by_url_s(urls=urls, user_id=user.id)
     find_feed_tasks = []
-    for feed_creation in feed_creations:
+    for feed_creation in result.feed_creations:
         find_feed_tasks.append(rss.find_feed.s(feed_creation.id))
     # https://docs.celeryproject.org/en/latest/faq.html#does-celery-support-task-priorities
     # https://docs.celeryproject.org/en/latest/userguide/calling.html#routing-options
     # https://docs.celeryproject.org/en/latest/userguide/calling.html#advanced-options
     queue = 'bookmark' if is_from_bookmark else 'batch'
     celery.group(find_feed_tasks).apply_async(queue=queue)
-    feeds = [x.to_dict() for x in feeds]
-    feed_creations = [x.to_dict() for x in feed_creations]
+    created_feeds = [x.to_dict() for x in result.created_feeds]
+    feed_creations = [x.to_dict() for x in result.feed_creations]
     return dict(
-        num_feeds=len(feeds),
-        feeds=feeds,
-        num_feed_creations=len(feed_creations),
+        total=result.total,
+        num_created_feeds=len(result.created_feeds),
+        num_existed_feeds=len(result.existed_feeds),
+        num_feed_creations=len(result.feed_creations),
+        created_feeds=created_feeds,
         feed_creations=feed_creations,
     )
 
 
 FeedImportResultSchema = T.dict(
-    num_feeds=T.int.min(0).optional,
-    feeds=T.list(FeedSchema).maxlen(5000),
-    num_feed_creations=T.int.min(0).optional,
+    total=T.int.min(0),
+    num_created_feeds=T.int.min(0),
+    num_existed_feeds=T.int.min(0),
+    num_feed_creations=T.int.min(0),
+    created_feeds=T.list(FeedSchema).maxlen(5000),
     feed_creations=T.list(FeedCreationSchema).maxlen(5000),
 )
 
