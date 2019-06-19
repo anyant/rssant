@@ -19,6 +19,9 @@ PROXY_RESPONSE_HEADERS = [
 ]
 
 
+MAX_IMAGE_SIZE = int(2 * 1024 * 1024)
+
+
 class ImageProxyError(Exception):
     def __init__(self, message, status=400):
         self.message = message
@@ -90,7 +93,10 @@ async def image_proxy(request, url, referer):
         elif response.headers.get('Transfer-Encoding'):
             my_response.headers['Transfer-Encoding'] = response.headers['Transfer-Encoding']
         if response.headers.get('Content-Length'):
-            my_response.content_length = int(response.headers['Content-Length'])
+            content_length = int(response.headers['Content-Length'])
+            if content_length > MAX_IMAGE_SIZE:
+                return json_response({'message': 'image too large'}, status=413)
+            my_response.content_length = content_length
         if response.headers.get('Content-Type'):
             my_response.content_type = response.headers['Content-Type']
         for h in PROXY_RESPONSE_HEADERS:
@@ -102,7 +108,13 @@ async def image_proxy(request, url, referer):
         await session.close()
         raise
     try:
+        content_length = 0
         async for chunk in response.content.iter_chunked(8 * 1024):
+            content_length += len(chunk)
+            if content_length > MAX_IMAGE_SIZE:
+                LOG.warning(f'image too large, abort the response, url={url}')
+                my_response.force_close()
+                break
             await my_response.write(chunk)
         await my_response.write_eof()
     finally:

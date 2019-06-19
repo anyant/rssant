@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse, urlunparse
 
 import tqdm
 from django.db import transaction, connection
@@ -6,6 +7,7 @@ import djclick as click
 
 from rssant_api.models import Feed, Story
 from rssant_common.helper import format_table
+from rssant_common.image_url import encode_image_url
 from rssant_common import unionid
 from rssant_api.tasks import rss
 
@@ -110,3 +112,12 @@ def clean_celery_tables():
     LOG.info('truncate django_celery_* tables')
     with connection.cursor() as cursor:
         cursor.execute(sql)
+
+
+@main.command()
+@click.argument('url')
+def proxy_image(url):
+    schema, netloc, path, __, __, __ = urlparse(url)
+    referer = urlunparse((schema, netloc, path, None, None, None))
+    token = encode_image_url(url, referer)
+    print(token)
