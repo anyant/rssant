@@ -3,7 +3,7 @@ import time
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
-from validr import validator, SchemaError, Invalid, Compiler
+from validr import validator, SchemaError, Invalid, Compiler, builtin_validators
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -11,6 +11,7 @@ from django.utils.dateparse import parse_datetime
 
 from .helper import coerce_url
 from .cursor import Cursor
+from .detail import detail_validator
 from . import unionid
 
 
@@ -110,12 +111,28 @@ def create_unionid_validator(tuple_class):
     return unionid_validator
 
 
+def dict_validator(compiler, schema):
+    schema = schema.copy()
+    remove_empty = schema.params.pop('remove_empty', False)
+    origin_validate = builtin_validators['dict'](compiler, schema)
+
+    def validate(value):
+        value = origin_validate(value)
+        if value and remove_empty:
+            value = {k: v for k, v in value.items() if v is not None and v != ''}
+        return value
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
     'datetime': datetime_validator,
     'feed_unionid': create_unionid_validator(FeedUnionId),
     'story_unionid': create_unionid_validator(StoryUnionId),
+    'detail': detail_validator,
+    'dict': dict_validator,
 }
 
 

@@ -3,8 +3,10 @@ import gzip
 from django.utils import timezone
 from django.db import transaction, connection
 from cached_property import cached_property
+from validr import T
 
 from rssant_common.validator import FeedUnionId
+from rssant_common.detail import Detail
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
@@ -28,13 +30,29 @@ class FeedStatus:
 FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
+FeedDetailSchema = T.detail.fields("""
+    icon
+    title
+    author
+    version
+    link
+    story_publish_period
+    offset_early_story
+    dt_early_story_published
+    dt_latest_story_published
+""").extra_fields("""
+    description
+    encoding
+    etag
+    last_modified
+    content_length
+    content_hash_base64
+    dt_checked
+    dt_synced
+""").default(False)
+
 FEED_DETAIL_FIELDS = [
-    'feed__description',
-    'feed__encoding',
-    'feed__etag',
-    'feed__last_modified',
-    'feed__content_length',
-    'feed__content_hash_base64',
+    f'feed__{x}' for x in Detail.from_schema(False, FeedDetailSchema).exclude_fields
 ]
 
 
@@ -527,32 +545,15 @@ class UnionFeed:
             is_ready=self.is_ready,
             status=self.status,
             url=self.url,
-            title=self.title,
-            link=self.link,
-            author=self.author,
-            icon=self.icon,
-            version=self.version,
             total_storys=self.total_storys,
             story_offset=self.story_offset,
             num_unread_storys=self.num_unread_storys,
-            story_publish_period=self.story_publish_period,
-            offset_early_story=self.offset_early_story,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
-            dt_early_story_published=self.dt_early_story_published,
-            dt_latest_story_published=self.dt_latest_story_published,
         )
-        if self._detail:
-            ret.update(
-                description=self.description,
-                encoding=self.encoding,
-                etag=self.etag,
-                last_modified=self.last_modified,
-                content_length=self.content_length,
-                content_hash_base64=self.content_hash_base64,
-                dt_checked=self.dt_checked,
-                dt_synced=self.dt_synced,
-            )
+        detail = Detail.from_schema(self._detail, FeedDetailSchema)
+        for k in detail.include_fields:
+            ret[k] = getattr(self, k)
         return ret
 
     @staticmethod
@@ -583,10 +584,11 @@ class UnionFeed:
 
         hints: T.list(T.dict(id=T.unionid, dt_updated=T.datetime))
         """
+        detail = Detail.from_schema(detail, FeedDetailSchema)
+        exclude_fields = [f'feed__{x}' for x in detail.exclude_fields]
         if not hints:
             q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
-            if not detail:
-                q = q.defer(*FEED_DETAIL_FIELDS)
+            q = q.defer(*exclude_fields)
             union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
             return len(union_feeds), union_feeds, []
         hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
@@ -608,8 +610,7 @@ class UnionFeed:
                 updates.append(feed_id)
         q = UserFeed.objects.select_related('feed')\
             .filter(user_id=user_id, feed_id__in=updates)
-        if not detail:
-            q = q.defer(*FEED_DETAIL_FIELDS)
+        q = q.defer(*exclude_fields)
         union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
         return total, union_feeds, deteted_ids
 

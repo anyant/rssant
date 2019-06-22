@@ -3,6 +3,7 @@ from rest_framework.response import Response
 
 from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
 from rssant_api.models import UnionStory
+from rssant_api.models.story import StoryDetailSchema
 from .helper import check_unionid
 
 StorySchema = T.dict(
@@ -27,7 +28,7 @@ StorySchema = T.dict(
     dt_favorited=T.datetime.object.optional,
     summary=T.str.optional,
     content=T.str.optional,
-)
+).remove_empty
 
 StoryResultSchema = T.dict(
     total=T.int.optional,
@@ -47,7 +48,7 @@ def story_query_by_feed(
     feed_id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     size: T.int.min(1).max(100).default(10),
-    detail: T.bool.default(False),
+    detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     """Story list"""
     check_unionid(request, feed_id)
@@ -70,7 +71,7 @@ def story_query_recent(
     request,
     feed_ids: T.list(T.feed_unionid.object),
     days: T.int.min(1).max(30).default(14),
-    detail: T.bool.default(False),
+    detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     check_unionid(request, feed_ids)
     storys = UnionStory.query_recent_by_user(
@@ -90,7 +91,7 @@ def story_get_by_offset(
     request,
     feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
-    detail: T.bool.default(False),
+    detail: StoryDetailSchema,
 ) -> StorySchema:
     """Story detail"""
     check_unionid(request, feed_unionid)
@@ -104,7 +105,7 @@ def story_get_by_offset(
 @StoryView.get('story/favorited')
 def story_query_favorited(
     request,
-    detail: T.bool.default(False),
+    detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     """Query favorited storys"""
     storys = UnionStory.query_favorited(user_id=request.user.id, detail=detail)
@@ -119,7 +120,7 @@ def story_query_favorited(
 @StoryView.get('story/watched')
 def story_query_watched(
     request,
-    detail: T.bool.default(False),
+    detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     """Query watched storys"""
     storys = UnionStory.query_watched(user_id=request.user.id, detail=detail)

@@ -10,8 +10,9 @@ from mako.template import Template
 
 from rssant_feedlib.importer import import_feed_from_text
 from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
-from rssant_api.models import UnionFeed, FeedCreation
 from rssant_api.models.errors import FeedNotFoundError
+from rssant_api.models.feed import FeedDetailSchema
+from rssant_api.models import UnionFeed, FeedCreation
 from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
 from .helper import check_unionid
@@ -52,7 +53,7 @@ FeedSchema = T.dict(
     offset_early_story=T.int.min(0).optional,
     dt_early_story_published=T.datetime.object.optional,
     dt_latest_story_published=T.datetime.object.optional,
-)
+).remove_empty
 
 FeedCreationSchema = T.dict(
     id=T.int,
@@ -77,7 +78,7 @@ FeedView = RestRouter()
 def feed_query(
     request,
     hints: T.list(T.dict(id = T.feed_unionid.object, dt_updated = T.datetime.object)).optional,
-    detail: T.bool.default(False)
+    detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.optional,
     size=T.int.optional,
@@ -100,7 +101,7 @@ def feed_query(
 
 
 @FeedView.get('feed/<slug:feed_unionid>')
-def feed_get(request, feed_unionid: T.feed_unionid.object, detail: T.bool.default(False)) -> FeedSchema:
+def feed_get(request, feed_unionid: T.feed_unionid.object, detail: FeedDetailSchema) -> FeedSchema:
     """Feed detail"""
     check_unionid(request, feed_unionid)
     try:
@@ -130,7 +131,7 @@ def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
 
 
 @FeedView.get('feed/creation/<int:pk>')
-def feed_get_creation(request, pk: T.int, detail: T.bool.default(False)) -> FeedCreationSchema:
+def feed_get_creation(request, pk: T.int, detail: FeedDetailSchema) -> FeedCreationSchema:
     try:
         feed_creation = FeedCreation.get_by_pk(pk, user_id=request.user.id, detail=detail)
     except FeedCreation.DoesNotExist:
@@ -139,7 +140,7 @@ def feed_get_creation(request, pk: T.int, detail: T.bool.default(False)) -> Feed
 
 
 @FeedView.get('feed/creation')
-def feed_query_creation(request, detail: T.bool.default(False)) -> T.dict(
+def feed_query_creation(request, detail: FeedDetailSchema) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
     feed_creations=T.list(FeedCreationSchema),

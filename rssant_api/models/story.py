@@ -1,9 +1,11 @@
 from django.utils import timezone
 from django.db import connection, transaction
 from cached_property import cached_property
+from validr import T
 
 from rssant_feedlib.processor import story_html_to_text
 from rssant_common.validator import StoryUnionId, FeedUnionId
+from rssant_common.detail import Detail
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
 from .errors import FeedNotFoundError, StoryNotFoundError
@@ -11,14 +13,21 @@ from .errors import FeedNotFoundError, StoryNotFoundError
 MONTH_18 = timezone.timedelta(days=18 * 30)
 ONE_MONTH = timezone.timedelta(days=30)
 
+StoryDetailSchema = T.detail.fields("""
+    unique_id
+    dt_published
+    dt_updated
+    dt_created
+    dt_watched
+    dt_favorited
+""").extra_fields("""
+    dt_synced
+    summary
+    content
+""").default(False)
 
-STORY_DETAIL_FEILDS = ['summary', 'content']
-USER_STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
-
-
-def convert_summary(summary):
-    return story_html_to_text(summary)
-
+STORY_DETAIL_FEILDS = Detail.from_schema(False, StoryDetailSchema).exclude_fields
+USER_STORY_DETAIL_FEILDS = [f'story__{x}' for x in STORY_DETAIL_FEILDS]
 
 FEED_STORY_PUBLISH_PERIOD_FIELDS = [
     'id',
@@ -28,6 +37,10 @@ FEED_STORY_PUBLISH_PERIOD_FIELDS = [
     'dt_early_story_published',
     'dt_latest_story_published',
 ]
+
+
+def convert_summary(summary):
+    return story_html_to_text(summary)
 
 
 class Story(Model, ContentHashMixin):
@@ -207,8 +220,8 @@ class Story(Model, ContentHashMixin):
         assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
         story_publish_period = round(max(dt_published_days, 1) / num_published_storys)
         is_updated = (
-            (feed.offset_early_story != offset_early_story) or
-            (feed.total_storys != total_storys)
+            (feed.offset_early_story != offset_early_story)
+            or (feed.total_storys != total_storys)
         )
         feed.total_storys = total_storys
         feed.offset_early_story = offset_early_story
@@ -394,23 +407,14 @@ class UnionStory:
             user=dict(id=self.user_id),
             feed=dict(id=self.feed_id),
             offset=self.offset,
-            unique_id=self.unique_id,
             title=self.title,
             link=self.link,
-            dt_published=self.dt_published,
-            dt_updated=self.dt_updated,
-            dt_created=self.dt_created,
-            dt_synced=self.dt_synced,
             is_watched=self.is_watched,
-            dt_watched=self.dt_watched,
             is_favorited=self.is_favorited,
-            dt_favorited=self.dt_favorited,
         )
-        if self._detail:
-            ret.update(
-                summary=self.summary,
-                content=self.content,
-            )
+        detail = Detail.from_schema(self._detail, StoryDetailSchema)
+        for k in detail.include_fields:
+            ret[k] = getattr(self, k)
         return ret
 
     @staticmethod
@@ -488,8 +492,8 @@ class UnionStory:
         if offset is None:
             offset = user_feed.story_offset
         q = Story.objects.filter(feed_id=feed_id, offset__gte=offset)
-        if not detail:
-            q = q.defer(*STORY_DETAIL_FEILDS)
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        q = q.defer(*detail.exclude_fields)
         q = q.order_by('offset')[:size]
         storys = list(q.all())
         story_ids = [x.id for x in storys]
@@ -515,8 +519,8 @@ class UnionStory:
         dt_begin = timezone.now() - timezone.timedelta(days=days)
         q = Story.objects.filter(feed_id__in=feed_ids)\
             .filter(dt_published__gte=dt_begin)
-        if not detail:
-            q = q.defer(*STORY_DETAIL_FEILDS)
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        q = q.defer(*detail.exclude_fields)
         q = q.order_by('-dt_published')[:limit]
         storys = list(q.all())
         story_ids = [x.id for x in storys]
@@ -530,8 +534,9 @@ class UnionStory:
     @staticmethod
     def _query_by_tag(user_id, is_favorited=None, is_watched=None, detail=False):
         q = UserStory.objects.select_related('story').filter(user_id=user_id)
-        if not detail:
-            q = q.defer(*USER_STORY_DETAIL_FEILDS)
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        exclude_fields = [f'story__{x}' for x in detail.exclude_fields]
+        q = q.defer(*exclude_fields)
         if is_favorited is not None:
             q = q.filter(is_favorited=is_favorited)
         if is_watched is not None:
