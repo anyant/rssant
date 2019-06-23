@@ -210,15 +210,7 @@ class FeedFinder:
             self._log(f'resolve redirect, set start url to {url}')
             self._set_start_url(url)
         if not is_ok:
-            if status < 0:
-                error_name = FeedResponseStatus(status).name
-            else:
-                try:
-                    error_name = http.HTTPStatus(status).name
-                except ValueError:
-                    # eg: http://huanggua.sinaapp.com/
-                    # ValueError: 600 is not a valid HTTPStatus
-                    error_name = 'HTTP_ERROR'
+            error_name = FeedResponseStatus.name_of(status)
             msg = '{} {} when request {!r}'.format(status, error_name, url)
             self._log(msg)
         return status, res

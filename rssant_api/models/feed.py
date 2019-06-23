@@ -570,6 +570,10 @@ class UnionFeed:
         return UnionFeed(user_feed.feed, user_feed, detail=detail)
 
     @staticmethod
+    def bulk_delete(feed_ids):
+        return Feed.objects.filter(id__in=list(feed_ids)).delete()
+
+    @staticmethod
     def _merge_user_feeds(user_feeds, detail=False):
         def sort_union_feeds(x):
             return (bool(x.dt_updated), x.dt_updated, x.id)

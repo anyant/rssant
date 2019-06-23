@@ -3,6 +3,7 @@ import socket
 import ssl
 import ipaddress
 from urllib.parse import urlparse
+from http import HTTPStatus
 
 import requests
 
@@ -39,16 +40,31 @@ class FeedResponseStatus(enum.Enum):
     RESPONSE_ERROR = -400
     DNS_ERROR = -201
     PRIVATE_ADDRESS_ERROR = -202
-    CONNECTION_RESET = -202
-    CONNECTION_TIMEOUT = - 203
-    SSL_ERROR = - 204
+    CONNECTION_TIMEOUT = -203
+    SSL_ERROR = -204
     READ_TIMEOUT = -205
+    CONNECTION_RESET = -206
     TOO_MANY_REDIRECT_ERROR = -401
     CHUNKED_ENCODING_ERROR = -402
     CONTENT_DECODING_ERROR = -403
     CONTENT_TOO_LARGE_ERROR = -404
     REFERER_DENY = -405  # 严格防盗链，必须服务端才能绕过
     REFERER_NOT_ALLOWED = -406  # 普通防盗链，不带Referer头可绕过
+
+    @classmethod
+    def name_of(cls, value):
+        if value > 0:
+            try:
+                return HTTPStatus(value).name
+            except ValueError:
+                # eg: http://huanggua.sinaapp.com/
+                # ValueError: 600 is not a valid HTTPStatus
+                return f'HTTP_{value}'
+        else:
+            try:
+                return 'RSSANT_' + FeedResponseStatus(value).name
+            except ValueError:
+                return f'RSSANT_{value}'
 
 
 class FeedReader:
