@@ -4,8 +4,8 @@ from urllib.parse import urljoin
 from html2text import HTML2Text
 
 RE_IMG = re.compile(
-    r'(?:<img\s*.*?\s*src="([^"]+?)")|'
-    r'(?:<source\s*.*?\s*srcset="([^"]+?)")',
+    r'(?:<img\s*.*?\s+src="([^"]+?)")|'
+    r'(?:<source\s*.*?\s+srcset="([^"]+?)")',
     re.I | re.M)
 
 StoryImageIndexItem = namedtuple('StoryImageIndexItem', 'pos, endpos, value')
@@ -22,17 +22,20 @@ class StoryImageProcessor:
     ...     <img src="/abc.jpg" alt="Design System实践">
     ...     <img src="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D" alt="DataURL">
     ... </picture>
+    ... <img data-src="/error.jpg" src="/ok.jpg">
     ... '''
     >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
     >>> image_indexs = processor.parse()
     >>> len(image_indexs)
-    3
+    4
     >>> image_indexs[0].value
     'https://rss.anyant.com/abc.webp'
     >>> image_indexs[1].value
     'https://rss.anyant.com/abc.jpg'
     >>> image_indexs[2].value
     'https://rss.anyant.com/abc.jpg'
+    >>> image_indexs[3].value
+    'https://rss.anyant.com/ok.jpg'
     """
 
     def __init__(self, story_url, content):

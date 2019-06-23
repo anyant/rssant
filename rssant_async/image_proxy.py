@@ -8,9 +8,20 @@ from rssant.settings import ENV_CONFIG
 from rssant_common.helper import get_referer_of_url
 from rssant_feedlib.reader import DEFAULT_USER_AGENT, PrivateAddressError
 from rssant_feedlib.async_reader import AsyncFeedReader
+from rssant_feedlib.blacklist import compile_url_blacklist
 
 
 LOG = logging.getLogger(__name__)
+
+# 这些图片Referer错误会返回200，无法有效处理失败情况
+# 需要直接设置为正确的Referer
+REFERER_FORCE_URL_LIST = """
+qpic.cn
+qlogo.cn
+qq.com
+"""
+is_referer_force_url = compile_url_blacklist(REFERER_FORCE_URL_LIST)
+
 
 PROXY_REQUEST_HEADERS = [
     'Accept', 'Accept-Encoding', 'ETag', 'If-Modified-Since', 'Cache-Control',
@@ -65,7 +76,7 @@ REFERER_DENY_STATUS = {401, 403}
 
 
 async def image_proxy(request, url, referer=None):
-    if not referer:
+    if not referer or is_referer_force_url(url):
         referer = get_referer_of_url(url)
     LOG.info(f'proxy image {url} referer={referer}')
     try:
