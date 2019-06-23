@@ -146,7 +146,7 @@ def delete_invalid_feeds(days=1, limit=100, threshold=99):
     """
     sql_ok_count = """
     SELECT feed_id, count(1) as count FROM rssant_api_rawfeed
-    WHERE dt_created >= %s and (status_code >= 200 or status_code < 400)
+    WHERE dt_created >= %s and (status_code >= 200 and status_code < 400)
         AND feed_id=ANY(%s)
     group by feed_id
     """
@@ -160,6 +160,7 @@ def delete_invalid_feeds(days=1, limit=100, threshold=99):
             error_name = FeedResponseStatus.name_of(status_code)
             error[error_name] = count
             error_feeds[feed_id]['error_count'] = sum(error.values())
+            error_feeds[feed_id].update(ok_count=0, error_percent=100)
         cursor.execute(sql_ok_count, [t_begin, list(error_feeds)])
         for feed_id, ok_count in cursor.fetchall():
             feed = error_feeds[feed_id]
