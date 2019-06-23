@@ -232,8 +232,7 @@ if not IS_CELERY_PROCESS and ENV_CONFIG.sentry_enable:
 
 # RSSANT
 
-# 每10分钟检查一次更新
-RSSANT_CHECK_FEED_SECONDS = 10 * 60
+RSSANT_CHECK_FEED_SECONDS = 60 * ENV_CONFIG.check_feed_minutes
 RSSANT_CONTENT_HASH_METHOD = 'sha1'
 
 # Celery tasks

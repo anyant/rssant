@@ -109,7 +109,7 @@ def sync_feed(feed_id, force=False):
 
 @task(name='rssant.tasks.clean_feed_creation')
 def clean_feed_creation():
-    # 删除所有status=ERROR, 没有feed_id，并且入库时间超过2小时的订阅创建信息
+    # 删除所有入库时间超过2小时的订阅创建信息
     num_deleted = FeedCreation.delete_by_status(survival_seconds=2 * 60 * 60)
     LOG.info('delete {} old feed creations'.format(num_deleted))
     # 重试 status=UPDATING 超过10分钟的订阅

@@ -12,6 +12,7 @@ class EnvConfig:
     async_callback_url_prefix = T.url.default('http://127.0.0.1:6788/api/v1')
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address = T.bool.default(False)
+    check_feed_minutes = T.int.min(1).default(30)
     # postgres database
     pg_host = T.str.default('127.0.0.1').desc('postgres host')
     pg_port = T.int.default(5432).desc('postgres port')
