@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import sys
+import logging
 import os.path
 from os.path import dirname, abspath
 from .env import load_env_config
@@ -143,6 +144,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# https://stackoverflow.com/questions/45522159/dont-log-certificate-did-not-match-expected-hostname-error-messages
+logging.getLogger('urllib3.connection').setLevel(logging.CRITICAL)
 
 if not IS_CELERY_PROCESS:
     LOGGING = {
