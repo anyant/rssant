@@ -1,12 +1,11 @@
 import logging
-from urllib.parse import urlparse, urlunparse
 
 import tqdm
 from django.db import transaction, connection
 import djclick as click
 
 from rssant_api.models import Feed, Story
-from rssant_common.helper import format_table
+from rssant_common.helper import format_table, get_referer_of_url
 from rssant_common.image_url import encode_image_url
 from rssant_common import unionid
 from rssant_api.tasks import rss
@@ -72,8 +71,10 @@ def update_feed_story_publish_period(feeds=None):
 
 @main.command()
 @click.argument('feed-id')
-def sync_feed(feed_id):
-    async_result = rss.sync_feed.delay(feed_id=feed_id)
+@click.option('--force', default=False, is_flag=True,
+              help='force refresh if feed or story not modified')
+def sync_feed(feed_id, force=False):
+    async_result = rss.sync_feed.delay(feed_id=feed_id, force=force)
     LOG.info(f'celery task id {async_result.id}')
 
 
@@ -117,7 +118,6 @@ def clean_celery_tables():
 @main.command()
 @click.argument('url')
 def proxy_image(url):
-    schema, netloc, path, __, __, __ = urlparse(url)
-    referer = urlunparse((schema, netloc, path, None, None, None))
+    referer = get_referer_of_url(url)
     token = encode_image_url(url, referer)
     print(token)

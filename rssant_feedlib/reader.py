@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from rssant.settings import ENV_CONFIG
 from rssant_common.helper import resolve_response_encoding
 
 
@@ -46,6 +47,8 @@ class FeedResponseStatus(enum.Enum):
     CHUNKED_ENCODING_ERROR = -402
     CONTENT_DECODING_ERROR = -403
     CONTENT_TOO_LARGE_ERROR = -404
+    REFERER_DENY = -405  # 严格防盗链，必须服务端才能绕过
+    REFERER_NOT_ALLOWED = -406  # 普通防盗链，不带Referer头可绕过
 
 
 class FeedReader:
@@ -80,6 +83,8 @@ class FeedReader:
 
     def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
+        if ENV_CONFIG.allow_private_address:
+            return
         hostname = urlparse(url).hostname
         for ip in self._resolve_hostname(hostname):
             ip = ipaddress.ip_address(ip)

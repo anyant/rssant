@@ -43,7 +43,7 @@ async def api_get_story(
 @routes.post('/async/detect_story_images')
 async def api_detect_story_images(
     request,
-    story: T.dict(id = T.str, url = T.url),
+    story: T.dict(id = T.str, url = T.url.optional),
     images: T.list(T.dict(url = T.url)).unique,
     callback: T.str.optional,
 ) -> T.dict(message=T.str):

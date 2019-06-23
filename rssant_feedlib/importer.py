@@ -2,7 +2,6 @@ import re
 import logging
 from collections import namedtuple
 from urllib.parse import urlsplit, urlunsplit
-from urllib.parse import urlparse, urlunparse, unquote
 from xml.etree import ElementTree
 
 from validr import T, Invalid
@@ -11,6 +10,7 @@ from xml.etree.ElementTree import ParseError
 from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
 from .schema import validate_opml
+from .blacklist import compile_url_blacklist
 
 LOG = logging.getLogger(__name__)
 
@@ -86,19 +86,7 @@ v2ex.com/member
 """
 
 
-def _parse_blacklist():
-    lines = set()
-    for line in BLACKLIST_CONTENT.strip().splitlines():
-        if line.strip():
-            lines.add(line.strip())
-    items = []
-    for line in list(sorted(lines)):
-        items.append(r'((.*\.)?{})'.format(line))
-    pattern = re.compile('|'.join(items), re.I)
-    return pattern
-
-
-BLACKLIST_RE = _parse_blacklist()
+is_in_blacklist = compile_url_blacklist(BLACKLIST_CONTENT)
 
 
 def parse_opml(text):
@@ -136,18 +124,17 @@ def remove_url_fragment(url):
 def parse_text(text):
     tmp_urls = set()
     for match in RE_URL.finditer(text):
-        tmp_urls.add(match.group(0).strip())
+        url = match.group(0).strip()
+        if not is_in_blacklist(url):
+            tmp_urls.add(url)
     urls = []
     for url in tmp_urls:
-        url = urlparse(url)
-        if not BLACKLIST_RE.fullmatch(url.netloc):
-            url = unquote(urlunparse(url))
-            try:
-                url = validate_url(url)
-            except Invalid:
-                pass  # ignore
-            else:
-                urls.append(url)
+        try:
+            url = validate_url(url)
+        except Invalid:
+            pass  # ignore
+        else:
+            urls.append(url)
     urls = list(sorted(urls))
     return urls
 

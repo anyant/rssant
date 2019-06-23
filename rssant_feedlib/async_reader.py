@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 import aiodns
 import aiohttp
 
+from rssant.settings import ENV_CONFIG
 from rssant_common.helper import resolve_aiohttp_response_encoding
 
 from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, PrivateAddressError, ContentTooLargeError
@@ -51,6 +52,8 @@ class AsyncFeedReader:
 
     async def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
+        if ENV_CONFIG.allow_private_address:
+            return
         await self._async_init()
         hostname = urlparse(url).hostname
         async for ip in self._resolve_hostname(hostname):

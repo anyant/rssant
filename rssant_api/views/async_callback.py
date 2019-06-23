@@ -21,7 +21,7 @@ def async_callback_story_images(
     request,
     story: T.dict(
         id = T.str,
-        url = T.url,
+        url = T.url.optional,
     ),
     images: T.list(T.dict(
         status = T.int,

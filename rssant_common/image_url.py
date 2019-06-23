@@ -17,7 +17,7 @@ from rssant_common.validator import compiler
 
 validate_image_url = compiler.compile(T.dict(
     url=T.url,
-    referer=T.url,
+    referer=T.url.optional,
 ))
 
 
@@ -29,7 +29,7 @@ class ImageUrlDecodeError(Exception):
     """ImageUrlDecodeError"""
 
 
-def encode_image_url(url, referer):
+def encode_image_url(url, referer=None):
     try:
         text = json.dumps(validate_image_url(dict(url=url, referer=referer)))
         data = brotli.compress(text.encode('utf-8'))

@@ -3,12 +3,22 @@ import time
 import asyncio
 import concurrent.futures
 
-from rssant_feedlib.async_reader import AsyncFeedReader
+from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
+from rssant_feedlib.blacklist import compile_url_blacklist
 
 from .callback_client import CallbackClient
 from .redis_dao import REDIS_DAO
 
 LOG = logging.getLogger(__name__)
+
+
+REFERER_DENY_LIST = """
+qpic.cn
+qlogo.cn
+qq.com
+"""
+
+is_referer_deny_url = compile_url_blacklist(REFERER_DENY_LIST)
 
 
 async def fetch_story(id, url, callback_url=None):
@@ -36,6 +46,8 @@ async def detect_story_images(story_id, story_url, image_urls, callback_url=None
     LOG.info(f'detect story images story_id={story_id} num_images={len(image_urls)} begin')
     async with AsyncFeedReader() as reader:
         async def _read(url):
+            if is_referer_deny_url(url):
+                return url, FeedResponseStatus.REFERER_DENY.value
             status, response = await reader.read(
                 url,
                 referer="https://rss.anyant.com/story/",

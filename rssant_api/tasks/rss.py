@@ -9,6 +9,7 @@ from django.utils import timezone
 from readability import Document as ReadabilityDocument
 
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser, processor
+from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import UserFeed, RawFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
@@ -64,10 +65,10 @@ def check_feed(seconds=300):
 
 
 @task(name='rssant.tasks.sync_feed')
-def sync_feed(feed_id):
+def sync_feed(feed_id, force=False):
     feed = Feed.get_by_pk(feed_id)
     LOG.info(f'read feed#{feed_id} url={feed.url}')
-    status_code, response = _read_response(feed)
+    status_code, response = _read_response(feed, force=force)
     LOG.info(f'feed#{feed_id} url={feed.url} status_code={status_code}')
     feed.refresh_from_db()
     feed.status = FeedStatus.READY
@@ -83,7 +84,7 @@ def sync_feed(feed_id):
             _create_raw_feed(feed, status_code, response)
         return default_result
     content_hash_base64 = compute_hash_base64(response.content)
-    if not feed.is_modified(content_hash_base64):
+    if (not force) and (not feed.is_modified(content_hash_base64)):
         LOG.info(f'feed#{feed_id} url={feed.url} not modified by compare content hash!')
         return default_result
     LOG.info(f'parse feed#{feed_id} url={feed.url}')
@@ -91,10 +92,10 @@ def sync_feed(feed_id):
     if parsed.bozo:
         LOG.warning(f'failed parse feed#{feed_id} url={feed.url}: {parsed.bozo_exception}')
         return default_result
-    num_modified, num_storys = _save_storys(feed, parsed.entries)
+    num_modified, num_storys = _save_storys(feed, parsed.entries, force=force)
     feed.refresh_from_db()
     _save_feed(feed, parsed, content_hash_base64, has_update=num_modified > 0)
-    if num_modified > 0:
+    if (not force) and num_modified > 0:
         _create_raw_feed(feed, status_code, response, content_hash_base64=content_hash_base64)
     else:
         LOG.info(f'feed#{feed_id} url={feed.url} not modified by compare storys!')
@@ -165,7 +166,11 @@ def detect_story_images(story_id, story_url, content):
         )
 
 
-IMAGE_REFERER_DENY_STATUS = set([400, 401, 403, 404])
+IMAGE_REFERER_DENY_STATUS = set([
+    400, 401, 403, 404,
+    FeedResponseStatus.REFERER_DENY.value,
+    FeedResponseStatus.REFERER_NOT_ALLOWED.value,
+])
 
 
 @task(name='rssant.tasks.process_story_images')
@@ -270,7 +275,7 @@ def _save_feed(feed, parsed, content_hash_base64=None, has_update=True):
     return feed
 
 
-def _save_storys(feed, entries):
+def _save_storys(feed, entries, force=False):
     storys = []
     now = timezone.now()
     for data in entries:
@@ -298,7 +303,7 @@ def _save_storys(feed, entries):
         story['dt_published'] = _get_dt_published(data, now)
         story['dt_updated'] = _get_dt_updated(data, now)
         storys.append(story)
-    modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
+    modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys, force=force)
     LOG.info(
         'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
         feed.id, len(storys), len(modified_storys), num_reallocate
@@ -369,10 +374,12 @@ def _get_story_unique_id(entry):
     return unquote(unique_id)
 
 
-def _read_response(feed):
+def _read_response(feed, *, force=False):
     reader = FeedReader()
-    status_code, response = reader.read(
-        feed.url, etag=feed.etag, last_modified=feed.last_modified)
+    params = {}
+    if not force:
+        params = dict(etag=feed.etag, last_modified=feed.last_modified)
+    status_code, response = reader.read(feed.url, **params)
     return status_code, response
 
 

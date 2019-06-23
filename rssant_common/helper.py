@@ -1,5 +1,7 @@
 import json
 import codecs
+from urllib.parse import urlparse, urlunparse
+
 import cchardet
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
@@ -86,3 +88,9 @@ def coerce_url(url, default_schema='http'):
     if "://" not in url:
         return "{}://{}".format(default_schema, url)
     return url
+
+
+def get_referer_of_url(url):
+    schema, netloc, path, __, __, __ = urlparse(url)
+    referer = urlunparse((schema, netloc, path, None, None, None))
+    return referer

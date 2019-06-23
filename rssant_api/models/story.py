@@ -100,7 +100,7 @@ class Story(Model, ContentHashMixin):
         return storys
 
     @staticmethod
-    def bulk_save_by_feed(feed_id, storys, batch_size=100):
+    def bulk_save_by_feed(feed_id, storys, batch_size=100, force=False):
         if not storys:
             return [], 0  # modified_story_objects, num_reallocate
         storys = Story._dedup_sort_storys(storys)
@@ -123,7 +123,7 @@ class Story(Model, ContentHashMixin):
                 is_story_exist = unique_id in story_objects
                 if is_story_exist:
                     story = story_objects[unique_id]
-                    if not story.is_modified(content_hash_base64):
+                    if (not force) and (not story.is_modified(content_hash_base64)):
                         continue
                 else:
                     story = Story(feed_id=feed_id, unique_id=unique_id, offset=offset)

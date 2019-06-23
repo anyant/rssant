@@ -4,6 +4,8 @@ import yarl
 import aiohttp
 from aiohttp.web import StreamResponse, json_response
 
+from rssant.settings import ENV_CONFIG
+from rssant_common.helper import get_referer_of_url
 from rssant_feedlib.reader import DEFAULT_USER_AGENT, PrivateAddressError
 from rssant_feedlib.async_reader import AsyncFeedReader
 
@@ -32,6 +34,8 @@ class ImageProxyError(Exception):
 
 
 async def check_private_address(url):
+    if ENV_CONFIG.allow_private_address:
+        return
     async with AsyncFeedReader() as reader:
         try:
             await reader.check_private_address(url)
@@ -60,7 +64,9 @@ async def get_response(session, url, headers):
 REFERER_DENY_STATUS = {401, 403}
 
 
-async def image_proxy(request, url, referer):
+async def image_proxy(request, url, referer=None):
+    if not referer:
+        referer = get_referer_of_url(url)
     LOG.info(f'proxy image {url} referer={referer}')
     try:
         await check_private_address(url)
@@ -68,8 +74,8 @@ async def image_proxy(request, url, referer):
         for h in PROXY_REQUEST_HEADERS:
             if h in request.headers:
                 headers[h] = request.headers[h]
-        referer_headers = {'Referer': referer}
-        referer_headers.update(headers)
+        referer_headers = dict(headers)
+        referer_headers['Referer'] = referer
         request_timeout = 30
         session = aiohttp.ClientSession(
             auto_decompress=False,
