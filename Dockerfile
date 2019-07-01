@@ -3,6 +3,9 @@ FROM phusion/baseimage:0.11
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
+# https://opsx.alibaba.com/mirror ubuntu 18.04
+COPY etc/apt-sources.list /etc/apt/sources.list
+
 RUN apt-get update && \
     apt-get install -y python3-venv python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
