@@ -22,8 +22,7 @@ class CallbackClient:
         if self.session is None:
             self.session = aiohttp.ClientSession(
                 raise_for_status=True,
-                read_timeout=self.request_timeout,
-                conn_timeout=self.request_timeout,
+                timeout=aiohttp.ClientTimeout(total=self.request_timeout),
             )
 
     async def _send(self, callback_url, data):

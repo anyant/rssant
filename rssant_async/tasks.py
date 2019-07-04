@@ -44,7 +44,7 @@ async def fetch_story(id, url, callback_url=None):
 
 async def detect_story_images(story_id, story_url, image_urls, callback_url=None):
     LOG.info(f'detect story images story_id={story_id} num_images={len(image_urls)} begin')
-    async with AsyncFeedReader() as reader:
+    async with AsyncFeedReader(allow_non_webpage=True) as reader:
         async def _read(url):
             if is_referer_deny_url(url):
                 return url, FeedResponseStatus.REFERER_DENY.value

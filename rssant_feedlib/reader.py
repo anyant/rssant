@@ -1,3 +1,4 @@
+import re
 import enum
 import socket
 import ssl
@@ -24,14 +25,6 @@ DEFAULT_USER_AGENT = (
 )
 
 
-class PrivateAddressError(Exception):
-    """Private IP address"""
-
-
-class ContentTooLargeError(Exception):
-    """Content too large"""
-
-
 class FeedResponseStatus(enum.Enum):
     # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
     UNKNOWN_ERROR = -100
@@ -50,9 +43,18 @@ class FeedResponseStatus(enum.Enum):
     CONTENT_TOO_LARGE_ERROR = -404
     REFERER_DENY = -405  # 严格防盗链，必须服务端才能绕过
     REFERER_NOT_ALLOWED = -406  # 普通防盗链，不带Referer头可绕过
+    CONTENT_TYPE_NOT_SUPPORT_ERROR = -407  # 非文本/HTML响应
 
     @classmethod
     def name_of(cls, value):
+        """
+        >>> FeedResponseStatus.name_of(200)
+        'OK'
+        >>> FeedResponseStatus.name_of(-200)
+        'RSSANT_CONNECTION_ERROR'
+        >>> FeedResponseStatus.name_of(-999)
+        'RSSANT_E999'
+        """
         if value > 0:
             try:
                 return HTTPStatus(value).name
@@ -64,7 +66,53 @@ class FeedResponseStatus(enum.Enum):
             try:
                 return 'RSSANT_' + FeedResponseStatus(value).name
             except ValueError:
-                return f'RSSANT_{value}'
+                return f'RSSANT_E{abs(value)}'
+
+
+class FeedReaderError(Exception):
+    """FeedReaderError"""
+    status = None
+
+    def __init__(self, *args, response=None, **kwargs):
+        self.response = response
+        super().__init__(*args, **kwargs)
+
+
+class PrivateAddressError(FeedReaderError):
+    """Private IP address"""
+    status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
+
+
+class ContentTooLargeError(FeedReaderError):
+    """Content too large"""
+    status = FeedResponseStatus.CONTENT_TOO_LARGE_ERROR.value
+
+
+class ContentTypeNotSupportError(FeedReaderError):
+    """ContentTypeNotSupportError"""
+    status = FeedResponseStatus.CONTENT_TYPE_NOT_SUPPORT_ERROR.value
+
+
+RE_WEBPAGE_CONTENT_TYPE = re.compile(
+    r'(text/html|application/xml|text/xml|application/json|'
+    r'application/.*xml|application/.*json|text/.*xml)', re.I)
+
+
+def is_webpage(content_type):
+    """
+    >>> is_webpage(' text/HTML ')
+    True
+    >>> is_webpage('application/rss+xml; charset=utf-8')
+    True
+    >>> is_webpage('application/atom+json')
+    True
+    >>> is_webpage('image/jpeg')
+    False
+    """
+    if not content_type:
+        return True
+    content_type = content_type.split(';', maxsplit=1)[0].strip()
+    return bool(RE_WEBPAGE_CONTENT_TYPE.fullmatch(content_type))
 
 
 class FeedReader:
@@ -75,6 +123,7 @@ class FeedReader:
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
         allow_private_address=False,
+        allow_non_webpage=False,
     ):
         if session is None:
             session = requests.session()
@@ -86,6 +135,7 @@ class FeedReader:
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
+        self.allow_non_webpage = allow_non_webpage
 
     def _resolve_hostname(self, hostname):
         addrinfo = socket.getaddrinfo(hostname, None)
@@ -107,6 +157,16 @@ class FeedReader:
             if ip.is_private:
                 raise PrivateAddressError(ip)
 
+    def check_content_type(self, response):
+        if self.allow_non_webpage:
+            return
+        if not (200 <= response.status_code <= 299):
+            return
+        content_type = response.headers.get('content-type')
+        if not is_webpage(content_type):
+            raise ContentTypeNotSupportError(
+                f'content-type {content_type} not support', response=response)
+
     def _read_content(self, response):
         content_length = response.headers.get('Content-Length')
         if content_length:
@@ -114,14 +174,14 @@ class FeedReader:
             if content_length > self.max_content_length:
                 msg = 'Content length {} larger than limit {}'.format(
                     content_length, self.max_content_length)
-                raise ContentTooLargeError(msg)
+                raise ContentTooLargeError(msg, response=response)
         content_length = 0
         content = []
         for data in response.iter_content(chunk_size=8 * 1024):
             content_length += len(data)
             if content_length > self.max_content_length:
                 msg = 'Content length larger than limit {}'.format(self.max_content_length)
-                raise ContentTooLargeError(msg)
+                raise ContentTooLargeError(msg, response=response)
             content.append(data)
         response._content = b''.join(content)
 
@@ -137,8 +197,9 @@ class FeedReader:
             self.check_private_address(prepared.url)
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
         response = self.session.send(prepared, timeout=(6.5, self.request_timeout), stream=True)
-        self._read_content(response)
         response.raise_for_status()
+        self.check_content_type(response)
+        self._read_content(response)
         resolve_response_encoding(response)
         return response
 
@@ -148,8 +209,6 @@ class FeedReader:
             response = self._read(*args, **kwargs)
         except socket.gaierror:
             status = FeedResponseStatus.DNS_ERROR.value
-        except PrivateAddressError:
-            status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
         except requests.exceptions.ReadTimeout:
             status = FeedResponseStatus.READ_TIMEOUT.value
         except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout):
@@ -166,8 +225,9 @@ class FeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except requests.exceptions.ContentDecodingError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
-        except ContentTooLargeError:
-            status = FeedResponseStatus.CONTENT_TOO_LARGE_ERROR.value
+        except FeedReaderError as ex:
+            status = ex.status
+            response = ex.response
         except requests.HTTPError as ex:
             response = ex.response
             status = response.status_code

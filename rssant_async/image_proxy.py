@@ -90,8 +90,7 @@ async def image_proxy(request, url, referer=None):
         request_timeout = 30
         session = aiohttp.ClientSession(
             auto_decompress=False,
-            read_timeout=request_timeout,
-            conn_timeout=request_timeout,
+            timeout=aiohttp.ClientTimeout(total=request_timeout),
         )
         # 先尝试发带Referer的请求，不行再尝试不带Referer
         response = await get_response(session, url, referer_headers)

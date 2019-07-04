@@ -11,7 +11,8 @@ import aiohttp
 from rssant.settings import ENV_CONFIG
 from rssant_common.helper import resolve_aiohttp_response_encoding
 
-from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, PrivateAddressError, ContentTooLargeError
+from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, is_webpage
+from .reader import PrivateAddressError, ContentTooLargeError, ContentTypeNotSupportError, FeedReaderError
 
 
 class AsyncFeedReader:
@@ -22,6 +23,7 @@ class AsyncFeedReader:
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
         allow_private_address=False,
+        allow_non_webpage=False,
     ):
         self._close_session = session is None
         self.session = session
@@ -30,15 +32,14 @@ class AsyncFeedReader:
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
+        self.allow_non_webpage = allow_non_webpage
 
     async def _async_init(self):
         if self.resolver is None:
             self.resolver = aiodns.DNSResolver(loop=asyncio.get_event_loop())
         if self.session is None:
             self.session = aiohttp.ClientSession(
-                read_timeout=self.request_timeout,
-                conn_timeout=self.request_timeout,
-            )
+                timeout=aiohttp.ClientTimeout(total=self.request_timeout))
 
     async def _resolve_hostname(self, hostname):
         addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)
@@ -61,6 +62,16 @@ class AsyncFeedReader:
             if ip.is_private:
                 raise PrivateAddressError(ip)
 
+    def check_content_type(self, response):
+        if self.allow_non_webpage:
+            return
+        if not (200 <= response.status <= 299):
+            return
+        content_type = response.headers.get('content-type')
+        if not is_webpage(content_type):
+            raise ContentTypeNotSupportError(
+                f'content-type {content_type} not support', response=response)
+
     async def _read_content(self, response):
         content_length = response.headers.get('Content-Length')
         if content_length:
@@ -68,14 +79,14 @@ class AsyncFeedReader:
             if content_length > self.max_content_length:
                 msg = 'Content length {} larger than limit {}'.format(
                     content_length, self.max_content_length)
-                raise ContentTooLargeError(msg)
+                raise ContentTooLargeError(msg, response=response)
         content_length = 0
         content = []
         async for chunk in response.content.iter_chunked(8 * 1024):
             content_length += len(chunk)
             if content_length > self.max_content_length:
                 msg = 'Content length larger than limit {}'.format(self.max_content_length)
-                raise ContentTooLargeError(msg)
+                raise ContentTooLargeError(msg, response=response)
             content.append(chunk)
         content = b''.join(content)
         response._body = content
@@ -100,6 +111,7 @@ class AsyncFeedReader:
             await self.check_private_address(url)
         async with self.session.get(url, headers=headers) as response:
             response.raise_for_status()
+            self.check_content_type(response)
             if not ignore_content:
                 await self._read_content(response)
         return response
@@ -110,8 +122,6 @@ class AsyncFeedReader:
             response = await self._read(*args, **kwargs)
         except (socket.gaierror, aiodns.error.DNSError):
             status = FeedResponseStatus.DNS_ERROR.value
-        except PrivateAddressError:
-            status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
         except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,
                 asyncio.TimeoutError, concurrent.futures.TimeoutError):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
@@ -127,8 +137,9 @@ class AsyncFeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except UnicodeDecodeError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
-        except ContentTooLargeError:
-            status = FeedResponseStatus.CONTENT_TOO_LARGE_ERROR.value
+        except FeedReaderError as ex:
+            status = ex.status
+            response = ex.response
         except aiohttp.ClientResponseError as ex:
             status = ex.status
             if ex.history:
