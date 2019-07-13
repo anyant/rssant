@@ -7,7 +7,7 @@ def get_params(f):
     params_schema = {}
     for name, p in list(sig.parameters.items())[1:]:
         if p.default is not inspect.Parameter.empty:
-            raise ValueError('You should set default in schema annotation!')
+            raise ValueError('You should not set default in schema annotation!')
         if p.annotation is inspect.Parameter.empty:
             raise ValueError(f'Missing annotation in parameter {name}!')
         params_schema[name] = p.annotation

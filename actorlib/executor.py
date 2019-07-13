@@ -1,15 +1,22 @@
 import queue
+import logging
 from threading import Thread
 
 import asyncio
 import aiojobs
 
-from .actor import ActorContext
+from .actor import Actor
+from .message import ActorMessage
 from .helper import kill_thread
+from .registery import ActorRegistery
+from .sender import MessageSender
+
+
+LOG = logging.getLogger(__name__)
 
 
 class ActorExecutor:
-    def __init__(self, actors, sender, registery, concurrency=100):
+    def __init__(self, actors, sender: MessageSender, registery: ActorRegistery, concurrency=100):
         self.actors = actors
         self.sender = sender
         self.registery = registery
@@ -82,6 +89,7 @@ class ActorExecutor:
 
     async def async_submit(self, message):
         message = self.registery.complete_message(message)
+        LOG.info(f'submit message {message}')
         if not self.registery.is_local_message(message):
             await self.sender.async_submit(message)
             return
@@ -93,6 +101,7 @@ class ActorExecutor:
 
     def submit(self, message):
         message = self.registery.complete_message(message)
+        LOG.info(f'submit message {message}')
         if not self.registery.is_local_message(message):
             self.sender.submit(message)
             return
@@ -115,4 +124,28 @@ class ActorExecutor:
 
     def shutdown(self):
         for t in self.threads:
-            kill_thread(t.ident)
+            if t.is_alive():
+                kill_thread(t.ident)
+
+    def join(self):
+        for t in self.threads:
+            t.join()
+
+
+class ActorContext:
+    def __init__(self, executor: ActorExecutor, actor: Actor, state: dict, message: ActorMessage):
+        self.executor = executor
+        self.registery = executor.registery
+        self.actor = actor
+        self.state = state
+        self.message = message
+
+    def send(self, dst, content, dst_node=None):
+        msg = ActorMessage(
+            content=content, src=self.actor.name,
+            dst=dst, dst_node=dst_node,
+        )
+        if self.actor.is_async:
+            return self.executor.async_submit(msg)
+        else:
+            return self.executor.submit(msg)

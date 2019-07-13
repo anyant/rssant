@@ -1,10 +1,19 @@
 import socket
+import logging
+
+from validr import Compiler
 
 from .actor import Actor
 from .executor import ActorExecutor
 from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .sender import MessageSender
+
+
+LOG_FORMAT = "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+LOG = logging.getLogger(__name__)
 
 
 class ActorNode:
@@ -18,12 +27,16 @@ class ActorNode:
         subpath=None,
         networks=None,
         registery_node_spec=None,
+        schema_compiler=None,
     ):
-        actors = [Actor(x) for x in actors]
+        if schema_compiler is None:
+            schema_compiler = Compiler()
+        self.schema_compiler = schema_compiler
+        actors = [Actor(x, schema_compiler=schema_compiler) for x in actors]
         self.actors = {x.name: x for x in actors}
         actor_modules = {x.module for x in actors}
         if not name:
-            name = socket.getfqdn()
+            name = '{}:{}'.format(socket.getfqdn(), port)
         self.name = name
         if not networks:
             networks = []
@@ -44,11 +57,9 @@ class ActorNode:
     def run(self):
         self.sender.start()
         self.executor.start()
-        register_message = self.registery.get_register_message()
-        if register_message:
-            self.sender.submit(register_message)
+        LOG.info(f'Actor Node {self.name} started')
         try:
             self.receiver.run()
         finally:
-            self.sender.shutdown()
             self.executor.shutdown()
+            self.sender.shutdown()

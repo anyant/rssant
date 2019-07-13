@@ -3,8 +3,19 @@ import random
 from collections import defaultdict
 from threading import RLock
 
+from validr import T
+
 from .actor import Actor
-from .message import ActorMessage
+
+
+NodeSpecSchema = T.dict(
+    name=T.str,
+    modules=T.list(T.str),
+    networks=T.list(T.dict(
+        name=T.str,
+        url=T.url,
+    ))
+)
 
 
 class NodeInfo:
@@ -15,16 +26,6 @@ class NodeInfo:
 
     @classmethod
     def from_spec(cls, node):
-        """
-        T.dict(
-            name=T.str,
-            modules=T.list(T.str),
-            networks=T.list(T.dict(
-                name=T.str,
-                url=T.url,
-            ))
-        )
-        """
         networks = defaultdict(set)
         for network in node['networks']:
             networks[network['name']].add(network['url'])
@@ -78,6 +79,11 @@ class ActorRegistery:
         nodes = [NodeInfo.from_spec(spec) for spec in node_specs]
         self._update(nodes)
 
+    def add(self, node_spec):
+        nodes = list(self._nodes.values())
+        nodes.append(NodeInfo.from_spec(node_spec))
+        self._update(nodes)
+
     def to_spec(self):
         with self._lock:
             return [x.to_spec() for x in self._nodes.values()]
@@ -109,14 +115,3 @@ class ActorRegistery:
 
     def is_local_message(self, message):
         return message.dst_node == self.current_node.name
-
-    def get_register_message(self):
-        if not self.registery_node:
-            return None
-        return ActorMessage(
-            content=self.current_node.to_spec(),
-            src='__actor__.update_registery',
-            src_node=self.current_node.name,
-            dst='__actor__.register',
-            dst_node=self.registery_node.name,
-        )

@@ -3,15 +3,34 @@ import os.path
 import importlib
 import inspect
 
-from .message import ActorMessage
+from validr import T
+
+
+def get_params(f):
+    sig = inspect.signature(f)
+    params_schema = {}
+    for name, p in list(sig.parameters.items())[1:]:
+        if p.default is not inspect.Parameter.empty:
+            raise ValueError('You should not set default in schema annotation!')
+        if p.annotation is inspect.Parameter.empty:
+            raise ValueError(f'Missing annotation in parameter {name}!')
+        params_schema[name] = p.annotation
+    if params_schema:
+        return T.dict(params_schema).__schema__
+    return None
 
 
 class Actor:
-    def __init__(self, handler):
+    def __init__(self, handler, schema_compiler):
         self.name = handler.__actor_name__
         self.module = self.get_module(self.name)
         self.handler = handler
         self.is_async = inspect.iscoroutinefunction(handler)
+        params_schema = get_params(handler)
+        if params_schema:
+            self._validate_params = schema_compiler.compile(params_schema)
+        else:
+            self._validate_params = None
 
     @staticmethod
     def get_module(name):
@@ -22,26 +41,11 @@ class Actor:
         return '<{} {}{}>'.format(type(self).__name__, is_async, self.name)
 
     def __call__(self, ctx):
-        return self.handler(ctx, ctx.message)
-
-
-class ActorContext:
-    def __init__(self, executor, actor, state, message):
-        self.executor = executor
-        self.actor = actor
-        self.state = state
-        self.message = message
-
-    def send(self, dst, content, dst_node=None):
-        msg = ActorMessage(
-            src=self.actor.name,
-            dst=dst, dst_node=dst_node,
-            content=content,
-        )
-        if self.actor.is_async:
-            return self.executor.async_submit(msg)
+        if self._validate_params is None:
+            return self.handler(ctx)
         else:
-            return self.executor.submit(msg)
+            params = self._validate_params(ctx.message.content)
+            return self.handler(ctx, **params)
 
 
 def actor(name):

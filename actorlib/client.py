@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from collections import defaultdict
 
@@ -7,6 +8,9 @@ import requests
 
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
+
+
+LOG = logging.getLogger(__name__)
 
 
 class ActorClientBase:
@@ -48,8 +52,10 @@ class ActorClient(ActorClientBase):
         self.close()
 
     def _group_send(self, dst_url, messages):
+        LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        r = self.session.post(dst_url, data=data)
+        headers = {'Actor-Content-Encoding': self.content_encoding.value}
+        r = self.session.post(dst_url, data=data, headers=headers)
         r.raise_for_status()
 
     def _batch_send(self, messages: List[ActorMessage]):
@@ -83,8 +89,10 @@ class AsyncActorClient(ActorClientBase):
         await self.close()
 
     async def _group_send(self, dst_url, messages):
+        LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        async with self.session.post(dst_url, data=data) as r:
+        headers = {'Actor-Content-Encoding': self.content_encoding.value}
+        async with self.session.post(dst_url, data=data, headers=headers) as r:
             await r.read()
 
     async def _batch_send(self, messages: List[ActorMessage]):

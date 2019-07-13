@@ -1,7 +1,9 @@
 import logging
+
 from aiohttp.web import Application, run_app, Response
 
-from actorlib.message import ActorMessage
+from .message import ActorMessage
+
 
 LOG = logging.getLogger(__name__)
 
@@ -23,19 +25,11 @@ class MessageReceiver:
         return Response(status=204)
 
     async def handle_message(self, message):
-        if message.dst == 'registery.update':
-            self.registery.update(message.content)
-        else:
-            await self.executor.async_submit(message)
+        await self.executor.async_submit(message)
 
     def create_app(self):
-        api = Application()
-        api.router.add_post('/', self.request_handler)
-        if self.subpath:
-            app = Application()
-            app.add_subapp(self.subpath, api)
-        else:
-            app = api
+        app = Application()
+        app.router.add_post(self.subpath, self.request_handler)
         return app
 
     def run(self):

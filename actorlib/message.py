@@ -1,8 +1,9 @@
 import enum
 import json
 import gzip
-import base64
 import msgpack
+
+from .helper import shorten
 
 
 class ContentEncoding(enum.Enum):
@@ -35,57 +36,46 @@ class ContentEncoding(enum.Enum):
 class ActorMessage:
     def __init__(
         self, *,
-        content: bytes,
-        src: str, src_node: str = None,
-        dst: str, dst_node: str = None,
-        dst_url: str = None,
+        content: dict,
+        src: str = None, src_node: str = None,
+        dst: str, dst_node: str = None, dst_url: str = None,
     ):
+        self.content = content
         self.src = src
         self.src_node = src_node
         self.dst = dst
         self.dst_node = dst_node
         self.dst_url = dst_url
-        self.content = content
 
     def __repr__(self):
-        return '<{} {}/{} to {}/{} size={}>'.format(
+        return '<{} {}/{} to {}/{} {}>'.format(
             type(self).__name__,
-            self.src_node, self.src, self.dst_node, self.dst, len(self.content)
+            self.src_node, self.src, self.dst_node, self.dst,
+            shorten(repr(self.content), width=30),
         )
 
     @classmethod
-    def _from_dict(cls, d, do_base64=False):
-        content = d['content']
-        if do_base64:
-            content = base64.b64decode(content.encode('ascii'))
+    def _from_dict(cls, d):
         return ActorMessage(
             src=d['src'], src_node=d['src_node'],
             dst=d['dst'], dst_node=d['dst_node'],
-            content=content, dst_url=d['dst_url'],
+            content=d['content'], dst_url=d['dst_url'],
         )
 
-    @staticmethod
-    def _to_dict(self, do_base64=False):
-        content = self.content
-        if do_base64:
-            content = base64.b64encode(content)
+    def _to_dict(self):
         return dict(
             src=self.src, src_node=self.src_node,
             dst=self.dst, dst_node=self.dst_node,
-            content=content, dst_url=self.dst_url,
+            content=self.content, dst_url=self.dst_url,
         )
 
     @classmethod
     def batch_encode(cls, messages, content_encoding=None):
         content_encoding = ContentEncoding.of(content_encoding)
-        items = []
+        items = [x._to_dict() for x in messages]
         if content_encoding.is_json:
-            for x in messages:
-                items.append(x._to_dict(do_base64=True))
             data = json.dumps(items, ensure_ascii=False).encode('utf-8')
         else:
-            for x in messages:
-                items.append(x._to_dict(do_base64=False))
             data = msgpack.packb(items, use_bin_type=True)
         if content_encoding.is_gzip:
             data = gzip.compress(data)
@@ -99,10 +89,7 @@ class ActorMessage:
         messages = []
         if content_encoding.is_json:
             data = json.loads(data.decode('utf-8'))
-            for x in data:
-                messages.append(cls._from_dict(x, do_base64=True))
         else:
-            data = msgpack.unpackb(raw=False)
-            for x in data:
-                messages.append(cls._from_dict(x, do_base64=False))
+            data = msgpack.unpackb(data, raw=False)
+        messages = [cls._from_dict(x) for x in data]
         return messages

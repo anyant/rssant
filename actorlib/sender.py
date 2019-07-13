@@ -37,6 +37,7 @@ class MessageSender:
                         break
                 if messages:
                     await client.send(*messages)
+                    messages = []
 
     def main(self):
         loop = asyncio.new_event_loop()
@@ -60,6 +61,8 @@ class MessageSender:
 
     def shutdown(self):
         self._stop = True
-        if self._thread:
+        if self._thread.is_alive():
             kill_thread(self._thread.ident)
-            self._thread = None
+
+    def join(self):
+        self._thread.join()
