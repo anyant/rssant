@@ -7,7 +7,7 @@ import aiojobs
 
 from .actor import Actor
 from .message import ActorMessage
-from .helper import kill_thread
+from .helper import unsafe_kill_thread
 from .registery import ActorRegistery
 from .sender import MessageSender
 
@@ -51,13 +51,19 @@ class ActorExecutor:
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
-        state = {}
-        while True:
-            message = await self._async_get_message(self.async_inbox)
-            actor = self.actors[message.dst]
-            ctx = ActorContext(
-                executor=self, actor=actor, state=state, message=message)
-            await scheduler.spawn(actor(ctx))
+        try:
+            state = {}
+            while True:
+                try:
+                    message = await self._async_get_message(self.async_inbox)
+                    actor = self.actors[message.dst]
+                    ctx = ActorContext(
+                        executor=self, actor=actor, state=state, message=message)
+                    await scheduler.spawn(actor(ctx))
+                except Exception as ex:
+                    LOG.exception(ex)
+        finally:
+            await scheduler.close()
 
     def _send_message(self, message):
         message = self.registery.complete_message(message)
@@ -81,17 +87,29 @@ class ActorExecutor:
     def thread_main(self):
         state = {}
         while True:
-            message = self.thread_inbox.get()
-            actor = self.actors[message.dst]
-            ctx = ActorContext(
-                executor=self, actor=actor, state=state, message=message)
-            actor(ctx)
+            try:
+                message = self.thread_inbox.get()
+                actor = self.actors[message.dst]
+                ctx = ActorContext(
+                    executor=self, actor=actor, state=state, message=message)
+                actor(ctx)
+            except Exception as ex:
+                LOG.exception(ex)
+
+    def _is_deliverable(self, message):
+        return self.registery.is_local_message(message) and message.dst in self.actors
 
     async def async_submit(self, message):
         message = self.registery.complete_message(message)
         LOG.info(f'submit message {message}')
         if not self.registery.is_local_message(message):
             await self.sender.async_submit(message)
+        else:
+            await self.async_on_message(message)
+
+    async def async_on_message(self, message):
+        if not self._is_deliverable(message):
+            LOG.error(f'undeliverable message {message}')
             return
         actor = self.actors[message.dst]
         if actor.is_async:
@@ -99,17 +117,23 @@ class ActorExecutor:
         else:
             await self._async_put_message(self.thread_inbox, message)
 
-    def submit(self, message):
-        message = self.registery.complete_message(message)
-        LOG.info(f'submit message {message}')
-        if not self.registery.is_local_message(message):
-            self.sender.submit(message)
+    def on_message(self, message):
+        if not self._is_deliverable(message):
+            LOG.error(f'undeliverable message {message}')
             return
         actor = self.actors[message.dst]
         if actor.is_async:
             self.async_inbox.put(message)
         else:
             self.thread_inbox.put(message)
+
+    def submit(self, message):
+        message = self.registery.complete_message(message)
+        LOG.info(f'submit message {message}')
+        if not self.registery.is_local_message(message):
+            self.sender.submit(message)
+        else:
+            self.on_message(message)
 
     def start(self):
         for i in range(self.num_async_workers):
@@ -125,7 +149,7 @@ class ActorExecutor:
     def shutdown(self):
         for t in self.threads:
             if t.is_alive():
-                kill_thread(t.ident)
+                unsafe_kill_thread(t.ident)
 
     def join(self):
         for t in self.threads:

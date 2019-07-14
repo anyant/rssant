@@ -6,6 +6,22 @@ import msgpack
 from .helper import shorten
 
 
+class ActorMessageError(Exception):
+    pass
+
+
+class UnsupportContentEncodingError(ActorMessageError):
+    pass
+
+
+class ActorMessageEncodeError(ActorMessageError):
+    pass
+
+
+class ActorMessageDecodeError(ActorMessageError):
+    pass
+
+
 class ContentEncoding(enum.Enum):
     JSON = 'json'
     MSGPACK = 'msgpack'
@@ -17,7 +33,10 @@ class ContentEncoding(enum.Enum):
         if value is None:
             return ContentEncoding.JSON
         if not isinstance(value, ContentEncoding):
-            return ContentEncoding(value)
+            try:
+                return ContentEncoding(value)
+            except ValueError:
+                raise UnsupportContentEncodingError(f'unsupport content encoding {value}')
         return value
 
     @property
@@ -73,10 +92,13 @@ class ActorMessage:
     def batch_encode(cls, messages, content_encoding=None):
         content_encoding = ContentEncoding.of(content_encoding)
         items = [x._to_dict() for x in messages]
-        if content_encoding.is_json:
-            data = json.dumps(items, ensure_ascii=False).encode('utf-8')
-        else:
-            data = msgpack.packb(items, use_bin_type=True)
+        try:
+            if content_encoding.is_json:
+                data = json.dumps(items, ensure_ascii=False).encode('utf-8')
+            else:
+                data = msgpack.packb(items, use_bin_type=True)
+        except (ValueError, TypeError) as ex:
+            raise ActorMessageEncodeError(str(ex)) from ex
         if content_encoding.is_gzip:
             data = gzip.compress(data)
         return data
@@ -85,11 +107,22 @@ class ActorMessage:
     def batch_decode(cls, data, content_encoding=None):
         content_encoding = ContentEncoding.of(content_encoding)
         if content_encoding.is_gzip:
-            data = gzip.decompress(data)
+            try:
+                data = gzip.decompress(data)
+            except (ValueError, TypeError):
+                raise ActorMessageDecodeError('gzip decompress failed')
         messages = []
-        if content_encoding.is_json:
-            data = json.loads(data.decode('utf-8'))
-        else:
-            data = msgpack.unpackb(data, raw=False)
-        messages = [cls._from_dict(x) for x in data]
+        try:
+            if content_encoding.is_json:
+                data = json.loads(data.decode('utf-8'))
+            else:
+                data = msgpack.unpackb(data, raw=False)
+        except json.JSONDecodeError:
+            raise ActorMessageDecodeError('json decode failed')
+        except msgpack.UnpackException:
+            raise ActorMessageDecodeError('msgpack decode failed')
+        try:
+            messages = [cls._from_dict(x) for x in data]
+        except KeyError as ex:
+            raise ActorMessageDecodeError(str(ex)) from ex
         return messages

@@ -4,7 +4,7 @@ import queue
 from threading import Thread
 
 from .client import AsyncActorClient
-from .helper import kill_thread
+from .helper import unsafe_kill_thread
 
 
 LOG = logging.getLogger(__name__)
@@ -19,25 +19,32 @@ class MessageSender:
         self._thread = None
         self._stop = False
 
+    async def _poll_messages(self):
+        messages = []
+        while (not self._stop) and len(messages) < self.concurrency:
+            try:
+                messages.append(self.outbox.get_nowait())
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+                try:
+                    while (not self._stop) and len(messages) < self.concurrency:
+                        messages.append(self.outbox.get_nowait())
+                except queue.Empty:
+                    pass
+                break
+        return messages
+
     async def _main(self):
         client = AsyncActorClient(registery=self.registery)
         async with client:
             while not self._stop:
-                messages = []
-                while (not self._stop) and len(messages) < self.concurrency:
-                    try:
-                        messages.append(self.outbox.get_nowait())
-                    except queue.Empty:
-                        await asyncio.sleep(0.1)
-                        try:
-                            while (not self._stop) and len(messages) < self.concurrency:
-                                messages.append(self.outbox.get_nowait())
-                        except queue.Empty:
-                            pass
-                        break
-                if messages:
-                    await client.send(*messages)
-                    messages = []
+                try:
+                    messages = await self._poll_messages()
+                    if messages:
+                        await client.send(*messages)
+                        messages = []
+                except Exception as ex:
+                    LOG.exception(ex)
 
     def main(self):
         loop = asyncio.new_event_loop()
@@ -62,7 +69,7 @@ class MessageSender:
     def shutdown(self):
         self._stop = True
         if self._thread.is_alive():
-            kill_thread(self._thread.ident)
+            unsafe_kill_thread(self._thread.ident)
 
     def join(self):
         self._thread.join()

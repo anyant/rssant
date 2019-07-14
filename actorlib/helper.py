@@ -19,7 +19,8 @@ def shorten(text, width, placeholder='...'):
     return text[: max(0, width - len(placeholder))] + placeholder
 
 
-def kill_thread(thread_id):
+def unsafe_kill_thread(thread_id):
+    # https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
     if thread_id is None:
         return False
     res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
