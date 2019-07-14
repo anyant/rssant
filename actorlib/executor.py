@@ -65,20 +65,6 @@ class ActorExecutor:
         finally:
             await scheduler.close()
 
-    def _send_message(self, message):
-        message = self.registery.complete_message(message)
-        if self.registery.is_local_message(message):
-            self.submit(message)
-        else:
-            self.sender.submit(message)
-
-    async def _async_send_message(self, message):
-
-        if self.registery.is_local_message(message):
-            self.submit(message)
-        else:
-            self.sender.submit(message)
-
     def async_main(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -164,7 +150,9 @@ class ActorContext:
         self.state = state
         self.message = message
 
-    def send(self, dst, content, dst_node=None):
+    def send(self, dst, content=None, dst_node=None):
+        if content is None:
+            content = {}
         msg = ActorMessage(
             content=content, src=self.actor.name,
             dst=dst, dst_node=dst_node,

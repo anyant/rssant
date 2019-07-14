@@ -75,18 +75,27 @@ class ActorRegistery:
             self._module_index = module_index
             self._nodes = {x.name: x for x in nodes}
 
+    def _add(self, node):
+        with self._lock:
+            nodes = list(self._nodes.values())
+            nodes.append(node)
+            self._update(nodes)
+
     def update(self, node_specs):
         nodes = [NodeInfo.from_spec(spec) for spec in node_specs]
         self._update(nodes)
 
     def add(self, node_spec):
-        nodes = list(self._nodes.values())
-        nodes.append(NodeInfo.from_spec(node_spec))
-        self._update(nodes)
+        self._add(NodeInfo.from_spec(node_spec))
 
     def to_spec(self):
         with self._lock:
             return [x.to_spec() for x in self._nodes.values()]
+
+    @property
+    def nodes(self):
+        with self._lock:
+            return list(self._nodes.values())
 
     def find_dst_nodes(self, dst: str) -> List[str]:
         module = Actor.get_module(dst)

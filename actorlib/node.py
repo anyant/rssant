@@ -8,6 +8,7 @@ from .executor import ActorExecutor
 from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .sender import MessageSender
+from .message import ActorMessage
 
 
 LOG_FORMAT = "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
@@ -54,11 +55,24 @@ class ActorNode:
             host=host, port=port, subpath=subpath,
             executor=self.executor, registery=self.registery)
 
+    def _send_init_message(self):
+        if 'actor.init' not in self.actors:
+            return
+        msg = ActorMessage(
+            content={},
+            src='actor.init',
+            src_node=self.registery.current_node.name,
+            dst='actor.init',
+            dst_node=self.registery.current_node.name
+        )
+        self.executor.submit(msg)
+
     def run(self):
         self.sender.start()
         self.executor.start()
         LOG.info(f'Actor Node {self.name} started')
         try:
+            self._send_init_message()
             self.receiver.run()
         finally:
             self.executor.shutdown()

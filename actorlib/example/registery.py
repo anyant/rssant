@@ -18,8 +18,8 @@ def do_register(ctx: ActorContext, node: NodeSpecSchema):
 async def do_check(ctx: ActorContext, node: NodeSpecSchema):
     LOG.info('ping node {}'.format(node['name']))
     await ctx.send('worker.ping', {'message': 'ping'}, dst_node=node['name'])
-    await asyncio.sleep(10)
-    await ctx.send('registery.check', dict(node=node))
+    next_task = ctx.send('registery.check', dict(node=node))
+    asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
 
 
 ACTORS = collect_actors(__name__)
