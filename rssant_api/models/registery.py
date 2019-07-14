@@ -35,4 +35,7 @@ class Registery(Model):
 
     @staticmethod
     def get(registery_node):
-        return Registery.objects.get(registery_node=registery_node)
+        try:
+            return Registery.objects.get(registery_node=registery_node)
+        except Registery.DoesNotExist:
+            return None
