@@ -140,6 +140,12 @@ class Feed(Model, ContentHashMixin):
 
     @staticmethod
     def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=100):
+        feeds = Feed.take_outdated_feeds(
+            outdate_seconds=outdate_seconds, timeout_seconds=timeout_seconds, limit=limit)
+        return [x['feed_id'] for x in feeds]
+
+    @staticmethod
+    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=100):
         """
         outdate_seconds: 正常检查时间间隔
         timeout_seconds: 异常检查时间间隔
@@ -151,7 +157,7 @@ class Feed(Model, ContentHashMixin):
         dt_timeout_before = now - timezone.timedelta(seconds=timeout_seconds)
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
         sql_check = """
-        SELECT id FROM rssant_api_feed AS feed
+        SELECT id, url FROM rssant_api_feed AS feed
         WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
         ORDER BY id LIMIT %s
         """
@@ -161,13 +167,14 @@ class Feed(Model, ContentHashMixin):
         WHERE id=ANY(%s)
         """
         params = [statuses, dt_outdate_before, dt_timeout_before, limit]
-        feed_ids = []
+        feeds = []
         with connection.cursor() as cursor:
             cursor.execute(sql_check, params)
-            for feed_id, in cursor.fetchall():
-                feed_ids.append(feed_id)
+            for feed_id, url in cursor.fetchall():
+                feeds.append(dict(feed_id=feed_id, url=url))
+            feed_ids = [x['feed_id'] for x in feeds]
             cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
-        return feed_ids
+        return feeds
 
 
 class RawFeed(Model, ContentHashMixin):

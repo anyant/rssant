@@ -6,6 +6,7 @@ from validr import T
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 
 from rssant_common.helper import pretty_format_json
+from rssant_common.validator import compiler as schema_compiler
 
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
@@ -30,6 +31,8 @@ def do_health(ctx):
 def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
     LOG.info(f'update registery {ctx.message}')
     ctx.registery.update(nodes)
+    nodes = pretty_format_json(ctx.registery.to_spec())
+    LOG.info(f'current registery:\n' + nodes)
 
 
 ACTORS = collect_actors('rssant_harbor')
@@ -37,6 +40,7 @@ ACTORS = collect_actors('rssant_harbor')
 
 app = ActorNode(
     actors=ACTORS,
+    concurrency=200,
     port=6791,
     name='harbor',
     subpath='/api/v1/harbor',
@@ -51,7 +55,8 @@ app = ActorNode(
             'name': 'local',
             'url': 'http://127.0.0.1:6790/api/v1/scheduler',
         }]
-    }
+    },
+    schema_compiler=schema_compiler,
 )
 
 

@@ -37,7 +37,7 @@ class ActorClient(ActorClientBase):
 
     def _init(self):
         if self.session is None:
-            self.session = requests.Session(timeout=self.timeout)
+            self.session = requests.Session()
 
     def close(self):
         if self.session:
@@ -55,7 +55,7 @@ class ActorClient(ActorClientBase):
         LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
         headers = {'Actor-Content-Encoding': self.content_encoding.value}
-        r = self.session.post(dst_url, data=data, headers=headers)
+        r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
         r.raise_for_status()
 
     def _batch_send(self, messages: List[ActorMessage]):

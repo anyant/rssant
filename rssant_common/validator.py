@@ -123,6 +123,10 @@ def dict_validator(compiler, schema):
             value = {k: v for k, v in value.items() if v is not None and v != ''}
         return value
 
+    attrs = ['__schema__', '__module__', '__name__', '__qualname__']
+    for k in attrs:
+        setattr(validate, k, getattr(origin_validate, k, None))
+
     return validate
 
 

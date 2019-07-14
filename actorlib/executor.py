@@ -26,7 +26,7 @@ class ActorExecutor:
             num_async_workers = 2
         else:
             num_async_workers = 3
-        num_thread_workers = min(1, concurrency - num_async_workers)
+        num_thread_workers = max(1, concurrency - num_async_workers)
         self.num_async_workers = num_async_workers
         self.num_thread_workers = num_thread_workers
         self.concurrency = num_async_workers + num_thread_workers

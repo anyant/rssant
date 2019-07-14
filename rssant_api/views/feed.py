@@ -1,7 +1,6 @@
 import logging
 import os.path
 
-import celery
 from django.http.response import HttpResponse
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
@@ -13,8 +12,8 @@ from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
 from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.models.feed import FeedDetailSchema
 from rssant_api.models import UnionFeed, FeedCreation
-from rssant_api.tasks import rss
 from rssant.settings import BASE_DIR
+from rssant_common.actor_client import schedule_task, batch_schedule_task
 from .helper import check_unionid
 from .errors import RssantAPIException
 
@@ -122,7 +121,10 @@ def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
     except FeedExistError:
         return Response({'message': 'already exists'}, status=400)
     if feed_creation:
-        rss.find_feed.delay(feed_creation.id)
+        schedule_task('worker_rss.find_feed', dict(
+            feed_creation_id=feed_creation.id,
+            url=feed_creation.url,
+        ))
     return dict(
         is_ready=bool(feed),
         feed=feed.to_dict() if feed else None,
@@ -204,12 +206,14 @@ def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
     result = UnionFeed.create_by_url_s(urls=urls, user_id=user.id)
     find_feed_tasks = []
     for feed_creation in result.feed_creations:
-        find_feed_tasks.append(rss.find_feed.s(feed_creation.id))
-    # https://docs.celeryproject.org/en/latest/faq.html#does-celery-support-task-priorities
-    # https://docs.celeryproject.org/en/latest/userguide/calling.html#routing-options
-    # https://docs.celeryproject.org/en/latest/userguide/calling.html#advanced-options
-    queue = 'bookmark' if is_from_bookmark else 'batch'
-    celery.group(find_feed_tasks).apply_async(queue=queue)
+        find_feed_tasks.append(dict(
+            dst='worker_rss.find_feed',
+            content=dict(
+                feed_creation_id=feed_creation.id,
+                url=feed_creation.url,
+            )
+        ))
+    batch_schedule_task(find_feed_tasks)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
     return dict(

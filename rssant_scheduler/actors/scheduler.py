@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from validr import T
 from actorlib import actor, ActorContext, NodeSpecSchema
 
 from rssant_api.models import Registery
@@ -55,3 +56,26 @@ async def do_healthcheck(ctx: ActorContext):
     for node in ctx.registery.nodes:
         LOG.info(f'check node {node.name}')
         await ctx.send('actor.health', {}, dst_node=node.name)
+
+
+@actor('scheduler.schedule_check_feed')
+async def do_schedule_check_feed(ctx):
+    next_task = ctx.send('scheduler.schedule_check_feed')
+    asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
+    await ctx.send('harbor_rss.check_feed')
+
+
+@actor('scheduler.schedule_clean_feed_creation')
+async def do_schedule_clean_feed_creation(ctx):
+    next_task = ctx.send('scheduler.schedule_clean_feed_creation')
+    asyncio.get_event_loop().call_later(60, asyncio.ensure_future, next_task)
+    await ctx.send('harbor_rss.clean_feed_creation')
+
+
+@actor("scheduler.schedule")
+async def do_schedule(
+    ctx: ActorContext,
+    dst: T.str,
+    content: T.dict,
+):
+    await ctx.send(dst, content)
