@@ -169,7 +169,7 @@ def do_process_story_webpage(
         ctx.send('worker_rss.detect_story_images', dict(
             story_id=story_id,
             story_url=url,
-            image_urls=image_urls,
+            image_urls=list(image_urls),
         ))
 
 

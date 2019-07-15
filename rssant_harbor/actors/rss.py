@@ -132,7 +132,15 @@ def do_update_feed(
         for k, v in feed_dict.items():
             if v != '' and v is not None:
                 setattr(feed, k, v)
+        if not feed.dt_updated:
+            feed.dt_updated = timezone.now()
         feed.save()
+        now = timezone.now()
+        for s in storys:
+            if not s['dt_updated']:
+                s['dt_updated'] = now
+            if not s['dt_published']:
+                s['dt_published'] = now
         modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
         LOG.info(
             'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
