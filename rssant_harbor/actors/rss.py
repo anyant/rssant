@@ -90,13 +90,14 @@ def do_save_feed_creation_result(
             feed_creation.save()
             FeedUrlMap(source=feed_creation.url, target=FeedUrlMap.NOT_FOUND).save()
             return
-        feed_creation.status = FeedStatus.READY
-        feed_creation.save()
         url = feed_dict['url']
         feed = Feed.get_first_by_url(url)
         if not feed:
             feed = Feed(url=url, status=FeedStatus.READY, dt_updated=timezone.now())
             feed.save()
+        feed_creation.status = FeedStatus.READY
+        feed_creation.feed_id = feed.id
+        feed_creation.save()
         user_feed = UserFeed.objects.filter(user_id=feed_creation.user_id, feed_id=feed.id).first()
         if user_feed:
             LOG.info('UserFeed#{} user_id={} feed_id={} already exists'.format(
