@@ -35,7 +35,7 @@ class MessageReceiver:
         await self.executor.async_on_message(message)
 
     def create_app(self):
-        app = Application()
+        app = Application(client_max_size=100 * 1024 * 1024)
         app.router.add_post(self.subpath, self.request_handler)
         return app
 

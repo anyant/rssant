@@ -5,7 +5,7 @@ from urllib.parse import unquote
 import concurrent.futures
 
 import yarl
-from validr import T
+from validr import T, Invalid
 from attrdict import AttrDict
 from django.utils import timezone
 from readability import Document as ReadabilityDocument
@@ -58,10 +58,31 @@ FeedSchema = T.dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
-    storys=T.list(StorySchema),
+    storys=T.list,
 )
 
-validate_feed = compiler.compile(FeedSchema)
+_validate_feed = compiler.compile(FeedSchema)
+_validate_story = compiler.compile(StorySchema)
+
+
+def validate_feed(feed):
+    feed_info = feed.get('url') or feed.get('link') or feed.get('title')
+    try:
+        feed_data = _validate_feed(feed)
+    except Invalid as ex:
+        ex.args = (f'{ex.args[0]}, feed={feed_info}', *ex.args[1:])
+        raise
+    storys = []
+    for story in feed_data['storys']:
+        try:
+            story = _validate_story(story)
+        except Invalid as ex:
+            story_info = story.get('link') or story.get('title') or story.get('link')
+            LOG.error(f'{ex}, feed={feed_info}, story={story_info}')
+        else:
+            storys.append(story)
+    feed_data['storys'] = storys
+    return feed_data
 
 
 @actor('worker_rss.find_feed')
@@ -131,12 +152,16 @@ async def do_fetch_story(
     if response and response.url:
         url = str(response.url)
     LOG.info(f'fetch story#{story_id} url={unquote(url)} status={status} finished')
-    if response and status == 200:
-        await ctx.send('worker_rss.process_story_webpage', dict(
-            story_id=story_id,
-            url=url,
-            text=response.rssant_text,
-        ))
+    if not (response and status == 200):
+        return
+    if not response.rssant_text:
+        LOG.error(f'story#{story_id} url={unquote(url)} response text is empty!')
+        return
+    await ctx.send('worker_rss.process_story_webpage', dict(
+        story_id=story_id,
+        url=url,
+        text=response.rssant_text,
+    ))
 
 
 @actor('worker_rss.process_story_webpage')

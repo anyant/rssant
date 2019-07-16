@@ -1,5 +1,5 @@
-import socket
 import logging
+import socket
 
 from validr import Compiler
 
@@ -10,9 +10,6 @@ from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
 
-
-LOG_FORMAT = "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
 LOG = logging.getLogger(__name__)
 

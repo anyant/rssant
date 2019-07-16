@@ -8,6 +8,7 @@ django-rest-swagger==2.2.0
 django-timezone-field==3.0
 django-click==2.1.0
 django-optimistic-lock==1.0.0
+jsonfield==2.0.2
 
 psycopg2==2.7.7
 psycopg2-binary==2.7.7
@@ -44,6 +45,9 @@ readability-lxml==0.7.1
 lxml==4.3.3
 newspaper3k==0.2.8
 validr==1.1.1
+attrdict==2.0.1
+msgpack==0.6.1
+loguru==0.3.1
 
 Click==7.0
 PyYAML==3.13

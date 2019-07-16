@@ -20,14 +20,15 @@ class MessageSender:
         self._stop = False
 
     async def _poll_messages(self):
+        highwater = max(1, self.concurrency // 10)
         messages = []
-        while (not self._stop) and len(messages) < self.concurrency:
+        while (not self._stop) and len(messages) <= highwater:
             try:
                 messages.append(self.outbox.get_nowait())
             except queue.Empty:
                 await asyncio.sleep(0.1)
                 try:
-                    while (not self._stop) and len(messages) < self.concurrency:
+                    while (not self._stop) and len(messages) <= highwater:
                         messages.append(self.outbox.get_nowait())
                 except queue.Empty:
                     pass

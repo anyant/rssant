@@ -48,6 +48,12 @@ class ActorExecutor:
             except queue.Full:
                 await asyncio.sleep(0.1)
 
+    async def _safe_async_run(self, coro, message):
+        try:
+            await coro
+        except Exception as ex:
+            LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
@@ -59,9 +65,10 @@ class ActorExecutor:
                     actor = self.actors[message.dst]
                     ctx = ActorContext(
                         executor=self, actor=actor, state=state, message=message)
-                    await scheduler.spawn(actor(ctx))
                 except Exception as ex:
                     LOG.exception(ex)
+                else:
+                    await scheduler.spawn(self._safe_async_run(actor(ctx), message))
         finally:
             await scheduler.close()
 
@@ -78,9 +85,13 @@ class ActorExecutor:
                 actor = self.actors[message.dst]
                 ctx = ActorContext(
                     executor=self, actor=actor, state=state, message=message)
-                actor(ctx)
             except Exception as ex:
                 LOG.exception(ex)
+            else:
+                try:
+                    actor(ctx)
+                except Exception as ex:
+                    LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
 
     def _is_deliverable(self, message):
         return self.registery.is_local_message(message) and message.dst in self.actors
