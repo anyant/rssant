@@ -1,5 +1,6 @@
 import datetime
 import time
+import functools
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
@@ -125,6 +126,41 @@ def dict_validator(compiler, schema):
     return validate
 
 
+def str_validator(compiler, schema):
+    """
+    >>> from validr import T
+    >>> f = compiler.compile(T.str.maxlen(10).truncated.strip)
+    >>> f(" 123456789 x")
+    '123456789'
+    """
+    schema = schema.copy()
+    truncated = schema.params.pop('truncated', False)
+    strip = schema.params.pop('strip', False)
+    lstrip = schema.params.pop('lstrip', False)
+    rstrip = schema.params.pop('rstrip', False)
+    maxlen = int(schema.params.get('maxlen', 1024*1024))
+    origin_validate = builtin_validators['str'](compiler, schema)
+
+    @functools.wraps(origin_validate)
+    def validate(value):
+        if isinstance(value, int):
+            value = str(value)
+        if truncated and isinstance(value, str) and len(value) > maxlen:
+            value = value[:maxlen]
+        value = origin_validate(value)
+        if value:
+            if strip:
+                value = value.strip()
+            else:
+                if lstrip:
+                    value = value.lstrip()
+                if rstrip:
+                    value = value.rstrip()
+        return value
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
@@ -133,6 +169,7 @@ VALIDATORS = {
     'story_unionid': create_unionid_validator(StoryUnionId),
     'detail': detail_validator,
     'dict': dict_validator,
+    'str': str_validator,
 }
 
 

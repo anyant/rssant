@@ -9,7 +9,7 @@ Detailed = T.dict(
     type=T.str.optional.desc(""),
     base=T.str.optional.desc(""),
     language=T.str.optional.desc(""),
-    value=T.str.optional.desc(""),
+    value=T.str.truncated.optional.desc(""),
 )
 
 UserInfo = T.dict(
@@ -23,7 +23,7 @@ CommonInfo = dict(
     title=T.str.optional.desc("The title of the feed/entry"),
     id=T.str.optional.desc("A globally unique identifier"),
     title_detail=Detailed.optional.desc("The title of the feed/entry"),
-    description=T.str.optional.desc("The description of the feed/entry"),
+    description=T.str.truncated.optional.desc("The description of the feed/entry"),
     published=T.str.optional.desc("The date the feed/entry was published"),
     published_parsed=T.datetime.object.optional.invalid_to_default.desc("The date the feed/entry was published"),
     updated=T.str.optional.desc("The date the feed/entry was updated"),
@@ -44,7 +44,7 @@ CommonInfo = dict(
 
 StorySchema = T.dict(
     **CommonInfo,
-    summary=T.str.optional.desc("A summary of the entry"),
+    summary=T.str.truncated.optional.desc("A summary of the entry"),
     summary_detail=Detailed.optional.desc("A summary of the entry"),
     content=T.list(Detailed).optional.desc(
         "Details about the full content of the entry"
