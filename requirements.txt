@@ -69,6 +69,7 @@ MarkupSafe==1.1.1
 more-itertools==7.0.0
 msgpack==0.6.1
 multidict==4.5.2
+netifaces==0.10.9
 newspaper3k==0.2.8
 nltk==3.4.2
 oauthlib==3.0.1
@@ -94,6 +95,7 @@ pytest-cov==2.7.1
 python-crontab==2.3.6
 python-dateutil==2.8.0
 python-dotenv==0.10.2
+python-slugify==3.0.2
 python3-openid==3.1.0
 pytz==2019.1
 PyYAML==3.13
@@ -112,6 +114,7 @@ SQLAlchemy==1.2.18
 sqlparse==0.2.4
 tabulate==0.8.3
 terminaltables==3.1.0
+text-unidecode==1.2
 tinysegmenter==0.3
 tldextract==2.2.1
 tornado==5.1.1

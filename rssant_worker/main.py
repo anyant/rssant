@@ -45,15 +45,11 @@ app = ActorNode(
     port=6792,
     name='worker',
     subpath='/api/v1/worker',
-    networks=[{
-        'name': 'local',
-        'url': 'http://127.0.0.1:6792/api/v1/worker',
-    }],
     registery_node_spec={
         'name': 'scheduler',
         'modules': ['scheduler'],
         'networks': [{
-            'name': 'local',
+            'name': 'localhost',
             'url': 'http://127.0.0.1:6790/api/v1/scheduler',
         }]
     },

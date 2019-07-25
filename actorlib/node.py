@@ -9,6 +9,7 @@ from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
+from .network_helper import get_local_networks
 
 
 LOG = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class ActorNode:
         self.name = name
         if not networks:
             networks = []
+        networks.extend(get_local_networks(port=port, subpath=subpath))
         self.registery = ActorRegistery(dict(
             name=self.name,
             modules=actor_modules,

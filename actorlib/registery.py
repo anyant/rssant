@@ -6,6 +6,7 @@ from threading import RLock
 from validr import T
 
 from .actor import Actor
+from .network_helper import LOCAL_NETWORK_NAMES
 
 
 NodeSpecSchema = T.dict(
@@ -24,11 +25,18 @@ class NodeInfo:
         self.modules = modules
         self.networks = networks
 
+    def __repr__(self):
+        return '<{} {}>'.format(type(self).__name__, self.name)
+
     @classmethod
     def from_spec(cls, node):
         networks = defaultdict(set)
         for network in node['networks']:
-            networks[network['name']].add(network['url'])
+            if network['name'] == 'localhost':
+                for name in LOCAL_NETWORK_NAMES:
+                    networks[name].add(network['url'])
+            else:
+                networks[network['name']].add(network['url'])
         return cls(
             node['name'],
             set(node['modules']),
