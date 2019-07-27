@@ -6,14 +6,14 @@ import inspect
 from validr import T
 
 
-def get_params(f):
+def get_params(f, actor_name):
     sig = inspect.signature(f)
     params_schema = {}
     for name, p in list(sig.parameters.items())[1:]:
         if p.default is not inspect.Parameter.empty:
-            raise ValueError('You should not set default in schema annotation!')
+            raise ValueError(f'You should not set default in schema annotation in actor {actor_name}!')
         if p.annotation is inspect.Parameter.empty:
-            raise ValueError(f'Missing annotation in parameter {name}!')
+            raise ValueError(f'Missing annotation in parameter {name} in actor {actor_name}!')
         params_schema[name] = p.annotation
     if params_schema:
         return T.dict(params_schema).__schema__
@@ -26,7 +26,7 @@ class Actor:
         self.module = self.get_module(self.name)
         self.handler = handler
         self.is_async = inspect.iscoroutinefunction(handler)
-        params_schema = get_params(handler)
+        params_schema = get_params(handler, self.name)
         if params_schema:
             self._validate_params = schema_compiler.compile(params_schema)
         else:

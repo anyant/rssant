@@ -22,6 +22,14 @@ async def do_check(ctx: ActorContext, node: NodeSpecSchema):
     asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
 
 
+@actor('registery.query')
+async def do_query(ctx: ActorContext):
+    return dict(
+        current_node=ctx.registery.current_node.to_spec(),
+        registery=ctx.registery.to_spec(),
+    )
+
+
 ACTORS = collect_actors(__name__)
 
 
@@ -31,12 +39,11 @@ def main():
         port=8081,
         name='registery',
         subpath='/api/v1/registery',
-        networks=[{
-            'name': 'local',
-            'url': 'http://127.0.0.1:8081/api/v1/registery',
-        }])
+    )
     app.run()
 
 
 if __name__ == "__main__":
+    from rssant_common.logger import configure_logging
+    configure_logging()
     main()

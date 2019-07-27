@@ -1,6 +1,8 @@
 import queue
 import logging
+import functools
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 import asyncio
 import aiojobs
@@ -33,6 +35,8 @@ class ActorExecutor:
         self.thread_inbox = queue.Queue(self.concurrency)
         self.async_inbox = queue.Queue(self.concurrency)
         self.threads = []
+        self.main_event_loop = asyncio.get_event_loop()
+        self.thread_pool = ThreadPoolExecutor(num_thread_workers)
 
     async def _async_get_message(self, box):
         while True:
@@ -48,27 +52,27 @@ class ActorExecutor:
             except queue.Full:
                 await asyncio.sleep(0.1)
 
-    async def _safe_async_run(self, coro, message):
+    async def _async_handle_message(self, message, state):
         try:
-            await coro
+            actor = self.actors[message.dst]
+            ctx = ActorContext(executor=self, actor=actor, state=state, message=message)
+            return await actor(ctx)
         except Exception as ex:
             LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+            return None
 
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
         try:
-            state = {}
             while True:
                 try:
                     message = await self._async_get_message(self.async_inbox)
-                    actor = self.actors[message.dst]
-                    ctx = ActorContext(
-                        executor=self, actor=actor, state=state, message=message)
                 except Exception as ex:
                     LOG.exception(ex)
                 else:
-                    await scheduler.spawn(self._safe_async_run(actor(ctx), message))
+                    task = self._async_handle_message(message, state={})
+                    await scheduler.spawn(task)
         finally:
             await scheduler.close()
 
@@ -77,21 +81,23 @@ class ActorExecutor:
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._async_main())
 
+    def _handle_message(self, message, state):
+        try:
+            actor = self.actors[message.dst]
+            ctx = ActorContext(executor=self, actor=actor, state=state, message=message)
+            return actor(ctx)
+        except Exception as ex:
+            LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+            return None
+
     def thread_main(self):
-        state = {}
         while True:
             try:
                 message = self.thread_inbox.get()
-                actor = self.actors[message.dst]
-                ctx = ActorContext(
-                    executor=self, actor=actor, state=state, message=message)
             except Exception as ex:
                 LOG.exception(ex)
             else:
-                try:
-                    actor(ctx)
-                except Exception as ex:
-                    LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+                self._handle_message(message, state={})
 
     def _is_deliverable(self, message):
         return self.registery.is_local_message(message) and message.dst in self.actors
@@ -104,25 +110,43 @@ class ActorExecutor:
         else:
             await self.async_on_message(message)
 
-    async def async_on_message(self, message):
+    async def async_on_message(self, message, is_ask=False):
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
         actor = self.actors[message.dst]
-        if actor.is_async:
-            await self._async_put_message(self.async_inbox, message)
+        if is_ask:
+            kwargs = dict(message=message, state={})
+            if actor.is_async:
+                return await self._async_handle_message(**kwargs)
+            else:
+                task = functools.partial(self._handle_message, **kwargs)
+                return await self.main_event_loop.run_in_executor(
+                    self.thread_pool, task)
         else:
-            await self._async_put_message(self.thread_inbox, message)
+            if actor.is_async:
+                await self._async_put_message(self.async_inbox, message)
+            else:
+                await self._async_put_message(self.thread_inbox, message)
 
-    def on_message(self, message):
+    def on_message(self, message, is_ask=False):
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
         actor = self.actors[message.dst]
-        if actor.is_async:
-            self.async_inbox.put(message)
+        if is_ask:
+            kwargs = dict(message=message, state={})
+            if actor.is_async:
+                fut = asyncio.run_coroutine_threadsafe(
+                    self._async_handle_message(**kwargs), self.main_event_loop)
+            else:
+                fut = self.thread_pool.submit(self._handle_message, kwargs=kwargs)
+            return fut.result()
         else:
-            self.thread_inbox.put(message)
+            if actor.is_async:
+                self.async_inbox.put(message)
+            else:
+                self.thread_inbox.put(message)
 
     def submit(self, message):
         message = self.registery.complete_message(message)

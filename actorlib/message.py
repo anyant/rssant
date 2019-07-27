@@ -89,14 +89,13 @@ class ActorMessage:
         )
 
     @classmethod
-    def batch_encode(cls, messages, content_encoding=None):
+    def raw_encode(cls, data, content_encoding=None):
         content_encoding = ContentEncoding.of(content_encoding)
-        items = [x._to_dict() for x in messages]
         try:
             if content_encoding.is_json:
-                data = json.dumps(items, ensure_ascii=False).encode('utf-8')
+                data = json.dumps(data, ensure_ascii=False).encode('utf-8')
             else:
-                data = msgpack.packb(items, use_bin_type=True)
+                data = msgpack.packb(data, use_bin_type=True)
         except (ValueError, TypeError) as ex:
             raise ActorMessageEncodeError(str(ex)) from ex
         if content_encoding.is_gzip:
@@ -104,14 +103,13 @@ class ActorMessage:
         return data
 
     @classmethod
-    def batch_decode(cls, data, content_encoding=None):
+    def raw_decode(cls, data, content_encoding=None):
         content_encoding = ContentEncoding.of(content_encoding)
         if content_encoding.is_gzip:
             try:
                 data = gzip.decompress(data)
             except (ValueError, TypeError):
                 raise ActorMessageDecodeError('gzip decompress failed')
-        messages = []
         try:
             if content_encoding.is_json:
                 data = json.loads(data.decode('utf-8'))
@@ -121,8 +119,18 @@ class ActorMessage:
             raise ActorMessageDecodeError('json decode failed')
         except msgpack.UnpackException:
             raise ActorMessageDecodeError('msgpack decode failed')
+        return data
+
+    @classmethod
+    def batch_encode(cls, messages, content_encoding=None):
+        items = [x._to_dict() for x in messages]
+        return cls.raw_encode(items, content_encoding=content_encoding)
+
+    @classmethod
+    def batch_decode(cls, data, content_encoding=None):
+        items = cls.raw_decode(data, content_encoding=content_encoding)
         try:
-            messages = [cls._from_dict(x) for x in data]
+            messages = [cls._from_dict(x) for x in items]
         except KeyError as ex:
             raise ActorMessageDecodeError(str(ex)) from ex
         return messages
