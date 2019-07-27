@@ -19,7 +19,7 @@ django.setup()
 
 @actor('actor.init')
 def do_init(ctx):
-    ctx.send('scheduler.register', dict(node=ctx.registery.current_node.to_spec()))
+    ctx.tell('scheduler.register', dict(node=ctx.registery.current_node.to_spec()))
 
 
 @actor('actor.health')

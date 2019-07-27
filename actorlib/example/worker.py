@@ -9,19 +9,23 @@ LOG = logging.getLogger(__name__)
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.send('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+    ctx.tell('registery.register', dict(node=ctx.registery.current_node.to_spec()))
 
 
 @actor('worker.ping')
 def do_ping(ctx: ActorContext, message: T.str):
     LOG.info(ctx.message)
-    ctx.send('worker.pong', dict(message=message))
+    r = ctx.ask('registery.query')
+    LOG.info(r)
+    ctx.tell('worker.pong', dict(message=message))
     return dict(message=message)
 
 
 @actor('worker.pong')
 async def do_pong(ctx: ActorContext, message: T.str):
-    LOG.info(f'receive: {message}')
+    LOG.info(ctx.message)
+    r = await ctx.ask('registery.query')
+    LOG.info(r)
     return dict(message=message)
 
 

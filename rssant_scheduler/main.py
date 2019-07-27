@@ -17,10 +17,10 @@ django.setup()
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.send('scheduler.load_registery')
-    ctx.send('scheduler.schedule_check_feed')
-    ctx.send('scheduler.schedule_clean_feed_creation')
-    # ctx.send('scheduler.healthcheck')
+    ctx.tell('scheduler.load_registery')
+    ctx.tell('scheduler.schedule_check_feed')
+    ctx.tell('scheduler.schedule_clean_feed_creation')
+    # ctx.tell('scheduler.healthcheck')
 
 
 @actor('actor.health')

@@ -113,7 +113,7 @@ def do_save_feed_creation_result(
         FeedUrlMap(source=feed_creation.url, target=feed.url).save()
         if feed.url != feed_creation.url:
             FeedUrlMap(source=feed.url, target=feed.url).save()
-    ctx.send('harbor_rss.update_feed', dict(
+    ctx.tell('harbor_rss.update_feed', dict(
         feed_id=feed.id,
         feed=feed_dict,
     ))
@@ -148,7 +148,7 @@ def do_update_feed(
             feed.id, len(storys), len(modified_storys), num_reallocate
         )
     for story in modified_storys:
-        ctx.send('worker_rss.fetch_story', dict(
+        ctx.tell('worker_rss.fetch_story', dict(
             url=story.link,
             story_id=str(story.id)
         ))
@@ -211,7 +211,7 @@ def do_check_feed(ctx):
     feeds = Feed.take_outdated_feeds(30 * 60)
     LOG.info('found {} feeds need sync'.format(len(feeds)))
     for feed in feeds:
-        ctx.send('worker_rss.sync_feed', dict(
+        ctx.tell('worker_rss.sync_feed', dict(
             feed_id=feed['feed_id'],
             url=feed['url'],
         ))

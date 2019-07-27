@@ -8,7 +8,7 @@ import requests
 
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
-
+from .helper import shorten
 
 LOG = logging.getLogger(__name__)
 
@@ -21,9 +21,12 @@ class ActorClientBase:
         timeout=30,
     ):
         self.registery = registery
-        self.content_encoding = content_encoding
+        self.content_encoding = ContentEncoding.of(content_encoding)
         self.timeout = timeout
         self.session = None
+        self.headers = {'Actor-Content-Encoding': self.content_encoding.value}
+        if self.content_encoding == ContentEncoding.JSON:
+            self.headers['Content-Type'] = 'application/json; charset=utf-8'
 
     def _group_messages(self, messages):
         groups = defaultdict(lambda: [])
@@ -31,6 +34,24 @@ class ActorClientBase:
             msg = self.registery.complete_message(msg)
             groups[msg.dst_url].append(msg)
         return groups
+
+    def _get_ask_request(self, dst, content):
+        dst_node = self.registery.choice_dst_node(dst)
+        dst_url = self.registery.choice_dst_url(dst_node)
+        short_content = shorten(repr(content), width=30)
+        LOG.info(f'ask {dst} at {dst_url}: {short_content}')
+        data = ActorMessage.raw_encode(content, self.content_encoding)
+        headers = self.headers.copy()
+        headers['Actor-DST'] = dst
+        return dst_url, headers, data
+
+    def _decode_ask_response(self, content, headers):
+        if not content:
+            raise ValueError('not receive reply')
+        content_encoding = headers.get('Actor-Content-Encoding')
+        content_encoding = ContentEncoding.of(content_encoding)
+        result = ActorMessage.raw_decode(content, content_encoding)
+        return result
 
 
 class ActorClient(ActorClientBase):
@@ -54,8 +75,7 @@ class ActorClient(ActorClientBase):
     def _group_send(self, dst_url, messages):
         LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        headers = {'Actor-Content-Encoding': self.content_encoding.value}
-        r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
+        r = self.session.post(dst_url, data=data, headers=self.headers, timeout=self.timeout)
         r.raise_for_status()
 
     def _batch_send(self, messages: List[ActorMessage]):
@@ -66,6 +86,13 @@ class ActorClient(ActorClientBase):
 
     def send(self, *messages):
         self._batch_send(messages)
+
+    def ask(self, dst, content):
+        self._init()
+        dst_url, headers, data = self._get_ask_request(dst, content)
+        r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
+        r.raise_for_status()
+        return self._decode_ask_response(r.content, r.headers)
 
 
 class AsyncActorClient(ActorClientBase):
@@ -91,8 +118,7 @@ class AsyncActorClient(ActorClientBase):
     async def _group_send(self, dst_url, messages):
         LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        headers = {'Actor-Content-Encoding': self.content_encoding.value}
-        async with self.session.post(dst_url, data=data, headers=headers) as r:
+        async with self.session.post(dst_url, data=data, headers=self.headers) as r:
             await r.read()
 
     async def _batch_send(self, messages: List[ActorMessage]):
@@ -105,3 +131,11 @@ class AsyncActorClient(ActorClientBase):
 
     async def send(self, *messages):
         await self._batch_send(messages)
+
+    async def ask(self, dst, content):
+        await self._async_init()
+        dst_url, headers, data = self._get_ask_request(dst, content)
+        async with self.session.post(dst_url, data=data, headers=headers) as r:
+            headers = r.headers
+            content = await r.read()
+        return self._decode_ask_response(content, headers)

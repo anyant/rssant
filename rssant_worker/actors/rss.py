@@ -91,7 +91,7 @@ def do_find_feed(
     feed_creation_id: T.int,
     url: T.url,
 ):
-    ctx.send('harbor_rss.update_feed_creation_status', dict(
+    ctx.tell('harbor_rss.update_feed_creation_status', dict(
         feed_creation_id=feed_creation_id,
         status=FeedStatus.UPDATING,
     ))
@@ -105,7 +105,7 @@ def do_find_feed(
     finder = FeedFinder(url, message_handler=message_handler)
     found = finder.find()
     feed = _parse_found(found) if found else None
-    ctx.send('harbor_rss.save_feed_creation_result', dict(
+    ctx.tell('harbor_rss.save_feed_creation_result', dict(
         feed_creation_id=feed_creation_id,
         messages=messages,
         feed=feed,
@@ -137,7 +137,7 @@ def do_sync_feed(
         LOG.warning(f'failed parse feed#{feed_id} url={url}: {parsed.bozo_exception}')
         return
     feed = _parse_found(parsed)
-    ctx.send('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
+    ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 
 
 @actor('worker_rss.fetch_story')
@@ -157,7 +157,7 @@ async def do_fetch_story(
     if not response.rssant_text:
         LOG.error(f'story#{story_id} url={unquote(url)} response text is empty!')
         return
-    await ctx.send('worker_rss.process_story_webpage', dict(
+    await ctx.tell('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
         text=response.rssant_text,
@@ -180,7 +180,7 @@ def do_process_story_webpage(
     doc = ReadabilityDocument(text)
     content = doc.summary()
     summary = shorten(story_html_to_text(content), width=300)
-    ctx.send('harbor_rss.update_story', dict(
+    ctx.tell('harbor_rss.update_story', dict(
         story_id=story_id,
         content=content,
         summary=summary,
@@ -191,7 +191,7 @@ def do_process_story_webpage(
     image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
     LOG.info(f'found story#{story_id} {url} has {len(image_urls)} images')
     if image_urls:
-        ctx.send('worker_rss.detect_story_images', dict(
+        ctx.tell('worker_rss.detect_story_images', dict(
             story_id=story_id,
             story_url=url,
             image_urls=list(image_urls),
@@ -236,7 +236,7 @@ async def do_detect_story_images(
     LOG.info(f'detect story images story_id={story_id} '
              f'num_images={len(image_urls)} finished, '
              f'ok={num_ok} error={num_error} cost={cost_ms:.0f}ms')
-    await ctx.send('harbor_rss.update_story_images', dict(
+    await ctx.tell('harbor_rss.update_story_images', dict(
         story_id=story_id,
         story_url=story_url,
         images=images,

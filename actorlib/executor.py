@@ -1,3 +1,4 @@
+import typing
 import queue
 import logging
 import functools
@@ -12,6 +13,7 @@ from .message import ActorMessage
 from .helper import unsafe_kill_thread
 from .registery import ActorRegistery
 from .sender import MessageSender
+from .client import AsyncActorClient, ActorClient
 
 
 LOG = logging.getLogger(__name__)
@@ -35,7 +37,10 @@ class ActorExecutor:
         self.thread_inbox = queue.Queue(self.concurrency)
         self.async_inbox = queue.Queue(self.concurrency)
         self.threads = []
+        # main objects used in receiver(http server) threads or eventloop
         self.main_event_loop = asyncio.get_event_loop()
+        self.main_async_client = AsyncActorClient(registery=self.registery)
+        self.main_thread_client = ActorClient(registery=self.registery)
         self.thread_pool = ThreadPoolExecutor(num_thread_workers)
 
     async def _async_get_message(self, box):
@@ -52,10 +57,11 @@ class ActorExecutor:
             except queue.Full:
                 await asyncio.sleep(0.1)
 
-    async def _async_handle_message(self, message, state):
+    async def _async_handle_message(self, message, state, actor_client):
         try:
             actor = self.actors[message.dst]
-            ctx = ActorContext(executor=self, actor=actor, state=state, message=message)
+            ctx = ActorContext(executor=self, actor=actor, state=state,
+                               message=message, actor_client=actor_client)
             return await actor(ctx)
         except Exception as ex:
             LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
@@ -64,40 +70,46 @@ class ActorExecutor:
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
-        try:
-            while True:
-                try:
-                    message = await self._async_get_message(self.async_inbox)
-                except Exception as ex:
-                    LOG.exception(ex)
-                else:
-                    task = self._async_handle_message(message, state={})
-                    await scheduler.spawn(task)
-        finally:
-            await scheduler.close()
+        actor_client = AsyncActorClient(registery=self.registery)
+        async with actor_client:
+            try:
+                while True:
+                    try:
+                        message = await self._async_get_message(self.async_inbox)
+                    except Exception as ex:
+                        LOG.exception(ex)
+                    else:
+                        task = self._async_handle_message(
+                            message, state={}, actor_client=actor_client)
+                        await scheduler.spawn(task)
+            finally:
+                await scheduler.close()
 
     def async_main(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._async_main())
 
-    def _handle_message(self, message, state):
+    def _handle_message(self, message, state, actor_client):
         try:
             actor = self.actors[message.dst]
-            ctx = ActorContext(executor=self, actor=actor, state=state, message=message)
+            ctx = ActorContext(executor=self, actor=actor, state=state,
+                               message=message, actor_client=actor_client)
             return actor(ctx)
         except Exception as ex:
             LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
             return None
 
     def thread_main(self):
-        while True:
-            try:
-                message = self.thread_inbox.get()
-            except Exception as ex:
-                LOG.exception(ex)
-            else:
-                self._handle_message(message, state={})
+        actor_client = ActorClient(registery=self.registery)
+        with actor_client:
+            while True:
+                try:
+                    message = self.thread_inbox.get()
+                except Exception as ex:
+                    LOG.exception(ex)
+                else:
+                    self._handle_message(message, state={}, actor_client=actor_client)
 
     def _is_deliverable(self, message):
         return self.registery.is_local_message(message) and message.dst in self.actors
@@ -116,7 +128,7 @@ class ActorExecutor:
             return
         actor = self.actors[message.dst]
         if is_ask:
-            kwargs = dict(message=message, state={})
+            kwargs = dict(message=message, state={}, actor_client=self.main_async_client)
             if actor.is_async:
                 return await self._async_handle_message(**kwargs)
             else:
@@ -135,7 +147,7 @@ class ActorExecutor:
             return
         actor = self.actors[message.dst]
         if is_ask:
-            kwargs = dict(message=message, state={})
+            kwargs = dict(message=message, state={}, actor_client=self.main_thread_client)
             if actor.is_async:
                 fut = asyncio.run_coroutine_threadsafe(
                     self._async_handle_message(**kwargs), self.main_event_loop)
@@ -171,6 +183,8 @@ class ActorExecutor:
         for t in self.threads:
             if t.is_alive():
                 unsafe_kill_thread(t.ident)
+        self.main_thread_client.close()
+        # TODO: close self.main_async_client
 
     def join(self):
         for t in self.threads:
@@ -178,14 +192,16 @@ class ActorExecutor:
 
 
 class ActorContext:
-    def __init__(self, executor: ActorExecutor, actor: Actor, state: dict, message: ActorMessage):
+    def __init__(self, executor: ActorExecutor, actor: Actor, state: dict,
+                 message: ActorMessage, actor_client: typing.Union[AsyncActorClient, ActorClient]):
         self.executor = executor
         self.registery = executor.registery
         self.actor = actor
         self.state = state
         self.message = message
+        self.actor_client = actor_client
 
-    def send(self, dst, content=None, dst_node=None):
+    def tell(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
         msg = ActorMessage(
@@ -196,3 +212,8 @@ class ActorContext:
             return self.executor.async_submit(msg)
         else:
             return self.executor.submit(msg)
+
+    def ask(self, dst, content=None):
+        if content is None:
+            content = {}
+        return self.actor_client.ask(dst, content)

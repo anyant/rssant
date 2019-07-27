@@ -17,7 +17,7 @@ def do_save_registery(ctx: ActorContext):
     registery_node = ctx.registery.registery_node.to_spec()
     nodes = ctx.registery.to_spec()
     Registery.create_or_update(registery_node, nodes)
-    ctx.send('scheduler.boardcast_registery')
+    ctx.tell('scheduler.boardcast_registery')
 
 
 @actor('scheduler.load_registery')
@@ -31,7 +31,7 @@ def do_load_registery(ctx: ActorContext):
     else:
         title = 'current'
     LOG.info(f'{title} registery info:\n' + pretty_format_json(ctx.registery.to_spec()))
-    ctx.send('scheduler.boardcast_registery')
+    ctx.tell('scheduler.boardcast_registery')
 
 
 @actor('scheduler.boardcast_registery')
@@ -39,37 +39,37 @@ async def do_boardcast_registery(ctx: ActorContext):
     msg = dict(nodes=ctx.registery.to_spec())
     for node in ctx.registery.nodes:
         if node.name != ctx.registery.current_node.name:
-            await ctx.send('actor.update_registery', msg, dst_node=node.name)
+            await ctx.tell('actor.update_registery', msg, dst_node=node.name)
 
 
 @actor('scheduler.register')
 async def do_register(ctx: ActorContext, node: NodeSpecSchema):
     LOG.info(f'register node {node}')
     ctx.registery.add(node)
-    await ctx.send('scheduler.save_registery')
+    await ctx.tell('scheduler.save_registery')
 
 
 @actor('scheduler.healthcheck')
 async def do_healthcheck(ctx: ActorContext):
-    next_task = ctx.send('scheduler.healthcheck')
+    next_task = ctx.tell('scheduler.healthcheck')
     asyncio.get_event_loop().call_later(60, asyncio.ensure_future, next_task)
     for node in ctx.registery.nodes:
         LOG.info(f'check node {node.name}')
-        await ctx.send('actor.health', {}, dst_node=node.name)
+        await ctx.tell('actor.health', {}, dst_node=node.name)
 
 
 @actor('scheduler.schedule_check_feed')
 async def do_schedule_check_feed(ctx):
-    next_task = ctx.send('scheduler.schedule_check_feed')
+    next_task = ctx.tell('scheduler.schedule_check_feed')
     asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
-    await ctx.send('harbor_rss.check_feed')
+    await ctx.tell('harbor_rss.check_feed')
 
 
 @actor('scheduler.schedule_clean_feed_creation')
 async def do_schedule_clean_feed_creation(ctx):
-    next_task = ctx.send('scheduler.schedule_clean_feed_creation')
+    next_task = ctx.tell('scheduler.schedule_clean_feed_creation')
     asyncio.get_event_loop().call_later(60, asyncio.ensure_future, next_task)
-    await ctx.send('harbor_rss.clean_feed_creation')
+    await ctx.tell('harbor_rss.clean_feed_creation')
 
 
 @actor("scheduler.schedule")
@@ -78,4 +78,4 @@ async def do_schedule(
     dst: T.str,
     content: T.dict,
 ):
-    await ctx.send(dst, content)
+    await ctx.tell(dst, content)
