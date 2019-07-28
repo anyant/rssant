@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker exec -ti rssant_redis redis-cli
+docker exec -ti rssant-redis redis-cli

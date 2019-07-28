@@ -1,5 +1,6 @@
 from typing import List
 import random
+import logging
 from collections import defaultdict
 from threading import RLock
 
@@ -9,12 +10,15 @@ from .actor import Actor
 from .network_helper import LOCAL_NETWORK_NAMES
 
 
+LOG = logging.getLogger(__name__)
+
+
 NodeSpecSchema = T.dict(
     name=T.str,
     modules=T.list(T.str),
     networks=T.list(T.dict(
         name=T.str,
-        url=T.url,
+        url=T.str,  # TODO: T.url
     ))
 )
 
@@ -121,14 +125,22 @@ class ActorRegistery:
             return list(self._module_index[module])
 
     def choice_dst_node(self, dst: str) -> str:
-        return random.choice(self.find_dst_nodes(dst))
+        nodes = self.find_dst_nodes(dst)
+        if not nodes:
+            return None
+        return random.choice(nodes)
 
     def find_dst_urls(self, dst_node: str) -> List[str]:
         with self._lock:
             return list(self._node_index[dst_node])
 
     def choice_dst_url(self, dst_node: str) -> str:
-        return random.choice(self.find_dst_urls(dst_node))
+        if not dst_node:
+            return None
+        urls = self.find_dst_urls(dst_node)
+        if not urls:
+            return None
+        return random.choice(urls)
 
     def complete_message(self, message):
         if self.current_node and not message.src_node:

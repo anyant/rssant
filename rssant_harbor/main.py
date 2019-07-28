@@ -8,6 +8,7 @@ from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
 from rssant_common.logger import configure_logging
+from rssant.settings import ENV_CONFIG
 
 
 configure_logging()
@@ -51,14 +52,7 @@ if __name__ == "__main__":
         port=6791,
         name='harbor',
         subpath='/api/v1/harbor',
-        registery_node_spec={
-            'name': 'scheduler',
-            'modules': ['scheduler'],
-            'networks': [{
-                'name': 'localhost',
-                'url': 'http://127.0.0.1:6790/api/v1/scheduler',
-            }]
-        },
+        registery_node_spec=ENV_CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
         on_startup=[on_startup],
         on_shutdown=[on_shutdown],

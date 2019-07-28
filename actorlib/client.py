@@ -32,6 +32,9 @@ class ActorClientBase:
         groups = defaultdict(lambda: [])
         for msg in messages:
             msg = self.registery.complete_message(msg)
+            if not msg.dst_url:
+                LOG.error(f'no dst url for message {msg}')
+                continue
             groups[msg.dst_url].append(msg)
         return groups
 
@@ -40,7 +43,10 @@ class ActorClientBase:
             dst_node = self.registery.choice_dst_node(dst)
         dst_url = self.registery.choice_dst_url(dst_node)
         short_content = shorten(repr(content), width=30)
-        LOG.info(f'ask {dst} at {dst_url}: {short_content}')
+        if not dst_url:
+            raise ValueError(
+                f'no dst url for ask {dst} dst_node={dst_node} content={short_content}')
+        LOG.info(f'ask {dst} at {dst_node} {dst_url}: {short_content}')
         data = ActorMessage.raw_encode(content, self.content_encoding)
         headers = self.headers.copy()
         headers['Actor-DST'] = dst
@@ -76,7 +82,11 @@ class ActorClient(ActorClientBase):
     def _group_send(self, dst_url, messages):
         LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        r = self.session.post(dst_url, data=data, headers=self.headers, timeout=self.timeout)
+        try:
+            r = self.session.post(dst_url, data=data, headers=self.headers, timeout=self.timeout)
+        except requests.ConnectionError as ex:
+            LOG.error(f'failed to send message to {dst_url}: {ex}')
+            return
         r.raise_for_status()
 
     def _batch_send(self, messages: List[ActorMessage]):
@@ -91,7 +101,11 @@ class ActorClient(ActorClientBase):
     def ask(self, dst, content, dst_node=None):
         self._init()
         dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
-        r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
+        try:
+            r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
+        except requests.ConnectionError as ex:
+            LOG.error(f'failed to send message to {dst_url}: {ex}')
+            raise
         r.raise_for_status()
         return self._decode_ask_response(r.content, r.headers)
 
@@ -119,8 +133,11 @@ class AsyncActorClient(ActorClientBase):
     async def _group_send(self, dst_url, messages):
         LOG.info(f'send {len(messages)} messages to {dst_url}')
         data = ActorMessage.batch_encode(messages, self.content_encoding)
-        async with self.session.post(dst_url, data=data, headers=self.headers) as r:
-            await r.read()
+        try:
+            async with self.session.post(dst_url, data=data, headers=self.headers) as r:
+                await r.read()
+        except aiohttp.ClientConnectionError as ex:
+            LOG.error(f'failed to send message to {dst_url}: {ex}')
 
     async def _batch_send(self, messages: List[ActorMessage]):
         await self._async_init()
@@ -136,7 +153,11 @@ class AsyncActorClient(ActorClientBase):
     async def ask(self, dst, content, dst_node=None):
         await self._async_init()
         dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
-        async with self.session.post(dst_url, data=data, headers=headers) as r:
-            headers = r.headers
-            content = await r.read()
+        try:
+            async with self.session.post(dst_url, data=data, headers=headers) as r:
+                headers = r.headers
+                content = await r.read()
+        except aiohttp.ClientConnectionError as ex:
+            LOG.error(f'failed to send message to {dst_url}: {ex}')
+            raise
         return self._decode_ask_response(content, headers)

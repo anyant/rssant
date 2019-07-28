@@ -1,10 +1,10 @@
 #!/bin/bash
 
 docker network create rssant || true
-docker volume create rssant_postgres || true
+docker volume create rssant-postgres || true
 
 docker run -d \
-    --name rssant_postgres \
+    --name rssant-postgres \
     --network rssant \
     -p 127.0.0.1:5432:5432 \
     -e "POSTGRES_USER=rssant" \

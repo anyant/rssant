@@ -10,6 +10,8 @@ class EnvConfig:
     root_url = T.url.default('http://localhost:6789')
     async_url_prefix = T.url.default('http://localhost:6786/api/v1')
     async_callback_url_prefix = T.url.default('http://localhost:6788/api/v1')
+    scheduler_network = T.str.default('localhost')
+    scheduler_url = T.url.default('http://localhost:6790/api/v1/scheduler')
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address = T.bool.default(False)
     check_feed_minutes = T.int.min(1).default(30)
@@ -46,6 +48,14 @@ class EnvConfig:
                 raise Invalid('smtp_host is required when smtp_enable=True')
             if not self.smtp_port:
                 raise Invalid('smtp_port is required when smtp_enable=True')
+        self.registery_node_spec = {
+            'name': 'scheduler',
+            'modules': ['scheduler'],
+            'networks': [{
+                'name': self.scheduler_network,
+                'url': self.scheduler_url,
+            }]
+        }
 
 
 def load_env_config() -> EnvConfig:
