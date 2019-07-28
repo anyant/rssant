@@ -3,9 +3,11 @@ from rssant.settings import ENV_CONFIG
 
 
 class SchedulerActorClient:
-    def __init__(self, registery_node_spec):
+    def __init__(self, registery_node_spec, current_networks=None):
         self.registery = ActorRegistery(
-            registery_node_spec=registery_node_spec)
+            registery_node_spec=registery_node_spec,
+            current_networks=current_networks,
+        )
         self.client = ActorClient(registery=self.registery)
 
     def tell(self, dst, content):
@@ -33,4 +35,7 @@ class SchedulerActorClient:
         return self.client.ask('scheduler.proxy_ask', dict(dst=dst, content=content))
 
 
-scheduler = SchedulerActorClient(ENV_CONFIG.registery_node_spec)
+scheduler = SchedulerActorClient(
+    ENV_CONFIG.registery_node_spec,
+    current_networks=[ENV_CONFIG.scheduler_network],
+)

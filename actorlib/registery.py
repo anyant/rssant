@@ -57,7 +57,7 @@ class NodeInfo:
 
 class ActorRegistery:
 
-    def __init__(self, current_node_spec=None, registery_node_spec=None, node_specs=None):
+    def __init__(self, current_node_spec=None, current_networks=None, registery_node_spec=None, node_specs=None):
         if registery_node_spec:
             self.registery_node = NodeInfo.from_spec(registery_node_spec)
         else:
@@ -68,6 +68,8 @@ class ActorRegistery:
         else:
             self.current_node = None
             self.current_networks = set(LOCAL_NETWORK_NAMES)
+        if current_networks:
+            self.current_networks.update(set(current_networks))
         self._nodes = {}
         self._node_index = {}  # node -> urls
         self._module_index = {}  # module -> (node, urls)
