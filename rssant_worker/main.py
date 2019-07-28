@@ -17,11 +17,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
 django.setup()
 
 
-@actor('actor.init')
-def do_init(ctx):
-    ctx.tell('scheduler.register', dict(node=ctx.registery.current_node.to_spec()))
-
-
 @actor('actor.health')
 def do_health(ctx):
     nodes = pretty_format_json(ctx.registery.to_spec())
@@ -39,24 +34,32 @@ def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
 ACTORS = collect_actors('rssant_worker')
 
 
-app = ActorNode(
-    actors=ACTORS,
-    concurrency=500,
-    port=6792,
-    name='worker',
-    subpath='/api/v1/worker',
-    registery_node_spec={
-        'name': 'scheduler',
-        'modules': ['scheduler'],
-        'networks': [{
-            'name': 'localhost',
-            'url': 'http://127.0.0.1:6790/api/v1/scheduler',
-        }]
-    },
-    schema_compiler=schema_compiler,
-)
+def on_startup(app):
+    r = app.ask('scheduler.register', dict(node=app.registery.current_node.to_spec()))
+    app.registery.update(r['nodes'])
+    print(pretty_format_json(app.registery.to_spec()))
+
+
+def on_shutdown(app):
+    app.ask('scheduler.unregister', dict(node_name=app.name))
 
 
 if __name__ == "__main__":
-    print(pretty_format_json(app.registery.to_spec()))
-    app.run()
+    ActorNode.cli(
+        actors=ACTORS,
+        concurrency=500,
+        port=6792,
+        name='worker',
+        subpath='/api/v1/worker',
+        registery_node_spec={
+            'name': 'scheduler',
+            'modules': ['scheduler'],
+            'networks': [{
+                'name': 'localhost',
+                'url': 'http://127.0.0.1:6790/api/v1/scheduler',
+            }]
+        },
+        schema_compiler=schema_compiler,
+        on_startup=[on_startup],
+        on_shutdown=[on_shutdown],
+    )

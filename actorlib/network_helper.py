@@ -20,11 +20,18 @@ def get_local_ip_list():
 LOCAL_IP_LIST = get_local_ip_list()
 
 
+def get_local_node_name():
+    return '{}-{}'.format(platform.platform(), socket.getfqdn())
+
+
+LOCAL_NODE_NAME = get_local_node_name()
+
+
 def get_local_network_ip_list(ip_list=None, prefix=None):
     if ip_list is None:
         ip_list = LOCAL_IP_LIST
     if prefix is None:
-        prefix = '{}-{}'.format(platform.platform(), socket.getfqdn())
+        prefix = LOCAL_NODE_NAME
     names = []
     for interface_name, ip in ip_list:
         name = slugify(f'{prefix}-{interface_name}--{ip}')

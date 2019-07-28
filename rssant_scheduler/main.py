@@ -32,23 +32,20 @@ def do_health(ctx):
 ACTORS = collect_actors('rssant_scheduler')
 
 
-app = ActorNode(
-    actors=ACTORS,
-    concurrency=100,
-    port=6790,
-    name='scheduler',
-    subpath='/api/v1/scheduler',
-    registery_node_spec={
-        'name': 'scheduler',
-        'modules': ['scheduler'],
-        'networks': [{
-            'name': 'localhost',
-            'url': 'http://127.0.0.1:6790/api/v1/scheduler',
-        }]
-    },
-    schema_compiler=schema_compiler,
-)
-
-
 if __name__ == "__main__":
-    app.run()
+    ActorNode.cli(
+        actors=ACTORS,
+        concurrency=100,
+        port=6790,
+        name='scheduler',
+        subpath='/api/v1/scheduler',
+        registery_node_spec={
+            'name': 'scheduler',
+            'modules': ['scheduler'],
+            'networks': [{
+                'name': 'localhost',
+                'url': 'http://127.0.0.1:6790/api/v1/scheduler',
+            }]
+        },
+        schema_compiler=schema_compiler,
+    )

@@ -1,6 +1,7 @@
 import logging
-import socket
+from urllib.parse import urlparse
 
+import click
 from validr import Compiler
 
 from .actor import Actor
@@ -9,7 +10,7 @@ from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
-from .network_helper import get_local_networks
+from .network_helper import get_local_networks, LOCAL_NODE_NAME
 
 
 LOG = logging.getLogger(__name__)
@@ -27,6 +28,8 @@ class ActorNode:
         networks=None,
         registery_node_spec=None,
         schema_compiler=None,
+        on_startup=None,
+        on_shutdown=None,
     ):
         if schema_compiler is None:
             schema_compiler = Compiler()
@@ -35,7 +38,7 @@ class ActorNode:
         self.actors = {x.name: x for x in actors}
         actor_modules = {x.module for x in actors}
         if not name:
-            name = '{}:{}'.format(socket.getfqdn(), port)
+            name = '{}:{}'.format(LOCAL_NODE_NAME, port)
         self.name = name
         if not networks:
             networks = []
@@ -45,14 +48,32 @@ class ActorNode:
             modules=actor_modules,
             networks=networks,
         ), registery_node_spec=registery_node_spec)
+        self.concurrency = concurrency
         self.sender = MessageSender(
             concurrency=concurrency, registery=self.registery)
         self.executor = ActorExecutor(
             self.actors, sender=self.sender,
             registery=self.registery, concurrency=concurrency)
+        self.host = host
+        self.port = port
+        self.subpath = subpath or ''
         self.receiver = MessageReceiver(
-            host=host, port=port, subpath=subpath,
+            host=self.host, port=self.port, subpath=self.subpath,
             executor=self.executor, registery=self.registery)
+        self._on_startup_handlers = []
+        self._on_shutdown_handlers = []
+        if on_startup:
+            self._on_startup_handlers.extend(on_startup)
+        if on_shutdown:
+            self._on_shutdown_handlers.extend(on_shutdown)
+
+    def on_startup(self, handler):
+        self._on_startup_handlers.append(handler)
+        return handler
+
+    def on_shutdown(self, handler):
+        self._on_shutdown_handlers.append(handler)
+        return handler
 
     def _send_init_message(self):
         if 'actor.init' not in self.actors:
@@ -66,13 +87,65 @@ class ActorNode:
         )
         self.executor.submit(msg)
 
+    def ask(self, dst, content=None, dst_node=None):
+        if content is None:
+            content = {}
+        client = self.executor.main_thread_client
+        return client.ask(dst, content, dst_node=dst_node)
+
+    def tell(self, dst, content=None, dst_node=None):
+        if content is None:
+            content = {}
+        msg = ActorMessage(content=content, dst=dst, dst_node=dst_node)
+        client = self.executor.main_thread_client
+        client.send(msg)
+
     def run(self):
         self.sender.start()
         self.executor.start()
-        LOG.info(f'Actor Node {self.name} started')
+        LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
         try:
+            for handler in self._on_startup_handlers:
+                handler(self)
             self._send_init_message()
             self.receiver.run()
         finally:
-            self.executor.shutdown()
-            self.sender.shutdown()
+            try:
+                for handler in self._on_shutdown_handlers:
+                    handler(self)
+            finally:
+                self.executor.shutdown()
+                self.sender.shutdown()
+
+    @classmethod
+    def cli(cls, *args, **kwargs):
+        @click.command()
+        @click.option('--name', help='actor node name')
+        @click.option('--listen', help='http://host:port/subpath')
+        @click.option('--network', multiple=True, help='network@http://host:port/subpath')
+        @click.option('--concurrency', type=int, help='concurrency')
+        def command(name, listen, network, concurrency):
+            if name:
+                kwargs['name'] = name
+            listen = urlparse(listen)
+            host = listen.hostname
+            if host:
+                kwargs['host'] = host
+            port = listen.port
+            if port:
+                kwargs['port'] = int(port)
+            subpath = listen.path
+            if subpath:
+                kwargs['subpath'] = subpath
+            networks = []
+            for network_spec in network:
+                name, url = network_spec.split('@', maxsplit=1)
+                networks.append(dict(name=name, url=url))
+            if kwargs.get('networks'):
+                networks.extend(kwargs.get('networks'))
+            kwargs['networks'] = networks
+            if concurrency:
+                kwargs['concurrency'] = concurrency
+            app = cls(*args, **kwargs)
+            app.run()
+        command()
