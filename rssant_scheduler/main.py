@@ -3,6 +3,8 @@ import logging
 
 import django
 from actorlib import actor, collect_actors, ActorNode, ActorContext
+from actorlib.sentry import sentry_init
+
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
 from rssant_common.logger import configure_logging
@@ -11,6 +13,9 @@ from rssant.settings import ENV_CONFIG
 
 configure_logging()
 LOG = logging.getLogger(__name__)
+
+if ENV_CONFIG.sentry_enable:
+    sentry_init(ENV_CONFIG.sentry_dsn)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
 django.setup()

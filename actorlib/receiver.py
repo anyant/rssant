@@ -44,7 +44,7 @@ class MessageReceiver:
 
     async def handle_ask(self, request, data, dst, content_encoding):
         dst_node = self.registery.current_node.name
-        dst_url = request.url
+        dst_url = str(request.url)
         msg = ActorMessage(
             content=data, src=None, src_node=None,
             dst=dst, dst_node=dst_node, dst_url=dst_url,

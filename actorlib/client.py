@@ -11,6 +11,7 @@ from rssant_common.helper import aiohttp_raise_for_status
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
 from .helper import shorten
+from .sentry import sentry_scope
 
 LOG = logging.getLogger(__name__)
 
@@ -41,18 +42,21 @@ class ActorClientBase:
         return groups
 
     def _get_ask_request(self, dst, content, dst_node=None):
-        if dst_node is None:
-            dst_node = self.registery.choice_dst_node(dst)
-        dst_url = self.registery.choice_dst_url(dst_node)
-        short_content = shorten(repr(content), width=30)
-        if not dst_url:
-            raise ValueError(
-                f'no dst url for ask {dst} dst_node={dst_node} content={short_content}')
-        LOG.info(f'ask {dst} at {dst_node} {dst_url}: {short_content}')
-        data = ActorMessage.raw_encode(content, self.content_encoding)
-        headers = self.headers.copy()
-        headers['Actor-DST'] = dst
-        return dst_url, headers, data
+        with sentry_scope() as scope:
+            if dst_node is None:
+                dst_node = self.registery.choice_dst_node(dst)
+            scope.set_tag('ask_dst_node', dst_node)
+            dst_url = self.registery.choice_dst_url(dst_node)
+            scope.set_tag('ask_dst_url', dst_url)
+            short_content = shorten(repr(content), width=30)
+            if not dst_url:
+                raise ValueError(
+                    f'no dst url for ask {dst} dst_node={dst_node} content={short_content}')
+            LOG.info(f'ask {dst} at {dst_node} {dst_url}: {short_content}')
+            data = ActorMessage.raw_encode(content, self.content_encoding)
+            headers = self.headers.copy()
+            headers['Actor-DST'] = dst
+            return dst_url, headers, data
 
     def _decode_ask_response(self, content, headers):
         if not content:
@@ -82,14 +86,18 @@ class ActorClient(ActorClientBase):
         self.close()
 
     def _group_send(self, dst_url, messages):
-        LOG.info(f'send {len(messages)} messages to {dst_url}')
-        data = ActorMessage.batch_encode(messages, self.content_encoding)
-        try:
-            r = self.session.post(dst_url, data=data, headers=self.headers, timeout=self.timeout)
-        except requests.ConnectionError as ex:
-            LOG.error(f'failed to send message to {dst_url}: {ex}')
-            return
-        r.raise_for_status()
+        with sentry_scope() as scope:
+            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('message_dst_url', dst_url)
+            LOG.info(f'send {len(messages)} messages to {dst_url}')
+            data = ActorMessage.batch_encode(messages, self.content_encoding)
+            try:
+                r = self.session.post(
+                    dst_url, data=data, headers=self.headers, timeout=self.timeout)
+            except requests.ConnectionError as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                return
+            r.raise_for_status()
 
     def _batch_send(self, messages: List[ActorMessage]):
         self._init()
@@ -101,15 +109,19 @@ class ActorClient(ActorClientBase):
         self._batch_send(messages)
 
     def ask(self, dst, content, dst_node=None):
-        self._init()
-        dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
-        try:
-            r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
-        except requests.ConnectionError as ex:
-            LOG.error(f'failed to send message to {dst_url}: {ex}')
-            raise
-        r.raise_for_status()
-        return self._decode_ask_response(r.content, r.headers)
+        with sentry_scope() as scope:
+            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('ask_dst', dst)
+            scope.set_tag('ask_dst_node', dst_node)
+            self._init()
+            dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
+            try:
+                r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
+            except requests.ConnectionError as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                raise
+            r.raise_for_status()
+            return self._decode_ask_response(r.content, r.headers)
 
 
 class AsyncActorClient(ActorClientBase):
@@ -132,15 +144,18 @@ class AsyncActorClient(ActorClientBase):
         await self.close()
 
     async def _group_send(self, dst_url, messages):
-        LOG.info(f'send {len(messages)} messages to {dst_url}')
-        data = ActorMessage.batch_encode(messages, self.content_encoding)
-        try:
-            async with self.session.post(dst_url, data=data, headers=self.headers) as r:
-                await r.read()
-        except aiohttp.ClientConnectionError as ex:
-            LOG.error(f'failed to send message to {dst_url}: {ex}')
-            return
-        aiohttp_raise_for_status(r)
+        with sentry_scope() as scope:
+            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('message_dst_url', dst_url)
+            LOG.info(f'send {len(messages)} messages to {dst_url}')
+            data = ActorMessage.batch_encode(messages, self.content_encoding)
+            try:
+                async with self.session.post(dst_url, data=data, headers=self.headers) as r:
+                    await r.read()
+            except aiohttp.ClientConnectionError as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                return
+            aiohttp_raise_for_status(r)
 
     async def _batch_send(self, messages: List[ActorMessage]):
         await self._async_init()
@@ -154,14 +169,18 @@ class AsyncActorClient(ActorClientBase):
         await self._batch_send(messages)
 
     async def ask(self, dst, content, dst_node=None):
-        await self._async_init()
-        dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
-        try:
-            async with self.session.post(dst_url, data=data, headers=headers) as r:
-                headers = r.headers
-                content = await r.read()
-        except aiohttp.ClientConnectionError as ex:
-            LOG.error(f'failed to send message to {dst_url}: {ex}')
-            raise
-        aiohttp_raise_for_status(r)
-        return self._decode_ask_response(content, headers)
+        with sentry_scope() as scope:
+            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('ask_dst', dst)
+            scope.set_tag('ask_dst_node', dst_node)
+            await self._async_init()
+            dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
+            try:
+                async with self.session.post(dst_url, data=data, headers=headers) as r:
+                    headers = r.headers
+                    content = await r.read()
+            except aiohttp.ClientConnectionError as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                raise
+            aiohttp_raise_for_status(r)
+            return self._decode_ask_response(content, headers)

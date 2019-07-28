@@ -18,6 +18,8 @@ def do_ping(ctx: ActorContext, message: T.str) -> T.dict(message=T.str):
     r = ctx.ask('registery.query')
     LOG.info(r)
     ctx.tell('worker.pong', dict(message=message))
+    if message == 'error':
+        raise ValueError(message)
     return dict(message=message)
 
 
@@ -26,6 +28,8 @@ async def do_pong(ctx: ActorContext, message: T.str) -> T.dict(message=T.str):
     LOG.info(ctx.message)
     r = await ctx.ask('registery.query')
     LOG.info(r)
+    if message == 'error':
+        raise ValueError(message)
     return dict(message=message)
 
 
@@ -51,5 +55,7 @@ def main():
 
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
+    from actorlib.sentry import sentry_init
     configure_logging()
+    sentry_init()
     main()

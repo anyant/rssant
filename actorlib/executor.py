@@ -2,6 +2,7 @@ import typing
 import queue
 import logging
 import functools
+import contextlib
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,6 +15,7 @@ from .helper import unsafe_kill_thread
 from .registery import ActorRegistery
 from .sender import MessageSender
 from .client import AsyncActorClient, ActorClient
+from .sentry import sentry_scope
 
 
 LOG = logging.getLogger(__name__)
@@ -57,15 +59,27 @@ class ActorExecutor:
             except queue.Full:
                 await asyncio.sleep(0.1)
 
+    @contextlib.contextmanager
+    def _set_sentry_scope(self, message):
+        with sentry_scope() as scope:
+            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('message_src', message.src)
+            scope.set_tag('message_src_node', message.src_node)
+            scope.set_tag('message_dst', message.dst)
+            scope.set_tag('message_dst_node', message.dst_node)
+            yield message
+
     async def _async_handle_message(self, message, state, actor_client):
-        try:
-            actor = self.actors[message.dst]
-            ctx = ActorContext(executor=self, actor=actor, state=state,
-                               message=message, actor_client=actor_client)
-            return await actor(ctx)
-        except Exception as ex:
-            LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
-            return None
+        with self._set_sentry_scope(message):
+            try:
+                actor = self.actors[message.dst]
+                ctx = ActorContext(
+                    executor=self, actor=actor, state=state,
+                    message=message, actor_client=actor_client)
+                return await actor(ctx)
+            except Exception as ex:
+                LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+                return None
 
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
@@ -91,14 +105,16 @@ class ActorExecutor:
         loop.run_until_complete(self._async_main())
 
     def _handle_message(self, message, state, actor_client):
-        try:
-            actor = self.actors[message.dst]
-            ctx = ActorContext(executor=self, actor=actor, state=state,
-                               message=message, actor_client=actor_client)
-            return actor(ctx)
-        except Exception as ex:
-            LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
-            return None
+        with self._set_sentry_scope(message):
+            try:
+                actor = self.actors[message.dst]
+                ctx = ActorContext(
+                    executor=self, actor=actor, state=state,
+                    message=message, actor_client=actor_client)
+                return actor(ctx)
+            except Exception as ex:
+                LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+                return None
 
     def thread_main(self):
         actor_client = ActorClient(registery=self.registery)
