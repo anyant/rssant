@@ -55,6 +55,27 @@ def get_local_networks(ip_list=None, prefix=None, port=None, subpath=None):
     return networks
 
 
+def get_public_ip_list():
+    """
+    TODO: 公网服务，随机6个取最快的3个结果 -> network-name
+    https://ip4.bramp.net/json?family=IPv4
+    https://httpbin.org/ip
+    https://www.whatismyip.com/
+    https://www.whatsmyip.org/
+    https://www.myip.com/
+    https://checkmyip.com/
+    https://www.iplocation.net/
+    https://whoer.net/zh
+    http://www.ip138.com/
+    https://www.ip.cn/
+    http://ip.tool.chinaz.com/
+    https://www.ipip.net/ip.html
+    https://en.ipip.net/ip.html
+    http://ip111.cn/
+    https://tool.lu/ip/
+    """
+
+
 if __name__ == "__main__":
     for x in get_local_networks():
         print(x)
