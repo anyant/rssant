@@ -6,6 +6,8 @@ import asyncio
 import aiohttp
 import requests
 
+from rssant_common.helper import aiohttp_raise_for_status
+
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
 from .helper import shorten
@@ -115,7 +117,6 @@ class AsyncActorClient(ActorClientBase):
     async def _async_init(self):
         if self.session is None:
             self.session = aiohttp.ClientSession(
-                raise_for_status=True,
                 timeout=aiohttp.ClientTimeout(total=self.timeout),
             )
 
@@ -138,6 +139,8 @@ class AsyncActorClient(ActorClientBase):
                 await r.read()
         except aiohttp.ClientConnectionError as ex:
             LOG.error(f'failed to send message to {dst_url}: {ex}')
+            return
+        aiohttp_raise_for_status(r)
 
     async def _batch_send(self, messages: List[ActorMessage]):
         await self._async_init()
@@ -160,4 +163,5 @@ class AsyncActorClient(ActorClientBase):
         except aiohttp.ClientConnectionError as ex:
             LOG.error(f'failed to send message to {dst_url}: {ex}')
             raise
+        aiohttp_raise_for_status(r)
         return self._decode_ask_response(content, headers)

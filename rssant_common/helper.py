@@ -2,6 +2,7 @@ import json
 import codecs
 from urllib.parse import urlparse, urlunparse
 
+import aiohttp
 import cchardet
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
@@ -94,3 +95,17 @@ def get_referer_of_url(url):
     schema, netloc, path, __, __, __ = urlparse(url)
     referer = urlunparse((schema, netloc, path, None, None, None))
     return referer
+
+
+def aiohttp_raise_for_status(response: aiohttp.ClientResponse):
+    # workaround aiohttp bug, can remove after fixed in aiohttp
+    # issue: https://github.com/aio-libs/aiohttp/issues/3906
+    if response.status >= 400:
+        response.release()
+        raise aiohttp.ClientResponseError(
+            response.request_info,
+            response.history,
+            status=response.status,
+            message=response.reason,
+            headers=response.headers,
+        )

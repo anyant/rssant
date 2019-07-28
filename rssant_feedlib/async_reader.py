@@ -9,7 +9,7 @@ import aiodns
 import aiohttp
 
 from rssant.settings import ENV_CONFIG
-from rssant_common.helper import resolve_aiohttp_response_encoding
+from rssant_common.helper import resolve_aiohttp_response_encoding, aiohttp_raise_for_status
 
 from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, is_webpage
 from .reader import PrivateAddressError, ContentTooLargeError, ContentTypeNotSupportError, FeedReaderError
@@ -110,7 +110,7 @@ class AsyncFeedReader:
         if not self.allow_private_address:
             await self.check_private_address(url)
         async with self.session.get(url, headers=headers) as response:
-            response.raise_for_status()
+            aiohttp_raise_for_status(response)
             self.check_content_type(response)
             if not ignore_content:
                 await self._read_content(response)

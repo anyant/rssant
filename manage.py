@@ -2,6 +2,9 @@
 import os
 import sys
 
+from rssant_common.logger import configure_logging
+
+
 if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
     try:
@@ -12,4 +15,5 @@ if __name__ == '__main__':
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    configure_logging()
     execute_from_command_line(sys.argv)
