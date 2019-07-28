@@ -46,7 +46,7 @@ class MessageReceiver:
         dst_node = self.registery.current_node.name
         dst_url = request.url
         msg = ActorMessage(
-            content=data, src='?', src_node='?',
+            content=data, src=None, src_node=None,
             dst=dst, dst_node=dst_node, dst_url=dst_url,
         )
         result = await self.executor.async_on_message(msg, is_ask=True)

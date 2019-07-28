@@ -53,12 +53,17 @@ class NodeInfo:
 
 class ActorRegistery:
 
-    def __init__(self, current_node_spec, registery_node_spec=None, node_specs=None):
+    def __init__(self, current_node_spec=None, registery_node_spec=None, node_specs=None):
         if registery_node_spec:
             self.registery_node = NodeInfo.from_spec(registery_node_spec)
         else:
             self.registery_node = None
-        self.current_node = NodeInfo.from_spec(current_node_spec)
+        if current_node_spec:
+            self.current_node = NodeInfo.from_spec(current_node_spec)
+            self.current_networks = set(self.current_node.networks.keys())
+        else:
+            self.current_node = None
+            self.current_networks = set(LOCAL_NETWORK_NAMES)
         self._nodes = {}
         self._node_index = {}  # node -> urls
         self._module_index = {}  # module -> (node, urls)
@@ -67,21 +72,23 @@ class ActorRegistery:
 
     def _update(self, nodes):
         with self._lock:
-            nodes = list(nodes) + [self.current_node]
+            nodes = {x.name: x for x in nodes}
+            if self.current_node:
+                nodes[self.current_node.name] = self.current_node
             if self.registery_node:
-                nodes.append(self.registery_node)
+                nodes[self.registery_node.name] = self.registery_node
             node_index = {}
             module_index = defaultdict(set)
-            for node in nodes:
+            for node in nodes.values():
                 urls = set()
-                for name in node.networks.keys() & self.current_node.networks.keys():
+                for name in node.networks.keys() & self.current_networks:
                     urls.update(node.networks[name])
                 node_index[node.name] = list(urls)
                 for mod in node.modules:
                     module_index[mod].add(node.name)
             self._node_index = node_index
             self._module_index = module_index
-            self._nodes = {x.name: x for x in nodes}
+            self._nodes = nodes
 
     def _add(self, node):
         with self._lock:
@@ -121,14 +128,16 @@ class ActorRegistery:
         return random.choice(self.find_dst_urls(dst_node))
 
     def complete_message(self, message):
-        if not message.src_node:
+        if self.current_node and not message.src_node:
             message.src_node = self.current_node.name
         if not message.dst_node:
             message.dst_node = self.choice_dst_node(message.dst)
-        if message.dst_node != self.current_node.name:
+        if not self.is_local_message(message):
             if not message.dst_url:
                 message.dst_url = self.choice_dst_url(message.dst_node)
         return message
 
     def is_local_message(self, message):
+        if not self.current_node:
+            return False
         return message.dst_node == self.current_node.name
