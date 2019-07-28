@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from validr import T
 from actorlib import actor, collect_actors, ActorNode, ActorContext, NodeSpecSchema
 
 
@@ -23,11 +24,8 @@ async def do_check(ctx: ActorContext, node: NodeSpecSchema):
 
 
 @actor('registery.query')
-async def do_query(ctx: ActorContext):
-    return dict(
-        current_node=ctx.registery.current_node.to_spec(),
-        registery=ctx.registery.to_spec(),
-    )
+async def do_query(ctx: ActorContext) -> T.dict(nodes=T.list(NodeSpecSchema)):
+    return dict(nodes=ctx.registery.to_spec())
 
 
 ACTORS = collect_actors(__name__)

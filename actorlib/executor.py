@@ -213,7 +213,7 @@ class ActorContext:
         else:
             return self.executor.submit(msg)
 
-    def ask(self, dst, content=None):
+    def ask(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
-        return self.actor_client.ask(dst, content)
+        return self.actor_client.ask(dst, content, dst_node=dst_node)

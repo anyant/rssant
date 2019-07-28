@@ -13,7 +13,7 @@ def do_init(ctx: ActorContext):
 
 
 @actor('worker.ping')
-def do_ping(ctx: ActorContext, message: T.str):
+def do_ping(ctx: ActorContext, message: T.str) -> T.dict(message=T.str):
     LOG.info(ctx.message)
     r = ctx.ask('registery.query')
     LOG.info(r)
@@ -22,7 +22,7 @@ def do_ping(ctx: ActorContext, message: T.str):
 
 
 @actor('worker.pong')
-async def do_pong(ctx: ActorContext, message: T.str):
+async def do_pong(ctx: ActorContext, message: T.str) -> T.dict(message=T.str):
     LOG.info(ctx.message)
     r = await ctx.ask('registery.query')
     LOG.info(r)

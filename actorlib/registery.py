@@ -71,37 +71,40 @@ class ActorRegistery:
         self.update(node_specs or [])
 
     def _update(self, nodes):
-        with self._lock:
-            nodes = {x.name: x for x in nodes}
-            if self.current_node:
-                nodes[self.current_node.name] = self.current_node
-            if self.registery_node:
-                nodes[self.registery_node.name] = self.registery_node
-            node_index = {}
-            module_index = defaultdict(set)
-            for node in nodes.values():
-                urls = set()
-                for name in node.networks.keys() & self.current_networks:
-                    urls.update(node.networks[name])
-                node_index[node.name] = list(urls)
-                for mod in node.modules:
-                    module_index[mod].add(node.name)
-            self._node_index = node_index
-            self._module_index = module_index
-            self._nodes = nodes
+        nodes = {x.name: x for x in nodes}
+        if self.current_node:
+            nodes[self.current_node.name] = self.current_node
+        if self.registery_node:
+            nodes[self.registery_node.name] = self.registery_node
+        node_index = {}
+        module_index = defaultdict(set)
+        for node in nodes.values():
+            urls = set()
+            for name in node.networks.keys() & self.current_networks:
+                urls.update(node.networks[name])
+            node_index[node.name] = list(urls)
+            for mod in node.modules:
+                module_index[mod].add(node.name)
+        self._node_index = node_index
+        self._module_index = module_index
+        self._nodes = nodes
 
-    def _add(self, node):
+    def update(self, node_specs):
+        nodes = [NodeInfo.from_spec(spec) for spec in node_specs]
+        with self._lock:
+            self._update(nodes)
+
+    def add(self, node_spec):
+        node = NodeInfo.from_spec(node_spec)
         with self._lock:
             nodes = list(self._nodes.values())
             nodes.append(node)
             self._update(nodes)
 
-    def update(self, node_specs):
-        nodes = [NodeInfo.from_spec(spec) for spec in node_specs]
-        self._update(nodes)
-
-    def add(self, node_spec):
-        self._add(NodeInfo.from_spec(node_spec))
+    def remove(self, node_name):
+        with self._lock:
+            self._nodes.pop(node_name, None)
+            self._update(list(self._nodes.values()))
 
     def to_spec(self):
         with self._lock:

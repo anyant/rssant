@@ -35,8 +35,9 @@ class ActorClientBase:
             groups[msg.dst_url].append(msg)
         return groups
 
-    def _get_ask_request(self, dst, content):
-        dst_node = self.registery.choice_dst_node(dst)
+    def _get_ask_request(self, dst, content, dst_node=None):
+        if dst_node is None:
+            dst_node = self.registery.choice_dst_node(dst)
         dst_url = self.registery.choice_dst_url(dst_node)
         short_content = shorten(repr(content), width=30)
         LOG.info(f'ask {dst} at {dst_url}: {short_content}')
@@ -87,9 +88,9 @@ class ActorClient(ActorClientBase):
     def send(self, *messages):
         self._batch_send(messages)
 
-    def ask(self, dst, content):
+    def ask(self, dst, content, dst_node=None):
         self._init()
-        dst_url, headers, data = self._get_ask_request(dst, content)
+        dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
         r = self.session.post(dst_url, data=data, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         return self._decode_ask_response(r.content, r.headers)
@@ -132,9 +133,9 @@ class AsyncActorClient(ActorClientBase):
     async def send(self, *messages):
         await self._batch_send(messages)
 
-    async def ask(self, dst, content):
+    async def ask(self, dst, content, dst_node=None):
         await self._async_init()
-        dst_url, headers, data = self._get_ask_request(dst, content)
+        dst_url, headers, data = self._get_ask_request(dst, content, dst_node=dst_node)
         async with self.session.post(dst_url, data=data, headers=headers) as r:
             headers = r.headers
             content = await r.read()

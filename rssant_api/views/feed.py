@@ -13,7 +13,7 @@ from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.models.feed import FeedDetailSchema
 from rssant_api.models import UnionFeed, FeedCreation
 from rssant.settings import BASE_DIR
-from rssant_common.actor_client import schedule_task, batch_schedule_task
+from rssant_common.actor_client import scheduler
 from .helper import check_unionid
 from .errors import RssantAPIException
 
@@ -121,7 +121,7 @@ def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
     except FeedExistError:
         return Response({'message': 'already exists'}, status=400)
     if feed_creation:
-        schedule_task('worker_rss.find_feed', dict(
+        scheduler.tell('worker_rss.find_feed', dict(
             feed_creation_id=feed_creation.id,
             url=feed_creation.url,
         ))
@@ -213,7 +213,7 @@ def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
                 url=feed_creation.url,
             )
         ))
-    batch_schedule_task(find_feed_tasks)
+    scheduler.batch_tell(find_feed_tasks)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
     return dict(
