@@ -11,10 +11,12 @@ from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_common.image_url import encode_image_url
+from rssant.settings import ENV_CONFIG
 
 
 LOG = logging.getLogger(__name__)
 
+CHECK_FEED_SECONDS = ENV_CONFIG.check_feed_minutes * 60
 
 StorySchema = T.dict(
     unique_id=T.str,
@@ -209,7 +211,7 @@ def do_update_story_images(
 @actor('harbor_rss.check_feed')
 @django_context
 def do_check_feed(ctx):
-    feeds = Feed.take_outdated_feeds(30 * 60)
+    feeds = Feed.take_outdated_feeds(CHECK_FEED_SECONDS)
     LOG.info('found {} feeds need sync'.format(len(feeds)))
     for feed in feeds:
         ctx.tell('worker_rss.sync_feed', dict(
@@ -232,7 +234,7 @@ def do_clean_feed_creation(ctx):
     _retry_feed_creations(feed_creation_ids)
     # 重试 status=PENDING 超过30分钟的订阅
     feed_creation_ids = FeedCreation.query_ids_by_status(
-        FeedStatus.PENDING, survival_seconds=30 * 60)
+        FeedStatus.PENDING, survival_seconds=CHECK_FEED_SECONDS)
     num_retry_pending = len(feed_creation_ids)
     LOG.info('retry {} status=PENDING feed creations'.format(num_retry_pending))
     _retry_feed_creations(feed_creation_ids)
