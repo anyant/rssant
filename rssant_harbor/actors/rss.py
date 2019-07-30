@@ -133,10 +133,11 @@ def do_update_feed(
         for k, v in feed_dict.items():
             if v != '' and v is not None:
                 setattr(feed, k, v)
-        if not feed.dt_updated:
-            feed.dt_updated = timezone.now()
-        feed.save()
         now = timezone.now()
+        if not feed.dt_updated:
+            feed.dt_updated = now
+        feed.dt_checked = feed.dt_synced = now
+        feed.save()
         for s in storys:
             if not s['dt_updated']:
                 s['dt_updated'] = now

@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 import django
 from validr import T
@@ -40,8 +41,15 @@ ACTORS = collect_actors('rssant_worker')
 
 
 def on_startup(app):
-    r = app.ask('scheduler.register', dict(node=app.registery.current_node.to_spec()))
-    app.registery.update(r['nodes'])
+    while True:
+        try:
+            r = app.ask('scheduler.register', dict(node=app.registery.current_node.to_spec()))
+        except Exception as ex:
+            LOG.error(f'ask scheduler.register failed: {ex}')
+            time.sleep(1)
+        else:
+            app.registery.update(r['nodes'])
+            break
     print(pretty_format_json(app.registery.to_spec()))
 
 

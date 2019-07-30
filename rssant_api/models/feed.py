@@ -159,6 +159,7 @@ class Feed(Model, ContentHashMixin):
         sql_check = """
         SELECT id, url FROM rssant_api_feed AS feed
         WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
+            OR (dt_checked is NULL)
         ORDER BY id LIMIT %s
         """
         sql_update_status = """
