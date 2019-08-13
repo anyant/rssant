@@ -6,6 +6,7 @@ import django
 from validr import T
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from actorlib.sentry import sentry_init
+import backdoor
 
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
@@ -58,6 +59,7 @@ def on_shutdown(app):
 
 
 if __name__ == "__main__":
+    backdoor.setup()
     ActorNode.cli(
         actors=ACTORS,
         concurrency=200,

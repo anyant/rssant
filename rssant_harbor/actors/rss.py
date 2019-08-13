@@ -1,14 +1,16 @@
 import logging
 import functools
 
+import yarl
 from validr import T
 from django import db
 from django.db import transaction
 from django.utils import timezone
 from actorlib import actor, ActorContext
 
+from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
-from rssant_feedlib.processor import StoryImageProcessor
+from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_common.image_url import encode_image_url
 from rssant.settings import ENV_CONFIG
@@ -127,6 +129,7 @@ def do_update_feed(
     ctx: ActorContext,
     feed_id: T.int,
     feed: FeedSchema,
+    is_refresh: T.bool.default(False),
 ):
     with transaction.atomic():
         feed_dict = feed
@@ -150,11 +153,38 @@ def do_update_feed(
             'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
             feed.id, len(storys), len(modified_storys), num_reallocate
         )
+    need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
-        ctx.tell('worker_rss.fetch_story', dict(
-            url=story.link,
-            story_id=str(story.id)
-        ))
+        if need_fetch_story:
+            ctx.tell('worker_rss.fetch_story', dict(
+                url=story.link,
+                story_id=str(story.id)
+            ))
+        elif story.link:
+            _process_story_images(ctx, story, is_refresh)
+
+
+def _is_feed_need_fetch_storys(feed):
+    checkers = [processor.is_v2ex, processor.is_hacknews, processor.is_github, processor.is_pypi]
+    for check in checkers:
+        if check(feed.url):
+            return False
+    return True
+
+
+def _process_story_images(ctx, story, is_refresh):
+    story_text = story_html_to_text(story.content)
+    if is_refresh or len(story_text) < 1000:
+        processer = StoryImageProcessor(story.link, story.content)
+        image_indexs = processer.parse()
+        image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
+        LOG.info(f'found story#{story.id} {story.link} has {len(image_urls)} images')
+        if image_urls:
+            ctx.tell('worker_rss.detect_story_images', dict(
+                story_id=story.id,
+                story_url=story.link,
+                image_urls=list(image_urls),
+            ))
 
 
 @actor('harbor_rss.update_story')

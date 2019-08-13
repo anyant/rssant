@@ -4,6 +4,7 @@ import logging
 import django
 from actorlib import actor, collect_actors, ActorNode, ActorContext
 from actorlib.sentry import sentry_init
+import backdoor
 
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
@@ -39,6 +40,7 @@ ACTORS = collect_actors('rssant_scheduler')
 
 
 if __name__ == "__main__":
+    backdoor.setup()
     ActorNode.cli(
         actors=ACTORS,
         concurrency=100,

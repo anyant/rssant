@@ -6,6 +6,7 @@ from aiohttp import web
 from aiojobs.aiohttp import setup as setup_aiojobs
 import sentry_sdk
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+import backdoor
 
 from rssant.settings import ENV_CONFIG
 from .views import routes
@@ -33,6 +34,7 @@ setup_aiojobs(app, limit=5000, pending_limit=5000)
 app.on_cleanup.append(lambda app: CallbackClient.close())
 app.on_startup.append(lambda app: REDIS_DAO.init())
 app.on_cleanup.append(lambda app: REDIS_DAO.close())
+backdoor.setup()
 
 
 if __name__ == "__main__":

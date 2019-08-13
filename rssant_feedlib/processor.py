@@ -52,7 +52,7 @@ class StoryImageProcessor:
 
     def parse(self) -> [StoryImageIndexItem]:
         if not self.content:
-            return
+            return []
         content = self.content
         image_indexs = []
         pos = 0

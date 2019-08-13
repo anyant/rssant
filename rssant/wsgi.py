@@ -11,8 +11,10 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 from rssant_common.logger import configure_logging
+import backdoor
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
 
 configure_logging()
+backdoor.setup()
 application = get_wsgi_application()
