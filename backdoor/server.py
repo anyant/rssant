@@ -97,7 +97,6 @@ class BackdoorHandler:
         self.cli_sock = cli_sock
         self.cli_addr = cli_addr
         self.globals = {'print': self.backdoor_print}
-        self.locals = {}
         self.print_buffer = StringIO()
         self.filename = '<backdoor>'
 
@@ -111,7 +110,6 @@ class BackdoorHandler:
 
     def close(self):
         self.cli_sock.close()
-        self.locals = None
         self.globals = None
 
     def handle(self):
@@ -127,8 +125,9 @@ class BackdoorHandler:
                 self.cli_sock.sendall(packer.pack(response))
 
     def _format_exception(self, ex):
-        msg = traceback.format_exception(type(ex), ex, ex.__traceback__)
-        return ''.join(msg).rstrip() + '\n'
+        msg = self.take_print_buffer()
+        traces = traceback.format_exception(type(ex), ex, ex.__traceback__)
+        return msg + ''.join(traces).rstrip() + '\n'
 
     def command_info(self):
         total_memory_usage = (
@@ -160,10 +159,10 @@ class BackdoorHandler:
         except (SyntaxError, ValueError, OverflowError) as ex:
             return BackdoorResponse(False, self._format_exception(ex))
         try:
-            exec(code, self.globals, self.locals)
+            exec(code, self.globals, None)
             msg = ''
             if last_code is not None:
-                r = eval(last_code, self.globals, self.locals)
+                r = eval(last_code, self.globals, None)
                 if r is None:
                     msg = ''
                 else:
