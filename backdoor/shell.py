@@ -9,7 +9,7 @@ import click
 from rssant_common.logger import configure_logging
 
 from .client import BackdoorClient
-from .helper import detect_server_pid
+from .helper import connect_first_available_server
 
 
 HISTORY_PATH = os.path.expanduser("~/.backdoor-history")
@@ -153,10 +153,10 @@ class PythonInteractiveConsole:
 
 
 class BackdoorShell(PythonInteractiveConsole):
-    def __init__(self, pid):
+    def __init__(self, pid, sock=None):
         super().__init__()
         self.pid = pid
-        self.client = BackdoorClient(pid)
+        self.client = BackdoorClient(pid, sock=sock)
         info_response = self.client.request('info')
         assert info_response.ok, 'failed to get backdoor server info!'
         self.info = dict(info_response.content)
@@ -173,6 +173,8 @@ class BackdoorShell(PythonInteractiveConsole):
         super().interact(banner=banner, exitmsg=exitmsg)
 
     def runsource(self, source):
+        if not source:
+            return False
         try:
             code_obj = compile_command(source)
         except (SyntaxError, ValueError, OverflowError):
@@ -192,11 +194,12 @@ class BackdoorShell(PythonInteractiveConsole):
 def main(pid=None, verbose=False):
     level = logging.DEBUG if verbose else logging.INFO
     configure_logging(level=level)
+    sock = None
     if pid is None:
-        pid = detect_server_pid()
+        pid, sock = connect_first_available_server()
     if pid is None:
-        raise click.Abort("Server PID is required!")
-    shell = BackdoorShell(pid)
+        raise click.BadOptionUsage('pid', "Server PID is required!")
+    shell = BackdoorShell(pid, sock=sock)
     shell.interact()
 
 

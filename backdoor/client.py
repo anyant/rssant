@@ -10,13 +10,14 @@ LOG = logging.getLogger(__name__)
 
 
 class BackdoorClient:
-    def __init__(self, pid):
+    def __init__(self, pid, sock=None):
         self.pid = pid
         socket_path = get_socket_path(pid)
         self.socket_path = socket_path
-        LOG.debug(f'backdoor client connect to {socket_path}')
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.connect(socket_path)
+        LOG.info(f'backdoor client connect to {socket_path}')
+        if sock is None:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.connect(socket_path)
         self.sock = sock
 
     def close(self):

@@ -47,13 +47,8 @@ class BackdoorOutput:
 
 class BackdoorServer:
     def __init__(self):
-        socket_path = get_socket_path(os.getpid())
-        LOG.info(f'backdoor server listen at {socket_path}!')
-        self.socket_path = socket_path
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.bind(socket_path)
-        sock.listen(5)
-        self.sock = sock
+        self.socket_path = get_socket_path(os.getpid())
+        self.sock = None
         atexit.register(self.close)
         thread = Thread(target=self.run)
         thread.daemon = True
@@ -61,15 +56,27 @@ class BackdoorServer:
         self._sys_stdout = sys.stdout
         self._sys_stderr = sys.stderr
 
+    def _init_sock(self):
+        try:
+            os.remove(self.socket_path)
+        except FileNotFoundError:
+            pass  # ignore
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock = sock
+        sock.bind(self.socket_path)
+        sock.listen(5)
+
     def run(self):
+        sys.stdout = BackdoorOutput(self._sys_stdout)
+        sys.stderr = BackdoorOutput(self._sys_stderr)
+        self._init_sock()
+        LOG.info(f'backdoor server listen at {self.socket_path}!')
         while True:
             cli_sock, cli_addr = self.sock.accept()
             t = Thread(target=self.handler, args=(cli_sock, cli_addr))
             t.start()
 
     def start(self):
-        sys.stdout = BackdoorOutput(self._sys_stdout)
-        sys.stderr = BackdoorOutput(self._sys_stderr)
         self.thread.start()
 
     def handler(self, cli_sock: socket.socket, cli_addr):
@@ -87,8 +94,12 @@ class BackdoorServer:
     def close(self):
         sys.stdout = self._sys_stdout
         sys.stderr = self._sys_stderr
-        self.sock.close()
-        os.unlink(self.socket_path)
+        if self.sock is not None:
+            self.sock.close()
+        try:
+            os.remove(self.socket_path)
+        except FileNotFoundError:
+            pass  # ignore
 
 
 class BackdoorHandler:
@@ -179,7 +190,7 @@ class BackdoorHandler:
         if hasattr(self, command):
             response = getattr(self, command)(**request.params)
         else:
-            response = BackdoorResponse(True, str(request))
+            response = BackdoorResponse(False, f"No such command: {request.command}\n")
         LOG.info(f'backdoor server sending response {response}')
         return response.to_dict()
 
