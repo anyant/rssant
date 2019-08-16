@@ -87,7 +87,7 @@ class ActorClient(ActorClientBase):
 
     def _group_send(self, dst_url, messages):
         with sentry_scope() as scope:
-            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('actor_node', self.registery.current_node_name)
             scope.set_tag('message_dst_url', dst_url)
             LOG.info(f'send {len(messages)} messages to {dst_url}')
             data = ActorMessage.batch_encode(messages, self.content_encoding)
@@ -110,7 +110,7 @@ class ActorClient(ActorClientBase):
 
     def ask(self, dst, content, dst_node=None):
         with sentry_scope() as scope:
-            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('actor_node', self.registery.current_node_name)
             scope.set_tag('ask_dst', dst)
             scope.set_tag('ask_dst_node', dst_node)
             self._init()
@@ -145,7 +145,7 @@ class AsyncActorClient(ActorClientBase):
 
     async def _group_send(self, dst_url, messages):
         with sentry_scope() as scope:
-            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('actor_node', self.registery.current_node_name)
             scope.set_tag('message_dst_url', dst_url)
             LOG.info(f'send {len(messages)} messages to {dst_url}')
             data = ActorMessage.batch_encode(messages, self.content_encoding)
@@ -170,7 +170,7 @@ class AsyncActorClient(ActorClientBase):
 
     async def ask(self, dst, content, dst_node=None):
         with sentry_scope() as scope:
-            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('actor_node', self.registery.current_node_name)
             scope.set_tag('ask_dst', dst)
             scope.set_tag('ask_dst_node', dst_node)
             await self._async_init()

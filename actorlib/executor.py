@@ -62,7 +62,7 @@ class ActorExecutor:
     @contextlib.contextmanager
     def _set_sentry_scope(self, message):
         with sentry_scope() as scope:
-            scope.set_tag('actor_node', self.registery.current_node.name)
+            scope.set_tag('actor_node', self.registery.current_node_name)
             scope.set_tag('message_src', message.src)
             scope.set_tag('message_src_node', message.src_node)
             scope.set_tag('message_dst', message.dst)

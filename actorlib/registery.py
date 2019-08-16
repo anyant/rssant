@@ -76,6 +76,12 @@ class ActorRegistery:
         self._lock = RLock()
         self.update(node_specs or [])
 
+    @property
+    def current_node_name(self):
+        if self.current_node is None:
+            return None
+        return self.current_node.name
+
     def _update(self, nodes):
         nodes = {x.name: x for x in nodes}
         if self.current_node:
