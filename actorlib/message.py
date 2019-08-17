@@ -55,10 +55,14 @@ class ContentEncoding(enum.Enum):
 class ActorMessage:
     def __init__(
         self, *,
-        content: dict,
+        id: str = None,
+        content: dict = None,
         src: str = None, src_node: str = None,
         dst: str, dst_node: str = None, dst_url: str = None,
     ):
+        self.id = id
+        if content is None:
+            content = {}
         self.content = content
         self.src = src
         self.src_node = src_node
@@ -67,8 +71,8 @@ class ActorMessage:
         self.dst_url = dst_url
 
     def __repr__(self):
-        return '<{} {}/{} to {}/{} {}>'.format(
-            type(self).__name__,
+        return '<{} {} {}/{} to {}/{} {}>'.format(
+            type(self).__name__, self.id,
             self.src_node, self.src, self.dst_node, self.dst,
             shorten(repr(self.content), width=30),
         )
@@ -76,16 +80,16 @@ class ActorMessage:
     @classmethod
     def _from_dict(cls, d):
         return ActorMessage(
+            id=d['id'], content=d['content'],
             src=d['src'], src_node=d['src_node'],
-            dst=d['dst'], dst_node=d['dst_node'],
-            content=d['content'], dst_url=d['dst_url'],
+            dst=d['dst'], dst_node=d['dst_node'], dst_url=d['dst_url'],
         )
 
     def _to_dict(self):
         return dict(
+            id=self.id, content=self.content,
             src=self.src, src_node=self.src_node,
-            dst=self.dst, dst_node=self.dst_node,
-            content=self.content, dst_url=self.dst_url,
+            dst=self.dst, dst_node=self.dst_node, dst_url=self.dst_url,
         )
 
     @classmethod

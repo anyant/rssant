@@ -4,6 +4,8 @@ from urllib.parse import urlparse
 import click
 from validr import Compiler
 
+from rssant_common.helper import pretty_format_json
+
 from .actor import Actor
 from .executor import ActorExecutor
 from .registery import ActorRegistery
@@ -43,11 +45,14 @@ class ActorNode:
         if not networks:
             networks = []
         networks.extend(get_local_networks(port=port, subpath=subpath))
-        self.registery = ActorRegistery(dict(
+        current_node_spec = dict(
             name=self.name,
             modules=actor_modules,
             networks=networks,
-        ), registery_node_spec=registery_node_spec)
+        )
+        self.registery = ActorRegistery(
+            current_node_spec=current_node_spec,
+            registery_node_spec=registery_node_spec)
         self.concurrency = concurrency
         self.sender = MessageSender(
             concurrency=concurrency, registery=self.registery)
@@ -79,10 +84,7 @@ class ActorNode:
         if 'actor.init' not in self.actors:
             return
         msg = ActorMessage(
-            content={},
-            src='actor.init',
-            src_node=self.registery.current_node.name,
-            dst='actor.init',
+            src='actor.init', dst='actor.init',
             dst_node=self.registery.current_node.name
         )
         self.executor.submit(msg)
@@ -90,13 +92,16 @@ class ActorNode:
     def ask(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
+        msg = ActorMessage(
+            src='actor.init', content=content, dst=dst, dst_node=dst_node)
         client = self.executor.main_thread_client
-        return client.ask(dst, content, dst_node=dst_node)
+        return client.ask(msg)
 
     def tell(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
-        msg = ActorMessage(content=content, dst=dst, dst_node=dst_node)
+        msg = ActorMessage(
+            src='actor.init', content=content, dst=dst, dst_node=dst_node)
         client = self.executor.main_thread_client
         client.send(msg)
 
@@ -104,6 +109,7 @@ class ActorNode:
         self.sender.start()
         self.executor.start()
         LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
+        LOG.info(f'current registery:\n{pretty_format_json(self.registery.to_spec())}')
         try:
             for handler in self._on_startup_handlers:
                 handler(self)

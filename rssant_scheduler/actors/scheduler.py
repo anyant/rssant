@@ -34,16 +34,20 @@ async def do_schedule_clean_feed_creation(ctx):
 @actor("scheduler.proxy_tell")
 async def do_proxy_tell(
     ctx: ActorContext,
-    dst: T.str,
-    content: T.dict,
+    tasks: T.list(T.dict(
+        dst = T.str,
+        content = T.dict.optional,
+    ))
 ):
-    await ctx.tell(dst, content)
+    for t in tasks:
+        await ctx.tell(t['dst'], t['content'])
+    return None
 
 
 @actor("scheduler.proxy_ask")
 async def do_proxy_ask(
     ctx: ActorContext,
     dst: T.str,
-    content: T.dict,
+    content: T.dict.optional,
 ):
     return await ctx.ask(dst, content)

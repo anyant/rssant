@@ -1,10 +1,12 @@
 from typing import List
 import random
 import logging
+import uuid
 from collections import defaultdict
 from threading import RLock
 
 from validr import T
+from cached_property import cached_property
 
 from .actor import Actor
 from .network_helper import LOCAL_NETWORK_NAMES
@@ -18,74 +20,70 @@ NodeSpecSchema = T.dict(
     modules=T.list(T.str),
     networks=T.list(T.dict(
         name=T.str,
-        url=T.str,  # TODO: T.url
+        url=T.str.optional,
     ))
 )
 
 
 class NodeInfo:
-    def __init__(self, name, modules, networks):
+    def __init__(self, name: str, modules: set, networks: list):
         self.name = name
         self.modules = modules
-        self.networks = networks
+        self._networks = networks
 
     def __repr__(self):
-        return '<{} {}>'.format(type(self).__name__, self.name)
+        return '<{} #{} {}>'.format(type(self).__name__, self.id, self.name)
+
+    @cached_property
+    def networks(self) -> dict:
+        networks = defaultdict(set)
+        for network in self._networks:
+            networks[network['name']].add(network['url'])
+        networks = {name: set(x for x in urls if x) for name, urls in networks.items()}
+        return networks
 
     @classmethod
     def from_spec(cls, node):
-        networks = defaultdict(set)
+        networks = []
         for network in node['networks']:
             if network['name'] == 'localhost':
                 for name in LOCAL_NETWORK_NAMES:
-                    networks[name].add(network['url'])
+                    networks.append(dict(name=name, url=network['url']))
             else:
-                networks[network['name']].add(network['url'])
+                networks.append(network)
         return cls(
-            node['name'],
-            set(node['modules']),
+            name=node['name'],
+            modules=set(node['modules']),
             networks=networks,
         )
 
     def to_spec(self):
-        networks = []
-        for name, urls in self.networks.items():
-            for url in urls:
-                networks.append(dict(name=name, url=url))
-        return dict(name=self.name, modules=list(self.modules), networks=networks)
+        return dict(
+            name=self.name,
+            modules=list(self.modules),
+            networks=self._networks,
+        )
 
 
 class ActorRegistery:
 
-    def __init__(self, current_node_spec=None, current_networks=None, registery_node_spec=None, node_specs=None):
+    def __init__(self, *, current_node_spec, registery_node_spec=None, node_specs=None):
+        self.current_node = NodeInfo.from_spec(current_node_spec)
+        self.current_node_name = self.current_node.name
+        self.current_networks = set(self.current_node.networks.keys())
+        self.registery_node = None
         if registery_node_spec:
             self.registery_node = NodeInfo.from_spec(registery_node_spec)
-        else:
-            self.registery_node = None
-        if current_node_spec:
-            self.current_node = NodeInfo.from_spec(current_node_spec)
-            self.current_networks = set(self.current_node.networks.keys())
-        else:
-            self.current_node = None
-            self.current_networks = set(LOCAL_NETWORK_NAMES)
-        if current_networks:
-            self.current_networks.update(set(current_networks))
         self._nodes = {}
         self._node_index = {}  # node -> urls
         self._module_index = {}  # module -> (node, urls)
         self._lock = RLock()
         self.update(node_specs or [])
 
-    @property
-    def current_node_name(self):
-        if self.current_node is None:
-            return None
-        return self.current_node.name
-
     def _update(self, nodes):
         nodes = {x.name: x for x in nodes}
         if self.current_node:
-            nodes[self.current_node.name] = self.current_node
+            nodes[self.current_node_name] = self.current_node
         if self.registery_node:
             nodes[self.registery_node.name] = self.registery_node
         node_index = {}
@@ -152,9 +150,11 @@ class ActorRegistery:
 
     def complete_message(self, message):
         if self.current_node and not message.src_node:
-            message.src_node = self.current_node.name
+            message.src_node = self.current_node_name
         if not message.dst_node:
             message.dst_node = self.choice_dst_node(message.dst)
+        if not message.id:
+            message.id = self.generate_message_id()
         if not self.is_local_message(message):
             if not message.dst_url:
                 message.dst_url = self.choice_dst_url(message.dst_node)
@@ -163,4 +163,7 @@ class ActorRegistery:
     def is_local_message(self, message):
         if not self.current_node:
             return False
-        return message.dst_node == self.current_node.name
+        return message.dst_node == self.current_node_name
+
+    def generate_message_id(self):
+        return self.current_node_name + ':' + str(uuid.uuid4())

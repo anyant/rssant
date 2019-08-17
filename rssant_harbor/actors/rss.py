@@ -1,9 +1,7 @@
 import logging
-import functools
 
 import yarl
 from validr import T
-from django import db
 from django.db import transaction
 from django.utils import timezone
 from actorlib import actor, ActorContext
@@ -13,6 +11,7 @@ from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_common.image_url import encode_image_url
+from rssant_common.actor_helper import django_context
 from rssant.settings import ENV_CONFIG
 
 
@@ -47,20 +46,6 @@ FeedSchema = T.dict(
     last_modified=T.str.optional,
     storys=T.list(StorySchema),
 )
-
-
-def django_context(f):
-
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        db.reset_queries()
-        db.close_old_connections()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            db.close_old_connections()
-
-    return wrapper
 
 
 @actor('harbor_rss.update_feed_creation_status')

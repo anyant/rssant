@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import sys
-import logging
 import os.path
 from os.path import dirname, abspath
 from .env import load_env_config
@@ -145,63 +144,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# https://stackoverflow.com/questions/45522159/dont-log-certificate-did-not-match-expected-hostname-error-messages
-logging.getLogger('urllib3.connection').setLevel(logging.CRITICAL)
-
-if not IS_CELERY_PROCESS:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            "rssant": {
-                "format": "%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
-            }
-        },
-        'handlers': {
-            'console': {
-                'level': 'INFO',
-                'class': 'logging.StreamHandler',
-                'formatter': 'rssant'
-            },
-        },
-        'loggers': {
-            'django_rest_validr': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'rssant_feedlib': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'rssant_common': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'rssant_async': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'rssant': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'rssant_api': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-            'scripts': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': True,
-            },
-        },
-    }
+# If you set LOGGING_CONFIG to None, the logging configuration process will be skipped.
+# https://docs.djangoproject.com/en/2.2/ref/settings/#logging-config
+LOGGING_CONFIG = None
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

@@ -17,12 +17,12 @@ class MessageReceiver:
         self.registery = registery
 
     async def request_handler(self, request):
-        actor_dst = request.headers.get('Actor-DST')
-        content_encoding = request.headers.get('Actor-Content-Encoding')
+        actor_ask_dst = request.headers.get('actor-ask-dst')
+        content_encoding = request.headers.get('actor-content-encoding')
         data = await request.read()
         try:
             content_encoding = ContentEncoding.of(content_encoding)
-            if actor_dst:
+            if actor_ask_dst:
                 if data:
                     data = ActorMessage.raw_decode(data, content_encoding=content_encoding)
                 else:
@@ -35,18 +35,25 @@ class MessageReceiver:
         except ActorMessageDecodeError as ex:
             LOG.exception(ex)
             return Response(body=str(ex), status=400)
-        if actor_dst:
-            return await self.handle_ask(request, data, actor_dst, content_encoding)
+        if actor_ask_dst:
+            return await self.handle_ask(request, data, actor_ask_dst, content_encoding)
         else:
             for msg in data:
                 await self.executor.async_on_message(msg)
             return Response(status=204)
 
     async def handle_ask(self, request, data, dst, content_encoding):
-        dst_node = self.registery.current_node.name
-        dst_url = str(request.url)
+        message_id = request.headers.get('actor-ask-id')
+        src = request.headers.get('actor-ask-src')
+        src_node = request.headers.get('actor-ask-src-node')
+        dst_node = request.headers.get('actor-ask-dst-node')
+        if not dst_node:
+            dst_node = self.registery.current_node_name
+        dst_url = request.headers.get('actor-ask-dst-url')
+        if not dst_url:
+            dst_url = str(request.url)
         msg = ActorMessage(
-            content=data, src=None, src_node=None,
+            id=message_id, content=data, src=src, src_node=src_node,
             dst=dst, dst_node=dst_node, dst_url=dst_url,
         )
         result = await self.executor.async_on_message(msg, is_ask=True)
@@ -55,9 +62,9 @@ class MessageReceiver:
         result = ActorMessage.raw_encode(result, content_encoding=content_encoding)
         headers = {}
         if content_encoding == ContentEncoding.JSON:
-            headers['Content-Type'] = 'application/json; charset=utf-8'
+            headers['content-type'] = 'application/json; charset=utf-8'
         else:
-            headers['Actor-Content-Encoding'] = content_encoding.value
+            headers['actor-content-encoding'] = content_encoding.value
         return Response(body=result, headers=headers)
 
     def create_app(self):

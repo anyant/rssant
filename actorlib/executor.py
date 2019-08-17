@@ -232,4 +232,8 @@ class ActorContext:
     def ask(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
-        return self.actor_client.ask(dst, content, dst_node=dst_node)
+        msg = ActorMessage(
+            content=content, src=self.actor.name,
+            dst=dst, dst_node=dst_node,
+        )
+        return self.actor_client.ask(msg)

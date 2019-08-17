@@ -2,6 +2,7 @@ import os.path
 
 from dotenv import load_dotenv
 from validr import T, modelclass, fields, Invalid
+from actorlib.network_helper import LOCAL_NODE_NAME
 
 
 @modelclass
@@ -54,6 +55,14 @@ class EnvConfig:
             'networks': [{
                 'name': self.scheduler_network,
                 'url': self.scheduler_url,
+            }]
+        }
+        self.current_node_spec = {
+            'name': '{}@{}'.format(LOCAL_NODE_NAME, os.getpid()),
+            'modules': [],
+            'networks': [{
+                'name': self.scheduler_network,
+                'url': None,
             }]
         }
 

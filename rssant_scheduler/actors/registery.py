@@ -5,12 +5,14 @@ from validr import T
 
 from rssant_api.models import Registery
 from rssant_common.helper import pretty_format_json
+from rssant_common.actor_helper import django_context
 
 
 LOG = logging.getLogger(__name__)
 
 
 @actor('scheduler.save_registery')
+@django_context
 def do_save_registery(ctx: ActorContext):
     LOG.info('save registery info for {}'.format(ctx.registery.registery_node.name))
     registery_node = ctx.registery.registery_node.to_spec()
@@ -20,6 +22,7 @@ def do_save_registery(ctx: ActorContext):
 
 
 @actor('scheduler.load_registery')
+@django_context
 def do_load_registery(ctx: ActorContext):
     registery_node = ctx.registery.registery_node.name
     LOG.info(f'load registery info for {registery_node}')
@@ -48,8 +51,9 @@ async def do_boardcast_registery(ctx: ActorContext):
 
 @actor('scheduler.register')
 async def do_register(ctx: ActorContext, node: NodeSpecSchema) -> T.dict(nodes=T.list(NodeSpecSchema)):
-    LOG.info(f'register node {node}')
+    LOG.info(f'register node:\n{pretty_format_json(node)}')
     ctx.registery.add(node)
+    LOG.info(f'current registery info:\n' + pretty_format_json(ctx.registery.to_spec()))
     await ctx.tell('scheduler.save_registery')
     return dict(nodes=ctx.registery.to_spec())
 

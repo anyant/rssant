@@ -15,11 +15,20 @@ LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> "
     "<cyan>{name}:{line:<4d}</cyan> <level>{message}</level>"
 )
-LOGURU_HANDLER = {"sink": sys.stderr, "colorize": True, "format": LOG_FORMAT}
+
+LOGURU_HANDLER = {
+    "sink": sys.stdout,
+    "colorize": True,
+    "format": LOG_FORMAT,
+    "diagnose": False,
+    "backtrace": False,
+}
 
 
 def configure_logging(level=logging.INFO):
     faulthandler.enable()
+    # https://stackoverflow.com/questions/45522159/dont-log-certificate-did-not-match-expected-hostname-error-messages
+    logging.getLogger('urllib3.connection').setLevel(logging.CRITICAL)
     logging.getLogger('readability.readability').setLevel(logging.WARNING)
     logging.basicConfig(handlers=[InterceptHandler()], level=level)
     loguru_logger.configure(handlers=[LOGURU_HANDLER])

@@ -1,5 +1,7 @@
 import socket
 import platform
+import hashlib
+
 import netifaces
 from slugify import slugify
 
@@ -21,7 +23,15 @@ LOCAL_IP_LIST = get_local_ip_list()
 
 
 def get_local_node_name():
-    return '{}-{}'.format(platform.platform(), socket.getfqdn())
+    """
+    same server <-> same node name
+    different server <-> different node name
+    """
+    name = '{}-{}'.format(platform.platform(), socket.getfqdn())
+    h = hashlib.md5(name.encode('utf-8'))
+    for interface_name, ip in LOCAL_IP_LIST:
+        h.update(f'{interface_name}-{ip}'.encode('utf-8'))
+    return h.hexdigest()[:6]
 
 
 LOCAL_NODE_NAME = get_local_node_name()
@@ -34,7 +44,7 @@ def get_local_network_ip_list(ip_list=None, prefix=None):
         prefix = LOCAL_NODE_NAME
     names = []
     for interface_name, ip in ip_list:
-        name = slugify(f'{prefix}-{interface_name}--{ip}')
+        name = slugify(f'{prefix}-{interface_name}-{ip}')
         names.append((name, ip))
     return names
 
