@@ -78,14 +78,14 @@ class ActorMessage:
         )
 
     @classmethod
-    def _from_dict(cls, d):
+    def from_dict(cls, d):
         return ActorMessage(
             id=d['id'], content=d['content'],
             src=d['src'], src_node=d['src_node'],
             dst=d['dst'], dst_node=d['dst_node'], dst_url=d['dst_url'],
         )
 
-    def _to_dict(self):
+    def to_dict(self):
         return dict(
             id=self.id, content=self.content,
             src=self.src, src_node=self.src_node,
@@ -127,14 +127,14 @@ class ActorMessage:
 
     @classmethod
     def batch_encode(cls, messages, content_encoding=None):
-        items = [x._to_dict() for x in messages]
+        items = [x.to_dict() for x in messages]
         return cls.raw_encode(items, content_encoding=content_encoding)
 
     @classmethod
     def batch_decode(cls, data, content_encoding=None):
         items = cls.raw_decode(data, content_encoding=content_encoding)
         try:
-            messages = [cls._from_dict(x) for x in items]
+            messages = [cls.from_dict(x) for x in items]
         except KeyError as ex:
             raise ActorMessageDecodeError(str(ex)) from ex
         return messages
