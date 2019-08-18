@@ -5,6 +5,6 @@ if __name__ == "__main__":
     start_actor(
         'rssant_worker',
         name='worker',
-        concurrency=500,
+        concurrency=100,
         port=6792,
     )

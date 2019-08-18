@@ -5,6 +5,6 @@ if __name__ == "__main__":
     start_actor(
         'rssant_harbor',
         name='harbor',
-        concurrency=200,
+        concurrency=100,
         port=6791,
     )
