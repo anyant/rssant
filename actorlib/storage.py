@@ -264,6 +264,7 @@ class ActorLocalStorage(ActorStorageBase):
         self.wal_limit = wal_limit
         self.buffer_size = buffer_size
         self._current_wal_size = 0
+        LOG.info(f'use local storage at {dir_path}')
         filepaths = self._load_filepaths(dir_path)
         if filepaths:
             for item in self._load_items(filepaths):

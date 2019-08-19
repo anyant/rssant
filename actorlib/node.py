@@ -13,6 +13,8 @@ from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
 from .network_helper import get_local_networks, LOCAL_NODE_NAME
+from .storage import ActorLocalStorage, ActorMemoryStorage
+from .storage_compactor import ActorStorageCompactor
 
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +31,8 @@ class ActorNode:
         subpath=None,
         networks=None,
         registery_node_spec=None,
+        storage_dir_path=None,
+        storage_wal_limit=10**6,
         schema_compiler=None,
         on_startup=None,
         on_shutdown=None,
@@ -53,11 +57,20 @@ class ActorNode:
         self.registery = ActorRegistery(
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
+        self.storage_dir_path = storage_dir_path
+        if storage_dir_path:
+            self.storage = ActorLocalStorage(
+                dir_path=storage_dir_path, wal_limit=storage_wal_limit)
+            self.storage_compactor = ActorStorageCompactor(self.storage)
+        else:
+            LOG.info('storage_dir_path not set, will use memory storage')
+            self.storage = ActorMemoryStorage()
+            self.storage_compactor = None
         self.concurrency = concurrency
         self.sender = MessageSender(
             concurrency=concurrency, registery=self.registery)
         self.executor = ActorExecutor(
-            self.actors, sender=self.sender,
+            self.actors, sender=self.sender, storage=self.storage,
             registery=self.registery, concurrency=concurrency)
         self.host = host
         self.port = port
@@ -108,6 +121,8 @@ class ActorNode:
     def run(self):
         self.sender.start()
         self.executor.start()
+        if self.storage_compactor:
+            self.storage_compactor.start()
         LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
         LOG.info(f'current registery:\n{pretty_format_json(self.registery.to_spec())}')
         try:
@@ -120,6 +135,8 @@ class ActorNode:
                 for handler in self._on_shutdown_handlers:
                     handler(self)
             finally:
+                if self.storage_compactor:
+                    self.storage_compactor.shutdown()
                 self.executor.shutdown()
                 self.sender.shutdown()
 

@@ -1,7 +1,7 @@
-import os
 import logging
 import time
 import functools
+import os.path
 
 import django
 from django import db
@@ -81,11 +81,18 @@ def start_actor(*modules, name, is_scheduler=False, **kwargs):
             on_startup=[on_startup],
             on_shutdown=[on_shutdown],
         )
+    if ENV_CONFIG.storage_path:
+        storage_path = os.path.expanduser(ENV_CONFIG.storage_path)
+        storage_dir_path = os.path.abspath(os.path.join(storage_path, name))
+        os.makedirs(storage_dir_path, exist_ok=True)
+    else:
+        storage_dir_path = None
     ActorNode.cli(
         actors=actors,
         name=name,
         subpath=f'/api/v1/{name}',
         registery_node_spec=ENV_CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
+        storage_dir_path=storage_dir_path,
         **kwargs
     )

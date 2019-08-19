@@ -16,15 +16,24 @@ from .registery import ActorRegistery
 from .sender import MessageSender
 from .client import AsyncActorClient, ActorClient
 from .sentry import sentry_scope
+from .storage import ActorStorageBase, DuplicateMessageError
 
 
 LOG = logging.getLogger(__name__)
 
 
 class ActorExecutor:
-    def __init__(self, actors, sender: MessageSender, registery: ActorRegistery, concurrency=100):
+    def __init__(
+        self,
+        actors,
+        sender: MessageSender,
+        storage: ActorStorageBase,
+        registery: ActorRegistery,
+        concurrency=100,
+    ):
         self.actors = actors
         self.sender = sender
+        self.storage = storage
         self.registery = registery
         if concurrency <= 3:
             num_async_workers = 1
@@ -69,14 +78,28 @@ class ActorExecutor:
             scope.set_tag('message_dst_node', message.dst_node)
             yield message
 
-    async def _async_handle_message(self, message, state, actor_client):
+    async def _async_handle_message(self, message, actor_client):
         with self._set_sentry_scope(message):
+            try:
+                self.storage.op_begin(message.id)
+            except DuplicateMessageError as ex:
+                LOG.info(f'DuplicateMessageError: {ex}')
+                return None
             try:
                 actor = self.actors[message.dst]
                 ctx = ActorContext(
-                    executor=self, actor=actor, state=state,
+                    executor=self, actor=actor,
                     message=message, actor_client=actor_client)
-                return await actor(ctx)
+                try:
+                    ret = await actor(ctx)
+                except Exception:
+                    self.storage.op_done(message.id, 'ERROR')
+                    raise
+                else:
+                    send_messages = [x.to_dict() for x in ctx.send_messages]
+                    self.storage.op_send(message.id, send_messages)
+                    await ctx.flush()
+                    return ret
             except Exception as ex:
                 LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
                 return None
@@ -94,7 +117,7 @@ class ActorExecutor:
                         LOG.exception(ex)
                     else:
                         task = self._async_handle_message(
-                            message, state={}, actor_client=actor_client)
+                            message, actor_client=actor_client)
                         await scheduler.spawn(task)
             finally:
                 await scheduler.close()
@@ -104,14 +127,28 @@ class ActorExecutor:
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self._async_main())
 
-    def _handle_message(self, message, state, actor_client):
+    def _handle_message(self, message, actor_client):
         with self._set_sentry_scope(message):
+            try:
+                self.storage.op_begin(message.id)
+            except DuplicateMessageError as ex:
+                LOG.info(f'DuplicateMessageError: {ex}')
+                return None
             try:
                 actor = self.actors[message.dst]
                 ctx = ActorContext(
-                    executor=self, actor=actor, state=state,
+                    executor=self, actor=actor,
                     message=message, actor_client=actor_client)
-                return actor(ctx)
+                try:
+                    ret = actor(ctx)
+                except Exception:
+                    self.storage.op_done(message.id, 'ERROR')
+                    raise
+                else:
+                    send_messages = [x.to_dict() for x in ctx.send_messages]
+                    self.storage.op_send(message.id, send_messages)
+                    ctx.flush()
+                    return ret
             except Exception as ex:
                 LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
                 return None
@@ -125,7 +162,7 @@ class ActorExecutor:
                 except Exception as ex:
                     LOG.exception(ex)
                 else:
-                    self._handle_message(message, state={}, actor_client=actor_client)
+                    self._handle_message(message, actor_client=actor_client)
 
     def _is_deliverable(self, message):
         return self.registery.is_local_message(message) and message.dst in self.actors
@@ -144,7 +181,7 @@ class ActorExecutor:
             return
         actor = self.actors[message.dst]
         if is_ask:
-            kwargs = dict(message=message, state={}, actor_client=self.main_async_client)
+            kwargs = dict(message=message, actor_client=self.main_async_client)
             if actor.is_async:
                 return await self._async_handle_message(**kwargs)
             else:
@@ -163,7 +200,7 @@ class ActorExecutor:
             return
         actor = self.actors[message.dst]
         if is_ask:
-            kwargs = dict(message=message, state={}, actor_client=self.main_thread_client)
+            kwargs = dict(message=message, actor_client=self.main_thread_client)
             if actor.is_async:
                 fut = asyncio.run_coroutine_threadsafe(
                     self._async_handle_message(**kwargs), self.main_event_loop)
@@ -208,26 +245,48 @@ class ActorExecutor:
 
 
 class ActorContext:
-    def __init__(self, executor: ActorExecutor, actor: Actor, state: dict,
+    def __init__(self, executor: ActorExecutor, actor: Actor,
                  message: ActorMessage, actor_client: typing.Union[AsyncActorClient, ActorClient]):
         self.executor = executor
         self.registery = executor.registery
         self.actor = actor
-        self.state = state
         self.message = message
         self.actor_client = actor_client
+        self.send_messages = []
 
-    def tell(self, dst, content=None, dst_node=None):
+    def _tell(self, dst, content=None, dst_node=None):
         if content is None:
             content = {}
         msg = ActorMessage(
             content=content, src=self.actor.name,
             dst=dst, dst_node=dst_node,
         )
+        self.send_messages.append(msg)
+
+    async def _async_tell(self, dst, content=None, dst_node=None):
+        self._tell(dst, content=content, dst_node=dst_node)
+
+    def tell(self, dst, content=None, dst_node=None):
         if self.actor.is_async:
-            return self.executor.async_submit(msg)
+            return self._async_tell(dst, content=content, dst_node=dst_node)
         else:
-            return self.executor.submit(msg)
+            return self._tell(dst, content=content, dst_node=dst_node)
+
+    def _flush(self):
+        for msg in self.send_messages:
+            self.executor.submit(msg)
+        self.send_messages = []
+
+    async def _async_flush(self):
+        for msg in self.send_messages:
+            await self.executor.async_submit(msg)
+        self.send_messages = []
+
+    def flush(self):
+        if self.actor.is_async:
+            return self._async_flush()
+        else:
+            return self._flush()
 
     def ask(self, dst, content=None, dst_node=None):
         if content is None:
