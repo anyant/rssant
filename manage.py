@@ -7,6 +7,7 @@ from rssant_common.logger import configure_logging
 
 if __name__ == '__main__':
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
+    os.environ.setdefault('SERVER_WSGI', 'true')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

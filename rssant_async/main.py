@@ -9,25 +9,23 @@ import backdoor
 
 from rssant.settings import ENV_CONFIG
 from rssant_common.logger import configure_logging
+from rssant_common.helper import is_main_or_wsgi
 
 from .views import routes
 from .callback_client import CallbackClient
 from .redis_dao import REDIS_DAO
 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-
-
-def main():
+def create_app():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
     configure_logging()
     django.setup()
-
+    backdoor.setup()
     if ENV_CONFIG.sentry_enable:
         sentry_sdk.init(
             dsn=ENV_CONFIG.sentry_dsn,
             integrations=[AioHttpIntegration()]
         )
-
     api = web.Application()
     api.router.add_routes(routes)
     app = web.Application()
@@ -36,10 +34,12 @@ def main():
     app.on_cleanup.append(lambda app: CallbackClient.close())
     app.on_startup.append(lambda app: REDIS_DAO.init())
     app.on_cleanup.append(lambda app: REDIS_DAO.close())
+    return app
 
-    backdoor.setup()
-    web.run_app(app, port=6786)
+
+if is_main_or_wsgi(__name__):
+    app = create_app()
 
 
 if __name__ == "__main__":
-    main()
+    web.run_app(app, port=6786)

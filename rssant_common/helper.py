@@ -1,3 +1,4 @@
+import os
 import json
 import codecs
 from urllib.parse import urlparse, urlunparse
@@ -6,6 +7,12 @@ import aiohttp
 import cchardet
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
+
+
+def is_main_or_wsgi(name):
+    is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
+    is_wsgi = bool(os.getenv('SERVER_WSGI'))
+    return name == '__main__' or is_gunicorn or is_wsgi
 
 
 def pretty_format_json(data):
