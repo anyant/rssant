@@ -1,5 +1,5 @@
 import tempfile
-from actorlib.storage import ActorState, ActorLocalStorage
+from actorlib.storage import ActorState, ActorLocalStorage, ActorMemoryStorage
 
 
 def op(op_type, message_id, **kwargs):
@@ -81,3 +81,13 @@ def test_actor_local_storage():
         with ActorLocalStorage(dir_path, wal_limit=550) as storage:
             assert not storage.should_compact()
             assert storage.current_wal_size == 550
+
+
+def test_actor_memory_storage():
+    with ActorMemoryStorage() as storage:
+        for i in range(100):
+            for status in ['OK', None, 'ERROR']:
+                msg_id = f'{i}_{status}'
+                for item in make_wal_items(msg_id, status=status):
+                    storage.op(item)
+        assert len(storage.query_send_message_ids()) == 200

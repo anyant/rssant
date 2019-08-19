@@ -60,6 +60,7 @@ class ActorState:
 
     status: BEGIN/SEND/OK/ERROR/ERROR_NOTRY
     """
+    # TODO: compact done message in state
 
     def __init__(self):
         # state:
@@ -190,10 +191,75 @@ class ActorState:
 COMPACT_FILENAME = 'z.msgpack'
 
 
-class ActorLocalStorage:
+class ActorStorageBase:
+
+    def __init__(self):
+        self._state = ActorState()
+        self._lock = RLock()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
+
+    def close(self):
+        with self._lock:
+            self._state = None
+
+    @property
+    def current_wal_size(self):
+        return 0
+
+    def should_compact(self):
+        return False
+
+    def compact(self):
+        """do nothing"""
+
+    def op(self, item):
+        with self._lock:
+            self._op(**item)
+
+    def op_begin(self, message_id):
+        with self._lock:
+            self._op('begin', message_id)
+
+    def op_done(self, message_id, status):
+        with self._lock:
+            self._op('done', message_id, status=status)
+
+    def op_send(self, message_id, send_messages: List[dict]):
+        with self._lock:
+            self._op('send', message_id, send_messages=send_messages)
+
+    def op_ack(self, message_id, ack_message_id, status):
+        with self._lock:
+            self._op('ack', message_id, ack_message_id=ack_message_id, status=status)
+
+    def op_retry(self, message_id, ack_message_id):
+        with self._lock:
+            self._op('retry', message_id, ack_message_id=ack_message_id)
+
+    def query_send_message_ids(self):
+        with self._lock:
+            return self._state.query_send_message_ids()
+
+    def get_send_message(self, message_id):
+        with self._lock:
+            return self._state.get_send_message(message_id)
+
+
+class ActorMemoryStorage(ActorStorageBase):
+
+    def _op(self, type, message_id, **kwargs):
+        getattr(self._state, 'apply_' + type)(message_id, **kwargs)
+
+
+class ActorLocalStorage(ActorStorageBase):
 
     def __init__(self, dir_path, wal_limit=10**6, buffer_size=100 * 1024 * 1024):
-        self._state = ActorState()
+        super().__init__()
         self.dir_path = dir_path
         self.wal_limit = wal_limit
         self.buffer_size = buffer_size
@@ -208,7 +274,6 @@ class ActorLocalStorage:
         self._filepaths = filepaths
         self._current_filepath = filepaths[-1]
         self._current = open(self._current_filepath, 'ab')
-        self._lock = RLock()
         self._packer = msgpack.Packer(use_bin_type=True)
         self._is_compacting = False
 
@@ -219,13 +284,8 @@ class ActorLocalStorage:
 
     def close(self):
         with self._lock:
+            super().close()
             self._current.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc_info):
-        self.close()
 
     def _get_file_num(self, filepath):
         num, _ = os.path.splitext(os.path.basename(filepath))
@@ -319,35 +379,3 @@ class ActorLocalStorage:
         self._append({'type': type, 'message_id': message_id, **kwargs})
         self._current_wal_size += 1
         getattr(self._state, 'apply_' + type)(message_id, **kwargs)
-
-    def op(self, item):
-        with self._lock:
-            self._op(**item)
-
-    def op_begin(self, message_id):
-        with self._lock:
-            self._op('begin', message_id)
-
-    def op_done(self, message_id, status):
-        with self._lock:
-            self._op('done', message_id, status=status)
-
-    def op_send(self, message_id, send_messages: List[dict]):
-        with self._lock:
-            self._op('send', message_id, send_messages=send_messages)
-
-    def op_ack(self, message_id, ack_message_id, status):
-        with self._lock:
-            self._op('ack', message_id, ack_message_id=ack_message_id, status=status)
-
-    def op_retry(self, message_id, ack_message_id):
-        with self._lock:
-            self._op('retry', message_id, ack_message_id=ack_message_id)
-
-    def query_send_message_ids(self):
-        with self._lock:
-            return self._state.query_send_message_ids()
-
-    def get_send_message(self, message_id):
-        with self._lock:
-            return self._state.get_send_message(message_id)
