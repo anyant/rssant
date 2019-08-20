@@ -78,10 +78,18 @@ class ActorExecutor:
             scope.set_tag('message_dst_node', message.dst_node)
             yield message
 
+    def _try_handle_ack(self, message):
+        if message.dst == 'actor.ack':
+            self.storage.op_ack(message.id, message.content['status'])
+            return True
+        return False
+
     async def _async_handle_message(self, message, actor_client):
         with self._set_sentry_scope(message):
+            if self._try_handle_ack(message):
+                return
             try:
-                self.storage.op_begin(message.id)
+                self.storage.op_begin(message.id, message.src_node)
             except DuplicateMessageError as ex:
                 LOG.info(f'DuplicateMessageError: {ex}')
                 return None
@@ -129,8 +137,10 @@ class ActorExecutor:
 
     def _handle_message(self, message, actor_client):
         with self._set_sentry_scope(message):
+            if self._try_handle_ack(message):
+                return
             try:
-                self.storage.op_begin(message.id)
+                self.storage.op_begin(message.id, message.src_node)
             except DuplicateMessageError as ex:
                 LOG.info(f'DuplicateMessageError: {ex}')
                 return None

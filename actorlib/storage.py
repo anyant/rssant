@@ -67,6 +67,7 @@ class ActorState:
         # {
         #     MESSAGE_ID: {
         #         "status": STATUS,
+        #         "src_node": SRC_NODE,
         #         "send_messages": {
         #             MESSAGE_ID: {
         #                 "status": STATUS,
@@ -76,16 +77,18 @@ class ActorState:
         #     }
         # }
         self._state = {}
-        # send_messages: { MESSAGE_ID: MESSAGE }
+        # send_messages: { MESSAGE_ID: (PARENT_ID, MESSAGE) }
         self._send_messages = {}
+        self._done_message_ids = []
 
-    def apply_begin(self, message_id):
+    def apply_begin(self, message_id, src_node):
         state = self._state.get(message_id)
         if state is not None:
             status = state['status']
             if status != 'ERROR' and status != 'ERROR_NOTRY':
+                self._done_message_ids.append(message_id)
                 raise DuplicateMessageError(f'duplicate message {message_id} status={status}')
-        self._state[message_id] = dict(status='BEGIN')
+        self._state[message_id] = dict(status='BEGIN', src_node=src_node)
 
     def apply_done(self, message_id, status):
         self._state.setdefault(message_id, {}).update(status=status)
@@ -93,26 +96,31 @@ class ActorState:
         if send_messages:
             for send_msg_id in send_messages:
                 self._send_messages.pop(send_msg_id, None)
+        self._done_message_ids.append(message_id)
 
     def apply_send(self, message_id, send_messages: List[dict]):
         send_messages_state = {}
         for x in send_messages:
-            self._send_messages[x['id']] = x
+            self._send_messages[x['id']] = (message_id, x)
             send_messages_state[x['id']] = dict(status='BEGIN', count=0)
         self._state[message_id].update(status='SEND', send_messages=send_messages_state)
 
-    def apply_ack(self, message_id, ack_message_id, status):
-        send_messages = self._state[message_id]['send_messages']
-        send_messages[ack_message_id].update(status=status)
+    def apply_ack(self, message_id, status):
+        parent_id, __ = self._send_messages[message_id]
+        send_messages = self._state[parent_id]['send_messages']
+        send_messages[message_id].update(status=status)
         if status == 'ERROR_NOTRY':
-            self.apply_done(message_id, 'ERROR_NOTRY')
+            self.apply_done(parent_id, 'ERROR_NOTRY')
         elif status == 'OK':
             all_ok = all(x['status'] == 'OK' for x in send_messages.values())
             if all_ok:
-                self.apply_done(message_id, 'OK')
+                self.apply_done(parent_id, 'OK')
+            else:
+                self._send_messages.pop(message_id, None)
 
-    def apply_retry(self, message_id, ack_message_id):
-        message_state = self._state[message_id]['send_messages'][ack_message_id]
+    def apply_retry(self, message_id):
+        parent_id, __ = self._send_messages[message_id]
+        message_state = self._state[parent_id]['send_messages'][message_id]
         message_state.update(count=message_state['count'] + 1)
 
     def query_message_ids(self):
@@ -121,11 +129,20 @@ class ActorState:
     def get_message_state(self, message_id):
         return self._state[message_id]
 
-    def query_send_message_ids(self):
-        return set(self._send_messages.keys())
+    def query_send_messages(self) -> [(str, dict, dict)]:
+        ret = {}
+        for msg_id, (parent_id, msg) in self._send_messages.items():
+            state = self._state[parent_id]['send_messages'][msg_id]
+            ret[msg_id] = (state, msg)
+        return ret
 
-    def get_send_message(self, message_id):
-        return self._send_messages[message_id]
+    def pop_done_messages(self):
+        ret = {}
+        for msg_id in self._done_message_ids:
+            state = self._state[msg_id]
+            ret[msg_id] = dict(status=state['status'], src_node=state['src_node'])
+        self._done_message_ids = []
+        return ret
 
     def apply(self, item):
         item = item.copy()
@@ -233,21 +250,21 @@ class ActorStorageBase:
         with self._lock:
             self._op('send', message_id, send_messages=send_messages)
 
-    def op_ack(self, message_id, ack_message_id, status):
+    def op_ack(self, message_id, status):
         with self._lock:
-            self._op('ack', message_id, ack_message_id=ack_message_id, status=status)
+            self._op('ack', message_id, status=status)
 
-    def op_retry(self, message_id, ack_message_id):
+    def op_retry(self, message_id):
         with self._lock:
-            self._op('retry', message_id, ack_message_id=ack_message_id)
+            self._op('retry', message_id)
 
-    def query_send_message_ids(self):
+    def query_send_messages(self):
         with self._lock:
-            return self._state.query_send_message_ids()
+            return self._state.query_send_messages()
 
-    def get_send_message(self, message_id):
+    def pop_done_messages(self):
         with self._lock:
-            return self._state.get_send_message(message_id)
+            return self._state.pop_done_messages()
 
 
 class ActorMemoryStorage(ActorStorageBase):
