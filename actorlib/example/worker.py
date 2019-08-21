@@ -1,5 +1,6 @@
 import logging
 
+import backdoor
 from validr import T
 from actorlib import actor, collect_actors, ActorNode, ActorContext
 
@@ -37,10 +38,14 @@ ACTORS = collect_actors(__name__)
 
 
 def main():
+    backdoor.setup()
     app = ActorNode(
         actors=ACTORS,
         port=8082,
         subpath='/api/v1/worker',
+        storage_dir_path='data/actorlib_example_worker',
+        storage_wal_limit=3,
+        storage_compact_interval=10,
         registery_node_spec={
             'name': 'registery',
             'modules': ['registery'],
@@ -48,7 +53,7 @@ def main():
                 'name': 'localhost',
                 'url': 'http://127.0.0.1:8081/api/v1/registery',
             }],
-        }
+        },
     )
     app.run()
 

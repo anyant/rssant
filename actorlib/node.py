@@ -33,6 +33,7 @@ class ActorNode:
         registery_node_spec=None,
         storage_dir_path=None,
         storage_wal_limit=10**6,
+        storage_compact_interval=180,
         schema_compiler=None,
         on_startup=None,
         on_shutdown=None,
@@ -44,7 +45,7 @@ class ActorNode:
         self.actors = {x.name: x for x in actors}
         actor_modules = {x.module for x in actors}
         if not name:
-            name = '{}:{}'.format(LOCAL_NODE_NAME, port)
+            name = '{}-{}'.format(LOCAL_NODE_NAME, port)
         self.name = name
         if not networks:
             networks = []
@@ -61,14 +62,15 @@ class ActorNode:
         if storage_dir_path:
             self.storage = ActorLocalStorage(
                 dir_path=storage_dir_path, wal_limit=storage_wal_limit)
-            self.storage_compactor = ActorStorageCompactor(self.storage)
+            self.storage_compactor = ActorStorageCompactor(
+                self.storage, interval=storage_compact_interval)
         else:
             LOG.info('storage_dir_path not set, will use memory storage')
             self.storage = ActorMemoryStorage()
             self.storage_compactor = None
         self.concurrency = concurrency
         self.sender = MessageSender(
-            concurrency=concurrency, registery=self.registery)
+            concurrency=concurrency, storage=self.storage, registery=self.registery)
         self.executor = ActorExecutor(
             self.actors, sender=self.sender, storage=self.storage,
             registery=self.registery, concurrency=concurrency)
@@ -97,7 +99,7 @@ class ActorNode:
         if 'actor.init' not in self.actors:
             return
         msg = ActorMessage(
-            src='actor.init', dst='actor.init',
+            src='actor.init', dst='actor.init', is_ask=True,
             dst_node=self.registery.current_node.name
         )
         self.executor.submit(msg)

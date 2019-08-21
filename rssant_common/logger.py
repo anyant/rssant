@@ -6,7 +6,7 @@ from loguru import logger as loguru_logger
 
 class InterceptHandler(logging.Handler):
     def emit(self, record):
-        logger_opt = loguru_logger.opt(depth=7, exception=record.exc_info)
+        logger_opt = loguru_logger.opt(depth=6, exception=record.exc_info)
         logger_opt.log(record.levelname, record.getMessage())
 
 

@@ -90,6 +90,9 @@ class MessageSender:
     def submit(self, message):
         return self.outbox.put(message)
 
+    def _get_retry_timeout(self, count):
+        return (count + 1) / self.max_retry_count * self.ack_timeout
+
     async def check_send_messages(self):
         send_messages = self.storage.query_send_messages()
         with self._lock:
@@ -110,8 +113,7 @@ class MessageSender:
                     retry_messages.append((msg_id, msg))
                     continue
                 if state['status'] == 'ERROR':
-                    error_timeout = now - (state['count'] + 1) / \
-                        self.max_retry_count * self.ack_timeout
+                    error_timeout = now - self._get_retry_timeout(state['count'])
                     if t_send < error_timeout:
                         retry_messages.append((msg_id, msg))
                         continue
@@ -128,19 +130,29 @@ class MessageSender:
     async def check_done_messages(self):
         done_messages = self.storage.pop_done_messages()
         for msg_id, state in done_messages.items():
-            await self.async_submit(ActorMessage(
-                id=msg_id,
-                src='actor.ack',
-                dst='actor.ack',
-                dst_node=state['src_node'],
-                content=dict(status=state['status'])
-            ))
+            if state['is_ask']:
+                continue
+            status = state['status']
+            dst_node = state['src_node']
+            if self.registery.is_local_node(dst_node):
+                self.storage.op_ack(msg_id, status)
+            else:
+                await self.async_submit(ActorMessage(
+                    id=msg_id,
+                    src='actor.ack',
+                    dst='actor.ack',
+                    dst_node=dst_node,
+                    content=dict(status=status)
+                ))
 
     async def _monitor_main(self):
         while not self._stop:
             await asyncio.sleep(1)
             try:
                 await self.check_send_messages()
+            except Exception as ex:
+                LOG.exception(ex)
+            try:
                 await self.check_done_messages()
             except Exception as ex:
                 LOG.exception(ex)

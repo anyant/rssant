@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import backdoor
 from validr import T
 from actorlib import actor, collect_actors, ActorNode, ActorContext, NodeSpecSchema
 
@@ -32,11 +33,15 @@ ACTORS = collect_actors(__name__)
 
 
 def main():
+    backdoor.setup()
     app = ActorNode(
         actors=ACTORS,
         port=8081,
         name='registery',
         subpath='/api/v1/registery',
+        storage_dir_path='data/actorlib_example_registery',
+        storage_wal_limit=3,
+        storage_compact_interval=10,
     )
     app.run()
 

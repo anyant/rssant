@@ -81,14 +81,14 @@ class ActorState:
         self._send_messages = {}
         self._done_message_ids = []
 
-    def apply_begin(self, message_id, src_node):
+    def apply_begin(self, message_id, *, src_node, is_ask):
         state = self._state.get(message_id)
         if state is not None:
             status = state['status']
             if status != 'ERROR' and status != 'ERROR_NOTRY':
                 self._done_message_ids.append(message_id)
                 raise DuplicateMessageError(f'duplicate message {message_id} status={status}')
-        self._state[message_id] = dict(status='BEGIN', src_node=src_node)
+        self._state[message_id] = dict(status='BEGIN', src_node=src_node, is_ask=is_ask)
 
     def apply_done(self, message_id, status):
         self._state.setdefault(message_id, {}).update(status=status)
@@ -123,9 +123,6 @@ class ActorState:
         message_state = self._state[parent_id]['send_messages'][message_id]
         message_state.update(count=message_state['count'] + 1)
 
-    def query_message_ids(self):
-        return set(self._state.keys())
-
     def get_message_state(self, message_id):
         return self._state[message_id]
 
@@ -140,8 +137,25 @@ class ActorState:
         ret = {}
         for msg_id in self._done_message_ids:
             state = self._state[msg_id]
-            ret[msg_id] = dict(status=state['status'], src_node=state['src_node'])
+            ret[msg_id] = dict(
+                status=state['status'],
+                src_node=state['src_node'],
+                is_ask=state['is_ask'],
+            )
         self._done_message_ids = []
+        return ret
+
+    def pop_begin_messages(self):
+        ret = {}
+        for msg_id, state in self._state.items():
+            if state['status'] == 'BEGIN':
+                ret[msg_id] = dict(
+                    status=state['status'],
+                    src_node=state['src_node'],
+                    is_ask=state['is_ask'],
+                )
+        for msg_id in ret:
+            del self._state[msg_id]
         return ret
 
     def apply(self, item):
@@ -164,20 +178,26 @@ class ActorState:
             if self._is_done(status):
                 yield dict(type='done', message_id=message_id, status=status)
             elif status == 'BEGIN':
-                yield dict(type='begin', message_id=message_id)
+                yield dict(type='begin', message_id=message_id,
+                           src_node=state['src_node'], is_ask=state['is_ask'])
             elif status == 'SEND':
-                yield dict(type='begin', message_id=message_id)
-                send_messages = [self._send_messages[k] for k in state['send_messages']]
+                yield dict(type='begin', message_id=message_id,
+                           src_node=state['src_node'], is_ask=state['is_ask'])
+                send_messages = []
+                for k, ack_state in state['send_messages'].items():
+                    if ack_state['status'] == 'OK':
+                        msg = {'id': k}
+                    else:
+                        __, msg = self._send_messages[k]
+                    send_messages.append(msg)
                 yield dict(type='send', message_id=message_id, send_messages=send_messages)
                 for ack_message_id, message_state in state['send_messages'].items():
                     ack_status = message_state['status']
                     count = message_state['count']
                     for i in range(count):
-                        yield dict(type='retry', message_id=message_id,
-                                   ack_message_id=ack_message_id)
+                        yield dict(type='retry', message_id=ack_message_id)
                     if self._is_done(ack_status):
-                        yield dict(type='ack', message_id=message_id,
-                                   ack_message_id=ack_message_id, status=ack_status)
+                        yield dict(type='ack', message_id=ack_message_id, status=ack_status)
                     elif ack_status == 'BEGIN':
                         pass
                     else:
@@ -238,9 +258,9 @@ class ActorStorageBase:
         with self._lock:
             self._op(**item)
 
-    def op_begin(self, message_id):
+    def op_begin(self, message_id, *, src_node, is_ask):
         with self._lock:
-            self._op('begin', message_id)
+            self._op('begin', message_id, src_node=src_node, is_ask=is_ask)
 
     def op_done(self, message_id, status):
         with self._lock:
@@ -270,6 +290,7 @@ class ActorStorageBase:
 class ActorMemoryStorage(ActorStorageBase):
 
     def _op(self, type, message_id, **kwargs):
+        # print(f'op_{type} {message_id} {kwargs}')
         getattr(self._state, 'apply_' + type)(message_id, **kwargs)
 
 
@@ -277,16 +298,20 @@ class ActorLocalStorage(ActorStorageBase):
 
     def __init__(self, dir_path, wal_limit=10**6, buffer_size=100 * 1024 * 1024):
         super().__init__()
+        dir_path = os.path.abspath(os.path.expanduser(dir_path))
+        LOG.info(f'use local storage at {dir_path}')
+        os.makedirs(dir_path, exist_ok=True)
         self.dir_path = dir_path
         self.wal_limit = wal_limit
         self.buffer_size = buffer_size
         self._current_wal_size = 0
-        LOG.info(f'use local storage at {dir_path}')
         filepaths = self._load_filepaths(dir_path)
         if filepaths:
             for item in self._load_items(filepaths):
                 self._state.apply(item)
                 self._current_wal_size += 1
+            # discard not processed messages
+            self._state.pop_begin_messages()
         else:
             filepaths.append(os.path.join(dir_path, '0.msgpack'))
         self._filepaths = filepaths

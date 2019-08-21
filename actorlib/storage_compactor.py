@@ -10,14 +10,15 @@ LOG = logging.getLogger(__name__)
 
 
 class ActorStorageCompactor:
-    def __init__(self, storage: ActorStorageBase):
+    def __init__(self, storage: ActorStorageBase, interval=180):
         self.storage = storage
+        self.interval = interval
         self._thread = None
 
     def main(self):
         while True:
             try:
-                time.sleep(180)
+                time.sleep(self.interval)
                 if self.storage.should_compact():
                     self.storage.compact()
             except Exception as ex:
