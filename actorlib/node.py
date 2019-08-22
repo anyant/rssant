@@ -32,7 +32,7 @@ class ActorNode:
         networks=None,
         registery_node_spec=None,
         storage_dir_path=None,
-        storage_wal_limit=10**6,
+        storage_wal_limit=10**4,
         storage_compact_interval=180,
         schema_compiler=None,
         on_startup=None,

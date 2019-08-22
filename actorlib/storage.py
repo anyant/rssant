@@ -106,6 +106,8 @@ class ActorState:
         self._state[message_id].update(status='SEND', send_messages=send_messages_state)
 
     def apply_ack(self, message_id, status):
+        if message_id not in self._send_messages:
+            return
         parent_id, __ = self._send_messages[message_id]
         send_messages = self._state[parent_id]['send_messages']
         send_messages[message_id].update(status=status)
@@ -165,7 +167,10 @@ class ActorState:
 
     def load(self, wal_items: list):
         for item in wal_items:
-            self.apply(item)
+            try:
+                self.apply(item)
+            except DuplicateMessageError as ex:
+                LOG.info(ex)
         return self
 
     @staticmethod
@@ -296,7 +301,7 @@ class ActorMemoryStorage(ActorStorageBase):
 
 class ActorLocalStorage(ActorStorageBase):
 
-    def __init__(self, dir_path, wal_limit=10**6, buffer_size=100 * 1024 * 1024):
+    def __init__(self, dir_path, wal_limit=10**4, buffer_size=100 * 1024 * 1024):
         super().__init__()
         dir_path = os.path.abspath(os.path.expanduser(dir_path))
         LOG.info(f'use local storage at {dir_path}')
@@ -308,8 +313,12 @@ class ActorLocalStorage(ActorStorageBase):
         filepaths = self._load_filepaths(dir_path)
         if filepaths:
             for item in self._load_items(filepaths):
-                self._state.apply(item)
-                self._current_wal_size += 1
+                try:
+                    self._state.apply(item)
+                except DuplicateMessageError as ex:
+                    LOG.info(ex)
+                else:
+                    self._current_wal_size += 1
             # discard not processed messages
             self._state.pop_begin_messages()
         else:
