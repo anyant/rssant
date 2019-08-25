@@ -53,10 +53,11 @@ class MessageReceiver:
         if not dst_url:
             dst_url = str(request.url)
         msg = ActorMessage(
-            id=message_id, content=data, src=src, src_node=src_node,
+            id=message_id, content=data, is_ask=True,
+            src=src, src_node=src_node,
             dst=dst, dst_node=dst_node, dst_url=dst_url,
         )
-        result = await self.executor.async_on_message(msg, is_ask=True)
+        result = await self.executor.async_on_message(msg)
         if result is None:
             return Response(status=204)
         result = ActorMessage.raw_encode(result, content_encoding=content_encoding)

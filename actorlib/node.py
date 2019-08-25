@@ -13,6 +13,9 @@ from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
 from .network_helper import get_local_networks, LOCAL_NODE_NAME
+from .storage import ActorLocalStorage, ActorMemoryStorage
+from .storage_compactor import ActorStorageCompactor
+from .message_monitor import ActorMessageMonitor
 
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +32,12 @@ class ActorNode:
         subpath=None,
         networks=None,
         registery_node_spec=None,
+        storage_dir_path=None,
+        storage_max_pending_size=10**2,
+        storage_max_done_size=10**3,
+        storage_compact_interval=10,
+        ack_timeout=180,
+        max_retry_count=3,
         schema_compiler=None,
         on_startup=None,
         on_shutdown=None,
@@ -40,7 +49,7 @@ class ActorNode:
         self.actors = {x.name: x for x in actors}
         actor_modules = {x.module for x in actors}
         if not name:
-            name = '{}:{}'.format(LOCAL_NODE_NAME, port)
+            name = '{}-{}'.format(LOCAL_NODE_NAME, port)
         self.name = name
         if not networks:
             networks = []
@@ -53,12 +62,32 @@ class ActorNode:
         self.registery = ActorRegistery(
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
+        self.storage_dir_path = storage_dir_path
+        if storage_dir_path:
+            self.storage = ActorLocalStorage(
+                dir_path=storage_dir_path,
+                max_pending_size=storage_max_pending_size,
+                max_done_size=storage_max_done_size,
+            )
+            self.storage_compactor = ActorStorageCompactor(
+                self.storage, interval=storage_compact_interval)
+        else:
+            LOG.info('storage_dir_path not set, will use memory storage')
+            self.storage = ActorMemoryStorage(
+                max_pending_size=storage_max_pending_size,
+                max_done_size=storage_max_done_size,
+            )
+            self.storage_compactor = None
         self.concurrency = concurrency
         self.sender = MessageSender(
-            concurrency=concurrency, registery=self.registery)
+            concurrency=concurrency, storage=self.storage, registery=self.registery)
         self.executor = ActorExecutor(
-            self.actors, sender=self.sender,
+            self.actors, sender=self.sender, storage=self.storage,
             registery=self.registery, concurrency=concurrency)
+        self.message_monitor = ActorMessageMonitor(
+            self.storage, self.executor, self.sender,
+            ack_timeout=ack_timeout, max_retry_count=max_retry_count,
+        )
         self.host = host
         self.port = port
         self.subpath = subpath or ''
@@ -84,7 +113,7 @@ class ActorNode:
         if 'actor.init' not in self.actors:
             return
         msg = ActorMessage(
-            src='actor.init', dst='actor.init',
+            src='actor.init', dst='actor.init', is_ask=False,
             dst_node=self.registery.current_node.name
         )
         self.executor.submit(msg)
@@ -108,6 +137,9 @@ class ActorNode:
     def run(self):
         self.sender.start()
         self.executor.start()
+        if self.storage_compactor:
+            self.storage_compactor.start()
+        self.message_monitor.start()
         LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
         LOG.info(f'current registery:\n{pretty_format_json(self.registery.to_spec())}')
         try:
@@ -120,6 +152,9 @@ class ActorNode:
                 for handler in self._on_shutdown_handlers:
                     handler(self)
             finally:
+                self.message_monitor.shutdown()
+                if self.storage_compactor:
+                    self.storage_compactor.shutdown()
                 self.executor.shutdown()
                 self.sender.shutdown()
 

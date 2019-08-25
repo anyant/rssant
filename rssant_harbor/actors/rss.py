@@ -12,6 +12,7 @@ from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
+from rssant_common.validator import compiler
 from rssant.settings import ENV_CONFIG
 
 
@@ -19,7 +20,7 @@ LOG = logging.getLogger(__name__)
 
 CHECK_FEED_SECONDS = ENV_CONFIG.check_feed_minutes * 60
 
-StorySchema = T.dict(
+StorySchemaFields = dict(
     unique_id=T.str,
     title=T.str,
     content_hash_base64=T.str,
@@ -31,7 +32,13 @@ StorySchema = T.dict(
     content=T.str.optional,
 )
 
-FeedSchema = T.dict(
+StoryOutputSchemaFields = StorySchemaFields.copy()
+StoryOutputSchemaFields.update(
+    dt_published=T.datetime.optional,
+    dt_updated=T.datetime.optional,
+)
+
+FeedSchemaFields = dict(
     url=T.url,
     title=T.str,
     content_hash_base64=T.str,
@@ -44,8 +51,26 @@ FeedSchema = T.dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
+)
+
+FeedOutputSchemaFields = FeedSchemaFields.copy()
+FeedOutputSchemaFields.update(
+    dt_updated=T.datetime.optional,
+)
+
+StorySchema = T.dict(**StorySchemaFields)
+FeedSchema = T.dict(
+    **FeedSchemaFields,
     storys=T.list(StorySchema),
 )
+
+StoryOutputSchema = T.dict(**StoryOutputSchemaFields)
+FeedOutputSchema = T.dict(
+    **FeedOutputSchemaFields,
+    storys=T.list(StoryOutputSchema),
+)
+
+validate_feed_output = compiler.compile(FeedOutputSchema)
 
 
 @actor('harbor_rss.update_feed_creation_status')
@@ -104,7 +129,7 @@ def do_save_feed_creation_result(
             FeedUrlMap(source=feed.url, target=feed.url).save()
     ctx.tell('harbor_rss.update_feed', dict(
         feed_id=feed.id,
-        feed=feed_dict,
+        feed=validate_feed_output(feed_dict),
     ))
 
 

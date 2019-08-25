@@ -288,11 +288,11 @@ def _get_storys(entries):
             summary = content
         summary = shorten(story_html_to_text(summary), width=300)
         story['summary'] = summary
-        title = shorten(data["title"], 200)
+        story['link'] = unquote(data["link"])
+        title = shorten(data["title"] or story['link'] or story['unique_id'], 200)
         content_hash_base64 = compute_hash_base64(content, summary, title)
         story['title'] = title
         story['content_hash_base64'] = content_hash_base64
-        story['link'] = unquote(data["link"])
         story['author'] = shorten(data["author"], 200)
         story['dt_published'] = _get_dt_published(data)
         story['dt_updated'] = _get_dt_updated(data)

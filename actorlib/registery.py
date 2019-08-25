@@ -161,9 +161,12 @@ class ActorRegistery:
         return message
 
     def is_local_message(self, message):
-        if not self.current_node:
+        return self.is_local_node(message.dst_node)
+
+    def is_local_node(self, node_name):
+        if not self.current_node or not node_name:
             return False
-        return message.dst_node == self.current_node_name
+        return node_name == self.current_node_name
 
     def generate_message_id(self):
         return self.current_node_name + ':' + str(uuid.uuid4())
