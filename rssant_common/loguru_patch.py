@@ -38,6 +38,14 @@ _srcfile = (
 )
 
 
+try:
+    import sentry_sdk.integrations.logging
+except ImportError:
+    pass  # ignore
+else:
+    _srcfile = (sentry_sdk.integrations.logging.__file__, *_srcfile)
+
+
 def findCaller(stack_info=False):
     """
     Find the stack frame of the caller so that we can note the source

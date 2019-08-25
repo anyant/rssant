@@ -79,13 +79,17 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
             elif not isinstance(value, datetime.datetime):
                 value = parse_datetime(value)
                 if value is None:
-                    raise ValueError('not well formatted at all')
+                    raise Invalid('not well formatted datetime')
             if not timezone.is_aware(value):
                 value = timezone.make_aware(value, timezone=timezone.utc)
+            if value.year < 1000:
+                raise Invalid('not support datetime before 1000-01-01')
             if output_object:
                 return value
             else:
                 return value.strftime(format)
+        except Invalid:
+            raise
         except Exception as ex:
             raise Invalid('invalid datetime') from ex
     return validate
@@ -142,7 +146,7 @@ def str_validator(compiler, schema):
     strip = schema.params.pop('strip', False)
     lstrip = schema.params.pop('lstrip', False)
     rstrip = schema.params.pop('rstrip', False)
-    maxlen = int(schema.params.get('maxlen', 1024*1024))
+    maxlen = int(schema.params.get('maxlen', 1024 * 1024))
     origin_validate = builtin_validators['str'](compiler, schema)
 
     @functools.wraps(origin_validate)
