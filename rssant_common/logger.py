@@ -2,12 +2,7 @@ import sys
 import logging
 import faulthandler
 from loguru import logger as loguru_logger
-
-
-class InterceptHandler(logging.Handler):
-    def emit(self, record):
-        logger_opt = loguru_logger.opt(depth=7, exception=record.exc_info)
-        logger_opt.log(record.levelname, record.getMessage())
+from .loguru_patch import loguru_patch, InterceptHandler
 
 
 LOG_FORMAT = (
@@ -27,8 +22,22 @@ LOGURU_HANDLER = {
 
 def configure_logging(level=logging.INFO):
     faulthandler.enable()
+    loguru_patch()
     # https://stackoverflow.com/questions/45522159/dont-log-certificate-did-not-match-expected-hostname-error-messages
     logging.getLogger('urllib3.connection').setLevel(logging.CRITICAL)
     logging.getLogger('readability.readability').setLevel(logging.WARNING)
     logging.basicConfig(handlers=[InterceptHandler()], level=level)
     loguru_logger.configure(handlers=[LOGURU_HANDLER])
+
+
+if __name__ == '__main__':
+    configure_logging()
+    LOG = logging.getLogger(__name__)
+    LOG.debug('debug log')
+    LOG.info('info log')
+    LOG.warning('warning log')
+    LOG.error('error log')
+    try:
+        raise ValueError('exception log')
+    except Exception as ex:
+        LOG.exception(ex)
