@@ -262,22 +262,22 @@ def do_check_feed(ctx):
 
 @actor('harbor_rss.clean_feed_creation')
 @django_context
-def do_clean_feed_creation(ctx):
+def do_clean_feed_creation(ctx: ActorContext):
     # 删除所有入库时间超过2小时的订阅创建信息
     num_deleted = FeedCreation.delete_by_status(survival_seconds=2 * 60 * 60)
     LOG.info('delete {} old feed creations'.format(num_deleted))
     # 重试 status=UPDATING 超过10分钟的订阅
-    feed_creation_ids = FeedCreation.query_ids_by_status(
+    feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
         FeedStatus.UPDATING, survival_seconds=10 * 60)
-    num_retry_updating = len(feed_creation_ids)
+    num_retry_updating = len(feed_creation_id_urls)
     LOG.info('retry {} status=UPDATING feed creations'.format(num_retry_updating))
-    _retry_feed_creations(feed_creation_ids)
+    _retry_feed_creations(ctx, feed_creation_id_urls)
     # 重试 status=PENDING 超过30分钟的订阅
-    feed_creation_ids = FeedCreation.query_ids_by_status(
+    feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
         FeedStatus.PENDING, survival_seconds=CHECK_FEED_SECONDS)
-    num_retry_pending = len(feed_creation_ids)
+    num_retry_pending = len(feed_creation_id_urls)
     LOG.info('retry {} status=PENDING feed creations'.format(num_retry_pending))
-    _retry_feed_creations(feed_creation_ids)
+    _retry_feed_creations(ctx, feed_creation_id_urls)
     return dict(
         num_deleted=num_deleted,
         num_retry_updating=num_retry_updating,
@@ -285,5 +285,11 @@ def do_clean_feed_creation(ctx):
     )
 
 
-def _retry_feed_creations(feed_creation_ids):
+def _retry_feed_creations(ctx: ActorContext, feed_creation_id_urls):
+    feed_creation_ids = [id for (id, url) in feed_creation_id_urls]
     FeedCreation.bulk_set_pending(feed_creation_ids)
+    for feed_creation_id, url in feed_creation_id_urls:
+        ctx.tell('worker_rss.find_feed', dict(
+            feed_creation_id=feed_creation_id,
+            url=url,
+        ))

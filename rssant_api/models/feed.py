@@ -344,14 +344,19 @@ class FeedCreation(Model):
         num_deleted, __ = q.delete()
         return num_deleted
 
-    @staticmethod
-    def query_ids_by_status(status, survival_seconds=None):
+    @classmethod
+    def query_ids_by_status(cls, status, survival_seconds=None):
+        id_urls = cls.query_id_urls_by_status(status, survival_seconds=survival_seconds)
+        return [id for (id, url) in id_urls]
+
+    @classmethod
+    def query_id_urls_by_status(cls, status, survival_seconds=None):
         q = FeedCreation.objects.filter(status=status)
         if survival_seconds:
             deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
             q = q.filter(dt_created__lt=deadline)
-        feed_creation_ids = [x.id for x in q.only('id').all()]
-        return feed_creation_ids
+        id_urls = [(x.id, x.url) for x in q.only('id', 'url').all()]
+        return id_urls
 
 
 class FeedUrlMap(Model):
