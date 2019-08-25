@@ -16,7 +16,8 @@ from .registery import ActorRegistery
 from .sender import MessageSender
 from .client import AsyncActorClient, ActorClient
 from .sentry import sentry_scope
-from .storage import ActorStorageBase, DuplicateMessageError
+from .storage import ActorStorageBase
+from .state import ActorStateError
 
 
 LOG = logging.getLogger(__name__)
@@ -80,9 +81,15 @@ class ActorExecutor:
 
     def _handle_message_execute_begin(self, message):
         try:
-            self.storage.op_begin(message.id, src_node=message.src_node, is_ask=message.is_ask)
-        except DuplicateMessageError as ex:
-            LOG.info(f'DuplicateMessageError: {ex}')
+            self.storage.op_begin(
+                message.id,
+                is_ask=message.is_ask,
+                dst=message.dst,
+                src=message.src,
+                src_node=message.src_node,
+            )
+        except ActorStateError as ex:
+            LOG.warning(ex)
             return True
         return False
 
@@ -95,16 +102,19 @@ class ActorExecutor:
                 ctx = ActorContext(
                     executor=self, actor=actor,
                     message=message, actor_client=actor_client)
-                try:
-                    ret = await actor(ctx)
-                except Exception:
-                    self.storage.op_done(message.id, 'ERROR')
-                    raise
-                else:
+                ret = await actor(ctx)
+                await self._async_send_ack_if_done(
                     self._handle_message_execute_done(message, ctx)
-                    return ret
+                )
+                return ret
             except Exception as ex:
                 LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+                try:
+                    done_msg = self.storage.op_done(message.id, 'ERROR')
+                except ActorStateError as ex:
+                    LOG.warning(ex)
+                else:
+                    await self._async_send_ack_if_done(done_msg)
                 return None
 
     async def _async_main(self):
@@ -132,10 +142,62 @@ class ActorExecutor:
 
     def _handle_message_execute_done(self, message, ctx):
         send_messages = [x.to_dict() for x in ctx._pop_send_messages()]
-        if send_messages:
-            self.storage.op_send(message.id, send_messages)
+        try:
+            if send_messages:
+                return self.storage.op_send(message.id, send_messages)
+            else:
+                return self.storage.op_done(message.id, 'OK')
+        except ActorStateError as ex:
+            LOG.warning(ex)
+            return None
+
+    def _send_ack_if_done(self, message):
+        if not message:
+            return
+        if message['is_ask']:
+            return
+        dst_node = message['src_node']
+        msg_id = message['id']
+        status = message['status']
+        if self.registery.is_local_node(dst_node):
+            try:
+                done_msg = self.storage.op_ack(msg_id, status)
+            except ActorStateError as ex:
+                LOG.warning(ex)
+            else:
+                self._send_ack_if_done(done_msg)
         else:
-            self.storage.op_done(message.id, 'OK')
+            self.sender.submit(ActorMessage(
+                id=msg_id,
+                src='actor.ack',
+                dst='actor.ack',
+                dst_node=dst_node,
+                content=dict(status=status)
+            ))
+
+    async def _async_send_ack_if_done(self, message):
+        if not message:
+            return
+        if message['is_ask']:
+            return
+        dst_node = message['src_node']
+        msg_id = message['id']
+        status = message['status']
+        if self.registery.is_local_node(dst_node):
+            try:
+                done_msg = self.storage.op_ack(msg_id, status)
+            except ActorStateError as ex:
+                LOG.warning(ex)
+            else:
+                await self._async_send_ack_if_done(done_msg)
+        else:
+            await self.sender.async_submit(ActorMessage(
+                id=msg_id,
+                src='actor.ack',
+                dst='actor.ack',
+                dst_node=dst_node,
+                content=dict(status=status)
+            ))
 
     def _handle_message(self, message, actor_client):
         with self._set_sentry_scope(message):
@@ -146,16 +208,19 @@ class ActorExecutor:
                 ctx = ActorContext(
                     executor=self, actor=actor,
                     message=message, actor_client=actor_client)
-                try:
-                    ret = actor(ctx)
-                except Exception:
-                    self.storage.op_done(message.id, 'ERROR')
-                    raise
-                else:
+                ret = actor(ctx)
+                self._send_ack_if_done(
                     self._handle_message_execute_done(message, ctx)
-                    return ret
+                )
+                return ret
             except Exception as ex:
                 LOG.exception(f'actor {message.dst} handle {message} failed: {ex}')
+                try:
+                    done_msg = self.storage.op_done(message.id, 'ERROR')
+                except ActorStateError as ex:
+                    LOG.warning(ex)
+                else:
+                    self._send_ack_if_done(done_msg)
                 return None
 
     def thread_main(self):
@@ -169,11 +234,18 @@ class ActorExecutor:
                 else:
                     self._handle_message(message, actor_client=actor_client)
 
-    def _preprocess_message(self, message):
+    def _check_process_ack_message(self, message):
         is_local = self.registery.is_local_message(message)
         if (not message.is_ask) and is_local and message.dst == 'actor.ack':
-            self.storage.op_ack(message.id, message.content['status'])
-            return True
+            try:
+                return True, self.storage.op_ack(message.id, message.content['status'])
+            except ActorStateError as ex:
+                LOG.warning(ex)
+            return True, None
+        return False, None
+
+    def _check_message_undeliverable(self, message):
+        is_local = self.registery.is_local_message(message)
         if not (is_local and message.dst in self.actors):
             LOG.error(f'undeliverable message {message}')
             return True
@@ -188,7 +260,11 @@ class ActorExecutor:
             await self.async_on_message(message)
 
     async def async_on_message(self, message):
-        if self._preprocess_message(message):
+        is_ack_message, done_msg = self._check_process_ack_message(message)
+        if is_ack_message:
+            await self._async_send_ack_if_done(done_msg)
+            return
+        if self._check_message_undeliverable(message):
             return
         actor = self.actors[message.dst]
         if message.is_ask:
@@ -206,7 +282,11 @@ class ActorExecutor:
                 await self._async_put_message(self.thread_inbox, message)
 
     def on_message(self, message):
-        if self._preprocess_message(message):
+        is_ack_message, done_msg = self._check_process_ack_message(message)
+        if is_ack_message:
+            self._send_ack_if_done(done_msg)
+            return
+        if self._check_message_undeliverable(message):
             return
         actor = self.actors[message.dst]
         if message.is_ask:

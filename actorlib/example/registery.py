@@ -21,7 +21,7 @@ async def do_check(ctx: ActorContext, node: NodeSpecSchema):
     LOG.info('ping node {}'.format(node['name']))
     await ctx.tell('worker.ping', {'message': 'ping'}, dst_node=node['name'])
     next_task = ctx.tell('registery.check', dict(node=node))
-    asyncio.get_event_loop().call_later(0.1, asyncio.ensure_future, next_task)
+    asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
 
 
 @actor('registery.query')
@@ -40,8 +40,6 @@ def main():
         name='registery',
         subpath='/api/v1/registery',
         storage_dir_path='data/actorlib_example_registery',
-        storage_wal_limit=3,
-        storage_compact_interval=10,
     )
     app.run()
 

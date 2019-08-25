@@ -5,238 +5,21 @@ from threading import RLock
 
 import msgpack
 
+from .state import ActorState, ActorStateError
+
 
 LOG = logging.getLogger(__name__)
 
 
-class ActorStateError(Exception):
-    """ActorStateError"""
-
-
-class DuplicateMessageError(ActorStateError):
-    """DuplicateMessageError"""
-
-
-class ActorState:
-    """
-    WAL + memory state
-
-    begin -> send -> ack1 -> ack2 ... -> done_OK
-        |                      |-> retry -> ERROR -> done_ERROR
-        |-> done_ERROR
-
-    op_begin MSG_ID
-    op_send MSG_ID SENDING_MESSAGES[1,2,3]
-    op_ack ACK_MSG_ID_1 OK
-    op_ack ACK_MSG_ID_2 OK
-    op_ack ACK_MSG_ID 3 OK
-    # op_done MSG_ID OK
-
-    op_begin MSG_ID
-    op_send MSG_ID SENDING_MESSAGES[1,2,3]
-    op_ack ACK_MSG_ID_1 OK
-    op_ack ACK_MSG_ID_2 ERR
-    op_retry ACK_MSG_ID_2
-    op_retry ACK_MSG_ID_3
-    op_ack ACK_MSG_ID_2 OK
-    op_ack ACK_MSG_ID_3 OK
-    # op_done MSG_ID OK
-
-    op_begin MSG_ID
-    op_done MSG_ID ERR
-
-    op_begin MSG_ID
-    op_send MSG_ID SENDING_MESSAGES[1,2,3]
-    op_ack ACK_MSG_ID_1 OK
-    op_ack ACK_MSG_ID_2 ERR
-    op_retry ACK_MSG_ID_2
-    op_retry ACK_MSG_ID_3
-    op_retry ACK_MSG_ID_2
-    op_retry ACK_MSG_ID_3
-    op_done MSG_ID ERR
-
-    op_done MSG_ID OK/ERR
-
-
-    status: BEGIN/SEND/OK/ERROR/ERROR_NOTRY
-    """
-    # TODO: compact done message in state
-
-    def __init__(self):
-        # state:
-        # {
-        #     MESSAGE_ID: {
-        #         "status": STATUS,
-        #         "src_node": SRC_NODE,
-        #         "send_messages": {
-        #             MESSAGE_ID: {
-        #                 "status": STATUS,
-        #                 "count": COUNT,
-        #             }
-        #         }
-        #     }
-        # }
-        self._state = {}
-        # send_messages: { MESSAGE_ID: (PARENT_ID, MESSAGE) }
-        self._send_messages = {}
-        self._done_message_ids = []
-
-    def apply_begin(self, message_id, *, src_node, is_ask):
-        state = self._state.get(message_id)
-        if state is not None:
-            status = state['status']
-            if status != 'ERROR' and status != 'ERROR_NOTRY':
-                self._done_message_ids.append(message_id)
-                raise DuplicateMessageError(f'duplicate message {message_id} status={status}')
-        self._state[message_id] = dict(status='BEGIN', src_node=src_node, is_ask=is_ask)
-
-    def apply_done(self, message_id, status):
-        self._state.setdefault(message_id, {}).update(status=status)
-        send_messages = self._state[message_id].pop('send_messages', None)
-        if send_messages:
-            for send_msg_id in send_messages:
-                self._send_messages.pop(send_msg_id, None)
-        self._done_message_ids.append(message_id)
-
-    def apply_send(self, message_id, send_messages: List[dict]):
-        send_messages_state = {}
-        for x in send_messages:
-            self._send_messages[x['id']] = (message_id, x)
-            send_messages_state[x['id']] = dict(status='BEGIN', count=0)
-        self._state[message_id].update(status='SEND', send_messages=send_messages_state)
-
-    def apply_ack(self, message_id, status):
-        if message_id not in self._send_messages:
-            return
-        parent_id, __ = self._send_messages[message_id]
-        send_messages = self._state[parent_id]['send_messages']
-        send_messages[message_id].update(status=status)
-        if status == 'ERROR_NOTRY':
-            self.apply_done(parent_id, 'ERROR_NOTRY')
-        elif status == 'OK':
-            all_ok = all(x['status'] == 'OK' for x in send_messages.values())
-            if all_ok:
-                self.apply_done(parent_id, 'OK')
-            else:
-                self._send_messages.pop(message_id, None)
-
-    def apply_retry(self, message_id):
-        parent_id, __ = self._send_messages[message_id]
-        message_state = self._state[parent_id]['send_messages'][message_id]
-        message_state.update(count=message_state['count'] + 1)
-
-    def get_message_state(self, message_id):
-        return self._state[message_id]
-
-    def query_send_messages(self) -> [(str, dict, dict)]:
-        ret = {}
-        for msg_id, (parent_id, msg) in self._send_messages.items():
-            state = self._state[parent_id]['send_messages'][msg_id]
-            ret[msg_id] = (state, msg)
-        return ret
-
-    def pop_done_messages(self):
-        ret = {}
-        for msg_id in self._done_message_ids:
-            state = self._state[msg_id]
-            ret[msg_id] = dict(
-                status=state['status'],
-                src_node=state['src_node'],
-                is_ask=state['is_ask'],
-            )
-        self._done_message_ids = []
-        return ret
-
-    def pop_begin_messages(self):
-        ret = {}
-        for msg_id, state in self._state.items():
-            if state['status'] == 'BEGIN':
-                ret[msg_id] = dict(
-                    status=state['status'],
-                    src_node=state['src_node'],
-                    is_ask=state['is_ask'],
-                )
-        for msg_id in ret:
-            del self._state[msg_id]
-        return ret
-
-    def apply(self, item):
-        item = item.copy()
-        op_type = item.pop('type')
-        getattr(self, 'apply_' + op_type)(**item)
-
-    def load(self, wal_items: list):
-        for item in wal_items:
-            try:
-                self.apply(item)
-            except DuplicateMessageError as ex:
-                LOG.info(ex)
-        return self
-
-    @staticmethod
-    def _is_done(x):
-        return x == 'OK' or x == 'ERROR' or x == 'ERROR_NOTRY'
-
-    def _dump(self):
-        for message_id, state in self._state.items():
-            status = state['status']
-            if self._is_done(status):
-                yield dict(type='done', message_id=message_id, status=status)
-            elif status == 'BEGIN':
-                yield dict(type='begin', message_id=message_id,
-                           src_node=state['src_node'], is_ask=state['is_ask'])
-            elif status == 'SEND':
-                yield dict(type='begin', message_id=message_id,
-                           src_node=state['src_node'], is_ask=state['is_ask'])
-                send_messages = []
-                for k, ack_state in state['send_messages'].items():
-                    if ack_state['status'] == 'OK':
-                        msg = {'id': k}
-                    else:
-                        __, msg = self._send_messages[k]
-                    send_messages.append(msg)
-                yield dict(type='send', message_id=message_id, send_messages=send_messages)
-                for ack_message_id, message_state in state['send_messages'].items():
-                    ack_status = message_state['status']
-                    count = message_state['count']
-                    for i in range(count):
-                        yield dict(type='retry', message_id=ack_message_id)
-                    if self._is_done(ack_status):
-                        yield dict(type='ack', message_id=ack_message_id, status=ack_status)
-                    elif ack_status == 'BEGIN':
-                        pass
-                    else:
-                        assert False, f'unknown ack_status {ack_status}'
-            else:
-                assert False, f'unknown status {status}'
-
-    def dump(self):
-        return list(self._dump())
-
-    def compact(self, limit=None):
-        wal_items = list(self._dump())
-        if limit is None or limit >= len(wal_items):
-            return wal_items
-        ret = []
-        skip_cnt = len(wal_items) - limit
-        for i, item in enumerate(wal_items):
-            if item['type'] == 'done':
-                skip_cnt -= 1
-                if skip_cnt <= 0:
-                    break
-            else:
-                ret.append(item)
-        ret.extend(wal_items[i + 1:])
-        return ret
-
-
-COMPACT_FILENAME = 'z.msgpack'
-
-
 class ActorStorageBase:
 
-    def __init__(self):
-        self._state = ActorState()
+    def __init__(self, max_pending_size=10**3, max_done_size=10**6):
+        self._max_pending_size = max_pending_size
+        self._max_done_size = max_done_size
+        self._state = ActorState(
+            max_pending_size=self._max_pending_size,
+            max_done_size=self._max_done_size,
+        )
         self._lock = RLock()
 
     def __enter__(self):
@@ -246,8 +29,39 @@ class ActorStorageBase:
         self.close()
 
     def close(self):
+        pass
+
+    def __repr__(self):
+        name = type(self).__name__
+        return (
+            f'<{name} begin={self.num_begin_messages} '
+            f'send={self.num_send_messages} done={self.num_done_messages}>'
+        )
+
+    @property
+    def num_begin_messages(self):
         with self._lock:
-            self._state = None
+            return self._state.num_begin_messages
+
+    @property
+    def num_send_messages(self):
+        with self._lock:
+            return self._state.num_send_messages
+
+    @property
+    def num_pending_messages(self):
+        with self._lock:
+            return self._state.num_pending_messages
+
+    @property
+    def num_done_messages(self):
+        with self._lock:
+            return self._state.num_done_messages
+
+    @property
+    def num_messages(self):
+        with self._lock:
+            return self._state.num_messages
 
     @property
     def current_wal_size(self):
@@ -259,75 +73,86 @@ class ActorStorageBase:
     def compact(self):
         """do nothing"""
 
-    def op(self, item):
+    def op(self, type, **kwargs):
         with self._lock:
-            self._op(**item)
+            return self._op(type, **kwargs)
 
-    def op_begin(self, message_id, *, src_node, is_ask):
+    def op_begin(self, message_id, **kwargs):
         with self._lock:
-            self._op('begin', message_id, src_node=src_node, is_ask=is_ask)
+            return self._op('begin', message_id=message_id, **kwargs)
 
     def op_done(self, message_id, status):
         with self._lock:
-            self._op('done', message_id, status=status)
+            return self._op('done', message_id=message_id, status=status)
 
     def op_send(self, message_id, send_messages: List[dict]):
         with self._lock:
-            self._op('send', message_id, send_messages=send_messages)
+            return self._op('send', message_id=message_id, send_messages=send_messages)
 
     def op_ack(self, message_id, status):
         with self._lock:
-            self._op('ack', message_id, status=status)
+            return self._op('ack', message_id=message_id, status=status)
 
     def op_retry(self, message_id):
         with self._lock:
-            self._op('retry', message_id)
+            return self._op('retry', message_id=message_id)
+
+    def op_restart(self):
+        with self._lock:
+            return self._op('restart')
+
+    def dump(self):
+        with self._lock:
+            return self._state.dump()
+
+    def get_message_state(self, message_id):
+        with self._lock:
+            return self._state.get_message_state(message_id)
 
     def query_send_messages(self):
         with self._lock:
             return self._state.query_send_messages()
 
-    def pop_done_messages(self):
-        with self._lock:
-            return self._state.pop_done_messages()
-
 
 class ActorMemoryStorage(ActorStorageBase):
 
-    def _op(self, type, message_id, **kwargs):
-        # print(f'op_{type} {message_id} {kwargs}')
-        getattr(self._state, 'apply_' + type)(message_id, **kwargs)
+    def _op(self, type, **kwargs):
+        return self._state.apply(type, **kwargs)
+
+
+COMPACT_FILENAME = 'z.msgpack'
 
 
 class ActorLocalStorage(ActorStorageBase):
 
-    def __init__(self, dir_path, wal_limit=10**4, buffer_size=100 * 1024 * 1024):
-        super().__init__()
+    def __init__(
+        self,
+        dir_path,
+        max_pending_size=10**3,
+        max_done_size=10**6,
+        buffer_size=100 * 1024 * 1024,
+        skip_invalid=False,
+    ):
+        super().__init__(max_pending_size=max_pending_size, max_done_size=max_done_size)
+        self.buffer_size = buffer_size
+        self.skip_invalid = skip_invalid
         dir_path = os.path.abspath(os.path.expanduser(dir_path))
         LOG.info(f'use local storage at {dir_path}')
         os.makedirs(dir_path, exist_ok=True)
         self.dir_path = dir_path
-        self.wal_limit = wal_limit
-        self.buffer_size = buffer_size
-        self._current_wal_size = 0
         filepaths = self._load_filepaths(dir_path)
-        if filepaths:
-            for item in self._load_items(filepaths):
-                try:
-                    self._state.apply(item)
-                except DuplicateMessageError as ex:
-                    LOG.info(ex)
-                else:
-                    self._current_wal_size += 1
-            # discard not processed messages
-            self._state.pop_begin_messages()
-        else:
+        has_data = bool(filepaths)
+        if not filepaths:
             filepaths.append(os.path.join(dir_path, '0.msgpack'))
         self._filepaths = filepaths
         self._current_filepath = filepaths[-1]
         self._current = open(self._current_filepath, 'ab')
         self._packer = msgpack.Packer(use_bin_type=True)
         self._is_compacting = False
+        self._current_wal_size = 0
+        if has_data:
+            self._current_wal_size = self._load_wal(self._state, filepaths)
+            self.op_restart()
 
     @property
     def current_wal_size(self):
@@ -352,7 +177,23 @@ class ActorLocalStorage(ActorStorageBase):
         filepaths = [os.path.join(dir_path, x) for x in sorted(filenames)]
         return filepaths
 
-    def _load_items(self, filepaths):
+    def _load_wal(self, state, filepaths: list):
+        n = 0
+        for item in self._load_msgpack_items(filepaths):
+            try:
+                state.apply(**item)
+            except ActorStateError as ex:
+                LOG.info(ex)
+            except (KeyError, ValueError, AssertionError) as ex:
+                if self.skip_invalid:
+                    LOG.exception(ex)
+                else:
+                    raise
+            else:
+                n += 1
+        return n
+
+    def _load_msgpack_items(self, filepaths):
         unpacker = msgpack.Unpacker(raw=False, max_buffer_size=self.buffer_size)
         for filepath in filepaths:
             with open(filepath, 'rb') as f:
@@ -364,17 +205,20 @@ class ActorLocalStorage(ActorStorageBase):
                     for item in unpacker:
                         yield item
 
+    def _get_expect_wal_size(self):
+        return self.num_begin_messages + self.num_done_messages + \
+            self.num_send_messages * 5
+
     def should_compact(self):
         with self._lock:
             if self._is_compacting:
                 return False
-            return self._current_wal_size > 3 * self.wal_limit
+            expect_size = self._get_expect_wal_size()
+            return self._current_wal_size > 2 * expect_size
 
     def compact(self):
         with self._lock:
             if self._is_compacting:
-                return
-            if self._current_wal_size < self.wal_limit:
                 return
             self._is_compacting = True
         try:
@@ -386,9 +230,10 @@ class ActorLocalStorage(ActorStorageBase):
     def _do_compact(self):
         # switch current file
         with self._lock:
+            expect_size = self._get_expect_wal_size()
             LOG.info(
                 f'compact begin current_wal_size={self._current_wal_size} '
-                f'wal_limit={self.wal_limit} '
+                f'expect_wal_size={expect_size} '
                 f'current_filepath={self._current_filepath}'
             )
             filepaths = self._filepaths.copy()
@@ -400,12 +245,14 @@ class ActorLocalStorage(ActorStorageBase):
             self._current.close()
             self._current = open(self._current_filepath, 'ab')
         # do compact
-        tmp_state = ActorState()
-        tmp_state.load(self._load_items(filepaths))
-        wal_items = tmp_state.compact(limit=self.wal_limit)
+        tmp_state = ActorState(
+            max_pending_size=self._max_pending_size,
+            max_done_size=self._max_done_size,
+        )
+        self._load_wal(tmp_state, filepaths)
         num_wal_items = 0
         with open(COMPACT_FILENAME, 'wb') as f:
-            for item in wal_items:
+            for item in tmp_state.dump():
                 self._append_file(f, item)
                 num_wal_items += 1
         for filepath in filepaths:
@@ -424,10 +271,8 @@ class ActorLocalStorage(ActorStorageBase):
     def _append_file(self, file, item):
         self._current.write(self._packer.pack(item))
 
-    def _append(self, item):
-        self._append_file(self._current, item)
-
-    def _op(self, type, message_id, **kwargs):
-        self._append({'type': type, 'message_id': message_id, **kwargs})
+    def _op(self, type, **kwargs):
+        ret = self._state.apply(type, **kwargs)
+        self._append_file(self._current, {'type': type, **kwargs})
         self._current_wal_size += 1
-        getattr(self._state, 'apply_' + type)(message_id, **kwargs)
+        return ret

@@ -44,8 +44,6 @@ def main():
         port=8082,
         subpath='/api/v1/worker',
         storage_dir_path='data/actorlib_example_worker',
-        storage_wal_limit=3,
-        storage_compact_interval=10,
         registery_node_spec={
             'name': 'registery',
             'modules': ['registery'],

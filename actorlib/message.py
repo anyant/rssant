@@ -72,7 +72,7 @@ class ActorMessage:
         self.dst_url = dst_url
 
     def __repr__(self):
-        ask = 'ask' if self.is_ask else 'tell'
+        ask = '?' if self.is_ask else '!'
         return '<{} {} {}/{} {} {}/{} {}>'.format(
             type(self).__name__, self.id,
             self.src_node, self.src, ask, self.dst_node, self.dst,
