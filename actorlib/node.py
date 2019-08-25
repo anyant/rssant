@@ -35,7 +35,7 @@ class ActorNode:
         storage_dir_path=None,
         storage_max_pending_size=10**2,
         storage_max_done_size=10**3,
-        storage_compact_interval=10,
+        storage_compact_interval=60,
         ack_timeout=180,
         max_retry_count=3,
         schema_compiler=None,

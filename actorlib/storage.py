@@ -120,9 +120,6 @@ class ActorMemoryStorage(ActorStorageBase):
         return self._state.apply(type, **kwargs)
 
 
-COMPACT_FILENAME = 'z.msgpack'
-
-
 class ActorLocalStorage(ActorStorageBase):
 
     def __init__(
@@ -140,6 +137,7 @@ class ActorLocalStorage(ActorStorageBase):
         LOG.info(f'use local storage at {dir_path}')
         os.makedirs(dir_path, exist_ok=True)
         self.dir_path = dir_path
+        self.compact_filename = os.path.join(dir_path, 'z.msgpack')
         filepaths = self._load_filepaths(dir_path)
         has_data = bool(filepaths)
         if not filepaths:
@@ -173,7 +171,7 @@ class ActorLocalStorage(ActorStorageBase):
         return os.path.join(self.dir_path, f'{next_file_num}.msgpack')
 
     def _load_filepaths(self, dir_path):
-        filenames = [x for x in os.listdir(dir_path) if x.lower() != COMPACT_FILENAME]
+        filenames = [x for x in os.listdir(dir_path) if x.lower() != self.compact_filename]
         filepaths = [os.path.join(dir_path, x) for x in sorted(filenames)]
         return filepaths
 
@@ -244,29 +242,39 @@ class ActorLocalStorage(ActorStorageBase):
             self._current_filepath = next_filepath
             self._current.close()
             self._current = open(self._current_filepath, 'ab')
-        # do compact
-        tmp_state = ActorState(
-            max_pending_size=self._max_pending_size,
-            max_done_size=self._max_done_size,
-        )
-        self._load_wal(tmp_state, filepaths)
-        num_wal_items = 0
-        with open(COMPACT_FILENAME, 'wb') as f:
-            for item in tmp_state.dump():
-                self._append_file(f, item)
-                num_wal_items += 1
-        for filepath in filepaths:
-            os.remove(filepath)
-        os.rename(COMPACT_FILENAME, prev_filepath)
-        # update some vars
-        with self._lock:
-            self._filepaths = [prev_filepath, self._current_filepath]
-            delta = self._current_wal_size - prev_current_wal_size
-            self._current_wal_size = num_wal_items + delta
-            LOG.info(
-                f'compact end current_wal_size={self._current_wal_size} '
-                f'current_filepath={self._current_filepath}'
+        try:
+            # do compact
+            tmp_state = ActorState(
+                max_pending_size=self._max_pending_size,
+                max_done_size=self._max_done_size,
             )
+            self._load_wal(tmp_state, filepaths)
+            num_wal_items = 0
+            with open(self.compact_filename, 'wb') as f:
+                for item in tmp_state.dump():
+                    self._append_file(f, item)
+                    num_wal_items += 1
+        except Exception:
+            os.remove(self.compact_filename)
+            raise
+        try:
+            for filepath in filepaths:
+                os.remove(filepath)
+            os.rename(self.compact_filename, prev_filepath)
+        except Exception:
+            # TODO: data lost
+            self._filepaths = [self._current_filepath]
+            raise
+        else:
+            # update some vars
+            with self._lock:
+                self._filepaths = [prev_filepath, self._current_filepath]
+                delta = self._current_wal_size - prev_current_wal_size
+                self._current_wal_size = num_wal_items + delta
+                LOG.info(
+                    f'compact end current_wal_size={self._current_wal_size} '
+                    f'current_filepath={self._current_filepath}'
+                )
 
     def _append_file(self, file, item):
         self._current.write(self._packer.pack(item))
