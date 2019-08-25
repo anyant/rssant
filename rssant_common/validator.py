@@ -82,6 +82,7 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
                     raise Invalid('not well formatted datetime')
             if not timezone.is_aware(value):
                 value = timezone.make_aware(value, timezone=timezone.utc)
+            # https://bugs.python.org/issue13305
             if value.year < 1000:
                 raise Invalid('not support datetime before 1000-01-01')
             if output_object:
