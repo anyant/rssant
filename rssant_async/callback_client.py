@@ -1,7 +1,10 @@
 import logging
 
-import aiohttp
-from rssant_common.helper import pretty_format_json, aiohttp_raise_for_status
+from rssant_common.helper import (
+    pretty_format_json,
+    aiohttp_raise_for_status,
+    aiohttp_client_session,
+)
 
 
 LOG = logging.getLogger(__name__)
@@ -20,9 +23,7 @@ class CallbackClient:
 
     async def _async_init(self):
         if self.session is None:
-            self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.request_timeout),
-            )
+            self.session = aiohttp_client_session(timeout=self.request_timeout)
 
     async def _send(self, callback_url, data):
         if not callback_url:

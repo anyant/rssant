@@ -74,3 +74,5 @@ graphviz==0.11.1
 memory-profiler==0.55.0
 psutil==5.6.3
 Pympler==0.7
+numpy==1.17.0
+pandas==0.25.1

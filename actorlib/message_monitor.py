@@ -126,7 +126,7 @@ class ActorMessageMonitor:
         loop.run_until_complete(self._main())
 
     def start(self):
-        self._thread = Thread(target=self.main)
+        self._thread = Thread(target=self.main, name='actor_message_monitor')
         self._thread.daemon = True
         self._thread.start()
 

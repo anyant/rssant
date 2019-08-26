@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import asyncio
 import aiojobs
+from attrdict import AttrDict
 
 from .actor import Actor
 from .message import ActorMessage
@@ -23,6 +24,25 @@ from .state import ActorStateError
 LOG = logging.getLogger(__name__)
 
 
+def normalize_concurrency(concurrency):
+    if concurrency <= 3:
+        num_async_workers = 1
+    elif concurrency <= 10:
+        num_async_workers = 2
+    else:
+        num_async_workers = 3
+    num_threads = max(1, concurrency - num_async_workers)
+    num_pool_workers = max(1, num_threads // 3)
+    num_thread_workers = max(1, num_threads - num_pool_workers)
+    concurrency = num_async_workers + num_pool_workers + num_thread_workers
+    return AttrDict(
+        concurrency=concurrency,
+        num_async_workers=num_async_workers,
+        num_pool_workers=num_pool_workers,
+        num_thread_workers=num_thread_workers,
+    )
+
+
 class ActorExecutor:
     def __init__(
         self,
@@ -36,16 +56,11 @@ class ActorExecutor:
         self.sender = sender
         self.storage = storage
         self.registery = registery
-        if concurrency <= 3:
-            num_async_workers = 1
-        elif concurrency <= 10:
-            num_async_workers = 2
-        else:
-            num_async_workers = 3
-        num_thread_workers = max(1, concurrency - num_async_workers)
-        self.num_async_workers = num_async_workers
-        self.num_thread_workers = num_thread_workers
-        self.concurrency = num_async_workers + num_thread_workers
+        concurrency_info = normalize_concurrency(concurrency)
+        self.concurrency = concurrency_info.concurrency
+        self.num_async_workers = concurrency_info.num_async_workers
+        self.num_pool_workers = concurrency_info.num_pool_workers
+        self.num_thread_workers = concurrency_info.num_thread_workers
         self.thread_inbox = queue.Queue(self.concurrency)
         self.async_inbox = queue.Queue(self.concurrency)
         self.threads = []
@@ -53,7 +68,8 @@ class ActorExecutor:
         self.main_event_loop = asyncio.get_event_loop()
         self.main_async_client = AsyncActorClient(registery=self.registery)
         self.main_thread_client = ActorClient(registery=self.registery)
-        self.thread_pool = ThreadPoolExecutor(num_thread_workers)
+        self.thread_pool = ThreadPoolExecutor(
+            self.num_pool_workers, thread_name_prefix='actor_pool_worker_')
 
     async def _async_get_message(self, box):
         while True:
@@ -313,16 +329,17 @@ class ActorExecutor:
 
     def start(self):
         for i in range(self.num_async_workers):
-            t = Thread(target=self.async_main)
+            t = Thread(target=self.async_main, name=f'actor_async_worker_{i}')
             self.threads.append(t)
         for i in range(self.num_thread_workers):
-            t = Thread(target=self.thread_main)
+            t = Thread(target=self.thread_main, name=f'actor_thread_worker_{i}')
             self.threads.append(t)
         for t in self.threads:
             t.daemon = True
             t.start()
 
     def shutdown(self):
+        self.thread_pool.shutdown(wait=False)
         for t in self.threads:
             if t.is_alive():
                 unsafe_kill_thread(t.ident)
@@ -332,6 +349,7 @@ class ActorExecutor:
     def join(self):
         for t in self.threads:
             t.join()
+        self.thread_pool.join()
 
 
 class ActorContext:

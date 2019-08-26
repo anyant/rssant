@@ -1,9 +1,12 @@
 import time
-import linecache
 import os
-import tracemalloc
 import gc
+import sys
+import linecache
+import tracemalloc
 from collections import defaultdict
+
+import pandas as pd
 from pympler import muppy, summary
 
 from .helper import shorten
@@ -80,3 +83,65 @@ def top_types(types=None):
         top10 = list(reversed(sorted(objs, key=len)))[:10]
         for x in top10:
             print(len(x), shorten(repr(x), 60))
+
+
+def _super_len(x):
+    try:
+        return len(x)
+    except Exception:
+        return 0
+
+
+def _get_name(x):
+    try:
+        return x.__qualname__
+    except Exception:
+        try:
+            return x.__name__
+        except Exception:
+            return None
+
+
+try:
+    from pytz.tzinfo import BaseTzInfo
+except Exception:
+    BaseTzInfo = None
+
+
+def _is_pytz(x):
+    if BaseTzInfo is None:
+        return False
+    return isinstance(x, BaseTzInfo)
+
+
+def _get_type_name(x):
+    if _is_pytz(x):
+        return 'TzInfo'
+    return _get_name(type(x))
+
+
+def _get_module(x):
+    try:
+        return type(x).__module__
+    except Exception:
+        return None
+
+
+def df_types():
+    objects = gc.get_objects()
+    items = []
+    for x in objects:
+        mod = _get_module(x)
+        type_name = mod + '.' + _get_type_name(x)
+        items.append((
+            mod,
+            type_name,
+            _super_len(x),
+            sys.getsizeof(x, 0)
+        ))
+    df = pd.DataFrame(items, columns=['module', 'type', 'len', 'size'])
+    df_count = df[['type']].groupby('type').size().reset_index(name='count')
+    df_sum = df[['type', 'len', 'size']].groupby('type').sum().reset_index()
+    df = df_count.merge(df_sum, on='type')
+    df = df.sort_values(['count', 'len', 'size'], ascending=False)
+    return df

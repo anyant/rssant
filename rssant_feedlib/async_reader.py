@@ -9,7 +9,11 @@ import aiodns
 import aiohttp
 
 from rssant.settings import ENV_CONFIG
-from rssant_common.helper import resolve_aiohttp_response_encoding, aiohttp_raise_for_status
+from rssant_common.helper import (
+    resolve_aiohttp_response_encoding,
+    aiohttp_raise_for_status,
+    aiohttp_client_session,
+)
 
 from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, is_webpage
 from .reader import PrivateAddressError, ContentTooLargeError, ContentTypeNotSupportError, FeedReaderError
@@ -38,8 +42,7 @@ class AsyncFeedReader:
         if self.resolver is None:
             self.resolver = aiodns.DNSResolver(loop=asyncio.get_event_loop())
         if self.session is None:
-            self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.request_timeout))
+            self.session = aiohttp_client_session(timeout=self.request_timeout)
 
     async def _resolve_hostname(self, hostname):
         addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)

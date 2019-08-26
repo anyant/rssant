@@ -25,7 +25,7 @@ class ActorStorageCompactor:
                 LOG.error(f'compact failed: {ex}', exc_info=ex)
 
     def start(self):
-        self._thread = Thread(target=self.main)
+        self._thread = Thread(target=self.main, name='actor_storage_compactor')
         self._thread.daemon = True
         self._thread.start()
 

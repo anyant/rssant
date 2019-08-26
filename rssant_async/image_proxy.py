@@ -5,7 +5,7 @@ import aiohttp
 from aiohttp.web import StreamResponse, json_response
 
 from rssant.settings import ENV_CONFIG
-from rssant_common.helper import get_referer_of_url
+from rssant_common.helper import get_referer_of_url, aiohttp_client_session
 from rssant_feedlib.reader import DEFAULT_USER_AGENT, PrivateAddressError
 from rssant_feedlib.async_reader import AsyncFeedReader
 from rssant_feedlib.blacklist import compile_url_blacklist
@@ -88,9 +88,9 @@ async def image_proxy(request, url, referer=None):
         referer_headers = dict(headers)
         referer_headers['Referer'] = referer
         request_timeout = 30
-        session = aiohttp.ClientSession(
+        session = aiohttp_client_session(
             auto_decompress=False,
-            timeout=aiohttp.ClientTimeout(total=request_timeout),
+            timeout=request_timeout,
         )
         # 先尝试发带Referer的请求，不行再尝试不带Referer
         response = await get_response(session, url, referer_headers)

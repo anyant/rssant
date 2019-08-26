@@ -7,7 +7,7 @@ import asyncio
 import aiohttp
 import requests
 
-from rssant_common.helper import aiohttp_raise_for_status
+from rssant_common.helper import aiohttp_raise_for_status, aiohttp_client_session
 
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
@@ -143,9 +143,7 @@ class AsyncActorClient(ActorClientBase):
 
     async def _async_init(self):
         if self.session is None:
-            self.session = aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=self.timeout),
-            )
+            self.session = aiohttp_client_session(timeout=self.timeout)
 
     async def close(self):
         if self.session:

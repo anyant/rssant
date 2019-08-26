@@ -116,3 +116,11 @@ def aiohttp_raise_for_status(response: aiohttp.ClientResponse):
             message=response.reason,
             headers=response.headers,
         )
+
+
+def aiohttp_client_session(*, timeout=None, **kwargs):
+    # use aiodns and support number timeout
+    if isinstance(timeout, (int, float)):
+        timeout = aiohttp.ClientTimeout(total=timeout)
+    connector = aiohttp.TCPConnector(resolver=aiohttp.AsyncResolver())
+    return aiohttp.ClientSession(connector=connector, timeout=timeout, **kwargs)

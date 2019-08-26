@@ -5,11 +5,11 @@ import socket
 import logging
 import traceback
 import atexit
-import resource
 from io import StringIO
 import threading
 from threading import Thread
 
+import psutil
 from msgpack import Packer, Unpacker
 
 from .helper import BackdoorRequest, BackdoorResponse, get_socket_path
@@ -50,7 +50,7 @@ class BackdoorServer:
         self.socket_path = get_socket_path(os.getpid())
         self.sock = None
         atexit.register(self.close)
-        thread = Thread(target=self.run)
+        thread = Thread(target=self.run, name='backdoor_server')
         thread.daemon = True
         self.thread = thread
         self._sys_stdout = sys.stdout
@@ -73,7 +73,7 @@ class BackdoorServer:
         LOG.info(f'backdoor server listen at {self.socket_path}!')
         while True:
             cli_sock, cli_addr = self.sock.accept()
-            t = Thread(target=self.handler, args=(cli_sock, cli_addr))
+            t = Thread(target=self.handler, args=(cli_sock, cli_addr), name='backdoor_handler')
             t.start()
 
     def start(self):
@@ -141,9 +141,7 @@ class BackdoorHandler:
         return msg + ''.join(traces).rstrip() + '\n'
 
     def command_info(self):
-        total_memory_usage = (
-            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            + resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss)
+        total_memory_usage = psutil.Process().memory_info().rss
         num_active_threads = threading.active_count()
         r = dict(
             version=sys.version,

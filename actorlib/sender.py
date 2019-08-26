@@ -94,7 +94,7 @@ class MessageSender:
         return self.outbox.put(message)
 
     def start(self):
-        self._thread = Thread(target=self.main)
+        self._thread = Thread(target=self.main, name='actor_message_sender')
         self._thread.daemon = True
         self._thread.start()
 
