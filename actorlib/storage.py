@@ -137,7 +137,7 @@ class ActorLocalStorage(ActorStorageBase):
         LOG.info(f'use local storage at {dir_path}')
         os.makedirs(dir_path, exist_ok=True)
         self.dir_path = dir_path
-        self.compact_filename = os.path.join(dir_path, 'z.msgpack')
+        self.compact_filepath = os.path.join(dir_path, 'z.msgpack')
         filepaths = self._load_filepaths(dir_path)
         has_data = bool(filepaths)
         if not filepaths:
@@ -171,8 +171,12 @@ class ActorLocalStorage(ActorStorageBase):
         return os.path.join(self.dir_path, f'{next_file_num}.msgpack')
 
     def _load_filepaths(self, dir_path):
-        filenames = [x for x in os.listdir(dir_path) if x.lower() != self.compact_filename]
-        filepaths = [os.path.join(dir_path, x) for x in sorted(filenames)]
+        filenames = [x for x in os.listdir(dir_path)]
+        filepaths = []
+        for x in sorted(filenames):
+            p = os.path.join(dir_path, x)
+            if p.lower() != self.compact_filepath:
+                filepaths.append(p)
         return filepaths
 
     def _load_wal(self, state, filepaths: list):
@@ -250,17 +254,17 @@ class ActorLocalStorage(ActorStorageBase):
             )
             self._load_wal(tmp_state, filepaths)
             num_wal_items = 0
-            with open(self.compact_filename, 'wb') as f:
+            with open(self.compact_filepath, 'wb') as f:
                 for item in tmp_state.dump():
                     self._append_file(f, item)
                     num_wal_items += 1
         except Exception:
-            os.remove(self.compact_filename)
+            os.remove(self.compact_filepath)
             raise
         try:
             for filepath in filepaths:
                 os.remove(filepath)
-            os.rename(self.compact_filename, prev_filepath)
+            os.rename(self.compact_filepath, prev_filepath)
         except Exception:
             # TODO: data lost
             self._filepaths = [self._current_filepath]
