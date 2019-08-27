@@ -127,8 +127,9 @@ def _get_module(x):
         return None
 
 
-def df_types():
-    objects = gc.get_objects()
+def df_types(objects=None):
+    if objects is None:
+        objects = gc.get_objects()
     items = []
     for x in objects:
         mod = _get_module(x)

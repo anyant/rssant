@@ -81,8 +81,8 @@ def start_actor(*modules, name, is_scheduler=False, **kwargs):
             on_startup=[on_startup],
             on_shutdown=[on_shutdown],
         )
-    if ENV_CONFIG.storage_path:
-        storage_path = os.path.expanduser(ENV_CONFIG.storage_path)
+    if ENV_CONFIG.actor_storage_path:
+        storage_path = os.path.expanduser(ENV_CONFIG.actor_storage_path)
         storage_dir_path = os.path.abspath(os.path.join(storage_path, name))
         os.makedirs(storage_dir_path, exist_ok=True)
     else:
@@ -94,5 +94,10 @@ def start_actor(*modules, name, is_scheduler=False, **kwargs):
         registery_node_spec=ENV_CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
         storage_dir_path=storage_dir_path,
+        storage_max_pending_size=ENV_CONFIG.actor_storage_max_pending_size,
+        storage_max_done_size=ENV_CONFIG.actor_storage_max_done_size,
+        storage_compact_interval=ENV_CONFIG.actor_storage_compact_interval,
+        ack_timeout=ENV_CONFIG.actor_ack_timeout,
+        max_retry_count=ENV_CONFIG.actor_max_retry_count,
         **kwargs
     )

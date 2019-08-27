@@ -16,8 +16,13 @@ class EnvConfig:
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address = T.bool.default(False)
     check_feed_minutes = T.int.min(1).default(30)
-    # actor storage
-    storage_path = T.str.optional
+    # actor
+    actor_storage_path = T.str.optional
+    actor_storage_max_pending_size = T.int.min(0).default(500)
+    actor_storage_max_done_size = T.int.min(0).default(5000)
+    actor_storage_compact_interval = T.int.min(1).default(60)
+    actor_ack_timeout = T.int.min(1).default(600)
+    actor_max_retry_count = T.int.min(0).default(3)
     # postgres database
     pg_host = T.str.default('localhost').desc('postgres host')
     pg_port = T.int.default(5432).desc('postgres port')
