@@ -142,12 +142,16 @@ def feed_get_creation(request, pk: T.int, detail: FeedDetailSchema) -> FeedCreat
 
 
 @FeedView.get('feed/creation')
-def feed_query_creation(request, detail: FeedDetailSchema) -> T.dict(
+def feed_query_creation(
+    request,
+    limit: T.int.min(10).max(2000).default(500),
+    detail: FeedDetailSchema
+) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
     feed_creations=T.list(FeedCreationSchema),
 ):
-    feed_creations = FeedCreation.query_by_user(request.user.id, detail=detail)
+    feed_creations = FeedCreation.query_by_user(request.user.id, limit=limit, detail=detail)
     feed_creations = [x.to_dict() for x in feed_creations]
     return dict(
         total=len(feed_creations),
