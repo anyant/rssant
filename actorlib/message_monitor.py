@@ -101,6 +101,7 @@ class ActorMessageMonitor:
                 await self.sender.async_submit(msg)
 
     async def _main(self):
+        LOG.info('actor_message_monitor started')
         while not self._stop:
             await asyncio.sleep(1)
             try:

@@ -4,11 +4,13 @@ from rssant.settings import ENV_CONFIG
 
 
 class SchedulerActorClient:
-    def __init__(self, registery=None):
+    def __init__(self, registery=None, token=None):
         if registery is None:
             registery = self.get_registery()
+        if not token:
+            token = ENV_CONFIG.actor_token
         self.registery = registery
-        self.client = ActorClient(registery=self.registery)
+        self.client = ActorClient(registery=self.registery, token=token)
 
     @classmethod
     def get_registery(cls):

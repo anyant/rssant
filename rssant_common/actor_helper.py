@@ -93,5 +93,6 @@ def start_actor(*modules, name, is_scheduler=False, **kwargs):
         storage_compact_interval=ENV_CONFIG.actor_storage_compact_interval,
         ack_timeout=ENV_CONFIG.actor_ack_timeout,
         max_retry_count=ENV_CONFIG.actor_max_retry_count,
+        token=ENV_CONFIG.actor_token,
         **kwargs
     )

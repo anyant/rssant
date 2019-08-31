@@ -16,6 +16,7 @@ class ActorStorageCompactor:
         self._thread = None
 
     def main(self):
+        LOG.info('actor_storage_compactor started')
         while True:
             try:
                 time.sleep(self.interval)

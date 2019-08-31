@@ -23,6 +23,7 @@ class EnvConfig:
     actor_storage_compact_interval = T.int.min(1).default(60)
     actor_ack_timeout = T.int.min(1).default(600)
     actor_max_retry_count = T.int.min(0).default(3)
+    actor_token = T.str.optional
     # postgres database
     pg_host = T.str.default('localhost').desc('postgres host')
     pg_port = T.int.default(5432).desc('postgres port')

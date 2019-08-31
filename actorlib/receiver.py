@@ -1,7 +1,9 @@
 import logging
+import secrets
 
 from aiohttp.web import Application, run_app, Response
 
+from .helper import hash_token
 from .message import ActorMessage, ContentEncoding, ActorMessageDecodeError, UnsupportContentEncodingError
 
 
@@ -9,14 +11,25 @@ LOG = logging.getLogger(__name__)
 
 
 class MessageReceiver:
-    def __init__(self, host, port, executor, registery, subpath=''):
+    def __init__(self, host, port, executor, registery, subpath='', token=None):
         self.host = host
         self.port = port
         self.subpath = subpath
         self.executor = executor
         self.registery = registery
+        self.token = hash_token(token)
+
+    def _verify_token(self, request):
+        if not self.token:
+            return True
+        actor_token = request.headers.get('actor-token')
+        if not actor_token:
+            return False
+        return secrets.compare_digest(actor_token, self.token)
 
     async def request_handler(self, request):
+        if not self._verify_token(request):
+            return Response(status=401)
         actor_ask_dst = request.headers.get('actor-ask-dst')
         content_encoding = request.headers.get('actor-content-encoding')
         data = await request.read()

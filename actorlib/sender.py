@@ -21,10 +21,12 @@ class MessageSender:
         registery: ActorRegistery,
         storage: ActorStorageBase,
         concurrency=100,
+        token=None,
     ):
         self.registery = registery
         self.storage = storage
         self.concurrency = concurrency
+        self.token = token
         self.outbox = ActorMessageQueue(concurrency * 2)
         # message_id -> t_send
         self._send_message_states = {}
@@ -73,8 +75,9 @@ class MessageSender:
                 self._send_message_states.pop(msg_id, None)
 
     async def _main(self):
-        client = AsyncActorClient(registery=self.registery)
+        client = AsyncActorClient(registery=self.registery, token=self.token)
         async with client:
+            LOG.info('actor_message_sender started')
             while not self._stop:
                 try:
                     messages = await self._poll_messages()

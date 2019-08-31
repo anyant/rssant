@@ -38,6 +38,7 @@ class ActorNode:
         storage_compact_interval=60,
         ack_timeout=180,
         max_retry_count=3,
+        token=None,
         schema_compiler=None,
         on_startup=None,
         on_shutdown=None,
@@ -61,6 +62,7 @@ class ActorNode:
             modules=actor_modules,
             networks=networks,
         )
+        self.token = token
         self.registery = ActorRegistery(
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
@@ -82,10 +84,11 @@ class ActorNode:
             self.storage_compactor = None
         self.concurrency = concurrency
         self.sender = MessageSender(
-            concurrency=concurrency, storage=self.storage, registery=self.registery)
+            concurrency=concurrency, token=self.token,
+            storage=self.storage, registery=self.registery)
         self.executor = ActorExecutor(
             self.actors, sender=self.sender, storage=self.storage,
-            registery=self.registery, concurrency=concurrency)
+            registery=self.registery, concurrency=concurrency, token=self.token)
         self.message_monitor = ActorMessageMonitor(
             self.storage, self.executor, self.sender,
             ack_timeout=ack_timeout, max_retry_count=max_retry_count,
@@ -95,7 +98,7 @@ class ActorNode:
         self.subpath = subpath or ''
         self.receiver = MessageReceiver(
             host=self.host, port=self.port, subpath=self.subpath,
-            executor=self.executor, registery=self.registery)
+            executor=self.executor, registery=self.registery, token=self.token)
         self._on_startup_handlers = []
         self._on_shutdown_handlers = []
         if on_startup:

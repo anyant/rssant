@@ -46,11 +46,13 @@ class ActorExecutor:
         storage: ActorStorageBase,
         registery: ActorRegistery,
         concurrency=100,
+        token=None,
     ):
         self.actors = actors
         self.sender = sender
         self.storage = storage
         self.registery = registery
+        self.token = token
         self.storage_helper = StorageHelper(storage, registery)
         concurrency_info = normalize_concurrency(concurrency)
         self.concurrency = concurrency_info.concurrency
@@ -62,8 +64,8 @@ class ActorExecutor:
         self.threads = []
         # main objects used in receiver(http server) threads or eventloop
         self.main_event_loop = asyncio.get_event_loop()
-        self.main_async_client = AsyncActorClient(registery=self.registery)
-        self.main_thread_client = ActorClient(registery=self.registery)
+        self.main_async_client = AsyncActorClient(registery=self.registery, token=self.token)
+        self.main_thread_client = ActorClient(registery=self.registery, token=self.token)
         self.thread_pool = ThreadPoolExecutor(
             self.num_pool_workers, thread_name_prefix='actor_pool_worker_')
 
@@ -131,7 +133,7 @@ class ActorExecutor:
             self.thread_inbox.put(message)
 
     def thread_main(self):
-        actor_client = ActorClient(registery=self.registery)
+        actor_client = ActorClient(registery=self.registery, token=self.token)
         with actor_client:
             while True:
                 try:
@@ -144,7 +146,7 @@ class ActorExecutor:
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
-        actor_client = AsyncActorClient(registery=self.registery)
+        actor_client = AsyncActorClient(registery=self.registery, token=self.token)
         async with actor_client:
             try:
                 while True:
