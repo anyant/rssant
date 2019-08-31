@@ -203,7 +203,7 @@ class ActorState:
         return None
 
     def apply_retry(self, message_id) -> None:
-        LOG.info(f'apply_ack {message_id}')
+        LOG.info(f'apply_retry {message_id}')
         if message_id not in self._send_messages:
             raise MessageNotExistsError(f'invalid or already acked message {message_id}')
         parent_id, __ = self._send_messages[message_id]

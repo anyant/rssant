@@ -72,6 +72,7 @@ class ActorExecutor:
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
+        LOG.info(f'handle ask message {message}')
         actor = self.actors[message.dst]
         ctx = ActorContext(
             actor=actor, message=message, executor=self,
@@ -87,6 +88,7 @@ class ActorExecutor:
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
+        LOG.info(f'handle ask message {message}')
         actor = self.actors[message.dst]
         ctx = ActorContext(
             actor=actor, message=message, executor=self,
@@ -101,6 +103,7 @@ class ActorExecutor:
     async def async_submit(self, message: ActorMessage) -> None:
         """Handle tell or hope message from receiver and local async actor"""
         if self._is_ack_message(message):
+            LOG.info(f'handle ack message {message}')
             return await self._async_handle_ack(message)
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
@@ -115,6 +118,7 @@ class ActorExecutor:
     def submit(self, message: ActorMessage) -> None:
         """Handle tell or hope message from local actor (or thread receiver)"""
         if self._is_ack_message(message):
+            LOG.info(f'handle ack message {message}')
             return self._thread_handle_ack(message)
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')

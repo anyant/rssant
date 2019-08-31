@@ -37,7 +37,7 @@ class MessageSender:
         messages = []
 
         def append(x):
-            self._update_send_message(t_send, x)
+            self.update_send_message_time(x.id, t_send)
             messages.append(x)
 
         while (not self._stop) and len(messages) <= highwater:
@@ -54,9 +54,9 @@ class MessageSender:
                 break
         return messages
 
-    def _update_send_message(self, t_send, message):
+    def update_send_message_time(self, message_id, t_send):
         with self._lock:
-            self._send_message_states[message.id] = t_send
+            self._send_message_states[message_id] = t_send
 
     def get_send_message_states(self):
         with self._lock:
@@ -85,9 +85,11 @@ class MessageSender:
         loop.run_until_complete(self._main())
 
     async def async_submit(self, message):
+        LOG.info(f'submit message {message}')
         return await self.outbox.async_put(message)
 
     def submit(self, message):
+        LOG.info(f'submit message {message}')
         return self.outbox.put(message)
 
     def start(self):

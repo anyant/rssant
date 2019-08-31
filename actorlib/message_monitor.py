@@ -59,7 +59,12 @@ class ActorMessageMonitor:
             if state['count'] >= self.max_retry_count:
                 error_notry_messages.append(msg_id)
                 continue
-            if t_send is None or t_send < t_timeout:
+            # (1) message submited in queue but not sent yet
+            # (2) or send message failed
+            if t_send is None:
+                self.sender.update_send_message_time(msg_id, time.time())
+                continue
+            if t_send < t_timeout:
                 # TODO: fix local recursion messages
                 if self.registery.is_local_node(msg['dst_node']):
                     error_notry_messages.append(msg_id)
