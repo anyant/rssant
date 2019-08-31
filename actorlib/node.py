@@ -1,4 +1,5 @@
 import logging
+import os.path
 from urllib.parse import urlparse
 
 import click
@@ -29,6 +30,7 @@ class ActorNode:
         port=8000,
         concurrency=100,
         name=None,
+        name_prefix=None,
         subpath=None,
         networks=None,
         registery_node_spec=None,
@@ -52,7 +54,8 @@ class ActorNode:
             self.actors[x.name] = x
         actor_modules = {x.module for x in self.actors.values()}
         if not name:
-            name = '{}-{}'.format(LOCAL_NODE_NAME, port)
+            prefix = '{}-'.format(name_prefix) if name_prefix else ''
+            name = '{}{}-{}'.format(prefix, LOCAL_NODE_NAME, port)
         self.name = name
         if not networks:
             networks = []
@@ -66,10 +69,13 @@ class ActorNode:
         self.registery = ActorRegistery(
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
-        self.storage_dir_path = storage_dir_path
         if storage_dir_path:
+            storage_dir_path = os.path.abspath(os.path.expanduser(storage_dir_path))
+            self.storage_dir_path = storage_dir_path
+            storage_path = os.path.join(storage_dir_path, self.name)
+            os.makedirs(storage_path, exist_ok=True)
             self.storage = ActorLocalStorage(
-                dir_path=storage_dir_path,
+                dir_path=storage_path,
                 max_pending_size=storage_max_pending_size,
                 max_done_size=storage_max_done_size,
             )
@@ -77,6 +83,7 @@ class ActorNode:
                 self.storage, interval=storage_compact_interval)
         else:
             LOG.info('storage_dir_path not set, will use memory storage')
+            self.storage_dir_path = None
             self.storage = ActorMemoryStorage(
                 max_pending_size=storage_max_pending_size,
                 max_done_size=storage_max_done_size,

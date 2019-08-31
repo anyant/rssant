@@ -75,19 +75,16 @@ def start_actor(*modules, name, is_scheduler=False, **kwargs):
             on_startup=[on_startup],
             on_shutdown=[on_shutdown],
         )
-    if ENV_CONFIG.actor_storage_path:
-        storage_path = os.path.expanduser(ENV_CONFIG.actor_storage_path)
-        storage_dir_path = os.path.abspath(os.path.join(storage_path, name))
-        os.makedirs(storage_dir_path, exist_ok=True)
+    if is_scheduler:
+        kwargs.update(name=name)
     else:
-        storage_dir_path = None
+        kwargs.update(name_prefix=name)
     ActorNode.cli(
         actors=actors,
-        name=name,
         subpath=f'/api/v1/{name}',
         registery_node_spec=ENV_CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
-        storage_dir_path=storage_dir_path,
+        storage_dir_path=ENV_CONFIG.actor_storage_path,
         storage_max_pending_size=ENV_CONFIG.actor_storage_max_pending_size,
         storage_max_done_size=ENV_CONFIG.actor_storage_max_done_size,
         storage_compact_interval=ENV_CONFIG.actor_storage_compact_interval,
