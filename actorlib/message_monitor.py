@@ -9,6 +9,7 @@ from .executor import ActorExecutor
 from .storage import ActorStorageBase
 from .state import ActorStateError
 from .helper import unsafe_kill_thread
+from .context import StorageHelper
 
 
 LOG = logging.getLogger(__name__)
@@ -30,33 +31,18 @@ class ActorMessageMonitor:
         self.ack_timeout = ack_timeout
         self.max_retry_count = max_retry_count
         self.registery = executor.registery
+        self._storage_helper = StorageHelper(self.storage, self.registery)
         self._thread = None
         self._stop = False
 
     def _get_retry_timeout(self, count):
         return (count + 1) / self.max_retry_count * self.ack_timeout
 
-    def _send_ack_if_done(self, message):
-        if not message:
-            return
-        dst_node = message['src_node']
-        msg_id = message['id']
-        status = message['status']
-        if self.registery.is_local_node(dst_node):
-            try:
-                done_msg = self.storage.op_ack(msg_id, status)
-            except ActorStateError as ex:
-                LOG.warning(ex)
-            else:
-                self._send_ack_if_done(done_msg)
-        else:
-            self.sender.submit(ActorMessage(
-                id=msg_id,
-                src='actor.ack',
-                dst='actor.ack',
-                dst_node=dst_node,
-                content=dict(status=status)
-            ))
+    async def _ack_error_notry(self, msg_id):
+        ack_msg = self._storage_helper.execute_op(
+            self.storage.op_ack, msg_id, 'ERROR_NOTRY')
+        if ack_msg:
+            await self.sender.async_submit(ack_msg)
 
     async def check_send_messages(self):
         send_messages = self.storage.query_send_messages()
@@ -91,10 +77,7 @@ class ActorMessageMonitor:
         if error_notry_messages:
             LOG.info(f'error_notry {len(error_notry_messages)} messages')
         for msg_id in error_notry_messages:
-            try:
-                self._send_ack_if_done(self.storage.op_ack(msg_id, 'ERROR_NOTRY'))
-            except ActorStateError as ex:
-                LOG.warning(ex)
+            await self._ack_error_notry(msg_id)
         if retry_messages:
             LOG.info(f'retry {len(retry_messages)} messages')
         for msg_id, msg in retry_messages:

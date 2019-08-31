@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 @actor('actor.init')
 async def actor_init(ctx: ActorContext):
     print(ctx)
-    await ctx.tell('actor.fab', dict(limit=100))
+    await ctx.hope('actor.fab', dict(limit=100))
 
 
 @actor('actor.fab')

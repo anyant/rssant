@@ -57,7 +57,7 @@ class ActorState:
         #     MESSAGE_ID: {
         #         "status": MESSAGE_STATUS,
         #         "message": {
-        #             "is_ask": IS_ASK,
+        #             "require_ack": REQUIRE_ACK,
         #             "dst": DST,
         #             "src": SRC,
         #             "src_node": SRC_NODE,
@@ -106,9 +106,9 @@ class ActorState:
             f'send={self.num_send_messages} done={self.num_done_messages}>'
         )
 
-    def apply_begin(self, message_id, *, is_ask, dst, src, src_node) -> None:
+    def apply_begin(self, message_id, *, require_ack, dst, src, src_node) -> None:
         LOG.info(
-            f'apply_begin {message_id} is_ask={is_ask} dst={dst} '
+            f'apply_begin {message_id} require_ack={require_ack} dst={dst} '
             f'src={src} src_node={src_node}')
         state = self._state.get(message_id)
         if state is not None:
@@ -119,7 +119,7 @@ class ActorState:
         self._check_pending_messages()
         if state is not None:
             self._num_done_messages -= 1
-        message = dict(is_ask=is_ask, dst=dst, src=src, src_node=src_node)
+        message = dict(require_ack=require_ack, dst=dst, src=src, src_node=src_node)
         self._state[message_id] = dict(status=BEGIN, message=message)
         self._num_begin_messages += 1
         self._check_num_messages()

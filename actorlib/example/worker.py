@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.tell('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+    ctx.hope('registery.register', dict(node=ctx.registery.current_node.to_spec()))
 
 
 @actor('worker.ping')

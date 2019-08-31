@@ -13,14 +13,14 @@ LOG = logging.getLogger(__name__)
 def do_register(ctx: ActorContext, node: NodeSpecSchema):
     LOG.info(f'register node {node}')
     ctx.registery.add(node)
-    ctx.tell('registery.check', dict(node=node))
+    ctx.hope('registery.check', dict(node=node))
 
 
 @actor('registery.check')
 async def do_check(ctx: ActorContext, node: NodeSpecSchema):
     LOG.info('ping node {}'.format(node['name']))
     await ctx.tell('worker.ping', {'message': 'ping'}, dst_node=node['name'])
-    next_task = ctx.tell('registery.check', dict(node=node))
+    next_task = ctx.hope('registery.check', dict(node=node))
     asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
 
 

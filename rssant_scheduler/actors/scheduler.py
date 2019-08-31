@@ -19,14 +19,14 @@ async def do_healthcheck(ctx: ActorContext):
 
 @actor('scheduler.schedule_check_feed')
 async def do_schedule_check_feed(ctx):
-    next_task = ctx.tell('scheduler.schedule_check_feed')
+    next_task = ctx.hope('scheduler.schedule_check_feed')
     asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
     await ctx.tell('harbor_rss.check_feed')
 
 
 @actor('scheduler.schedule_clean_feed_creation')
 async def do_schedule_clean_feed_creation(ctx):
-    next_task = ctx.tell('scheduler.schedule_clean_feed_creation')
+    next_task = ctx.hope('scheduler.schedule_clean_feed_creation')
     asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
     await ctx.tell('harbor_rss.clean_feed_creation')
 

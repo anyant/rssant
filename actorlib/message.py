@@ -56,7 +56,7 @@ class ActorMessage:
     def __init__(
         self, *,
         id: str = None,
-        content: dict = None, is_ask: bool = False,
+        content: dict = None, is_ask: bool = False, require_ack: bool = False,
         src: str = None, src_node: str = None,
         dst: str, dst_node: str = None, dst_url: str = None,
     ):
@@ -64,7 +64,9 @@ class ActorMessage:
         if content is None:
             content = {}
         self.content = content
+        assert not (is_ask and require_ack), 'ask message not require ack'
         self.is_ask = is_ask
+        self.require_ack = require_ack
         self.src = src
         self.src_node = src_node
         self.dst = dst
@@ -72,24 +74,29 @@ class ActorMessage:
         self.dst_url = dst_url
 
     def __repr__(self):
-        ask = '?' if self.is_ask else '!'
+        if self.is_ask:
+            msg_type = '?'
+        else:
+            msg_type = '!' if self.require_ack else '~'
         return '<{} {} {}/{} {} {}/{} {}>'.format(
             type(self).__name__, self.id,
-            self.src_node, self.src, ask, self.dst_node, self.dst,
+            self.src_node, self.src, msg_type, self.dst_node, self.dst,
             shorten(repr(self.content), width=30),
         )
 
     @classmethod
     def from_dict(cls, d):
         return ActorMessage(
-            id=d['id'], content=d['content'], is_ask=d['is_ask'],
+            id=d['id'], content=d['content'],
+            is_ask=d['is_ask'], require_ack=d['require_ack'],
             src=d['src'], src_node=d['src_node'],
             dst=d['dst'], dst_node=d['dst_node'], dst_url=d['dst_url'],
         )
 
     def to_dict(self):
         return dict(
-            id=self.id, content=self.content, is_ask=self.is_ask,
+            id=self.id, content=self.content,
+            is_ask=self.is_ask, require_ack=self.require_ack,
             src=self.src, src_node=self.src_node,
             dst=self.dst, dst_node=self.dst_node, dst_url=self.dst_url,
         )

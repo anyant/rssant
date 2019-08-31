@@ -8,6 +8,7 @@ from .client import AsyncActorClient
 from .helper import unsafe_kill_thread
 from .registery import ActorRegistery
 from .storage import ActorStorageBase
+from .message_queue import ActorMessageQueue
 
 
 LOG = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class MessageSender:
         self.registery = registery
         self.storage = storage
         self.concurrency = concurrency
-        self.outbox = queue.Queue(concurrency * 2)
+        self.outbox = ActorMessageQueue(concurrency * 2)
         # message_id -> t_send
         self._send_message_states = {}
         self._thread = None
@@ -84,11 +85,7 @@ class MessageSender:
         loop.run_until_complete(self._main())
 
     async def async_submit(self, message):
-        while True:
-            try:
-                return self.outbox.put_nowait(message)
-            except queue.Full:
-                await asyncio.sleep(0.1)
+        return await self.outbox.async_put(message)
 
     def submit(self, message):
         return self.outbox.put(message)

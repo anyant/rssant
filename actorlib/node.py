@@ -112,27 +112,42 @@ class ActorNode:
     def _send_init_message(self):
         if 'actor.init' not in self.actors:
             return
+        self.hope('actor.init', dst_node=self.registery.current_node.name)
+
+    def _create_message(self, dst, content=None, dst_node=None, **kwargs):
+        if content is None:
+            content = {}
         msg = ActorMessage(
-            src='actor.init', dst='actor.init', is_ask=False,
-            dst_node=self.registery.current_node.name
+            content=content, src='actor.init',
+            dst=dst, dst_node=dst_node,
+            **kwargs,
         )
-        self.executor.submit(msg)
+        msg = self.registery.complete_message(msg)
+        return msg
 
     def ask(self, dst, content=None, dst_node=None):
-        if content is None:
-            content = {}
-        msg = ActorMessage(
-            src='actor.init', content=content, dst=dst, dst_node=dst_node)
-        client = self.executor.main_thread_client
-        return client.ask(msg)
+        msg = self._create_message(
+            dst, content=content, dst_node=dst_node, is_ask=True)
+        if self.registery.is_local_message(msg):
+            return self.executor.handle_ask(msg)
+        else:
+            return self.executor.main_thread_client.ask(msg)
 
     def tell(self, dst, content=None, dst_node=None):
-        if content is None:
-            content = {}
-        msg = ActorMessage(
-            src='actor.init', content=content, dst=dst, dst_node=dst_node)
-        client = self.executor.main_thread_client
-        client.send(msg)
+        msg = self._create_message(
+            dst, content=content, dst_node=dst_node, require_ack=True)
+        if self.registery.is_local_message(msg):
+            return self.executor.submit(msg)
+        else:
+            return self.sender.submit(msg)
+
+    def hope(self, dst, content=None, dst_node=None):
+        msg = self._create_message(
+            dst, content=content, dst_node=dst_node, require_ack=False)
+        if self.registery.is_local_message(msg):
+            return self.executor.submit(msg)
+        else:
+            return self.sender.submit(msg)
 
     def run(self):
         self.sender.start()
