@@ -22,6 +22,14 @@ class ActorStorageBase:
         )
         self._lock = RLock()
 
+    @property
+    def max_pending_size(self):
+        return self._max_pending_size
+
+    @property
+    def max_done_size(self):
+        return self._max_done_size
+
     def __enter__(self):
         return self
 
@@ -156,6 +164,11 @@ class ActorLocalStorage(ActorStorageBase):
     def current_wal_size(self):
         with self._lock:
             return self._current_wal_size
+
+    @property
+    def current_filepath(self):
+        with self._lock:
+            return self._current_filepath
 
     def close(self):
         with self._lock:

@@ -33,12 +33,6 @@ def django_context(f):
     return wrapper
 
 
-@actor('actor.health')
-def do_health(ctx):
-    nodes = pretty_format_json(ctx.registery.to_spec())
-    LOG.info(f'receive healthcheck message {ctx.message}:\n{nodes}')
-
-
 @actor('actor.update_registery')
 def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
     LOG.info(f'update registery {ctx.message}')

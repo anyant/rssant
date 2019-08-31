@@ -52,6 +52,8 @@ class MessageReceiver:
         dst_url = request.headers.get('actor-ask-dst-url')
         if not dst_url:
             dst_url = str(request.url)
+        if not message_id:
+            message_id = self.registery.generate_message_id()
         msg = ActorMessage(
             id=message_id, content=data, is_ask=True,
             src=src, src_node=src_node, require_ack=False,
@@ -74,5 +76,5 @@ class MessageReceiver:
         return app
 
     def run(self):
-        app = self.create_app()
-        run_app(app, host=self.host, port=self.port)
+        self.app = self.create_app()
+        run_app(self.app, host=self.host, port=self.port)

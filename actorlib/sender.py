@@ -32,6 +32,11 @@ class MessageSender:
         self._lock = RLock()
         self._stop = False
 
+    @property
+    def message_state_size(self):
+        with self._lock:
+            return len(self._send_message_states)
+
     async def _poll_messages(self):
         highwater = max(1, self.concurrency // 10)
         messages = []
