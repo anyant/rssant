@@ -59,8 +59,8 @@ class NodeInfo:
     def to_spec(self):
         return dict(
             name=self.name,
-            modules=list(self.modules),
-            networks=self._networks,
+            modules=list(sorted(self.modules)),
+            networks=list(sorted(self._networks, key=lambda x: (x['name'], x['url']))),
         )
 
 
@@ -117,7 +117,12 @@ class ActorRegistery:
 
     def to_spec(self):
         with self._lock:
-            return [x.to_spec() for x in self._nodes.values()]
+            ret = [x.to_spec() for x in self._nodes.values()]
+            return list(sorted(ret, key=lambda x: x['name']))
+
+    def get(self, name):
+        with self._lock:
+            return self._nodes.get(name)
 
     @property
     def nodes(self):
