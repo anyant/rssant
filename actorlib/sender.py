@@ -27,7 +27,7 @@ class MessageSender:
         self.storage = storage
         self.concurrency = concurrency
         self.token = token
-        self.outbox = ActorMessageQueue(concurrency * 2)
+        self.outbox = ActorMessageQueue(concurrency * 10)
         # message_id -> t_send
         self._send_message_states = {}
         self._thread = None
@@ -40,7 +40,7 @@ class MessageSender:
             return len(self._send_message_states)
 
     async def _poll_messages(self):
-        highwater = max(1, self.concurrency // 10)
+        highwater = 10
         messages = []
 
         def append(x):

@@ -59,8 +59,8 @@ class ActorExecutor:
         self.num_async_workers = concurrency_info.num_async_workers
         self.num_pool_workers = concurrency_info.num_pool_workers
         self.num_thread_workers = concurrency_info.num_thread_workers
-        self.thread_inbox = ActorMessageQueue(self.concurrency)
-        self.async_inbox = ActorMessageQueue(self.concurrency)
+        self.thread_inbox = ActorMessageQueue(self.concurrency * 10)
+        self.async_inbox = ActorMessageQueue(self.concurrency * 10)
         self.threads = []
         # main objects used in receiver(http server) threads or eventloop
         self.main_event_loop = asyncio.get_event_loop()

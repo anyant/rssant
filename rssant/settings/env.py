@@ -27,7 +27,7 @@ class EnvConfig:
     check_feed_minutes = T.int.min(1).default(30)
     # actor
     actor_storage_path = T.str.optional
-    actor_storage_max_pending_size = T.int.min(0).default(500)
+    actor_storage_max_pending_size = T.int.min(0).default(5000)
     actor_storage_max_done_size = T.int.min(0).default(5000)
     actor_storage_compact_interval = T.int.min(1).default(60)
     actor_ack_timeout = T.int.min(1).default(600)
