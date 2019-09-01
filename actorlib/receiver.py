@@ -3,7 +3,6 @@ import secrets
 
 from aiohttp.web import Application, run_app, Response
 
-from .helper import hash_token
 from .message import ActorMessage, ContentEncoding, ActorMessageDecodeError, UnsupportContentEncodingError
 
 
@@ -17,7 +16,7 @@ class MessageReceiver:
         self.subpath = subpath
         self.executor = executor
         self.registery = registery
-        self.token = hash_token(token)
+        self.token = token
 
     def _verify_token(self, request):
         if not self.token:

@@ -27,7 +27,6 @@ def main():
     app = ActorNode(
         actors=ACTORS,
         port=8083,
-        subpath='/api/v1/fab',
         storage_dir_path='data/actorlib_example_fab',
     )
     app.run()

@@ -9,7 +9,7 @@ from validr import T
 from cached_property import cached_property
 
 from .actor import Actor
-from .network_helper import LOCAL_NETWORK_NAMES
+from .network_helper import LOCAL_NODE_NAME
 
 
 LOG = logging.getLogger(__name__)
@@ -47,8 +47,7 @@ class NodeInfo:
         networks = []
         for network in node['networks']:
             if network['name'] == 'localhost':
-                for name in LOCAL_NETWORK_NAMES:
-                    networks.append(dict(name=name, url=network['url']))
+                networks.append(dict(name=LOCAL_NODE_NAME, url=network['url']))
             else:
                 networks.append(network)
         return cls(

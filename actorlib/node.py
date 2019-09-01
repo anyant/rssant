@@ -1,8 +1,6 @@
 import logging
 import os.path
-from urllib.parse import urlparse
 
-import click
 from validr import Compiler
 
 from rssant_common.helper import pretty_format_json
@@ -13,7 +11,7 @@ from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .sender import MessageSender
 from .message import ActorMessage
-from .network_helper import get_local_networks, LOCAL_NODE_NAME
+from .network_helper import get_localhost_network
 from .storage import ActorLocalStorage, ActorMemoryStorage
 from .storage_compactor import ActorStorageCompactor
 from .message_monitor import ActorMessageMonitor
@@ -30,7 +28,6 @@ class ActorNode:
         port=8000,
         concurrency=100,
         name=None,
-        name_prefix=None,
         subpath=None,
         networks=None,
         registery_node_spec=None,
@@ -54,12 +51,11 @@ class ActorNode:
             self.actors[x.name] = x
         actor_modules = {x.module for x in self.actors.values()}
         if not name:
-            prefix = '{}-'.format(name_prefix) if name_prefix else ''
-            name = '{}{}-{}'.format(prefix, LOCAL_NODE_NAME, port)
+            name = f'actor-{port}'
         self.name = name
         if not networks:
             networks = []
-        networks.extend(get_local_networks(port=port, subpath=subpath))
+        networks.append(get_localhost_network(port=port, subpath=subpath))
         current_node_spec = dict(
             name=self.name,
             modules=actor_modules,
@@ -251,36 +247,3 @@ class ActorNode:
                     self.storage_compactor.shutdown()
                 self.executor.shutdown()
                 self.sender.shutdown()
-
-    @classmethod
-    def cli(cls, *args, **kwargs):
-        @click.command()
-        @click.option('--name', help='actor node name')
-        @click.option('--listen', help='http://host:port/subpath')
-        @click.option('--network', multiple=True, help='network@http://host:port/subpath')
-        @click.option('--concurrency', type=int, help='concurrency')
-        def command(name, listen, network, concurrency):
-            if name:
-                kwargs['name'] = name
-            listen = urlparse(listen)
-            host = listen.hostname
-            if host:
-                kwargs['host'] = host
-            port = listen.port
-            if port:
-                kwargs['port'] = int(port)
-            subpath = listen.path
-            if subpath:
-                kwargs['subpath'] = subpath
-            networks = []
-            for network_spec in network:
-                name, url = network_spec.split('@', maxsplit=1)
-                networks.append(dict(name=name, url=url))
-            if kwargs.get('networks'):
-                networks.extend(kwargs.get('networks'))
-            kwargs['networks'] = networks
-            if concurrency:
-                kwargs['concurrency'] = concurrency
-            app = cls(*args, **kwargs)
-            app.run()
-        command()

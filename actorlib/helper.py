@@ -1,6 +1,5 @@
 import ctypes
 import logging
-import hashlib
 
 
 LOG = logging.getLogger(__name__)
@@ -30,9 +29,3 @@ def unsafe_kill_thread(thread_id):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
         LOG.error(f'kill thread#{thread_id} failed')
     return res <= 0
-
-
-def hash_token(token):
-    if not token:
-        return None
-    return hashlib.sha1(token.encode('utf-8')).hexdigest()

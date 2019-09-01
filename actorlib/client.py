@@ -9,7 +9,6 @@ import requests
 
 from rssant_common.helper import aiohttp_raise_for_status, aiohttp_client_session
 
-from .helper import hash_token
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
 from .sentry import sentry_scope
@@ -28,7 +27,7 @@ class ActorClientBase:
         self.registery = registery
         self.content_encoding = ContentEncoding.of(content_encoding)
         self.timeout = timeout
-        self.token = hash_token(token)
+        self.token = token
         self.session = None
         self.headers = {'actor-content-encoding': self.content_encoding.value}
         if self.content_encoding == ContentEncoding.JSON:

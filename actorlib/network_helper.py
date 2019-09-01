@@ -27,14 +27,22 @@ def get_local_node_name():
     same server <-> same node name
     different server <-> different node name
     """
-    name = '{}-{}'.format(platform.platform(), socket.getfqdn())
-    h = hashlib.md5(name.encode('utf-8'))
+    items = ['{}-{}'.format(platform.platform(), socket.getfqdn())]
     for interface_name, ip in LOCAL_IP_LIST:
-        h.update(f'{interface_name}-{ip}'.encode('utf-8'))
-    return h.hexdigest()[:6]
+        if ip == '127.0.0.1':
+            continue
+        items.append(f'{interface_name}-{ip}')
+    return slugify('-'.join(items))
+
+
+def get_local_node_name_digest(size=6):
+    name = get_local_node_name()
+    h = hashlib.md5(name.encode('utf-8'))
+    return h.hexdigest()[:size]
 
 
 LOCAL_NODE_NAME = get_local_node_name()
+LOCAL_NODE_NAME_DIGEST = get_local_node_name_digest()
 
 
 def get_local_network_ip_list(ip_list=None, prefix=None):
@@ -63,6 +71,17 @@ def get_local_networks(ip_list=None, prefix=None, port=None, subpath=None):
         url = f'http://{ip}:{port}{subpath}'
         networks.append(dict(name=name, url=url))
     return networks
+
+
+def get_localhost_network(port=None, subpath=None):
+    if port is None:
+        port = 80
+    if subpath is None:
+        subpath = ''
+    return dict(
+        name=LOCAL_NODE_NAME,
+        url=f'http://localhost:{port}{subpath}'
+    )
 
 
 def get_public_ip_list():

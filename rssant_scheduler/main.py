@@ -12,10 +12,4 @@ def do_init(ctx: ActorContext):
 
 
 if __name__ == "__main__":
-    start_actor(
-        'rssant_scheduler',
-        name='scheduler',
-        concurrency=100,
-        port=6790,
-        is_scheduler=True,
-    )
+    start_actor('scheduler', port=6790)

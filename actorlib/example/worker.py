@@ -42,14 +42,14 @@ def main():
     app = ActorNode(
         actors=ACTORS,
         port=8082,
-        subpath='/api/v1/worker',
+        name='worker',
         storage_dir_path='data/actorlib_example_worker',
         registery_node_spec={
             'name': 'registery',
             'modules': ['registery'],
             'networks': [{
                 'name': 'localhost',
-                'url': 'http://127.0.0.1:8081/api/v1/registery',
+                'url': 'http://localhost:8081',
             }],
         },
     )

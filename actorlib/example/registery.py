@@ -38,7 +38,6 @@ def main():
         actors=ACTORS,
         port=8081,
         name='registery',
-        subpath='/api/v1/registery',
         storage_dir_path='data/actorlib_example_registery',
     )
     app.run()
