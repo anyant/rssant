@@ -38,7 +38,7 @@ StorySchema = T.dict(
     title=T.str,
     content_hash_base64=T.str,
     author=T.str.optional,
-    link=T.str.optional,
+    link=T.url.optional,
     dt_published=T.datetime.optional,
     dt_updated=T.datetime.optional,
     summary=T.str.optional,
@@ -49,7 +49,7 @@ FeedSchema = T.dict(
     url=T.url,
     title=T.str,
     content_hash_base64=T.str,
-    link=T.str.optional,
+    link=T.url.optional,
     author=T.str.optional,
     icon=T.str.optional,
     description=T.str.optional,
@@ -124,17 +124,17 @@ def do_sync_feed(
     reader = FeedReader()
     params = dict(etag=etag, last_modified=last_modified)
     status_code, response = reader.read(url, **params)
-    LOG.info(f'read feed#{feed_id} url={url} status_code={status_code}')
+    LOG.info(f'read feed#{feed_id} url={unquote(url)} status_code={status_code}')
     if status_code != 200 or not response:
         return
     new_hash = compute_hash_base64(response.content)
     if new_hash == content_hash_base64:
-        LOG.info(f'feed#{feed_id} url={url} not modified by compare content hash!')
+        LOG.info(f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!')
         return
-    LOG.info(f'parse feed#{feed_id} url={url}')
+    LOG.info(f'parse feed#{feed_id} url={unquote(url)}')
     parsed = FeedParser.parse_response(response)
     if parsed.bozo:
-        LOG.warning(f'failed parse feed#{feed_id} url={url}: {parsed.bozo_exception}')
+        LOG.warning(f'failed parse feed#{feed_id} url={unquote(url)}: {parsed.bozo_exception}')
         return
     feed = _parse_found(parsed)
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
@@ -189,7 +189,7 @@ def do_process_story_webpage(
     processer = StoryImageProcessor(url, content)
     image_indexs = processer.parse()
     image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
-    LOG.info(f'found story#{story_id} {url} has {len(image_urls)} images')
+    LOG.info(f'found story#{story_id} {unquote(url)} has {len(image_urls)} images')
     if image_urls:
         ctx.tell('worker_rss.detect_story_images', dict(
             story_id=story_id,
@@ -257,7 +257,7 @@ def _parse_found(parsed):
         author_detail = parsed_feed['author_detail']
         if author_detail:
             link = author_detail['href']
-    feed.link = unquote(link)
+    feed.link = link
     feed.author = shorten(parsed_feed["author"], 200)
     feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
     feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
@@ -288,7 +288,7 @@ def _get_storys(entries):
             summary = content
         summary = shorten(story_html_to_text(summary), width=300)
         story['summary'] = summary
-        story['link'] = unquote(data["link"])
+        story['link'] = data["link"]
         title = shorten(data["title"] or story['link'] or story['unique_id'], 200)
         content_hash_base64 = compute_hash_base64(content, summary, title)
         story['title'] = title
@@ -309,7 +309,7 @@ def _get_last_modified(response):
 
 
 def _get_url(response):
-    return unquote(response.url)
+    return response.url
 
 
 def _get_dt_published(data, default=None):
@@ -330,4 +330,4 @@ def _get_story_unique_id(entry):
     unique_id = entry['id']
     if not unique_id:
         unique_id = entry['link']
-    return unquote(unique_id)
+    return unique_id

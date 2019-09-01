@@ -1,6 +1,5 @@
 import logging
 import cgi
-import http
 from urllib.parse import urlsplit, urlunsplit, unquote, urljoin
 
 from bs4 import BeautifulSoup
@@ -171,7 +170,7 @@ class FeedFinder:
     """
 
     def __init__(self, start_url, message_handler=None, max_trys=10, reader=None, validate=True):
-        start_url = unquote(coerce_url(start_url))
+        start_url = coerce_url(start_url)
         self._set_start_url(start_url)
         self.message_handler = message_handler
         self.max_trys = max_trys
@@ -206,8 +205,8 @@ class FeedFinder:
         is_ok = status == requests.codes.ok
         if is_ok and current_try == 0 and res.history:
             # 发生了重定向，重新设置start_url
-            url = unquote(res.url)
-            self._log(f'resolve redirect, set start url to {url}')
+            url = res.url
+            self._log(f'resolve redirect, set start url to {unquote(url)}')
             self._set_start_url(url)
         if not is_ok:
             error_name = FeedResponseStatus.name_of(status)
@@ -261,7 +260,7 @@ class FeedFinder:
         self._log(msg)
 
     def _parse_html(self, response):
-        links = self._find_links(response.text, unquote(response.url))
+        links = self._find_links(response.text, response.url)
         # 按得分从高到低排序，取前 max_trys 个
         links = list(sorted(links, key=lambda x: x.score, reverse=True))
         links = links[: self.max_trys]
@@ -347,7 +346,7 @@ class FeedFinder:
                     s += score
                     break
         s += 0.020 - len(path) * 0.001  # 分数相差不大时，越短的路径越好
-        return ScoredLink(unquote(url), s)
+        return ScoredLink(url, s)
 
     def _guess_links(self):
         path_segments = self.path.split("/")

@@ -94,7 +94,7 @@ def start_actor_cli(*args, actor_type, **kwargs):
             name = 'scheduler'
             subpath = '/api/v1/scheduler'
         else:
-            name = '{}/{}-{}'.format(actor_type, node, port)
+            name = '{}-{}-{}'.format(actor_type, node, port)
             subpath = '/api/v1/{}/{}-{}'.format(actor_type, node, port)
         kwargs.update(name=name, subpath=subpath)
         network_specs = []
