@@ -1,5 +1,7 @@
 import logging
 import os.path
+import time
+import asyncio
 
 from validr import Compiler
 
@@ -46,7 +48,8 @@ class ActorNode:
             schema_compiler = Compiler()
         self.schema_compiler = schema_compiler
         self.actors = {}
-        for handler in [self.do_actor_health] + list(actors):
+        builtin_actors = [self.do_actor_health, self.do_actor_timer]
+        for handler in builtin_actors + list(actors):
             x = Actor(handler, schema_compiler=schema_compiler)
             self.actors[x.name] = x
         actor_modules = {x.module for x in self.actors.values()}
@@ -122,6 +125,47 @@ class ActorNode:
         """Report health metrics"""
         return self.health()
 
+    def _load_timers(self):
+        timers = []
+        now = time.time()
+        for x in self.actors.values():
+            if x.timer is not None:
+                d = x.timer.total_seconds()
+                timers.append(dict(name=x.name, seconds=d, deadline=now + d))
+        return timers
+
+    async def _schedule_timers(self, ctx, timers):
+        now = time.time()
+        tasks = []
+        for timer in timers:
+            if now >= timer['deadline']:
+                tasks.append(timer['name'])
+                timer['deadline'] = now + timer['seconds']
+        for task in tasks:
+            try:
+                await ctx.hope(task, dst_node=self.registery.current_node.name)
+            except Exception as ex:
+                LOG.exception(ex)
+        now = time.time()
+        wait_seconds = 1
+        for timer in timers:
+            wait_seconds = min(wait_seconds, timer['deadline'] - now)
+        await asyncio.sleep(max(0, wait_seconds))
+
+    @actor('actor.timer')
+    async def do_actor_timer(self, ctx):
+        timers = self._load_timers()
+        if not timers:
+            LOG.info('no timers to schedule')
+            return
+        for timer in timers:
+            LOG.info("schedule timer {} every {} seconds".format(timer['name'], timer['seconds']))
+        while True:
+            try:
+                await self._schedule_timers(ctx, timers)
+            except Exception as ex:
+                LOG.exception(ex)
+
     def health(self):
         # registery
         registery_info = {}
@@ -185,9 +229,9 @@ class ActorNode:
         pretty_format_json(self.health())
 
     def _send_init_message(self):
-        if 'actor.init' not in self.actors:
-            return
-        self.hope('actor.init', dst_node=self.registery.current_node.name)
+        if 'actor.init' in self.actors:
+            self.hope('actor.init', dst_node=self.registery.current_node.name)
+        self.hope('actor.timer', dst_node=self.registery.current_node.name)
 
     def _create_message(self, dst, content=None, dst_node=None, **kwargs):
         if content is None:

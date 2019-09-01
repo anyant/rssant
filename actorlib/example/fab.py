@@ -7,10 +7,9 @@ from validr import T
 LOG = logging.getLogger(__name__)
 
 
-@actor('actor.init')
-async def actor_init(ctx: ActorContext):
-    print(ctx)
-    await ctx.hope('actor.fab', dict(limit=100))
+@actor('actor.fab_timer', timer='1s')
+async def actor_fab_timer(ctx: ActorContext):
+    await ctx.tell('actor.fab', dict(limit=100))
 
 
 @actor('actor.fab')

@@ -170,6 +170,51 @@ def str_validator(compiler, schema):
     return validate
 
 
+INTERVAL_UNITS = {'s': 1, 'm': 60, 'h': 60 * 60, 'd': 24 * 60 * 60}
+
+
+def parse_interval(t) -> datetime.timedelta:
+    if isinstance(t, datetime.timedelta):
+        return t
+    if isinstance(t, (int, float)):
+        seconds = t
+    else:
+        seconds = int(t[:-1]) * INTERVAL_UNITS[t[-1]]
+    return datetime.timedelta(seconds=seconds)
+
+
+@validator(accept=str, output=object)
+def interval_validator(compiler, min='0s', max='365d'):
+    """Time interval validator, convert value to seconds
+
+    Supported time units:
+        s: seconds, eg: 10s
+        m: minutes, eg: 10m
+        h: hours, eg: 1h
+        d: days, eg: 7d
+    """
+    try:
+        min = parse_interval(min)
+    except (IndexError, KeyError, ValueError):
+        raise SchemaError('invalid min value') from None
+    try:
+        max = parse_interval(max)
+    except (IndexError, KeyError, ValueError):
+        raise SchemaError('invalid max value') from None
+
+    def validate(value):
+        try:
+            value = parse_interval(value)
+        except (IndexError, KeyError, ValueError):
+            raise Invalid("invalid interval") from None
+        if value < min:
+            raise Invalid("interval must >= {}".format(min))
+        if value > max:
+            raise Invalid("interval must <= {}".format(max))
+        return value
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
@@ -179,6 +224,7 @@ VALIDATORS = {
     'detail': detail_validator,
     'dict': dict_validator,
     'str': str_validator,
+    'interval': interval_validator,
 }
 
 

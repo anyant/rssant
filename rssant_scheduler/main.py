@@ -1,14 +1,16 @@
+import logging
+
 from actorlib import actor, ActorContext
 
 from rssant_common.actor_helper import start_actor
 
 
+LOG = logging.getLogger(__name__)
+
+
 @actor('actor.init')
-def do_init(ctx: ActorContext):
-    ctx.hope('scheduler.load_registery')
-    ctx.hope('scheduler.schedule_check_feed')
-    ctx.hope('scheduler.schedule_clean_feed_creation')
-    # ctx.hope('scheduler.healthcheck')
+async def do_init(ctx: ActorContext):
+    await ctx.hope('scheduler.load_registery')
 
 
 if __name__ == "__main__":

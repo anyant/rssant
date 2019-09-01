@@ -5,6 +5,8 @@ import inspect
 
 from validr import T
 
+from .helper import parse_actor_timer
+
 
 def get_params(f, actor_name):
     sig = inspect.signature(f)
@@ -32,6 +34,7 @@ def get_returns(f):
 class Actor:
     def __init__(self, handler, schema_compiler):
         self.name = handler.__actor_name__
+        self.timer = handler.__actor_timer__
         self.module = self.get_module(self.name)
         self.handler = handler
         self.is_async = inspect.iscoroutinefunction(handler)
@@ -71,10 +74,16 @@ class Actor:
         return self._validate_returns(ret)
 
 
-def actor(name):
+def actor(name, timer=None):
+
+    if timer is not None:
+        timer = parse_actor_timer(timer)
+
     def decorator(f):
         f.__actor_name__ = name
+        f.__actor_timer__ = timer
         return f
+
     return decorator
 
 

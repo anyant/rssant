@@ -44,6 +44,16 @@ def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
     LOG.info(f'current registery:\n' + nodes)
 
 
+@actor('actor.keepalive', timer='60s')
+async def do_keepalive(ctx):
+    try:
+        r = await ctx.ask('scheduler.register', dict(node=ctx.registery.current_node.to_spec()))
+    except Exception as ex:
+        LOG.warning(f'ask scheduler.register failed: {ex}')
+    else:
+        ctx.registery.update(r['nodes'])
+
+
 def on_startup(app):
     while True:
         try:
@@ -116,9 +126,13 @@ def start_actor(actor_type, **kwargs):
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
     django.setup()
     backdoor.setup()
-    actors = collect_actors('rssant_common.actor_helper', f'rssant_{actor_type}')
     is_scheduler = actor_type == 'scheduler'
+    actors = list(collect_actors(f'rssant_{actor_type}'))
     if not is_scheduler:
+        actors.extend([
+            do_update_registery,
+            do_keepalive,
+        ])
         kwargs.update(
             on_startup=[on_startup],
             on_shutdown=[on_shutdown],

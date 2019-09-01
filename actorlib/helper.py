@@ -1,6 +1,9 @@
 import ctypes
 import logging
 
+from validr import T
+from rssant_common.validator import compiler as internal_schema_compiler
+
 
 LOG = logging.getLogger(__name__)
 
@@ -29,3 +32,7 @@ def unsafe_kill_thread(thread_id):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
         LOG.error(f'kill thread#{thread_id} failed')
     return res <= 0
+
+
+parse_actor_timer = internal_schema_compiler.compile(
+    T.interval.min('1s').max('24h'))
