@@ -120,6 +120,9 @@ class ActorClient(ActorClientBase):
             except requests.ConnectionError as ex:
                 LOG.error(f'failed to send message to {dst_url}: {ex}')
                 return
+            except requests.RequestException as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                raise
             r.raise_for_status()
 
     def send(self, *messages: List[ActorMessage]):
@@ -136,7 +139,7 @@ class ActorClient(ActorClientBase):
                 r = self.session.post(
                     message.dst_url, data=data,
                     headers=headers, timeout=self.timeout)
-            except requests.ConnectionError as ex:
+            except requests.RequestException as ex:
                 LOG.error(f'failed to send message to {message.dst_url}: {ex}')
                 raise
             r.raise_for_status()
@@ -170,6 +173,9 @@ class AsyncActorClient(ActorClientBase):
             except aiohttp.ClientConnectionError as ex:
                 LOG.error(f'failed to send message to {dst_url}: {ex}')
                 return
+            except aiohttp.ClientError as ex:
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                raise
             aiohttp_raise_for_status(r)
 
     async def send(self, *messages: List[ActorMessage]):
@@ -188,7 +194,7 @@ class AsyncActorClient(ActorClientBase):
                 async with self.session.post(message.dst_url, data=data, headers=headers) as r:
                     headers = r.headers
                     content = await r.read()
-            except aiohttp.ClientConnectionError as ex:
+            except aiohttp.ClientError as ex:
                 LOG.error(f'failed to send message to {message.dst_url}: {ex}')
                 raise
             aiohttp_raise_for_status(r)

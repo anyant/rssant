@@ -1,7 +1,10 @@
 import sys
 import logging
 import faulthandler
+
 from loguru import logger as loguru_logger
+
+from rssant.settings import ENV_CONFIG
 from .loguru_patch import loguru_patch, InterceptHandler
 
 
@@ -15,8 +18,8 @@ LOGURU_HANDLER = {
     "sink": sys.stdout,
     "colorize": True,
     "format": LOG_FORMAT,
-    "diagnose": False,
-    "backtrace": False,
+    "diagnose": ENV_CONFIG.debug,
+    "backtrace": ENV_CONFIG.debug,
 }
 
 

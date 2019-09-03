@@ -4,6 +4,8 @@ import gc
 import sys
 import linecache
 import tracemalloc
+import threading
+import traceback
 from collections import defaultdict
 
 import pandas as pd
@@ -146,3 +148,13 @@ def df_types(objects=None):
     df = df_count.merge(df_sum, on='type')
     df = df.sort_values(['count', 'len', 'size'], ascending=False)
     return df
+
+
+def print_stack():
+    # http://xiaorui.cc/2018/05/21/打印python线程stack分析当前上下文/
+    print("\n*** STACKTRACE - START ***\n")
+    for th in threading.enumerate():
+        print(th)
+        traceback.print_stack(sys._current_frames()[th.ident])
+        print("\n")
+    print("\n*** STACKTRACE - END ***\n")

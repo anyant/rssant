@@ -226,7 +226,7 @@ class ActorNode:
         )
 
     def print_health(self):
-        pretty_format_json(self.health())
+        print(pretty_format_json(self.health()))
 
     def _send_init_message(self):
         if 'actor.init' in self.actors:
