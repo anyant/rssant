@@ -4,6 +4,8 @@ import queue
 import time
 from threading import Thread, RLock
 
+import aiojobs
+
 from .client import AsyncActorClient
 from .helper import unsafe_kill_thread
 from .registery import ActorRegistery
@@ -75,6 +77,8 @@ class MessageSender:
                 self._send_message_states.pop(msg_id, None)
 
     async def _main(self):
+        scheduler = await aiojobs.create_scheduler(
+            limit=self.concurrency * 3, pending_limit=self.concurrency * 3)
         client = AsyncActorClient(registery=self.registery, token=self.token)
         async with client:
             LOG.info('actor_message_sender started')
@@ -82,7 +86,7 @@ class MessageSender:
                 try:
                     messages = await self._poll_messages()
                     if messages:
-                        await client.send(*messages)
+                        await scheduler.spawn(client.send(*messages))
                         messages = []
                 except Exception as ex:
                     LOG.exception(ex)
