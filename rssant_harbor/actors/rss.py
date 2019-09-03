@@ -81,7 +81,11 @@ def do_update_feed_creation_status(
     status: T.str,
 ):
     with transaction.atomic():
-        feed_creation = FeedCreation.get_by_pk(feed_creation_id)
+        try:
+            feed_creation = FeedCreation.get_by_pk(feed_creation_id)
+        except FeedCreation.DoesNotExist:
+            LOG.warning(f'feed creation {feed_creation_id} not exists')
+            return
         feed_creation.status = FeedStatus.UPDATING
         feed_creation.save()
 
@@ -96,7 +100,11 @@ def do_save_feed_creation_result(
 ):
     with transaction.atomic():
         feed_dict = feed
-        feed_creation = FeedCreation.get_by_pk(feed_creation_id)
+        try:
+            feed_creation = FeedCreation.get_by_pk(feed_creation_id)
+        except FeedCreation.DoesNotExist:
+            LOG.warning(f'feed creation {feed_creation_id} not exists')
+            return
         feed_creation.message = '\n\n'.join(messages)
         feed_creation.dt_updated = timezone.now()
         if not feed_dict:
