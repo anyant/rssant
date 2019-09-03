@@ -129,6 +129,9 @@ class ActorContext:
 
     def _preprocess(self) -> bool:
         """return can process or not"""
+        if self.message.is_expired():
+            LOG.warning(f'expired message {self.message}')
+            return False
         try:
             self._storage.op_begin(
                 self.message.id,
@@ -160,13 +163,13 @@ class ActorContext:
             return ack_msg
         return None
 
-    def _append_message(self, dst, content=None, dst_node=None, require_ack=False):
+    def _append_message(self, dst, content=None, dst_node=None, require_ack=False, expire_at=None):
         if content is None:
             content = {}
         msg = ActorMessage(
             content=content, src=self.actor.name,
             dst=dst, dst_node=dst_node,
-            is_ask=False, require_ack=require_ack,
+            is_ask=False, require_ack=require_ack, expire_at=expire_at,
         )
         msg = self.registery.complete_message(msg)
         self._send_messages.append(msg)
@@ -184,16 +187,16 @@ class ActorContext:
             else:
                 return self._sender.submit(message)
 
-    def tell(self, dst, content=None, dst_node=None):
+    def tell(self, dst, content=None, dst_node=None, expire_at=None):
         """Require ack, will retry if failed"""
         msg = self._append_message(
-            dst, content=content, dst_node=dst_node, require_ack=True)
+            dst, content=content, dst_node=dst_node, require_ack=True, expire_at=expire_at)
         return self._send_message(msg)
 
-    def hope(self, dst, content=None, dst_node=None):
+    def hope(self, dst, content=None, dst_node=None, expire_at=None):
         """Fire and fogot, not require ack"""
         msg = self._append_message(
-            dst, content=content, dst_node=dst_node, require_ack=False)
+            dst, content=content, dst_node=dst_node, require_ack=False, expire_at=expire_at)
         return self._send_message(msg)
 
     def ask(self, dst, content=None, dst_node=None):

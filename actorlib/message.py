@@ -1,6 +1,8 @@
 import enum
 import json
 import gzip
+import time
+import datetime
 import msgpack
 
 from .helper import shorten
@@ -59,12 +61,14 @@ class ActorMessage:
         content: dict = None, is_ask: bool = False, require_ack: bool = False,
         src: str = None, src_node: str = None,
         dst: str, dst_node: str = None, dst_url: str = None,
+        expire_at: int = None,
     ):
         self.id = id
         if content is None:
             content = {}
         self.content = content
-        assert not (is_ask and require_ack), 'ask message not require ack'
+        if is_ask and require_ack:
+            raise ValueError('ask message not require ack')
         self.is_ask = is_ask
         self.require_ack = require_ack
         self.src = src
@@ -72,17 +76,35 @@ class ActorMessage:
         self.dst = dst
         self.dst_node = dst_node
         self.dst_url = dst_url
+        if expire_at is not None:
+            if expire_at <= 0:
+                expire_at = None
+            else:
+                expire_at = int(expire_at)
+        if is_ask and expire_at:
+            raise ValueError('ask message can not set expire_at')
+        self.expire_at = expire_at
 
     def __repr__(self):
+        type_name = type(self).__name__
         if self.is_ask:
             msg_type = '?'
         else:
             msg_type = '!' if self.require_ack else '~'
-        return '<{} {} {}/{} {} {}/{} {}>'.format(
-            type(self).__name__, self.id,
-            self.src_node, self.src, msg_type, self.dst_node, self.dst,
-            shorten(repr(self.content), width=30),
-        )
+        expire_at = ''
+        if self.expire_at is not None:
+            expire_at = datetime.datetime.utcfromtimestamp(self.expire_at)
+            expire_at = ' expire_at ' + expire_at.isoformat(timespec='seconds') + 'Z'
+        short_content = shorten(repr(self.content), width=30)
+        return (f'<{type_name} {self.id} {self.src_node}/{self.src} {msg_type} '
+                f'{self.dst_node}/{self.dst}{expire_at} {short_content}>')
+
+    def is_expired(self, now: int = None):
+        if self.expire_at is None:
+            return False
+        if now is None:
+            now = time.time()
+        return self.expire_at <= now
 
     @classmethod
     def from_dict(cls, d):
@@ -91,6 +113,7 @@ class ActorMessage:
             is_ask=d['is_ask'], require_ack=d['require_ack'],
             src=d['src'], src_node=d['src_node'],
             dst=d['dst'], dst_node=d['dst_node'], dst_url=d['dst_url'],
+            expire_at=d.get('expire_at'),
         )
 
     def to_dict(self):
@@ -99,6 +122,7 @@ class ActorMessage:
             is_ask=self.is_ask, require_ack=self.require_ack,
             src=self.src, src_node=self.src_node,
             dst=self.dst, dst_node=self.dst_node, dst_url=self.dst_url,
+            expire_at=self.expire_at,
         )
 
     @classmethod

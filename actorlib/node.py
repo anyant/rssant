@@ -252,17 +252,17 @@ class ActorNode:
         else:
             return self.executor.main_thread_client.ask(msg)
 
-    def tell(self, dst, content=None, dst_node=None):
+    def tell(self, dst, content=None, dst_node=None, expire_at=None):
         msg = self._create_message(
-            dst, content=content, dst_node=dst_node, require_ack=True)
+            dst, content=content, dst_node=dst_node, require_ack=True, expire_at=expire_at)
         if self.registery.is_local_message(msg):
             return self.executor.submit(msg)
         else:
             return self.sender.submit(msg)
 
-    def hope(self, dst, content=None, dst_node=None):
+    def hope(self, dst, content=None, dst_node=None, expire_at=None):
         msg = self._create_message(
-            dst, content=content, dst_node=dst_node, require_ack=False)
+            dst, content=content, dst_node=dst_node, require_ack=False, expire_at=expire_at)
         if self.registery.is_local_message(msg):
             return self.executor.submit(msg)
         else:

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from collections import defaultdict
 
 from validr import T
@@ -27,13 +28,13 @@ async def do_healthcheck(ctx: ActorContext):
 
 
 @actor('scheduler.schedule_check_feed', timer='10s')
-async def do_schedule_check_feed(ctx):
-    await ctx.hope('harbor_rss.check_feed')
+async def do_schedule_check_feed(ctx: ActorContext):
+    await ctx.tell('harbor_rss.check_feed', expire_at=time.time() + 30)
 
 
 @actor('scheduler.schedule_clean_feed_creation', timer='10s')
-async def do_schedule_clean_feed_creation(ctx):
-    await ctx.hope('harbor_rss.clean_feed_creation')
+async def do_schedule_clean_feed_creation(ctx: ActorContext):
+    await ctx.tell('harbor_rss.clean_feed_creation', expire_at=time.time() + 30)
 
 
 @actor("scheduler.proxy_tell")

@@ -1,4 +1,5 @@
 import logging
+import time
 
 import yarl
 from validr import T
@@ -258,21 +259,22 @@ def do_update_story_images(
 
 @actor('harbor_rss.check_feed')
 @django_context
-def do_check_feed(ctx):
+def do_check_feed(ctx: ActorContext):
     feeds = Feed.take_outdated_feeds(CHECK_FEED_SECONDS)
+    expire_at = time.time() + CHECK_FEED_SECONDS
     LOG.info('found {} feeds need sync'.format(len(feeds)))
     for feed in feeds:
         ctx.tell('worker_rss.sync_feed', dict(
             feed_id=feed['feed_id'],
             url=feed['url'],
-        ))
+        ), expire_at=expire_at)
 
 
 @actor('harbor_rss.clean_feed_creation')
 @django_context
 def do_clean_feed_creation(ctx: ActorContext):
-    # 删除所有入库时间超过2小时的订阅创建信息
-    num_deleted = FeedCreation.delete_by_status(survival_seconds=2 * 60 * 60)
+    # 删除所有入库时间超过24小时的订阅创建信息
+    num_deleted = FeedCreation.delete_by_status(survival_seconds=24 * 60 * 60)
     LOG.info('delete {} old feed creations'.format(num_deleted))
     # 重试 status=UPDATING 超过10分钟的订阅
     feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
@@ -296,8 +298,9 @@ def do_clean_feed_creation(ctx: ActorContext):
 def _retry_feed_creations(ctx: ActorContext, feed_creation_id_urls):
     feed_creation_ids = [id for (id, url) in feed_creation_id_urls]
     FeedCreation.bulk_set_pending(feed_creation_ids)
+    expire_at = time.time() + 2 * 60 * 60
     for feed_creation_id, url in feed_creation_id_urls:
         ctx.tell('worker_rss.find_feed', dict(
             feed_creation_id=feed_creation_id,
             url=url,
-        ))
+        ), expire_at=expire_at)

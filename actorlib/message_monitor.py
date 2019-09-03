@@ -44,20 +44,49 @@ class ActorMessageMonitor:
         if ack_msg:
             await self.sender.async_submit(ack_msg)
 
+    async def _retry_messages(self, retry_messages):
+        if retry_messages:
+            LOG.info(f'retry {len(retry_messages)} messages')
+        for msg_id, msg in retry_messages:
+            try:
+                msg = ActorMessage.from_dict(msg)
+            except KeyError as ex:
+                LOG.exception(ex)
+                continue
+            try:
+                self.storage.op_retry(msg_id)
+            except ActorStateError as ex:
+                LOG.warning(ex)
+            if self.registery.is_local_message(msg):
+                await self.executor.async_submit(msg)
+            else:
+                await self.sender.async_submit(msg)
+
+    def _is_expired(self, msg, now):
+        expire_at = msg.get('expire_at')
+        if expire_at is None or expire_at <= 0:
+            return False
+        return expire_at < now
+
     async def check_send_messages(self):
         send_messages = self.storage.query_send_messages()
         send_message_states = self.sender.get_send_message_states()
         acked_message_ids = set(send_message_states) - set(send_messages)
         self.sender.remove_send_message_states(acked_message_ids)
         retry_messages = []
-        error_notry_messages = []
+        error_notry_message_ids = []
         now = time.time()
         t_timeout = now - self.ack_timeout
         # TODO: use time wheel algorithm
         for msg_id, (state, msg) in send_messages.items():
+            if self._is_expired(msg, now=now):
+                LOG.warning(f'expired message {msg_id} {state} '
+                            f'dst={msg["dst"]} dst_node={msg["dst_node"]}')
+                error_notry_message_ids.append(msg_id)
+                continue
             t_send = send_message_states.get(msg_id, None)
             if state['count'] >= self.max_retry_count:
-                error_notry_messages.append(msg_id)
+                error_notry_message_ids.append(msg_id)
                 continue
             # (1) message submited in queue but not sent yet
             # (2) or send message failed
@@ -67,7 +96,7 @@ class ActorMessageMonitor:
             if t_send < t_timeout:
                 # TODO: fix local recursion messages
                 if self.registery.is_local_node(msg['dst_node']):
-                    error_notry_messages.append(msg_id)
+                    error_notry_message_ids.append(msg_id)
                 else:
                     retry_messages.append((msg_id, msg))
                 continue
@@ -76,29 +105,14 @@ class ActorMessageMonitor:
                 if t_send < error_timeout:
                     retry_messages.append((msg_id, msg))
                     continue
-        self.sender.remove_send_message_states(error_notry_messages)
+        self.sender.remove_send_message_states(error_notry_message_ids)
         self.sender.remove_send_message_states(
             [msg_id for msg_id, msg in retry_messages])
-        if error_notry_messages:
-            LOG.info(f'error_notry {len(error_notry_messages)} messages')
-        for msg_id in error_notry_messages:
+        if error_notry_message_ids:
+            LOG.info(f'error_notry {len(error_notry_message_ids)} messages')
+        for msg_id in error_notry_message_ids:
             await self._ack_error_notry(msg_id)
-        if retry_messages:
-            LOG.info(f'retry {len(retry_messages)} messages')
-        for msg_id, msg in retry_messages:
-            try:
-                self.storage.op_retry(msg_id)
-            except ActorStateError as ex:
-                LOG.warning(ex)
-            try:
-                msg = ActorMessage.from_dict(msg)
-            except KeyError as ex:
-                LOG.exception(ex)
-                continue
-            if self.registery.is_local_message(msg):
-                await self.executor.async_submit(msg)
-            else:
-                await self.sender.async_submit(msg)
+        await self._retry_messages(retry_messages)
 
     async def _main(self):
         LOG.info('actor_message_monitor started')
