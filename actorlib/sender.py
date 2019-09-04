@@ -29,7 +29,7 @@ class MessageSender:
         self.storage = storage
         self.concurrency = concurrency
         self.token = token
-        self.outbox = ActorMessageQueue(concurrency * 10)
+        self.outbox = ActorMessageQueue(concurrency * 2)
         # message_id -> t_send
         self._send_message_states = {}
         self._thread = None
@@ -78,7 +78,7 @@ class MessageSender:
 
     async def _main(self):
         scheduler = await aiojobs.create_scheduler(
-            limit=self.concurrency * 3, pending_limit=self.concurrency * 3)
+            limit=self.concurrency, pending_limit=self.concurrency)
         client = AsyncActorClient(registery=self.registery, token=self.token)
         async with client:
             LOG.info('actor_message_sender started')
