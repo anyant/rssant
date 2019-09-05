@@ -1,7 +1,8 @@
 import re
 from collections import namedtuple
 from urllib.parse import urljoin
-from html2text import HTML2Text
+import lxml.html
+from lxml.html.clean import Cleaner
 
 RE_IMG = re.compile(
     r'(?:<img\s*.*?\s+src="([^"]+?)")|'
@@ -88,10 +89,49 @@ class StoryImageProcessor:
         return ''.join(content_chunks)
 
 
-def story_html_to_text(content):
-    h = HTML2Text()
-    h.ignore_links = True
-    return h.handle(content or "")
+RE_BLANK_LINE = re.compile(r'(\n\s*)(\n\s*)+')
+
+lxml_html_parser = lxml.html.HTMLParser(
+    remove_blank_text=True, remove_comments=True, collect_ids=False)
+
+lxml_html_cleaner = Cleaner(
+    scripts=True,
+    javascript=True,
+    comments=True,
+    style=True,
+    links=True,
+    meta=True,
+    page_structure=True,
+    processing_instructions=True,
+    embedded=True,
+    frames=True,
+    forms=True,
+    annoying_tags=True,
+    kill_tags=set(['code', 'pre', 'img', 'video']),
+)
+
+
+def story_html_to_text(content, clean=True):
+    """
+    >>> content = '''<html><body>
+    ... <pre>hello world</pre>
+    ...
+    ...
+    ... <p>happy day</p>
+    ... </body></html>
+    ... '''
+    >>> print(story_html_to_text(content))
+    happy day
+    >>> print(story_html_to_text(content, clean=False))
+    hello world
+    happy day
+    """
+    if not content:
+        return ""
+    if clean:
+        content = lxml_html_cleaner.clean_html(content)
+    r = lxml.html.fromstring(content, parser=lxml_html_parser)
+    return RE_BLANK_LINE.sub('\n', r.text_content().strip())
 
 
 RE_V2EX = re.compile(r'^http(s)?://[a-zA-Z0-9_\.\-]*\.v2ex\.com', re.I)
