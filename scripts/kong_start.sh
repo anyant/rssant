@@ -36,7 +36,7 @@ docker run -d --name rssant-kong \
     --network=rssant \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
     --restart unless-stopped \
-    --memory=200M \
+    --memory=400M \
     --cpus=0.2 \
     -e "KONG_DATABASE=postgres" \
     -e "KONG_PG_HOST=rssant-kong-postgres" \
@@ -52,6 +52,7 @@ docker run -d --name rssant-kong \
     -e "KONG_ADMIN_LISTEN=0.0.0.0:8001" \
     -e "KONG_MEM_CACHE_SIZE=8m" \
     -e "KONG_CLIENT_MAX_BODY_SIZE=100m" \
+    -e "KONG_CLIENT_BODY_BUFFER_SIZE=5m" \
     -p 8000:8000 \
     -p 127.0.0.1:8001:8001 \
     kong:1.3.0
