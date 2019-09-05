@@ -13,10 +13,11 @@ from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from actorlib.network_helper import LOCAL_NODE_NAME
 from actorlib.sentry import sentry_init
 
+from rssant.settings import ENV_CONFIG
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
-from rssant.settings import ENV_CONFIG
 from rssant_common.logger import configure_logging
+from rssant_common.kong_client import KongClient
 
 
 LOG = logging.getLogger(__name__)
@@ -66,6 +67,16 @@ def on_startup(app):
             break
     nodes = pretty_format_json(app.registery.to_spec())
     LOG.info(f'current registery:\n' + nodes)
+    if app.kong_client:
+        LOG.info(f'kong register {app.name} url={app.kong_actor_url}')
+        while True:
+            try:
+                app.kong_client.register(app.name, app.kong_actor_url)
+            except Exception as ex:
+                LOG.warning(f'kong register failed: {ex}')
+                time.sleep(3)
+            else:
+                break
 
 
 def on_shutdown(app):
@@ -73,6 +84,12 @@ def on_shutdown(app):
         app.ask('scheduler.unregister', dict(node_name=app.name))
     except Exception as ex:
         LOG.warning(f'ask scheduler.unregister failed: {ex}')
+    if app.kong_client:
+        LOG.info(f'kong unregister {app.name}')
+        try:
+            app.kong_client.unregister(app.name)
+        except Exception as ex:
+            LOG.warning(f'kong unregister failed: {ex}')
 
 
 def start_actor_cli(*args, actor_type, **kwargs):
@@ -86,7 +103,9 @@ def start_actor_cli(*args, actor_type, **kwargs):
     @click.option('--port', type=int, default=default_port, help='listen port')
     @click.option('--network', multiple=True, help='network@http://host:port')
     @click.option('--concurrency', type=int, default=default_concurrency, help='concurrency')
-    def command(node, host, port, network, concurrency):
+    @click.option('--kong-admin-url', type=str, default='http://localhost:8001', help='kong admin url')
+    @click.option('--kong-actor-host', type=str, help='actor host for kong to connect')
+    def command(node, host, port, network, concurrency, kong_admin_url, kong_actor_host=None):
         is_scheduler = actor_type == 'scheduler'
         kwargs['host'] = host
         kwargs['port'] = port
@@ -115,6 +134,14 @@ def start_actor_cli(*args, actor_type, **kwargs):
         kwargs['networks'] = networks
         kwargs['concurrency'] = concurrency
         app = ActorNode(*args, **kwargs)
+        if kong_actor_host:
+            kong_actor_url = f'http://{kong_actor_host}:{port}{subpath}'
+            client = KongClient(kong_admin_url)
+            app.kong_client = client
+            app.kong_actor_url = kong_actor_url
+        else:
+            app.kong_client = None
+            app.kong_actor_url = None
         app.run()
     return command()
 
