@@ -1,5 +1,8 @@
 import ctypes
 import logging
+import functools
+import asyncio
+import time
 
 from validr import T
 from rssant_common.validator import compiler as internal_schema_compiler
@@ -36,3 +39,37 @@ def unsafe_kill_thread(thread_id):
 
 parse_actor_timer = internal_schema_compiler.compile(
     T.interval.min('1s').max('24h'))
+
+
+def _get_function_name(fn):
+    mod_name = getattr(fn, '__module__', None)
+    name = getattr(fn, '__qualname__', None)
+    if not name:
+        name = getattr(fn, '__name__', None)
+    if mod_name:
+        return f'{mod_name}.{name}'
+    else:
+        return name
+
+
+def auto_restart_when_crash(fn):
+    fn_name = _get_function_name(fn)
+    if asyncio.iscoroutinefunction(fn):
+        @functools.wraps(fn)
+        async def wrapped(*args, **kwargs) -> None:
+            while True:
+                try:
+                    await fn(*args, **kwargs)
+                except Exception as ex:
+                    LOG.error(f'{fn_name} crashed, will restart it', exc_info=ex)
+                await asyncio.sleep(1)
+    else:
+        @functools.wraps(fn)
+        def wrapped(*args, **kwargs) -> None:
+            while True:
+                try:
+                    fn(*args, **kwargs)
+                except Exception as ex:
+                    LOG.error(f'{fn_name} crashed, will restart it', exc_info=ex)
+                time.sleep(1)
+    return wrapped

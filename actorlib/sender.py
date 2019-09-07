@@ -7,7 +7,7 @@ from threading import Thread, RLock
 import aiojobs
 
 from .client import AsyncActorClient
-from .helper import unsafe_kill_thread
+from .helper import unsafe_kill_thread, auto_restart_when_crash
 from .registery import ActorRegistery
 from .storage import ActorStorageBase
 from .message_queue import ActorMessageQueue
@@ -76,6 +76,7 @@ class MessageSender:
             for msg_id in message_ids:
                 self._send_message_states.pop(msg_id, None)
 
+    @auto_restart_when_crash
     async def _main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
@@ -91,6 +92,7 @@ class MessageSender:
                 except Exception as ex:
                     LOG.exception(ex)
 
+    @auto_restart_when_crash
     def main(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

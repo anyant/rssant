@@ -7,7 +7,7 @@ import aiojobs
 from attrdict import AttrDict
 
 from .message import ActorMessage
-from .helper import unsafe_kill_thread
+from .helper import unsafe_kill_thread, auto_restart_when_crash
 from .registery import ActorRegistery
 from .sender import MessageSender
 from .client import AsyncActorClient, ActorClient
@@ -132,6 +132,7 @@ class ActorExecutor:
         else:
             self.thread_inbox.put(message)
 
+    @auto_restart_when_crash
     def thread_main(self):
         actor_client = ActorClient(registery=self.registery, token=self.token)
         with actor_client:
@@ -143,6 +144,7 @@ class ActorExecutor:
                 else:
                     self._handle_message(message, actor_client=actor_client)
 
+    @auto_restart_when_crash
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
             limit=self.concurrency, pending_limit=self.concurrency)
@@ -161,6 +163,7 @@ class ActorExecutor:
             finally:
                 await scheduler.close()
 
+    @auto_restart_when_crash
     def async_main(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

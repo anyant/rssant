@@ -8,7 +8,7 @@ from .sender import MessageSender
 from .executor import ActorExecutor
 from .storage import ActorStorageBase
 from .state import ActorStateError
-from .helper import unsafe_kill_thread
+from .helper import unsafe_kill_thread, auto_restart_when_crash
 from .context import StorageHelper
 
 
@@ -114,6 +114,7 @@ class ActorMessageMonitor:
             await self._ack_error_notry(msg_id)
         await self._retry_messages(retry_messages)
 
+    @auto_restart_when_crash
     async def _main(self):
         LOG.info('actor_message_monitor started')
         while not self._stop:
@@ -123,6 +124,7 @@ class ActorMessageMonitor:
             except Exception as ex:
                 LOG.exception(ex)
 
+    @auto_restart_when_crash
     def main(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

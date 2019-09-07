@@ -3,7 +3,7 @@ import logging
 from threading import Thread
 
 from .storage import ActorStorageBase
-from .helper import unsafe_kill_thread
+from .helper import unsafe_kill_thread, auto_restart_when_crash
 
 
 LOG = logging.getLogger(__name__)
@@ -15,6 +15,7 @@ class ActorStorageCompactor:
         self.interval = interval
         self._thread = None
 
+    @auto_restart_when_crash
     def main(self):
         LOG.info('actor_storage_compactor started')
         while True:
