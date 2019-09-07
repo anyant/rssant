@@ -8,10 +8,19 @@ import threading
 import traceback
 from collections import defaultdict
 
+import objgraph
 import pandas as pd
 from pympler import muppy, summary
 
 from .helper import shorten
+from .asyncio_tools import get_event_loops, format_async_stack, get_all_tasks
+
+
+def get(name):
+    objs = objgraph.by_type(name)
+    if objs:
+        return objs[0]
+    return None
 
 
 def print_top_stats(top_stats, limit=10):
@@ -157,4 +166,24 @@ def print_stack():
         print(th)
         traceback.print_stack(sys._current_frames()[th.ident])
         print("\n")
+    print("\n*** STACKTRACE - END ***\n")
+
+
+def _print_async_tasks_stack(loop, thread):
+    # https://mozillazg.com/2017/12/python-get-concurrency-programm-all-tracebacks-threading-gevent-asyncio-etc.html#hidasyncio-task-traceback
+    tasks = get_all_tasks(loop)
+    print(thread)
+    print(loop)
+    print('total {} tasks\n'.format(len(tasks)))
+    for task in tasks:
+        print(format_async_stack(task))
+
+
+def print_async_stack():
+    loops = get_event_loops()
+    print("\n*** STACKTRACE - START ***\n")
+    for i, (loop, thread) in enumerate(loops):
+        if i != 0:
+            print('-' * 79 + '\n')
+        _print_async_tasks_stack(loop, thread)
     print("\n*** STACKTRACE - END ***\n")
