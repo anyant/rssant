@@ -8,7 +8,7 @@ COPY etc/apt-sources.list /etc/apt/sources.list
 
 RUN apt-get update && \
     apt-get install -y python3-venv python3-pip \
-        lsof strace htop tcpdump sysstat dstat \
+        lsof strace htop tcpdump dstat gdb \
         dnsutils iputils-ping net-tools iproute2 && \
     rm -rf /var/lib/apt/lists/* && \
     ln -s --force /usr/bin/python3 /usr/bin/python && \
