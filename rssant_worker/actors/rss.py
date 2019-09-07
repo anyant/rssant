@@ -180,6 +180,8 @@ def do_process_story_webpage(
     doc = ReadabilityDocument(text)
     content = doc.summary()
     summary = shorten(story_html_to_text(content), width=300)
+    if not summary:
+        return
     ctx.tell('harbor_rss.update_story', dict(
         story_id=story_id,
         content=content,
