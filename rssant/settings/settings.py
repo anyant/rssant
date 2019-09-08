@@ -50,7 +50,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.postgres',
     'django.contrib.sites',
-    'raven.contrib.django.raven_compat',
+]
+
+if ENV_CONFIG.sentry_enable:
+    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+
+INSTALLED_APPS.extend([
     'debug_toolbar',
     'django_celery_results',
     'django_celery_beat',
@@ -65,7 +70,7 @@ INSTALLED_APPS = [
     'rest_auth',
     'rest_auth.registration',
     'rssant_api',
-]
+])
 
 MIDDLEWARE = [
     'rssant.middleware.time.TimeMiddleware',
