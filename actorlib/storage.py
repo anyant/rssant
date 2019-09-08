@@ -48,28 +48,23 @@ class ActorStorageBase:
 
     @property
     def num_begin_messages(self):
-        with self._lock:
-            return self._state.num_begin_messages
+        return self._state.num_begin_messages
 
     @property
     def num_send_messages(self):
-        with self._lock:
-            return self._state.num_send_messages
+        return self._state.num_send_messages
 
     @property
     def num_pending_messages(self):
-        with self._lock:
-            return self._state.num_pending_messages
+        return self._state.num_pending_messages
 
     @property
     def num_done_messages(self):
-        with self._lock:
-            return self._state.num_done_messages
+        return self._state.num_done_messages
 
     @property
     def num_messages(self):
-        with self._lock:
-            return self._state.num_messages
+        return self._state.num_messages
 
     @property
     def current_wal_size(self):
@@ -162,13 +157,11 @@ class ActorLocalStorage(ActorStorageBase):
 
     @property
     def current_wal_size(self):
-        with self._lock:
-            return self._current_wal_size
+        return self._current_wal_size
 
     @property
     def current_filepath(self):
-        with self._lock:
-            return self._current_filepath
+        return self._current_filepath
 
     def close(self):
         with self._lock:

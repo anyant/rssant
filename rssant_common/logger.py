@@ -4,7 +4,6 @@ import faulthandler
 
 from loguru import logger as loguru_logger
 
-from rssant.settings import ENV_CONFIG
 from .loguru_patch import loguru_patch, InterceptHandler
 
 
@@ -18,9 +17,28 @@ LOGURU_HANDLER = {
     "sink": sys.stdout,
     "colorize": True,
     "format": LOG_FORMAT,
-    "diagnose": ENV_CONFIG.debug,
-    "backtrace": ENV_CONFIG.debug,
+    # diagnose and backtrace will cause deadlock, must disable it!
+    "diagnose": False,
+    "backtrace": False,
 }
+
+# How diagnose and backtrace cause dead lock:
+#
+# thread-1: log a message
+# with storage.lock:
+#     # thread-1 @here while thread-2 hold logging.lock
+#     with logging.lock:
+#         with loguru.lock:
+#             write_message()
+#
+# thread-2: log a exception
+# with logging.lock:
+#     with loguru.lock:
+#         # diagnose exception, call __repr__ or get property value
+#         # thread-2 @here while thread-1 hold storage.lock
+#         with storage.lock:
+#             return some_value
+#
 
 
 def configure_logging(level=logging.INFO):
