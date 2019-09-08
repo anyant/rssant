@@ -45,8 +45,10 @@ async def do_proxy_tell(
         content = T.dict.optional,
     ))
 ):
-    for t in tasks:
-        await ctx.tell(t['dst'], t['content'])
+    for i, t in enumerate(tasks):
+        await ctx.hope("scheduler.delay_tell", content=dict(
+            dst=t['dst'], content=t['content'], delay=i * 3
+        ))
     return None
 
 
@@ -57,3 +59,14 @@ async def do_proxy_ask(
     content: T.dict.optional,
 ):
     return await ctx.ask(dst, content)
+
+
+@actor("scheduler.delay_tell")
+async def do_delay_tell(
+    ctx: ActorContext,
+    dst: T.str,
+    content: T.dict.optional,
+    delay: T.float.min(0).default(1),
+):
+    await asyncio.sleep(delay)
+    await ctx.tell(dst, content)
