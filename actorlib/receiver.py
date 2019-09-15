@@ -6,8 +6,9 @@ from concurrent.futures import Future as ThreadFuture
 from aiohttp.web import Application, run_app, Response
 
 from .message import ActorMessage, ContentEncoding, ActorMessageDecodeError, UnsupportContentEncodingError
-from .queue2 import ActorMessageQueue
+from .queue import ActorMessageQueue
 from .registery import ActorRegistery
+from .state import ActorStateError
 
 
 LOG = logging.getLogger(__name__)
@@ -55,7 +56,11 @@ class MessageReceiver:
             return await self.handle_ask(request, data, actor_ask_dst, content_encoding)
         else:
             for msg in data:
-                self.queue.op_inbox(msg)
+                msg = self.registery.complete_message(msg)
+                try:
+                    self.queue.op_inbox(msg)
+                except ActorStateError as ex:
+                    LOG.warning(ex)
             return Response(status=204)
 
     async def handle_ask(self, request, data, dst, content_encoding):
@@ -68,12 +73,16 @@ class MessageReceiver:
         if not message_id:
             message_id = self.registery.generate_message_id()
         thread_future = ThreadFuture()
-        msg = ActorMessage(
+        msg = self.registery.create_message(
             id=message_id, content=data, is_ask=True,
             src=src, src_node=src_node, require_ack=False,
             dst=dst, dst_node=dst_node, future=thread_future,
         )
-        self.queue.op_inbox(msg)
+        try:
+            self.queue.op_inbox(msg)
+        except ActorStateError as ex:
+            LOG.warning(ex)
+            return Response(body=str(ex), status=400)
         result = await asyncio.wrap_future(thread_future)
         if result is None:
             return Response(status=204)

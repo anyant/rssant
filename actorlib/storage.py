@@ -11,6 +11,19 @@ from .state import ActorState, ActorStateError
 LOG = logging.getLogger(__name__)
 
 
+class ActorStorage:
+    def __init__(self):
+        self._wal = []
+
+    def load(self, state: ActorState):
+        for item in self._wal:
+            state.apply(**item)
+
+    def save(self, type, **kwargs):
+        self._wal.append({'type': type, **kwargs})
+        self._wal = self._wal[-20:]
+
+
 class ActorStorageBase:
 
     def __init__(self, max_pending_size=10**3, max_done_size=10**6):

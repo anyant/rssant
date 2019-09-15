@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 async def do_healthcheck(ctx: ActorContext):
     unhealth_count = defaultdict(lambda: 0)
     for i in range(3):
-        for node in ctx.registery.nodes:
+        for node in ctx.registery.remote_nodes:
             try:
                 await ctx.ask('actor.health', dst_node=node.name)
             except Exception as ex:

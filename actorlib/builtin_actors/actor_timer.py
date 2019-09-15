@@ -3,7 +3,6 @@ import time
 import logging
 
 from actorlib.actor import actor
-from actorlib.message import ActorMessage
 from actorlib.context import ActorContext
 
 from .base import BuiltinActorBase
@@ -24,19 +23,6 @@ class ActorTimer(BuiltinActorBase):
             timers.append(dict(name=x.name, seconds=d, deadline=now + d))
         return timers
 
-    def _op_inbox(self, ctx, dst, expire_at=None):
-        node_name = self.app.registery.current_node.name
-        message = ActorMessage(
-            dst=dst,
-            dst_node=node_name,
-            src=ACTOR_TIMER,
-            expire_at=expire_at,
-            priority=0,
-            require_ack=False,
-        )
-        message = self.app.registery.complete_message(message)
-        self.app.queue.op_inbox(message)
-
     async def _schedule_timers(self, ctx: ActorContext, timers):
         now = time.time()
         tasks = []
@@ -47,7 +33,7 @@ class ActorTimer(BuiltinActorBase):
                 timer['deadline'] = now + timer['seconds']
         for task in tasks:
             try:
-                self._op_inbox(ctx, **task)
+                self.op_inbox(src=ACTOR_TIMER, **task)
             except Exception as ex:
                 LOG.exception(ex)
         now = time.time()

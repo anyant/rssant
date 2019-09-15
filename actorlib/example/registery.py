@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import backdoor
@@ -16,12 +15,11 @@ def do_register(ctx: ActorContext, node: NodeSpecSchema):
     ctx.hope('registery.check', dict(node=node))
 
 
-@actor('registery.check')
-async def do_check(ctx: ActorContext, node: NodeSpecSchema):
-    LOG.info('ping node {}'.format(node['name']))
-    await ctx.tell('worker.ping', {'message': 'ping'}, dst_node=node['name'])
-    next_task = ctx.hope('registery.check', dict(node=node))
-    asyncio.get_event_loop().call_later(10, asyncio.ensure_future, next_task)
+@actor('registery.check', timer='10s')
+async def do_check(ctx: ActorContext):
+    for node in ctx.registery.remote_nodes:
+        LOG.info('ping node {}'.format(node.name))
+        await ctx.tell('worker.ping', {'message': 'ping'}, dst_node=node.name)
 
 
 @actor('registery.query')

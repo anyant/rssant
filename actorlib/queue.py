@@ -8,10 +8,15 @@ import threading
 
 from .actor import Actor
 from .message import ActorMessage
-from .state2 import ActorState, OUTBOX, EXPORT, ERROR_NOTRY
-from .storage2 import ActorStorage
-from .helper import generate_message_id
-from .builtin_actors.name import ACTOR_MESSAGE_FETCHER, ACTOR_MESSAGE_ACKER, ACTOR_MESSAGE_NOTIFY_SENDER
+from .state import ActorState, OUTBOX, EXPORT, ERROR_NOTRY
+from .storage import ActorStorage
+from .registery import ActorRegistery
+from .builtin_actors.name import (
+    ACTOR_SYSTEM,
+    ACTOR_MESSAGE_FETCHER,
+    ACTOR_MESSAGE_ACKER,
+    ACTOR_MESSAGE_NOTIFY_SENDER,
+)
 
 
 LOG = logging.getLogger(__name__)
@@ -64,8 +69,8 @@ class ActorStorageState:
 class ActorQueue:
     def __init__(
         self,
-        node_name: str,
         actor_name: str,
+        registery: ActorRegistery,
         state: ActorState,
         schedule_fetcher,
         inbox_lowsize: int = 10,
@@ -78,7 +83,7 @@ class ActorQueue:
         fetcher_concurrency: int = 3,
     ):
         self.actor_name = actor_name
-        self.node_name = node_name
+        self.registery = registery
         self.state = state
         self.schedule_fetcher = schedule_fetcher
         self.inbox_lowsize = inbox_lowsize
@@ -163,7 +168,7 @@ class ActorQueue:
         ret = []
         retry_base_at = time.time() + self.cycle_time
         dst_box = self.dst_node_outbox.get(dst_node)
-        box = dst_box[dst] if dst_box else None
+        box = dst_box.get(dst) if dst_box else None
         while len(ret) < maxsize and box:
             self._export_box(ret, box, retry_base_at)
         box = self.dst_outbox.get(dst)
@@ -221,17 +226,18 @@ class ActorQueue:
         if not upstream_list:
             return
         maxsize = self.inbox_highsize - self.inbox_size()
-        message_fetcher = ActorMessage(
-            id=generate_message_id(self.node_name),
+        message = self.registery.create_message(
             priority=0,
             src=self.actor_name,
-            src_node=self.node_name,
             dst=ACTOR_MESSAGE_FETCHER,
-            dst_node=self.node_name,
-            require_ack=False,
-            content=dict(upstream_list=upstream_list, maxsize=maxsize, actor_name=self.actor_name),
+            dst_node=self.registery.current_node_name,
+            content=dict(
+                actor_name=self.actor_name,
+                upstream_list=upstream_list,
+                maxsize=maxsize,
+            ),
         )
-        self.schedule_fetcher(message_fetcher)
+        self.schedule_fetcher(message)
         self.is_fetching = True
 
     def backoff_delay(self, executed_count):
@@ -240,6 +246,7 @@ class ActorQueue:
         return min(((8**executed_count) + random_seconds), self.max_retry_time)
 
     def check_timeout_and_retry(self, now):
+        # TODO: check outbox message expired
         retry_outbox_message_ids = []
         error_notry_outbox_message_ids = []
         for state in self.state.state.values():
@@ -257,7 +264,7 @@ class ActorQueue:
         for outbox_message_id in error_notry_outbox_message_ids:
             self.op_acked(outbox_message_id, ERROR_NOTRY)
         for outbox_message_id in retry_outbox_message_ids:
-            outbox_message = self.state.get_message(outbox_message_id)
+            outbox_message = self.state.get_outbox_message(outbox_message_id)
             if outbox_message.is_expired():
                 LOG.warning(f'expired outbox_message {outbox_message}')
                 self.state.apply_acked(outbox_message_id=outbox_message.id, status=ERROR_NOTRY)
@@ -270,11 +277,11 @@ class ActorQueue:
 class ActorMessageQueue:
     def __init__(
         self,
-        node_name: str,
+        registery: ActorRegistery,
         actors: typing.Dict[str, Actor],
         storage: ActorStorage = None,
     ):
-        self.node_name = node_name
+        self.registery = registery
         self.actors = actors
         state = ActorState()
         if storage:
@@ -296,9 +303,8 @@ class ActorMessageQueue:
             q = self.thread_actor_queues.get(actor_name)
         if q is None:
             q = ActorQueue(
-
-                node_name=self.node_name,
                 actor_name=actor_name,
+                registery=self.registery,
                 state=self.state,
                 schedule_fetcher=self._op_inbox,
             )
@@ -319,7 +325,7 @@ class ActorMessageQueue:
         return sum(x.outbox_size() for x in self.all_actor_queues())
 
     def qsize(self):
-        self.inbox_size() + self.outbox_size()
+        return self.inbox_size() + self.outbox_size()
 
     def op_execute(self) -> ActorMessage:
         """
@@ -357,9 +363,6 @@ class ActorMessageQueue:
         """
         with self.lock:
             message = self.state.get_message(message_id)
-            if not message:
-                LOG.warning(f'message {message_id} not exists')
-                return
             self.actor_queue(message.dst).op_done(message_id, status=status)
             if message.dst == ACTOR_MESSAGE_FETCHER:
                 self.actor_queue(message.src).on_fetcher_done()
@@ -404,14 +407,8 @@ class ActorMessageQueue:
         For message fetcher
         """
         with self.lock:
-            outbox_message = self.state.get_message(outbox_message_id)
-            if not outbox_message:
-                LOG.warning(f'outbox_message {outbox_message_id} not exists')
-                return
+            outbox_message = self.state.get_outbox_message(outbox_message_id)
             message = self.state.get_message(outbox_message.parent_id)
-            if not message:
-                LOG.warning(f'message {outbox_message.parent_id} not eixsts')
-                return
             self.actor_queue(message.dst).op_acked(outbox_message_id, status=status)
             self.execute_condition.notify()
 
@@ -438,14 +435,12 @@ class ActorMessageQueue:
         self.execute_condition.notify()
 
     def _ack_of(self, message, status):
-        return ActorMessage(
+        return self.registery.create_message(
             id=message.id,
             priority=0,
             src=message.dst,
-            src_node=self.node_name,
             dst=ACTOR_MESSAGE_ACKER,
             dst_node=message.src_node,
-            require_ack=False,
             content=dict(status=status),
         )
 
@@ -480,14 +475,11 @@ class ActorMessageQueue:
             return
         dst_info = [dict(dst=dst) for dst in dst_info]
         dst_node_info = [dict(dst=dst, dst_node=dst_node) for dst_node, dst in dst_node_info]
-        message_notifier = ActorMessage(
-            id=generate_message_id(self.node_name),
+        message_notifier = self.registery.create_message(
             priority=0,
-            src='actor.init',
-            src_node=self.node_name,
+            src=ACTOR_SYSTEM,
             dst=ACTOR_MESSAGE_NOTIFY_SENDER,
-            dst_node=self.node_name,
-            require_ack=False,
+            dst_node=self.registery.current_node_name,
             content=dict(dst_info=dst_info, dst_node_info=dst_node_info),
         )
         self.actor_queue(message_notifier.dst).op_inbox(message_notifier)

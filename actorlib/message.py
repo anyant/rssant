@@ -2,11 +2,10 @@ import enum
 import json
 import gzip
 import time
-import datetime
 import msgpack
 from concurrent.futures import Future
 
-from .helper import shorten
+from .helper import shorten, format_timestamp
 
 
 class ActorMessageError(Exception):
@@ -67,6 +66,7 @@ class ActorMessage:
         src_node: str = None,
         dst: str,
         dst_node: str = None,
+        is_local: bool = None,
         expire_at: int = None,
         parent_id: str = None,
         future: Future = None,
@@ -77,6 +77,10 @@ class ActorMessage:
             if priority is not None and priority != 0:
                 raise ValueError('ask message can not set priority')
             priority = 0
+        else:
+            if priority is None:
+                priority = 100
+            priority = max(1, priority)
         self.priority = priority
         if is_ask and require_ack:
             raise ValueError('ask message not require ack')
@@ -86,6 +90,7 @@ class ActorMessage:
         self.src_node = src_node
         self.dst = dst
         self.dst_node = dst_node
+        self.is_local = is_local
         if expire_at is not None:
             if expire_at <= 0:
                 expire_at = None
@@ -103,8 +108,8 @@ class ActorMessage:
             self.dst == other.dst,
         ])
 
-    def __gt__(self, other: "ActorMessage"):
-        return (self.priority, id(self)) > (other.priority, id(other))
+    def __lt__(self, other: "ActorMessage"):
+        return (self.priority, id(self)) < (other.priority, id(other))
 
     def __repr__(self):
         type_name = type(self).__name__
@@ -114,8 +119,7 @@ class ActorMessage:
             msg_type = '!' if self.require_ack else '~'
         expire_at = ''
         if self.expire_at is not None:
-            expire_at = datetime.datetime.utcfromtimestamp(self.expire_at)
-            expire_at = ' expire_at ' + expire_at.isoformat(timespec='seconds') + 'Z'
+            expire_at = ' expire_at=' + format_timestamp(self.expire_at)
         short_content = shorten(repr(self.content), width=30)
         parent = ''
         if self.parent_id:
@@ -134,36 +138,43 @@ class ActorMessage:
     def from_dict(cls, d):
         return ActorMessage(
             id=d['id'],
-            content=d.get('content'),
             priority=d['priority'],
-            is_ask=d['is_ask'],
             require_ack=d['require_ack'],
             src=d['src'],
             src_node=d['src_node'],
             dst=d['dst'],
             dst_node=d['dst_node'],
             expire_at=d.get('expire_at'),
+            content=d.get('content'),
+            is_ask=d.get('is_ask'),
+            is_local=d.get('is_local'),
             parent_id=d.get('parent_id'),
         )
 
-    def to_dict(self):
+    def _to_dict_basic(self):
         return dict(
             id=self.id,
-            content=self.content,
             priority=self.priority,
-            is_ask=self.is_ask,
             require_ack=self.require_ack,
             src=self.src,
             src_node=self.src_node,
             dst=self.dst,
             dst_node=self.dst_node,
             expire_at=self.expire_at,
-            parent_id=self.parent_id,
         )
 
+    def to_dict(self):
+        d = self._to_dict_basic()
+        d.update(content=self.content)
+        return d
+
     def meta(self):
-        d = self.to_dict()
-        d.pop('content', None)
+        d = self._to_dict_basic()
+        d.update(
+            is_ask=self.is_ask,
+            is_local=self.is_local,
+            parent_id=self.parent_id,
+        )
         return self.from_dict(d)
 
     @classmethod

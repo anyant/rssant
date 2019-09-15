@@ -6,7 +6,7 @@ from validr import T
 from actorlib.actor import actor
 from actorlib.context import ActorContext
 from actorlib.message import ActorMessage
-from actorlib.state2 import ActorStateError
+from actorlib.state import ActorStateError
 
 from .name import ACTOR_MESSAGE_FETCHER, ACTOR_MESSAGE_ACKER, ACTOR_MESSAGE_EXPORTER
 from .base import BuiltinActorBase
@@ -31,6 +31,7 @@ class MessageFetcher(BuiltinActorBase):
 
     async def local_fetch(self, dst, maxsize):
         messages = self.app.queue.op_export(dst=dst, dst_node=self.app.name, maxsize=maxsize)
+        messages = [ActorMessage.from_dict(d.to_dict()) for d in messages]
         return messages
 
     async def __call__(
@@ -63,6 +64,7 @@ class MessageFetcher(BuiltinActorBase):
                         LOG.warning(ex)
             else:
                 for msg in messages:
+                    msg = self.app.registery.complete_message(msg)
                     try:
                         queue.op_inbox(msg)
                     except ActorStateError as ex:

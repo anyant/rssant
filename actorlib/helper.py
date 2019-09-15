@@ -4,6 +4,7 @@ import functools
 import asyncio
 import time
 import uuid
+import datetime
 
 from validr import T
 from rssant_common.validator import compiler as internal_schema_compiler
@@ -78,3 +79,10 @@ def auto_restart_when_crash(fn):
 
 def generate_message_id(node_name):
     return node_name + ':' + str(uuid.uuid4())
+
+
+def format_timestamp(t):
+    if t is None:
+        return None
+    dt = datetime.datetime.utcfromtimestamp(t)
+    return dt.isoformat(timespec='seconds') + 'Z'

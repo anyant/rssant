@@ -1,3 +1,5 @@
+ACTOR_INIT = 'actor.init'
+ACTOR_SYSTEM = 'actor.system'
 
 ACTOR_MESSAGE_ACKER = 'actor.message_acker'
 ACTOR_MESSAGE_MONITOR = 'actor.message_monitor'

@@ -1,4 +1,4 @@
-from actorlib import ActorClient, ActorMessage, ActorRegistery
+from actorlib import ActorClient, ActorRegistery
 
 from rssant.settings import ENV_CONFIG
 
@@ -24,14 +24,23 @@ class SchedulerActorClient:
         self.batch_tell([dict(dst=dst, content=content, expire_at=expire_at)])
 
     def batch_tell(self, tasks):
-        tasks = [dict(dst=t['dst'], content=t.get('content'), expire_at=t.get('expire_at')) for t in tasks]
-        self.client.send(ActorMessage(
-            dst='scheduler.proxy_tell', content=dict(tasks=tasks),
+        tasks = [
+            dict(
+                dst=t['dst'],
+                content=t.get('content'),
+                expire_at=t.get('expire_at'),
+            )
+            for t in tasks
+        ]
+        self.client.send(self.registery.create_message(
+            dst='scheduler.proxy_tell',
+            content=dict(tasks=tasks),
         ))
 
     def ask(self, dst, content):
-        return self.client.ask(ActorMessage(
-            dst='scheduler.proxy_ask', content=dict(dst=dst, content=content),
+        return self.client.ask(self.registery.create_message(
+            dst='scheduler.proxy_ask',
+            content=dict(dst=dst, content=content),
         ))
 
 

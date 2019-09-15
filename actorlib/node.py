@@ -10,11 +10,11 @@ from .actor import Actor, collect_actors
 from .executor import ActorExecutor
 from .registery import ActorRegistery
 from .receiver import MessageReceiver
-from .message import ActorMessage
 from .network_helper import get_localhost_network
-from .queue2 import ActorMessageQueue
-from .storage2 import ActorStorage
+from .queue import ActorMessageQueue
+from .storage import ActorStorage
 from .client import ActorClient
+from .builtin_actors.name import ACTOR_SYSTEM
 
 
 LOG = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class ActorNode:
             registery_node_spec=registery_node_spec)
         self.storage = ActorStorage()
         self.queue = ActorMessageQueue(
-            node_name=self.name, actors=self.actors, storage=self.storage)
+            registery=self.registery, actors=self.actors, storage=self.storage)
         self.concurrency = concurrency
         self.executor = ActorExecutor(
             self.actors,
@@ -112,21 +112,13 @@ class ActorNode:
         self._on_shutdown_handlers.append(handler)
         return handler
 
-    def _send_init_message(self):
-        if 'actor.init' in self.actors:
-            self._op_inbox('actor.init')
-        self._op_inbox('actor.timer')
-
-    def _op_inbox(self, dst, content=None):
-        msg = ActorMessage(
-            content=content,
-            src='actor.init',
-            dst=dst,
+    def _send_system_init_message(self):
+        msg = self.registery.create_message(
+            src=ACTOR_SYSTEM,
+            dst=ACTOR_SYSTEM,
             dst_node=self.name,
             priority=0,
-            require_ack=False,
         )
-        msg = self.registery.complete_message(msg)
         self.queue.op_inbox(msg)
 
     def _close(self):
@@ -141,7 +133,7 @@ class ActorNode:
         try:
             for handler in self._on_startup_handlers:
                 handler(self)
-            self._send_init_message()
+            self._send_system_init_message()
             self.receiver.run()
         finally:
             try:
@@ -149,3 +141,16 @@ class ActorNode:
                     handler(self)
             finally:
                 self._close()
+
+    def ask(self, dst, content=None, dst_node=None):
+        """Send request and wait response"""
+        if not dst_node:
+            dst_node = self.registery.choice_dst_node(dst)
+        msg = self.registery.create_message(
+            is_ask=True,
+            content=content,
+            src=ACTOR_SYSTEM,
+            dst=dst,
+            dst_node=dst_node,
+        )
+        return self.client.ask(msg)

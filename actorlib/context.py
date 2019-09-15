@@ -9,8 +9,8 @@ from .actor import Actor
 from .message import ActorMessage
 from .client import AsyncActorClient, ActorClient
 from .registery import ActorRegistery
-from .queue2 import ActorMessageQueue
-from .state2 import ERROR, OK
+from .queue import ActorMessageQueue
+from .state import ERROR, OK
 
 
 LOG = logging.getLogger(__name__)
@@ -105,18 +105,16 @@ class ActorContext:
                 self.message.future.set_result(result)
 
     def _append_message(self, dst, content=None, dst_node=None, priority=None, require_ack=False, expire_at=None):
-        msg = ActorMessage(
+        msg = self.registery.create_message(
             content=content,
             src=self.actor.name,
             dst=dst,
             dst_node=dst_node,
             priority=priority,
-            is_ask=False,
             require_ack=require_ack,
             expire_at=expire_at,
             parent_id=self.message.id,
         )
-        msg = self.registery.complete_message(msg)
         self._outbox_messages.append(msg)
         return msg
 
@@ -126,7 +124,7 @@ class ActorContext:
     def tell(self, dst, content=None, dst_node=None, priority=None, expire_at=None):
         """Require ack, will retry if failed"""
         self._append_message(
-            dst,
+            dst=dst,
             content=content,
             dst_node=dst_node,
             require_ack=True,
@@ -139,10 +137,9 @@ class ActorContext:
     def hope(self, dst, content=None, dst_node=None, priority=None, expire_at=None):
         """Fire and fogot, not require ack"""
         self._append_message(
-            dst,
+            dst=dst,
             content=content,
             dst_node=dst_node,
-            require_ack=False,
             priority=priority,
             expire_at=expire_at,
         )
@@ -151,15 +148,16 @@ class ActorContext:
 
     def ask(self, dst, content=None, dst_node=None):
         """Send request and wait response"""
-        msg = ActorMessage(
-            content=content, src=self.actor.name,
-            is_ask=True, require_ack=False,
-            dst=dst, dst_node=dst_node,
-        )
         if not dst_node:
-            msg.dst_node = self.registery.choice_dst_node(dst)
-        msg = self.registery.complete_message(msg)
-        if self.registery.is_local_message(msg):
+            dst_node = self.registery.choice_dst_node(dst)
+        msg = self.registery.create_message(
+            dst=dst,
+            is_ask=True,
+            content=content,
+            src=self.actor.name,
+            dst_node=dst_node,
+        )
+        if msg.is_local:
             future = ThreadFuture()
             msg.future = future
             if self.actor.is_async:

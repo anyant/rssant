@@ -23,7 +23,7 @@ class MessageNotifySender(BuiltinActorBase):
         try:
             await ctx.ask(ACTOR_MESSAGE_NOTIFY_RECEIVER, content, dst_node=dst_node)
         except Exception as ex:
-            LOG.exception(ex)
+            LOG.warning(f'notify {dst_node} failed: {ex}')
 
     async def __call__(
         self,

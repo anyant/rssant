@@ -1,4 +1,5 @@
 import logging
+import time
 
 import backdoor
 from validr import T
@@ -10,7 +11,14 @@ LOG = logging.getLogger(__name__)
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.ask('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+    while True:
+        try:
+            ctx.ask('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+        except Exception as ex:
+            LOG.warning(f'ask registery.register failed: {ex}')
+        else:
+            break
+        time.sleep(3)
 
 
 @actor('worker.ping')

@@ -34,25 +34,21 @@ class ActorHealth(BuiltinActorBase):
         # storage_compactor
         storage_compactor_info = {}
         return dict(
-            name=self.name,
-            host=self.host,
-            port=self.port,
-            subpath=self.subpath,
-            concurrency=self.concurrency,
+            name=app.name,
+            host=app.host,
+            port=app.port,
+            subpath=app.subpath,
+            concurrency=app.concurrency,
             registery=registery_info,
             storage=storage_info,
             storage_compactor=storage_compactor_info,
             receiver=dict(),  # TODO: receiver/aiohttp metrics
-            queue_info=queue_info,
+            queue=queue_info,
             executor=dict(
-                concurrency=self.executor.concurrency,
-                num_async_workers=self.executor.num_async_workers,
-                num_thread_workers=self.executor.num_thread_workers,
+                concurrency=app.executor.concurrency,
+                num_async_workers=app.executor.num_async_workers,
+                num_thread_workers=app.executor.num_thread_workers,
             ),
-            message_monitor=dict(
-                ack_timeout=self.message_monitor.ack_timeout,
-                max_retry_count=self.message_monitor.max_retry_count,
-            )
         )
 
     def print_health(self):

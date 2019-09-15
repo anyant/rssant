@@ -127,7 +127,7 @@ class ActorClient(ActorClientBase):
                 LOG.error(f'failed to send message to {dst_url}: {ex}')
                 return
             except requests.RequestException as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
             r.raise_for_status()
 
@@ -146,7 +146,7 @@ class ActorClient(ActorClientBase):
                     dst_url, data=data,
                     headers=headers, timeout=self.timeout)
             except requests.RequestException as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
             r.raise_for_status()
             return self._decode_ask_response(r.content, r.headers)
@@ -180,7 +180,7 @@ class AsyncActorClient(ActorClientBase):
                 LOG.error(f'failed to send message to {dst_url}: {ex}')
                 return
             except aiohttp.ClientError as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
             aiohttp_raise_for_status(r)
 
@@ -201,7 +201,7 @@ class AsyncActorClient(ActorClientBase):
                     headers = r.headers
                     content = await r.read()
             except aiohttp.ClientError as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
             aiohttp_raise_for_status(r)
             return self._decode_ask_response(content, headers)

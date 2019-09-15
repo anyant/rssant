@@ -9,7 +9,7 @@ from .message import ActorMessage
 from .helper import unsafe_kill_thread, auto_restart_when_crash
 from .registery import ActorRegistery
 from .client import AsyncActorClient, ActorClient
-from .queue2 import ActorMessageQueue
+from .queue import ActorMessageQueue
 from .context import ActorContext
 
 
@@ -17,7 +17,7 @@ LOG = logging.getLogger(__name__)
 
 
 def normalize_concurrency(concurrency):
-    num_async_workers = concurrency // 10 + 1
+    num_async_workers = concurrency // 30 + 1
     num_thread_workers = max(1, concurrency - num_async_workers)
     concurrency = num_async_workers + num_thread_workers
     return AttrDict(
@@ -60,7 +60,7 @@ class ActorExecutor:
     @auto_restart_when_crash
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
-            limit=self.concurrency, pending_limit=self.concurrency)
+            limit=self.concurrency, pending_limit=max(10, self.concurrency // 10))
         actor_client = AsyncActorClient(registery=self.registery, token=self.token)
         async with actor_client:
             try:
@@ -81,7 +81,6 @@ class ActorExecutor:
         loop.run_until_complete(self._async_main())
 
     def _is_deliverable(self, message: ActorMessage):
-        # is_local = self.registery.is_local_message(message)
         return message.dst in self.actors
 
     def _handle_message(self, message: ActorMessage, actor_client):

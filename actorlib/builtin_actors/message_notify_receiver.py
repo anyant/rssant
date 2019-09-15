@@ -3,6 +3,7 @@ from validr import T
 
 from actorlib.actor import actor
 from actorlib.context import ActorContext
+from actorlib.state import ActorStateError
 
 from .name import ACTOR_MESSAGE_NOTIFY_RECEIVER
 from .base import BuiltinActorBase
@@ -22,5 +23,8 @@ class MessageNotifySender(BuiltinActorBase):
         queue = self.app.queue
         src_node = ctx.message.src_node
         for dst in dst_list:
-            queue.op_notify(src_node=src_node, dst=dst, available=True)
+            try:
+                queue.op_notify(src_node=src_node, dst=dst, available=True)
+            except ActorStateError as ex:
+                LOG.warning(ex)
         return dict(message='OK')
