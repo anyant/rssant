@@ -3,6 +3,7 @@ import logging
 import functools
 import asyncio
 import time
+import uuid
 
 from validr import T
 from rssant_common.validator import compiler as internal_schema_compiler
@@ -73,3 +74,7 @@ def auto_restart_when_crash(fn):
                     LOG.error(f'{fn_name} crashed, will restart it', exc_info=ex)
                 time.sleep(1)
     return wrapped
+
+
+def generate_message_id(node_name):
+    return node_name + ':' + str(uuid.uuid4())

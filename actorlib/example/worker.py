@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.hope('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+    ctx.ask('registery.register', dict(node=ctx.registery.current_node.to_spec()))
 
 
 @actor('worker.ping')
@@ -59,6 +59,6 @@ def main():
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
     from actorlib.sentry import sentry_init
-    configure_logging()
+    configure_logging(enable_loguru=True, level='DEBUG')
     sentry_init()
     main()

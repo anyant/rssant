@@ -46,6 +46,6 @@ def main():
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
     from actorlib.sentry import sentry_init
-    configure_logging()
+    configure_logging(enable_loguru=True, level='DEBUG')
     sentry_init()
     main()

@@ -4,6 +4,7 @@ import gzip
 import time
 import datetime
 import msgpack
+from concurrent.futures import Future
 
 from .helper import shorten
 
@@ -58,15 +59,25 @@ class ActorMessage:
     def __init__(
         self, *,
         id: str = None,
-        content: dict = None, is_ask: bool = False, require_ack: bool = False,
-        src: str = None, src_node: str = None,
-        dst: str, dst_node: str = None, dst_url: str = None,
+        content: dict = None,
+        priority: int = None,
+        is_ask: bool = False,
+        require_ack: bool = False,
+        src: str = None,
+        src_node: str = None,
+        dst: str,
+        dst_node: str = None,
         expire_at: int = None,
+        parent_id: str = None,
+        future: Future = None,
     ):
         self.id = id
-        if content is None:
-            content = {}
         self.content = content
+        if is_ask:
+            if priority is not None and priority != 0:
+                raise ValueError('ask message can not set priority')
+            priority = 0
+        self.priority = priority
         if is_ask and require_ack:
             raise ValueError('ask message not require ack')
         self.is_ask = is_ask
@@ -75,7 +86,6 @@ class ActorMessage:
         self.src_node = src_node
         self.dst = dst
         self.dst_node = dst_node
-        self.dst_url = dst_url
         if expire_at is not None:
             if expire_at <= 0:
                 expire_at = None
@@ -84,6 +94,17 @@ class ActorMessage:
         if is_ask and expire_at:
             raise ValueError('ask message can not set expire_at')
         self.expire_at = expire_at
+        self.parent_id = parent_id
+        self.future = future
+
+    def __eq__(self, other: "ActorMessage"):
+        return all([
+            self.id == other.id,
+            self.dst == other.dst,
+        ])
+
+    def __gt__(self, other: "ActorMessage"):
+        return (self.priority, id(self)) > (other.priority, id(other))
 
     def __repr__(self):
         type_name = type(self).__name__
@@ -96,8 +117,11 @@ class ActorMessage:
             expire_at = datetime.datetime.utcfromtimestamp(self.expire_at)
             expire_at = ' expire_at ' + expire_at.isoformat(timespec='seconds') + 'Z'
         short_content = shorten(repr(self.content), width=30)
+        parent = ''
+        if self.parent_id:
+            parent = ' parent=' + self.parent_id
         return (f'<{type_name} {self.id} {self.src_node}/{self.src} {msg_type} '
-                f'{self.dst_node}/{self.dst}{expire_at} {short_content}>')
+                f'{self.dst_node}/{self.dst}{expire_at}{parent} {short_content}>')
 
     def is_expired(self, now: int = None):
         if self.expire_at is None:
@@ -109,21 +133,38 @@ class ActorMessage:
     @classmethod
     def from_dict(cls, d):
         return ActorMessage(
-            id=d['id'], content=d['content'],
-            is_ask=d['is_ask'], require_ack=d['require_ack'],
-            src=d['src'], src_node=d['src_node'],
-            dst=d['dst'], dst_node=d['dst_node'], dst_url=d['dst_url'],
+            id=d['id'],
+            content=d.get('content'),
+            priority=d['priority'],
+            is_ask=d['is_ask'],
+            require_ack=d['require_ack'],
+            src=d['src'],
+            src_node=d['src_node'],
+            dst=d['dst'],
+            dst_node=d['dst_node'],
             expire_at=d.get('expire_at'),
+            parent_id=d.get('parent_id'),
         )
 
     def to_dict(self):
         return dict(
-            id=self.id, content=self.content,
-            is_ask=self.is_ask, require_ack=self.require_ack,
-            src=self.src, src_node=self.src_node,
-            dst=self.dst, dst_node=self.dst_node, dst_url=self.dst_url,
+            id=self.id,
+            content=self.content,
+            priority=self.priority,
+            is_ask=self.is_ask,
+            require_ack=self.require_ack,
+            src=self.src,
+            src_node=self.src_node,
+            dst=self.dst,
+            dst_node=self.dst_node,
             expire_at=self.expire_at,
+            parent_id=self.parent_id,
         )
+
+    def meta(self):
+        d = self.to_dict()
+        d.pop('content', None)
+        return self.from_dict(d)
 
     @classmethod
     def raw_encode(cls, data, content_encoding=None):

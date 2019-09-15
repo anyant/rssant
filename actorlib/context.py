@@ -1,56 +1,19 @@
 import typing
 import logging
 import contextlib
+import asyncio
+from concurrent.futures import Future as ThreadFuture
 
-import actorlib.executor
 from .sentry import sentry_scope
 from .actor import Actor
 from .message import ActorMessage
 from .client import AsyncActorClient, ActorClient
-from .state import ActorStateError
-from .storage import ActorStorageBase
 from .registery import ActorRegistery
+from .queue2 import ActorMessageQueue
+from .state2 import ERROR, OK
 
 
 LOG = logging.getLogger(__name__)
-
-
-class StorageHelper:
-
-    def __init__(self, storage: ActorStorageBase, registery: ActorRegistery):
-        self.storage = storage
-        self.registery = registery
-
-    def execute_op(self, op, *args, **kwargs):
-        try:
-            done_message = op(*args, **kwargs)
-        except ActorStateError as ex:
-            LOG.warning(ex)
-        else:
-            if done_message and done_message['require_ack']:
-                return self.handle_ack(
-                    message_id=done_message['id'],
-                    dst_node=done_message['src_node'],
-                    status=done_message['status'],
-                )
-        return None
-
-    def handle_ack(self, message_id, dst_node, status) -> None:
-        if not self.registery.is_local_node(dst_node):
-            ack_msg = ActorMessage(
-                id=message_id,
-                src='actor.ack',
-                dst='actor.ack',
-                dst_node=dst_node,
-                content=dict(status=status)
-            )
-            return self.registery.complete_message(ack_msg)
-        return self.execute_op(self.storage.op_ack, message_id, status)
-
-    def handle_ack_message(self, message: ActorMessage):
-        """Handle ack message from receiver"""
-        status = message.content['status']
-        return self.execute_op(self.storage.op_ack, message.id, status)
 
 
 class ActorContext:
@@ -58,18 +21,16 @@ class ActorContext:
         self, *,
         actor: Actor,
         message: ActorMessage,
-        executor: "actorlib.executor.ActorExecutor",
+        registery: ActorRegistery,
+        queue: ActorMessageQueue,
         actor_client: typing.Union[AsyncActorClient, ActorClient]
     ):
         self.actor = actor
         self.message = message
-        self.registery = executor.registery
-        self._executor = executor
-        self._storage_helper = executor.storage_helper
-        self._storage = executor.storage
-        self._sender = executor.sender
+        self.registery = registery
+        self._queue = queue
         self._actor_client = actor_client
-        self._send_messages = []
+        self._outbox_messages = []
 
     def _thread_execute(self):
         """Execute actor in thread worker"""
@@ -81,11 +42,9 @@ class ActorContext:
                 try:
                     ret = self.actor(self)
                 except Exception as ex:
-                    ack_msg = self._postprocess(None, ex)
+                    self._postprocess(None, ex)
                 else:
-                    ack_msg = self._postprocess(ret, None)
-                if ack_msg:
-                    self._sender.submit(ack_msg)
+                    self._postprocess(ret, None)
                 return ret
         finally:
             self._close()
@@ -100,11 +59,9 @@ class ActorContext:
                 try:
                     ret = await self.actor(self)
                 except Exception as ex:
-                    ack_msg = self._postprocess(None, ex)
+                    self._postprocess(None, ex)
                 else:
-                    ack_msg = self._postprocess(ret, None)
-                if ack_msg:
-                    await self._sender.async_submit(ack_msg)
+                    self._postprocess(ret, None)
                 return ret
         finally:
             self._close()
@@ -125,94 +82,89 @@ class ActorContext:
         self._storage = None
         self._sender = None
         self._actor_client = None
-        self._send_messages = None
+        self._outbox_messages = None
 
     def _preprocess(self) -> bool:
         """return can process or not"""
-        if self.message.is_expired():
-            LOG.warning(f'expired message {self.message}')
-            return False
-        try:
-            self._storage.op_begin(
-                self.message.id,
-                require_ack=self.message.require_ack,
-                dst=self.message.dst,
-                src=self.message.src,
-                src_node=self.message.src_node,
-            )
-        except ActorStateError as ex:
-            LOG.warning(ex)
-            return False
         return True
 
     def _postprocess(self, result, error):
         """return ack message if need ack"""
         if error:
             LOG.exception(f'actor {self.message.dst} handle {self.message} failed: {error}')
-            ack_msg = self._storage_helper.execute_op(
-                self._storage.op_done, self.message.id, 'ERROR')
+            self._queue.op_done(message_id=self.message.id, status=ERROR)
+            if self.message.future:
+                self.message.future.set_exception(error)
         else:
-            send_messages = [x.to_dict() for x in self._send_messages if x.require_ack]
-            if not send_messages:
-                ack_msg = self._storage_helper.execute_op(
-                    self._storage.op_done, self.message.id, 'OK')
+            if not self._outbox_messages:
+                self._queue.op_done(message_id=self.message.id, status=OK)
             else:
-                ack_msg = self._storage_helper.execute_op(
-                    self._storage.op_send, self.message.id, send_messages)
-        if self.message.require_ack and ack_msg:
-            return ack_msg
-        return None
+                self._queue.op_outbox(message_id=self.message.id,
+                                      outbox_messages=self._outbox_messages)
+            if self.message.future:
+                self.message.future.set_result(result)
 
-    def _append_message(self, dst, content=None, dst_node=None, require_ack=False, expire_at=None):
-        if content is None:
-            content = {}
+    def _append_message(self, dst, content=None, dst_node=None, priority=None, require_ack=False, expire_at=None):
         msg = ActorMessage(
-            content=content, src=self.actor.name,
-            dst=dst, dst_node=dst_node,
-            is_ask=False, require_ack=require_ack, expire_at=expire_at,
+            content=content,
+            src=self.actor.name,
+            dst=dst,
+            dst_node=dst_node,
+            priority=priority,
+            is_ask=False,
+            require_ack=require_ack,
+            expire_at=expire_at,
+            parent_id=self.message.id,
         )
         msg = self.registery.complete_message(msg)
-        self._send_messages.append(msg)
+        self._outbox_messages.append(msg)
         return msg
 
-    def _send_message(self, message):
-        if self.registery.is_local_message(message):
-            if self.actor.is_async:
-                return self._executor.async_submit(message)
-            else:
-                return self._executor.submit(message)
-        else:
-            if self.actor.is_async:
-                return self._sender.async_submit(message)
-            else:
-                return self._sender.submit(message)
+    async def _awaitable_none(self):
+        return None
 
-    def tell(self, dst, content=None, dst_node=None, expire_at=None):
+    def tell(self, dst, content=None, dst_node=None, priority=None, expire_at=None):
         """Require ack, will retry if failed"""
-        msg = self._append_message(
-            dst, content=content, dst_node=dst_node, require_ack=True, expire_at=expire_at)
-        return self._send_message(msg)
+        self._append_message(
+            dst,
+            content=content,
+            dst_node=dst_node,
+            require_ack=True,
+            priority=priority,
+            expire_at=expire_at,
+        )
+        if self.actor.is_async:
+            return self._awaitable_none()
 
-    def hope(self, dst, content=None, dst_node=None, expire_at=None):
+    def hope(self, dst, content=None, dst_node=None, priority=None, expire_at=None):
         """Fire and fogot, not require ack"""
-        msg = self._append_message(
-            dst, content=content, dst_node=dst_node, require_ack=False, expire_at=expire_at)
-        return self._send_message(msg)
+        self._append_message(
+            dst,
+            content=content,
+            dst_node=dst_node,
+            require_ack=False,
+            priority=priority,
+            expire_at=expire_at,
+        )
+        if self.actor.is_async:
+            return self._awaitable_none()
 
     def ask(self, dst, content=None, dst_node=None):
         """Send request and wait response"""
-        if content is None:
-            content = {}
         msg = ActorMessage(
             content=content, src=self.actor.name,
             is_ask=True, require_ack=False,
             dst=dst, dst_node=dst_node,
         )
+        if not dst_node:
+            msg.dst_node = self.registery.choice_dst_node(dst)
         msg = self.registery.complete_message(msg)
         if self.registery.is_local_message(msg):
+            future = ThreadFuture()
+            msg.future = future
             if self.actor.is_async:
-                return self._executor.async_handle_ask(msg)
+                return asyncio.wrap_future(future)
             else:
-                return self._executor.handle_ask(msg)
+                return future.result()
         else:
             return self._actor_client.ask(msg)

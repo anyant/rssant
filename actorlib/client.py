@@ -35,14 +35,21 @@ class ActorClientBase:
         if self.token:
             self.headers['actor-token'] = self.token
 
+    def _dst_url_of(self, message):
+        dst_node = message.dst_node
+        if not dst_node:
+            dst_node = self.registery.choice_dst_node(message.dst)
+        return self.registery.choice_dst_url(dst_node)
+
     def _group_messages(self, messages):
         groups = defaultdict(lambda: [])
         for msg in messages:
             msg = self.registery.complete_message(msg)
-            if not msg.dst_url:
+            dst_url = self._dst_url_of(msg)
+            if not dst_url:
                 LOG.error(f'no dst_url for message {msg}')
                 continue
-            groups[msg.dst_url].append(msg)
+            groups[dst_url].append(msg)
         return groups
 
     def _headers_of_ask(self, message):
@@ -52,18 +59,18 @@ class ActorClientBase:
             'actor-ask-src-node': message.src_node,
             'actor-ask-dst': message.dst,
             'actor-ask-dst-node': message.dst_node,
-            'actor-ask-dst-url': message.dst_url,
         }
 
     def _get_ask_request(self, message):
         message = self.registery.complete_message(message)
-        if not message.dst_url:
+        dst_url = self._dst_url_of(message)
+        if not dst_url:
             raise ValueError(f'no dst_url for ask {message}')
         LOG.info(f'ask {message}')
         data = ActorMessage.raw_encode(message.content, self.content_encoding)
         headers = self.headers.copy()
         headers.update(self._headers_of_ask(message))
-        return message, headers, data
+        return message, dst_url, headers, data
 
     @contextmanager
     def _sentry_group_message_scope(self, dst_url):
@@ -80,12 +87,11 @@ class ActorClientBase:
             scope.set_tag('src_node', message.src_node)
             scope.set_tag('dst', message.dst)
             scope.set_tag('dst_node', message.dst_node)
-            scope.set_tag('dst_url', message.dst_url)
             yield scope
 
     def _decode_ask_response(self, content, headers):
         if not content:
-            raise ValueError('not receive reply')
+            return None
         content_encoding = headers.get('actor-content-encoding')
         content_encoding = ContentEncoding.of(content_encoding)
         result = ActorMessage.raw_decode(content, content_encoding)
@@ -133,14 +139,14 @@ class ActorClient(ActorClientBase):
 
     def ask(self, message: ActorMessage):
         self._init()
-        message, headers, data = self._get_ask_request(message)
+        message, dst_url, headers, data = self._get_ask_request(message)
         with self._sentry_message_scope(message):
             try:
                 r = self.session.post(
-                    message.dst_url, data=data,
+                    dst_url, data=data,
                     headers=headers, timeout=self.timeout)
             except requests.RequestException as ex:
-                LOG.error(f'failed to send message to {message.dst_url}: {ex}')
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
                 raise
             r.raise_for_status()
             return self._decode_ask_response(r.content, r.headers)
@@ -188,14 +194,14 @@ class AsyncActorClient(ActorClientBase):
 
     async def ask(self, message: ActorMessage):
         await self._async_init()
-        message, headers, data = self._get_ask_request(message)
+        message, dst_url, headers, data = self._get_ask_request(message)
         with self._sentry_message_scope(message):
             try:
-                async with self.session.post(message.dst_url, data=data, headers=headers) as r:
+                async with self.session.post(dst_url, data=data, headers=headers) as r:
                     headers = r.headers
                     content = await r.read()
             except aiohttp.ClientError as ex:
-                LOG.error(f'failed to send message to {message.dst_url}: {ex}')
+                LOG.error(f'failed to send message to {dst_url}: {ex}')
                 raise
             aiohttp_raise_for_status(r)
             return self._decode_ask_response(content, headers)

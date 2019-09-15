@@ -288,6 +288,7 @@ def _get_storys(entries):
         summary = data["summary"]
         if not summary:
             summary = content
+        # TODO: performance
         summary = shorten(story_html_to_text(summary), width=300)
         story['summary'] = summary
         story['link'] = data["link"]
