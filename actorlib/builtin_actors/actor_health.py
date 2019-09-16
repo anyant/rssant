@@ -28,9 +28,20 @@ class ActorHealth(BuiltinActorBase):
         queue_info = dict(
             inbox_size=app.queue.inbox_size(),
             outbox_size=app.queue.outbox_size(),
+            state=dict(
+                wal_size=app.queue.state.wal_size,
+            )
         )
         # storage
         storage_info = dict()
+        if app.storage:
+            storage_info.update(
+                dirpath=app.storage.dirpath,
+                current_filepath=app.storage.current_filepath,
+                filepaths=app.storage.filepaths,
+                wal_size=app.storage.wal_size,
+                non_current_wal_size=app.storage.non_current_wal_size,
+            )
         # storage_compactor
         storage_compactor_info = {}
         return dict(

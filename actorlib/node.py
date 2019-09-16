@@ -12,7 +12,7 @@ from .registery import ActorRegistery
 from .receiver import MessageReceiver
 from .network_helper import get_localhost_network
 from .queue import ActorMessageQueue
-from .storage import ActorStorage
+from .storage import ActorLocalStorage
 from .client import ActorClient
 from .builtin_actors.name import ACTOR_SYSTEM
 
@@ -73,7 +73,10 @@ class ActorNode:
         self.registery = ActorRegistery(
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
-        self.storage = ActorStorage()
+        if storage_dir_path:
+            self.storage = ActorLocalStorage(dirpath=storage_dir_path)
+        else:
+            self.storage = None
         self.queue = ActorMessageQueue(
             registery=self.registery, actors=self.actors, storage=self.storage)
         self.concurrency = concurrency

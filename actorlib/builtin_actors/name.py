@@ -12,3 +12,5 @@ ACTOR_MESSAGE_NOTIFY_RECEIVER = 'actor.message_notify_receiver'
 
 ACTOR_TIMER = 'actor.timer'
 ACTOR_HEALTH = 'actor.health'
+
+ACTOR_STORAGE_COMPACTOR = 'actor.storage_compactor'

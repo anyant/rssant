@@ -49,6 +49,22 @@ class ActorState:
         # dst -> set{src_node}
         self.upstream = defaultdict(set)
 
+    @property
+    def wal_size(self):
+        # TODO: exclude complete messages
+        n = 0
+        for state in self.state.values():
+            status = state['status']
+            if status in (INBOX, OK, ERROR, ERROR_NOTRY):
+                n += 1
+            elif status == EXECUTE:
+                n += 2
+            elif status == OUTBOX:
+                n += 8
+        for dst, state in self.upstream.items():
+            n += len(state)
+        return n
+
     def get_message(self, message_id: str) -> ActorMessage:
         msg = self.message_objects.get(message_id)
         if msg is None:
@@ -255,6 +271,10 @@ class ActorState:
         for message_id, state in self.state.items():
             if state['status'] == EXECUTE:
                 message_ids.append(message_id)
+            elif state['status'] == INBOX:
+                message = self.get_message(message_id)
+                if message.is_ask:
+                    message_ids.append(message_id)
         for message_id in message_ids:
             self.apply_done(message_id=message_id, status=ERROR)
 

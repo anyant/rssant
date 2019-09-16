@@ -9,13 +9,14 @@ import threading
 from .actor import Actor
 from .message import ActorMessage
 from .state import ActorState, OUTBOX, EXPORT, ERROR_NOTRY
-from .storage import ActorStorage
+from .storage import ActorLocalStorage
 from .registery import ActorRegistery
 from .builtin_actors.name import (
     ACTOR_SYSTEM,
     ACTOR_MESSAGE_FETCHER,
     ACTOR_MESSAGE_ACKER,
     ACTOR_MESSAGE_NOTIFY_SENDER,
+    ACTOR_STORAGE_COMPACTOR,
 )
 
 
@@ -33,7 +34,7 @@ class ActorStorageState:
 
     def apply(self, type, **kwargs):
         self._state.apply(type, **kwargs)
-        self._storage.save(type, **kwargs)
+        self._storage.append(type, **kwargs)
 
     def apply_notify(self, **kwargs):
         self.apply('notify', **kwargs)
@@ -233,7 +234,7 @@ class ActorQueue:
             dst_node=self.registery.current_node_name,
             content=dict(
                 actor_name=self.actor_name,
-                upstream_list=upstream_list,
+                upstream_list=list(upstream_list),
                 maxsize=maxsize,
             ),
         )
@@ -279,19 +280,22 @@ class ActorMessageQueue:
         self,
         registery: ActorRegistery,
         actors: typing.Dict[str, Actor],
-        storage: ActorStorage = None,
+        storage: ActorLocalStorage = None,
     ):
         self.registery = registery
         self.actors = actors
         state = ActorState()
+        self.raw_state = state
         if storage:
             state = ActorStorageState(storage, state)
         self.state = state
+        self.storage = storage
         self.thread_actor_queues = {}
         self.async_actor_queues = {}
         self.lock = threading.Lock()
         self.execute_condition = threading.Condition(self.lock)
         self.is_notifing = False
+        self.is_compacting = False
 
     def actor_queue(self, actor_name: str):
         if actor_name not in self.actors:
@@ -368,6 +372,8 @@ class ActorMessageQueue:
                 self.actor_queue(message.src).on_fetcher_done()
             if message.dst == ACTOR_MESSAGE_NOTIFY_SENDER:
                 self.is_notifing = False
+            if message.dst == ACTOR_STORAGE_COMPACTOR:
+                self.is_compacting = False
             self.execute_condition.notify()
 
     def op_export(self, dst: str, dst_node: str, maxsize: int):
@@ -418,6 +424,7 @@ class ActorMessageQueue:
         """
         with self.lock:
             self._auto_schedule_notifier()
+            self._auto_schedule_compactor()
             for actor_queue in self.all_actor_queues():
                 num_error_notry = actor_queue.check_timeout_and_retry(now)
                 if num_error_notry > 0:
@@ -484,6 +491,26 @@ class ActorMessageQueue:
         )
         self.actor_queue(message_notifier.dst).op_inbox(message_notifier)
         self.is_notifing = True
+
+    def _auto_schedule_compactor(self):
+        if self.storage is None:
+            return
+        if self.is_compacting:
+            return
+        if not self.storage.should_compact(self.raw_state):
+            return
+        message_compactor = self.registery.create_message(
+            priority=0,
+            src=ACTOR_SYSTEM,
+            dst=ACTOR_STORAGE_COMPACTOR,
+            dst_node=self.registery.current_node_name,
+        )
+        self.actor_queue(message_compactor.dst).op_inbox(message_compactor)
+        self.is_compacting = True
+
+    def prepare_compact(self):
+        with self.lock:
+            return self.storage.prepare_compact(self.raw_state)
 
     def _op_execute(self, actor_queues):
         min_priority, min_actor = None, None

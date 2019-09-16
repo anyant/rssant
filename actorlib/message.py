@@ -168,14 +168,22 @@ class ActorMessage:
         d.update(content=self.content)
         return d
 
-    def meta(self):
+    def to_meta_dict(self):
         d = self._to_dict_basic()
         d.update(
             is_ask=self.is_ask,
             is_local=self.is_local,
             parent_id=self.parent_id,
         )
-        return self.from_dict(d)
+        return d
+
+    def to_complete_dict(self):
+        d = self.to_meta_dict()
+        d.update(content=self.content)
+        return d
+
+    def meta(self):
+        return self.from_dict(self.to_meta_dict())
 
     @classmethod
     def raw_encode(cls, data, content_encoding=None):
