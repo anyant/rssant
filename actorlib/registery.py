@@ -137,7 +137,7 @@ class ActorRegistery:
     def find_dst_nodes(self, dst: str) -> List[str]:
         module = Actor.get_module(dst)
         with self._lock:
-            return list(self._module_index[module])
+            return list(self._module_index.get(module, []))
 
     def choice_dst_node(self, dst: str) -> str:
         nodes = self.find_dst_nodes(dst)

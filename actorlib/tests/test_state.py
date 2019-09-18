@@ -45,7 +45,7 @@ def assert_message_not_exists(state, msg):
 def test_complete():
     s = ActorState()
     s.apply_complete(message_id=MSG_TEST.id, status=OK)
-    assert s.state == {MSG_TEST.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_TEST.id] == OK
     assert_message_not_exists(s, MSG_TEST)
 
 
@@ -55,7 +55,8 @@ def test_inbox_execute_complete():
     s.apply_execute(message_id=MSG_TEST.id)
     s.apply_done(message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_TEST.id)
-    assert s.state == {MSG_TEST.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_TEST.id] == OK
+    assert not s.state
     assert_message_not_exists(s, MSG_TEST)
 
 
@@ -67,7 +68,7 @@ def test_inbox_execute_outbox_export_ack_complete():
     s.apply_export(outbox_message_id=MSG_TEST.id)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
-    assert s.state == {MSG_PARENT.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_PARENT.id] == OK
     assert_message_not_exists(s, MSG_PARENT)
     assert_message_not_exists(s, MSG_TEST)
 
@@ -79,7 +80,7 @@ def test_inbox_execute_outbox_export_no_ack_complete():
     s.apply_outbox(message_id=MSG_PARENT.id, outbox_messages=[MSG_NOACK])
     s.apply_export(outbox_message_id=MSG_NOACK.id)
     s.apply_complete(message_id=MSG_PARENT.id)
-    assert s.state == {MSG_PARENT.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_PARENT.id] == OK
     assert_message_not_exists(s, MSG_PARENT)
     assert_message_not_exists(s, MSG_NOACK)
 
@@ -97,7 +98,7 @@ def test_inbox_execute_outbox_retry_complete():
     s.apply_export(outbox_message_id=MSG_TEST.id)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
-    assert s.state == {MSG_PARENT.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_PARENT.id] == OK
     assert_message_not_exists(s, MSG_PARENT)
     assert_message_not_exists(s, MSG_TEST)
 
@@ -116,7 +117,7 @@ def test_inbox_execute_outbox_export_ack_no_ack_retry_complete():
     s.apply_export(outbox_message_id=MSG_TEST.id)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
-    assert s.state == {MSG_PARENT.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_PARENT.id] == OK
     assert_message_not_exists(s, MSG_PARENT)
     assert_message_not_exists(s, MSG_TEST)
     assert_message_not_exists(s, MSG_NOACK)
@@ -133,9 +134,9 @@ def test_restart():
     s.apply_inbox(message=MSG_TEST)
     s.apply_execute(message_id=MSG_TEST.id)
     s.apply_restart()
-    assert s.state == {MSG_TEST.id: {'status': 'ERROR', 'is_acked': False}}
+    assert s.state == {MSG_TEST.id: {'status': ERROR}}
     s.apply_complete(message_id=MSG_TEST.id)
-    assert s.state == {MSG_TEST.id: {'status': 'ERROR', 'is_acked': True}}
+    assert s.complete_message_state[MSG_TEST.id] == ERROR
     assert_message_not_exists(s, MSG_TEST)
 
 
@@ -149,7 +150,7 @@ def test_dump_simple():
         s.apply(**item)
     s.apply_done(message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_TEST.id)
-    assert s.state == {MSG_TEST.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_TEST.id] == OK
     assert_message_not_exists(s, MSG_TEST)
 
 
@@ -171,7 +172,7 @@ def test_dump_complex():
         s.apply(**item)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
-    assert s.state == {MSG_PARENT.id: {'status': OK, 'is_acked': True}}
+    assert s.complete_message_state[MSG_PARENT.id] == OK
     assert_message_not_exists(s, MSG_PARENT)
     assert_message_not_exists(s, MSG_TEST)
     assert_message_not_exists(s, MSG_NOACK)

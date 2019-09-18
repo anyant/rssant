@@ -133,6 +133,7 @@ class ActorNode:
         self.executor.start()
         LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
         LOG.info(f'current registery:\n{pretty_format_json(self.registery.to_spec())}')
+        self.queue.op_restart()
         try:
             for handler in self._on_startup_handlers:
                 handler(self)

@@ -28,9 +28,7 @@ class ActorHealth(BuiltinActorBase):
         queue_info = dict(
             inbox_size=app.queue.inbox_size(),
             outbox_size=app.queue.outbox_size(),
-            state=dict(
-                wal_size=app.queue.state.wal_size,
-            )
+            state=app.queue.state.stats(),
         )
         # storage
         storage_info = dict()

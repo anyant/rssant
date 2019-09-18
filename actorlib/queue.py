@@ -27,7 +27,6 @@ class ActorStorageState:
     def __init__(self, storage, state):
         self._storage = storage
         self._state = state
-        storage.load(state)
 
     def __getattr__(self, *args, **kwargs):
         return getattr(self._state, *args, **kwargs)
@@ -281,10 +280,12 @@ class ActorMessageQueue:
         registery: ActorRegistery,
         actors: typing.Dict[str, Actor],
         storage: ActorLocalStorage = None,
+        max_complete_size: int = 128,
     ):
         self.registery = registery
         self.actors = actors
-        state = ActorState()
+        self.max_complete_size = max_complete_size
+        state = ActorState(max_complete_size=max_complete_size)
         self.raw_state = state
         if storage:
             state = ActorStorageState(storage, state)
@@ -435,6 +436,8 @@ class ActorMessageQueue:
         For application
         """
         with self.lock:
+            if self.storage:
+                self.storage.load(self.raw_state)
             self.state.apply_restart()
 
     def _op_inbox(self, message):
