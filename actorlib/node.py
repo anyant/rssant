@@ -1,5 +1,6 @@
 import logging
 import inspect
+import os.path
 from itertools import chain
 
 from validr import Compiler
@@ -74,7 +75,9 @@ class ActorNode:
             current_node_spec=current_node_spec,
             registery_node_spec=registery_node_spec)
         if storage_dir_path:
-            self.storage = ActorLocalStorage(dirpath=storage_dir_path)
+            storage_dir_path = os.path.abspath(os.path.expanduser(storage_dir_path))
+            storage_path = os.path.join(storage_dir_path, self.name)
+            self.storage = ActorLocalStorage(dirpath=storage_path)
         else:
             self.storage = None
         self.queue = ActorMessageQueue(

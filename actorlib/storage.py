@@ -136,8 +136,11 @@ class ActorLocalStorage:
         filenames = [x for x in os.listdir(dirpath)]
         filepaths = []
         for x in sorted(filenames):
-            if x.lower() != self.compact_filename:
-                filepaths.append(os.path.join(dirpath, x))
+            if x.lower() == self.compact_filename:
+                continue
+            filepath = os.path.join(dirpath, x)
+            if os.path.isfile(filepath):
+                filepaths.append(filepath)
         return filepaths
 
 

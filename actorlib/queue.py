@@ -134,7 +134,7 @@ class ActorQueue:
             LOG.warning(f'expired message {message}')
             return
         self.state.apply_inbox(message=message)
-        heapq.heappush(self.inbox, (message.priority, message))
+        self.push_inbox(message)
 
     def op_execute(self) -> ActorMessage:
         while True:
@@ -188,6 +188,9 @@ class ActorQueue:
     def op_acked(self, outbox_message_id: str, status: str):
         self.state.apply_acked(outbox_message_id=outbox_message_id, status=status)
         self.auto_schedule_fetcher()
+
+    def push_inbox(self, message: ActorMessage):
+        heapq.heappush(self.inbox, (message.priority, message))
 
     def push_outbox(self, outbox_message):
         if outbox_message.dst_node:
@@ -439,6 +442,17 @@ class ActorMessageQueue:
             if self.storage:
                 self.storage.load(self.raw_state)
             self.state.apply_restart()
+            for message in self.state.get_inbox_messages():
+                self.actor_queue(message.dst).push_inbox(message)
+                if message.dst == ACTOR_MESSAGE_NOTIFY_SENDER:
+                    self.is_notifing = True
+                if message.dst == ACTOR_STORAGE_COMPACTOR:
+                    self.is_compacting = True
+                if message.dst == ACTOR_MESSAGE_FETCHER:
+                    self.actor_queue(message.dst).is_fetching = True
+            for message, outbox_messages in self.state.get_outbox_messages():
+                for outbox_message in outbox_messages:
+                    self.actor_queue(message.dst).push_outbox(outbox_message)
 
     def _op_inbox(self, message):
         self.actor_queue(message.dst).op_inbox(message)

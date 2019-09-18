@@ -147,7 +147,7 @@ class ActorRegistery:
 
     def find_dst_urls(self, dst_node: str) -> List[str]:
         with self._lock:
-            return list(self._node_index[dst_node])
+            return list(self._node_index.get(dst_node, []))
 
     def choice_dst_url(self, dst_node: str) -> str:
         if not dst_node:

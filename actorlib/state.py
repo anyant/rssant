@@ -410,3 +410,23 @@ class ActorState:
         for dst, state in self.upstream.items():
             for src_node in state:
                 yield dict(type='notify', dst=dst, src_node=src_node, available=True)
+
+    def get_inbox_messages(self):
+        for message_id, state in self.state.items():
+            if state['status'] == INBOX:
+                yield self.get_message(message_id)
+
+    def get_outbox_messages(self):
+        for message_id, state in self.state.items():
+            if state['status'] != OUTBOX:
+                continue
+            message = self.get_message(message_id)
+            outbox_messages = []
+            outbox_states = state['outbox_states']
+            for outbox_message_id, outbox_state in outbox_states.items():
+                outbox_status = outbox_state['status']
+                if outbox_status == OUTBOX:
+                    outbox_message = self.get_outbox_message(outbox_message_id)
+                    outbox_messages.append(outbox_message)
+            if outbox_messages:
+                yield (message, outbox_messages)
