@@ -120,11 +120,19 @@ class ActorState:
         for dst, state in self.upstream.items():
             num_upstream += len(state)
         stats.update(num_upstream=num_upstream)
-        stats.update(num_done=len(self.done_message_ids))
-        stats.update(num_outbox=len(self.message_objects))
+        stats.update(num_outbox=len(self.outbox_message_objects))
         stats.update(num_non_complete=len(self.message_objects))
         stats.update(num_complete=len(self.complete_message_state))
         stats.update(wal_size=self.wal_size)
+        acks = []
+        num_done = 0
+        for dst, d in self.done_message_ids.items():
+            for src_node, v in d.items():
+                if v:
+                    num_done += len(v)
+                    acks.append(dict(dst=dst, src_node=src_node, size=len(v)))
+        acks = list(sorted(acks, key=lambda x: x['size']))
+        stats.update(num_done=num_done, acks=acks)
         return stats
 
     @property
@@ -272,6 +280,9 @@ class ActorState:
         LOG.debug(f'apply_export outbox_message_id={outbox_message_id} '
                   f'retry_at={format_timestamp(retry_at)}')
         outbox_message = self.get_outbox_message(outbox_message_id)
+        if outbox_message.require_ack and not retry_at:
+            raise ActorStateError(
+                f"retry_at is required for require_ack outbox_message {outbox_message_id}")
         message_id = outbox_message.parent_id
         state = self.get_state(message_id)
         if state is None:
@@ -286,11 +297,21 @@ class ActorState:
             raise ActorStateError(
                 f"can not apply_export for outbox_message {outbox_message.id} "
                 f"status={outbox_current_status}")
-        outbox_state.update(status=EXPORT)
-        if outbox_message.require_ack:
-            outbox_state.update(retry_at=retry_at)
-        else:
+        executed_count = outbox_state['executed_count'] + 1
+        outbox_state.update(status=EXPORT, executed_count=executed_count, retry_at=retry_at)
+        if not outbox_message.require_ack:
             self.apply_acked(outbox_message_id=outbox_message.id, status=OK)
+
+    @staticmethod
+    def _is_outbox_message_error_notry(outbox_message, outbox_state):
+        status = outbox_state['status']
+        if status == ERROR_NOTRY:
+            return True
+        if status == ERROR:
+            executed_count = outbox_state['executed_count']
+            if executed_count > outbox_message.max_retry:
+                return True
+        return False
 
     def apply_acked(self, *, outbox_message_id: str, status: str):
         LOG.debug(f'apply_acked outbox_message_id={outbox_message_id} status={status}')
@@ -312,20 +333,19 @@ class ActorState:
             raise ActorStateError(
                 f"can not apply_acked for outbox_message {outbox_message.id} "
                 f"status={outbox_current_status}")
-        outbox_state.update(status=status, retry_at=None)
-        if status == ERROR_NOTRY:
+        outbox_state.update(status=status)
+        if self._is_outbox_message_error_notry(outbox_message, outbox_state):
             self.apply_done(message_id=message_id, status=ERROR_NOTRY)
         elif status == OK:
+            outbox_state.update(retry_at=None)
             all_ok = all(x['status'] == OK for x in outbox_states.values())
             if all_ok:
                 self.apply_done(message_id=message_id, status=OK)
             else:
-                outbox_states[outbox_message.id] = dict(status=status)
                 self.outbox_message_objects[outbox_message.id] = outbox_message.meta()
 
-    def apply_retry(self, *, outbox_message_id: str, executed_count: int = None):
-        LOG.debug(f'apply_retry outbox_message_id={outbox_message_id} '
-                  f'executed_count={executed_count}')
+    def apply_retry(self, *, outbox_message_id: str):
+        LOG.debug(f'apply_retry outbox_message_id={outbox_message_id}')
         outbox_message = self.get_outbox_message(outbox_message_id)
         message_id = outbox_message.parent_id
         state = self.get_state(message_id)
@@ -338,18 +358,11 @@ class ActorState:
         outbox_states = state['outbox_states']
         outbox_state = outbox_states[outbox_message.id]
         outbox_current_status = outbox_state['status']
-        if executed_count is None:
-            if outbox_current_status not in (ERROR, EXPORT):
-                raise ActorStateError(
-                    f"can not apply_retry for outbox_message {outbox_message.id} "
-                    f"status={outbox_current_status}")
-            executed_count = outbox_state['executed_count'] + 1
-        else:
-            if outbox_current_status != OUTBOX:
-                raise ActorStateError(
-                    f"can not apply_retry for outbox_message {outbox_message.id} "
-                    f"status={outbox_current_status} with executed_count={executed_count}")
-        outbox_state.update(status=OUTBOX, executed_count=executed_count, retry_at=None)
+        if outbox_current_status not in (ERROR, EXPORT):
+            raise ActorStateError(
+                f"can not apply_retry for outbox_message {outbox_message.id} "
+                f"status={outbox_current_status}")
+        outbox_state.update(status=OUTBOX, retry_at=None)
 
     def apply_restart(self):
         LOG.debug(f'apply_restart')
@@ -367,19 +380,20 @@ class ActorState:
     def _dump_outbox_state(self, outbox_message_id, outbox_state):
         outbox_message = self.get_outbox_message(outbox_message_id)
         outbox_status = outbox_state['status']
-        executed_count = outbox_state.get('executed_count')
-        if executed_count and executed_count > 0:
-            yield dict(type='retry', outbox_message_id=outbox_message_id, executed_count=executed_count)
+        for i in range(outbox_state['executed_count'] - 1):
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=-1)
+            yield dict(type='retry', outbox_message_id=outbox_message_id)
         if outbox_status == EXPORT:
-            retry_at = outbox_state.get('retry_at')
+            retry_at = outbox_state['retry_at']
             yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=retry_at)
         elif outbox_status == OK:
-            yield dict(type='export', outbox_message_id=outbox_message_id)
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=-1)
             if outbox_message.require_ack:
                 yield dict(type='acked', outbox_message_id=outbox_message_id, status=outbox_status)
         elif outbox_status == ERROR:
-            yield dict(type='export', outbox_message_id=outbox_message_id)
-            yield dict(type='acked', outbox_message_id=outbox_message_id, status=outbox_status)
+            retry_at = outbox_state['retry_at']
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=retry_at)
+            yield dict(type='acked', outbox_message_id=outbox_message_id, status=ERROR)
 
     def dump(self):
         for message_id, status in self.complete_message_state:
@@ -387,6 +401,9 @@ class ActorState:
         for message_id, state in self.state.items():
             status = state['status']
             if status in (OK, ERROR, ERROR_NOTRY):
+                message = self.get_message(message_id)
+                yield dict(type='inbox', message=message)
+                yield dict(type='execute', message_id=message_id)
                 yield dict(type='done', message_id=message_id, status=status)
             elif status == INBOX:
                 message = self.get_message(message_id)

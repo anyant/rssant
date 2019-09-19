@@ -215,6 +215,18 @@ def interval_validator(compiler, min='0s', max='365d'):
     return validate
 
 
+@validator(accept=str, output=str)
+def enum_validator(compiler, items):
+    items = set(items.replace(',', ' ').split())
+
+    def validate(value):
+        if value in items:
+            return value
+        raise Invalid('value must be one of {}'.format(items))
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
@@ -225,6 +237,7 @@ VALIDATORS = {
     'dict': dict_validator,
     'str': str_validator,
     'interval': interval_validator,
+    'enum': enum_validator,
 }
 
 

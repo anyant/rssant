@@ -11,6 +11,7 @@ MSG_PARENT = ActorMessage(
     dst='test',
     dst_node='test_node',
     require_ack=True,
+    max_retry=10,
 )
 
 MSG_TEST = ActorMessage(
@@ -22,6 +23,7 @@ MSG_TEST = ActorMessage(
     dst='test',
     dst_node='test_node',
     require_ack=True,
+    max_retry=10,
     parent_id=MSG_PARENT.id,
 )
 
@@ -65,7 +67,7 @@ def test_inbox_execute_outbox_export_ack_complete():
     s.apply_inbox(message=MSG_PARENT)
     s.apply_execute(message_id=MSG_PARENT.id)
     s.apply_outbox(message_id=MSG_PARENT.id, outbox_messages=[MSG_TEST])
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
     assert s.complete_message_state[MSG_PARENT.id] == OK
@@ -90,12 +92,12 @@ def test_inbox_execute_outbox_retry_complete():
     s.apply_inbox(message=MSG_PARENT)
     s.apply_execute(message_id=MSG_PARENT.id)
     s.apply_outbox(message_id=MSG_PARENT.id, outbox_messages=[MSG_TEST])
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=ERROR)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
     assert s.complete_message_state[MSG_PARENT.id] == OK
@@ -109,12 +111,12 @@ def test_inbox_execute_outbox_export_ack_no_ack_retry_complete():
     s.apply_execute(message_id=MSG_PARENT.id)
     s.apply_outbox(message_id=MSG_PARENT.id, outbox_messages=[MSG_TEST, MSG_NOACK])
     s.apply_export(outbox_message_id=MSG_NOACK.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=ERROR)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=OK)
     s.apply_complete(message_id=MSG_PARENT.id)
     assert s.complete_message_state[MSG_PARENT.id] == OK
@@ -160,12 +162,12 @@ def test_dump_complex():
     s.apply_execute(message_id=MSG_PARENT.id)
     s.apply_outbox(message_id=MSG_PARENT.id, outbox_messages=[MSG_TEST, MSG_NOACK])
     s.apply_export(outbox_message_id=MSG_NOACK.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     s.apply_acked(outbox_message_id=MSG_TEST.id, status=ERROR)
     s.apply_retry(outbox_message_id=MSG_TEST.id)
-    s.apply_export(outbox_message_id=MSG_TEST.id)
+    s.apply_export(outbox_message_id=MSG_TEST.id, retry_at=1)
     wal_items = s.dump()
     s = ActorState()
     for item in wal_items:

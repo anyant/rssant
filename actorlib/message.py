@@ -67,6 +67,7 @@ class ActorMessage:
         dst: str,
         dst_node: str = None,
         is_local: bool = None,
+        max_retry: int = None,
         expire_at: int = None,
         parent_id: str = None,
         future: Future = None,
@@ -91,6 +92,9 @@ class ActorMessage:
         self.dst = dst
         self.dst_node = dst_node
         self.is_local = is_local
+        if max_retry is None:
+            max_retry = 0
+        self.max_retry = max_retry
         if expire_at is not None:
             if expire_at <= 0:
                 expire_at = None
@@ -120,12 +124,15 @@ class ActorMessage:
         expire_at = ''
         if self.expire_at is not None:
             expire_at = ' expire_at=' + format_timestamp(self.expire_at)
+        max_retry = ''
+        if self.max_retry > 0:
+            max_retry = f' max_retry={self.max_retry}'
         short_content = shorten(repr(self.content), width=30)
         parent = ''
         if self.parent_id:
             parent = ' parent=' + self.parent_id
         return (f'<{type_name} {self.id} {self.src_node}/{self.src} {msg_type} '
-                f'{self.dst_node}/{self.dst}{expire_at}{parent} {short_content}>')
+                f'{self.dst_node}/{self.dst}{expire_at}{max_retry}{parent} {short_content}>')
 
     def is_expired(self, now: int = None):
         if self.expire_at is None:
@@ -148,6 +155,7 @@ class ActorMessage:
             content=d.get('content'),
             is_ask=d.get('is_ask'),
             is_local=d.get('is_local'),
+            max_retry=d.get('max_retry'),
             parent_id=d.get('parent_id'),
         )
 
@@ -161,6 +169,7 @@ class ActorMessage:
             dst=self.dst,
             dst_node=self.dst_node,
             expire_at=self.expire_at,
+            max_retry=self.max_retry,
         )
 
     def to_dict(self):

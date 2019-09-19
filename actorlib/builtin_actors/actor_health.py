@@ -24,12 +24,6 @@ class ActorHealth(BuiltinActorBase):
         else:
             registery_info['registery_node'] = None
         registery_info['nodes'] = app.registery.to_spec()
-        # queue
-        queue_info = dict(
-            inbox_size=app.queue.inbox_size(),
-            outbox_size=app.queue.outbox_size(),
-            state=app.queue.state.stats(),
-        )
         # storage
         storage_info = dict()
         if app.storage:
@@ -39,9 +33,9 @@ class ActorHealth(BuiltinActorBase):
                 filepaths=app.storage.filepaths,
                 wal_size=app.storage.wal_size,
                 non_current_wal_size=app.storage.non_current_wal_size,
+                compact_wal_delta=app.storage.compact_wal_delta,
+                is_compacting=app.storage.is_compacting,
             )
-        # storage_compactor
-        storage_compactor_info = {}
         return dict(
             name=app.name,
             host=app.host,
@@ -50,9 +44,8 @@ class ActorHealth(BuiltinActorBase):
             concurrency=app.concurrency,
             registery=registery_info,
             storage=storage_info,
-            storage_compactor=storage_compactor_info,
             receiver=dict(),  # TODO: receiver/aiohttp metrics
-            queue=queue_info,
+            queue=app.queue.stats(),
             executor=dict(
                 concurrency=app.executor.concurrency,
                 num_async_workers=app.executor.num_async_workers,

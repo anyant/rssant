@@ -8,7 +8,7 @@ import threading
 
 from .actor import Actor
 from .message import ActorMessage
-from .state import ActorState, OUTBOX, EXPORT, ERROR_NOTRY
+from .state import ActorState, OUTBOX, EXPORT, ERROR, ERROR_NOTRY
 from .storage import ActorLocalStorage
 from .registery import ActorRegistery
 from .builtin_actors.name import (
@@ -73,12 +73,8 @@ class ActorQueue:
         registery: ActorRegistery,
         state: ActorState,
         schedule_fetcher,
-        inbox_lowsize: int = 10,
-        inbox_highsize: int = 30,
-        outbox_lowsize: int = 100,
-        outbox_highsize: int = 300,
-        cycle_time: int = 10 * 60,
-        max_retry_count: int = 3,
+        concurrency: int = 100,
+        max_retry_count: int = 1,
         max_retry_time: int = 10 * 60,
         fetcher_concurrency: int = 3,
     ):
@@ -86,11 +82,10 @@ class ActorQueue:
         self.registery = registery
         self.state = state
         self.schedule_fetcher = schedule_fetcher
-        self.inbox_lowsize = inbox_lowsize
-        self.inbox_highsize = inbox_highsize
-        self.outbox_lowsize = outbox_lowsize
-        self.outbox_highsize = outbox_highsize
-        self.cycle_time = cycle_time
+        self.inbox_lowsize = max(1, concurrency // 10)
+        self.inbox_highsize = max(3, concurrency // 3)
+        self.outbox_lowsize = max(10, concurrency)
+        self.outbox_highsize = max(30, concurrency * 3)
         self.max_retry_count = max_retry_count
         self.max_retry_time = max_retry_time
         self.fetcher_concurrency = fetcher_concurrency
@@ -101,6 +96,31 @@ class ActorQueue:
 
     def __repr__(self):
         return '<{} {}>'.format(type(self).__name__, self.actor_name)
+
+    def stats(self):
+        dst_stats = []
+        for dst, v in self.dst_outbox.items():
+            if v:
+                dst_stats.append(dict(dst=dst, size=len(v)))
+        dst_stats = list(sorted(dst_stats, key=lambda x: x['size']))
+        dst_node_stats = []
+        for dst_node, d in self.dst_node_outbox.items():
+            for dst, v in d.items():
+                if v:
+                    dst_node_stats.append(dict(dst_node=dst_node, dst=dst, size=len(v)))
+        dst_stats = list(sorted(dst_stats, key=lambda x: x['size']))
+        return dict(
+            name=self.actor_name,
+            inbox_lowsize=self.inbox_lowsize,
+            inbox_highsize=self.inbox_highsize,
+            outbox_lowsize=self.outbox_lowsize,
+            outbox_highsize=self.outbox_highsize,
+            inbox_size=self.inbox_size(),
+            outbox_size=self.outbox_size(),
+            is_fetching=self.is_fetching,
+            dst_outbox=dst_stats,
+            dst_node_outbox=dst_node_stats,
+        )
 
     def inbox_size(self):
         return len(self.inbox)
@@ -159,6 +179,9 @@ class ActorQueue:
             self.state.apply_acked(outbox_message_id=outbox_message.id, status=ERROR_NOTRY)
         else:
             outbox_state = self.state.get_outbox_state(outbox_message.id)
+            if not outbox_state:
+                LOG.warning(f'outbox_message {outbox_message} not in state!')
+                return
             executed_count = outbox_state['executed_count']
             retry_at = retry_base_at + self.backoff_delay(executed_count)
             self.state.apply_export(outbox_message_id=outbox_message.id, retry_at=retry_at)
@@ -166,7 +189,7 @@ class ActorQueue:
 
     def op_export(self, dst, dst_node, maxsize) -> [ActorMessage]:
         ret = []
-        retry_base_at = time.time() + self.cycle_time
+        retry_base_at = time.time() + self.max_retry_time
         dst_box = self.dst_node_outbox.get(dst_node)
         box = dst_box.get(dst) if dst_box else None
         while len(ret) < maxsize and box:
@@ -258,12 +281,17 @@ class ActorQueue:
             for outbox_message_id, outbox_state in state['outbox_states'].items():
                 outbox_status = outbox_state['status']
                 retry_at = outbox_state.get('retry_at')
-                if outbox_status == EXPORT and retry_at and retry_at < now:
-                    executed_count = outbox_state['executed_count']
-                    if executed_count >= self.max_retry_count - 1:
-                        error_notry_outbox_message_ids.append(outbox_message_id)
-                    else:
+                executed_count = outbox_state.get('executed_count')
+                if outbox_status == ERROR:
+                    if now > retry_at:
                         retry_outbox_message_ids.append(outbox_message_id)
+                elif outbox_status == EXPORT:
+                    if now > retry_at:
+                        outbox_message = self.state.get_outbox_message(outbox_message_id)
+                        if executed_count > outbox_message.max_retry:
+                            error_notry_outbox_message_ids.append(outbox_message_id)
+                        else:
+                            retry_outbox_message_ids.append(outbox_message_id)
         for outbox_message_id in error_notry_outbox_message_ids:
             self.op_acked(outbox_message_id, ERROR_NOTRY)
         for outbox_message_id in retry_outbox_message_ids:
@@ -283,10 +311,16 @@ class ActorMessageQueue:
         registery: ActorRegistery,
         actors: typing.Dict[str, Actor],
         storage: ActorLocalStorage = None,
+        concurrency: int = 100,
+        max_retry_count: int = 1,
+        max_retry_time: int = 10 * 60,
         max_complete_size: int = 128,
     ):
         self.registery = registery
         self.actors = actors
+        self.concurrency = concurrency
+        self.max_retry_count = max_retry_count
+        self.max_retry_time = max_retry_time
         self.max_complete_size = max_complete_size
         state = ActorState(max_complete_size=max_complete_size)
         self.raw_state = state
@@ -310,11 +344,17 @@ class ActorMessageQueue:
         else:
             q = self.thread_actor_queues.get(actor_name)
         if q is None:
+            concurrency = self.concurrency
+            if actor.is_async:
+                concurrency *= 10
             q = ActorQueue(
                 actor_name=actor_name,
                 registery=self.registery,
                 state=self.state,
                 schedule_fetcher=self._op_inbox,
+                concurrency=concurrency,
+                max_retry_count=self.max_retry_count,
+                max_retry_time=self.max_retry_time,
             )
             if actor.is_async:
                 self.async_actor_queues[actor_name] = q
@@ -322,7 +362,7 @@ class ActorMessageQueue:
                 self.thread_actor_queues[actor_name] = q
         return q
 
-    def all_actor_queues(self):
+    def all_actor_queues(self) -> typing.List[ActorQueue]:
         for actor_queues in [self.async_actor_queues, self.thread_actor_queues]:
             yield from actor_queues.values()
 
@@ -334,6 +374,25 @@ class ActorMessageQueue:
 
     def qsize(self):
         return self.inbox_size() + self.outbox_size()
+
+    def stats(self):
+        with self.lock:
+            actor_stats = []
+            for actor in self.all_actor_queues():
+                if actor.inbox_size() or actor.outbox_size():
+                    actor_stats.append(actor.stats())
+            actor_stats = list(sorted(actor_stats, key=lambda x: x['name']))
+            return dict(
+                is_compacting=self.is_compacting,
+                is_notifing=self.is_notifing,
+                inbox_size=self.inbox_size(),
+                outbox_size=self.outbox_size(),
+                concurrency=self.concurrency,
+                max_retry_count=self.max_retry_count,
+                max_retry_time=self.max_retry_time,
+                state=self.state.stats(),
+                actors=actor_stats,
+            )
 
     def op_execute(self) -> ActorMessage:
         """

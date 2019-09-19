@@ -175,7 +175,7 @@ def do_update_feed(
     need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
         if need_fetch_story:
-            ctx.tell('worker_rss.fetch_story', dict(
+            ctx.hope('worker_rss.fetch_story', dict(
                 url=story.link,
                 story_id=str(story.id)
             ))
@@ -199,7 +199,7 @@ def _process_story_images(ctx, story, is_refresh):
         image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
         LOG.info(f'found story#{story.id} {story.link} has {len(image_urls)} images')
         if image_urls:
-            ctx.tell('worker_rss.detect_story_images', dict(
+            ctx.hope('worker_rss.detect_story_images', dict(
                 story_id=story.id,
                 story_url=story.link,
                 image_urls=list(image_urls),

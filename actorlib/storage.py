@@ -19,7 +19,7 @@ OP_OUTBOX = 'outbox'
 
 
 class ActorLocalStorage:
-    def __init__(self, dirpath: str):
+    def __init__(self, dirpath: str, compact_wal_delta: int = 1000):
         dirpath = os.path.abspath(os.path.expanduser(dirpath))
         LOG.info(f'use local storage at {dirpath}')
         os.makedirs(dirpath, exist_ok=True)
@@ -31,6 +31,7 @@ class ActorLocalStorage:
             filepaths.append(os.path.join(dirpath, '0.msgpack'))
         self.filepaths = filepaths
         self.current_filepath = filepaths[-1]
+        self.compact_wal_delta = compact_wal_delta
         self.non_current_wal_size = 0
         self.current_storage = ActorLocalStorageFile(filepath=self.current_filepath)
         self.is_compacting = False
@@ -54,15 +55,14 @@ class ActorLocalStorage:
         self.current_storage.append(type=type, **kwargs)
 
     def should_compact(self, state: ActorState):
-        # TODO: allow config
         if self.is_compacting:
             return False
-        if self.wal_size < 100:
+        if self.wal_size < self.compact_wal_delta // 10:
             return False
         state_wal_size = state.wal_size
         if self.wal_size > state_wal_size * 3:
             return True
-        if self.wal_size - state_wal_size > 1000:
+        if self.wal_size - state_wal_size > self.compact_wal_delta:
             return True
         return False
 

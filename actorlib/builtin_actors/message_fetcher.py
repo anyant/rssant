@@ -43,7 +43,7 @@ class MessageFetcher(BuiltinActorBase):
     ):
         LOG.info(f'fetch dst={actor_name} maxsize={maxsize} from {upstream_list}')
         tasks = []
-        size = max(1, maxsize // len(upstream_list))
+        size = min(100, max(1, maxsize // len(upstream_list)))
         content = dict(dst=actor_name, maxsize=size)
         for src_node in upstream_list:
             if src_node == self.app.name:

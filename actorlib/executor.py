@@ -60,7 +60,7 @@ class ActorExecutor:
     @auto_restart_when_crash
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
-            limit=self.concurrency, pending_limit=max(10, self.concurrency // 10))
+            limit=self.concurrency * 5, pending_limit=max(10, self.concurrency // 2))
         actor_client = AsyncActorClient(registery=self.registery, token=self.token)
         async with actor_client:
             try:

@@ -36,10 +36,9 @@ class ActorNode:
         networks=None,
         registery_node_spec=None,
         storage_dir_path=None,
-        storage_max_pending_size=10**2,
-        storage_max_done_size=10**3,
-        storage_compact_interval=60,
-        ack_timeout=180,
+        storage_compact_wal_delta=1000,
+        queue_max_complete_size=1000,
+        max_retry_time=10 * 60,
         max_retry_count=3,
         token=None,
         schema_compiler=None,
@@ -77,11 +76,19 @@ class ActorNode:
         if storage_dir_path:
             storage_dir_path = os.path.abspath(os.path.expanduser(storage_dir_path))
             storage_path = os.path.join(storage_dir_path, self.name)
-            self.storage = ActorLocalStorage(dirpath=storage_path)
+            self.storage = ActorLocalStorage(
+                dirpath=storage_path, compact_wal_delta=storage_compact_wal_delta)
         else:
             self.storage = None
         self.queue = ActorMessageQueue(
-            registery=self.registery, actors=self.actors, storage=self.storage)
+            registery=self.registery,
+            actors=self.actors,
+            storage=self.storage,
+            max_complete_size=queue_max_complete_size,
+            concurrency=concurrency,
+            max_retry_count=max_retry_count,
+            max_retry_time=max_retry_time,
+        )
         self.concurrency = concurrency
         self.executor = ActorExecutor(
             self.actors,

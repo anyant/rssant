@@ -13,9 +13,10 @@ validate_extra_networks = compiler.compile(T.list(T.dict(
 )))
 
 
-@modelclass
+@modelclass(compiler=compiler)
 class EnvConfig:
     debug = T.bool.default(True).desc('debug')
+    log_level = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url = T.url.default('http://localhost:6789')
     async_url_prefix = T.url.default('http://localhost:6786/api/v1')
     async_callback_url_prefix = T.url.default('http://localhost:6788/api/v1')
@@ -27,11 +28,10 @@ class EnvConfig:
     check_feed_minutes = T.int.min(1).default(30)
     # actor
     actor_storage_path = T.str.optional
-    actor_storage_max_pending_size = T.int.min(0).default(5000)
-    actor_storage_max_done_size = T.int.min(0).default(5000)
-    actor_storage_compact_interval = T.int.min(1).default(60)
-    actor_ack_timeout = T.int.min(1).default(600)
-    actor_max_retry_count = T.int.min(0).default(3)
+    actor_storage_compact_wal_delta = T.int.min(1).default(5000)
+    actor_queue_max_complete_size = T.int.min(0).default(5000)
+    actor_max_retry_time = T.int.min(1).default(600)
+    actor_max_retry_count = T.int.min(0).default(1)
     actor_token = T.str.optional
     # postgres database
     pg_host = T.str.default('localhost').desc('postgres host')
