@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 
 
 @actor(ACTOR_MESSAGE_NOTIFY_RECEIVER)
-class MessageNotifySender(BuiltinActorBase):
+class MessageNotifyReceiver(BuiltinActorBase):
 
     async def __call__(
         self,

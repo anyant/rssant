@@ -6,7 +6,7 @@ from .base import BuiltinActorBase
 
 
 @actor(ACTOR_SYSTEM)
-class ActorHealth(BuiltinActorBase):
+class ActorSystem(BuiltinActorBase):
     def __call__(self, ctx: ActorContext):
         if ACTOR_INIT in self.app.actors:
             self.op_inbox(ACTOR_INIT, src=ACTOR_SYSTEM)
