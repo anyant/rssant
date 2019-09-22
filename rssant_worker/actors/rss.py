@@ -92,6 +92,7 @@ def do_find_feed(
     feed_creation_id: T.int,
     url: T.url,
 ):
+    # TODO: immediately send message to update status
     ctx.tell('harbor_rss.update_feed_creation_status', dict(
         feed_creation_id=feed_creation_id,
         status=FeedStatus.UPDATING,

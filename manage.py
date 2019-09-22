@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+import time
 
 from rssant_common.logger import configure_logging
 
@@ -17,4 +18,11 @@ if __name__ == '__main__':
             "forget to activate a virtual environment?"
         ) from exc
     configure_logging()
-    execute_from_command_line(sys.argv)
+    while True:
+        try:
+            execute_from_command_line(sys.argv)
+        except SyntaxError as ex:
+            print(f'* SyntaxError: {ex}')
+            time.sleep(3)
+        else:
+            break

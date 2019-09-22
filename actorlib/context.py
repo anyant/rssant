@@ -105,6 +105,8 @@ class ActorContext:
                 self.message.future.set_result(result)
 
     def _append_message(self, dst, content=None, dst_node=None, priority=None, require_ack=False, expire_at=None):
+        if priority is None and (not self.message.is_ask):
+            priority = self.message.priority
         msg = self.registery.create_message(
             content=content,
             src=self.actor.name,

@@ -46,7 +46,7 @@ async def do_proxy_tell(
     ))
 ):
     for t in tasks:
-        await ctx.tell(dst=t['dst'], content=t['content'])
+        await ctx.tell(dst=t['dst'], content=t['content'], priority=10)
 
 
 @actor("scheduler.proxy_ask")
