@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 
 import yarl
 from validr import T
@@ -82,13 +83,7 @@ def do_update_feed_creation_status(
     status: T.str,
 ):
     with transaction.atomic():
-        try:
-            feed_creation = FeedCreation.get_by_pk(feed_creation_id)
-        except FeedCreation.DoesNotExist:
-            LOG.warning(f'feed creation {feed_creation_id} not exists')
-            return
-        feed_creation.status = FeedStatus.UPDATING
-        feed_creation.save()
+        FeedCreation.objects.filter(pk=feed_creation_id).update(status=status)
 
 
 @actor('harbor_rss.save_feed_creation_result')
@@ -260,8 +255,10 @@ def do_update_story_images(
 @actor('harbor_rss.check_feed')
 @django_context
 def do_check_feed(ctx: ActorContext):
-    feeds = Feed.take_outdated_feeds(CHECK_FEED_SECONDS)
-    expire_at = time.time() + CHECK_FEED_SECONDS
+    rand_sec = random.random() * CHECK_FEED_SECONDS / 10
+    outdate_seconds = CHECK_FEED_SECONDS + rand_sec
+    feeds = Feed.take_outdated_feeds(outdate_seconds)
+    expire_at = time.time() + outdate_seconds
     LOG.info('found {} feeds need sync'.format(len(feeds)))
     for feed in feeds:
         ctx.tell('worker_rss.sync_feed', dict(
