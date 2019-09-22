@@ -1,5 +1,6 @@
 import logging
 import time
+import random
 
 import yarl
 from validr import T
@@ -82,13 +83,7 @@ def do_update_feed_creation_status(
     status: T.str,
 ):
     with transaction.atomic():
-        try:
-            feed_creation = FeedCreation.get_by_pk(feed_creation_id)
-        except FeedCreation.DoesNotExist:
-            LOG.warning(f'feed creation {feed_creation_id} not exists')
-            return
-        feed_creation.status = FeedStatus.UPDATING
-        feed_creation.save()
+        FeedCreation.objects.filter(pk=feed_creation_id).update(status=status)
 
 
 @actor('harbor_rss.save_feed_creation_result')
@@ -175,7 +170,7 @@ def do_update_feed(
     need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
         if need_fetch_story:
-            ctx.tell('worker_rss.fetch_story', dict(
+            ctx.hope('worker_rss.fetch_story', dict(
                 url=story.link,
                 story_id=str(story.id)
             ))
@@ -199,7 +194,7 @@ def _process_story_images(ctx, story, is_refresh):
         image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
         LOG.info(f'found story#{story.id} {story.link} has {len(image_urls)} images')
         if image_urls:
-            ctx.tell('worker_rss.detect_story_images', dict(
+            ctx.hope('worker_rss.detect_story_images', dict(
                 story_id=story.id,
                 story_url=story.link,
                 image_urls=list(image_urls),
@@ -260,8 +255,10 @@ def do_update_story_images(
 @actor('harbor_rss.check_feed')
 @django_context
 def do_check_feed(ctx: ActorContext):
-    feeds = Feed.take_outdated_feeds(CHECK_FEED_SECONDS)
-    expire_at = time.time() + CHECK_FEED_SECONDS
+    rand_sec = random.random() * CHECK_FEED_SECONDS / 10
+    outdate_seconds = CHECK_FEED_SECONDS + rand_sec
+    feeds = Feed.take_outdated_feeds(outdate_seconds)
+    expire_at = time.time() + outdate_seconds
     LOG.info('found {} feeds need sync'.format(len(feeds)))
     for feed in feeds:
         ctx.tell('worker_rss.sync_feed', dict(

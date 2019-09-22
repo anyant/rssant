@@ -1,7 +1,6 @@
 from typing import List
 import random
 import logging
-import uuid
 from collections import defaultdict
 from threading import RLock
 
@@ -10,6 +9,8 @@ from cached_property import cached_property
 
 from .actor import Actor
 from .network_helper import LOCAL_NODE_NAME
+from .helper import generate_message_id
+from .message import ActorMessage
 
 
 LOG = logging.getLogger(__name__)
@@ -129,10 +130,14 @@ class ActorRegistery:
         with self._lock:
             return list(self._nodes.values())
 
+    @property
+    def remote_nodes(self):
+        return [x for x in self.nodes if not self.is_local_node(x.name)]
+
     def find_dst_nodes(self, dst: str) -> List[str]:
         module = Actor.get_module(dst)
         with self._lock:
-            return list(self._module_index[module])
+            return list(self._module_index.get(module, []))
 
     def choice_dst_node(self, dst: str) -> str:
         nodes = self.find_dst_nodes(dst)
@@ -142,7 +147,7 @@ class ActorRegistery:
 
     def find_dst_urls(self, dst_node: str) -> List[str]:
         with self._lock:
-            return list(self._node_index[dst_node])
+            return list(self._node_index.get(dst_node, []))
 
     def choice_dst_url(self, dst_node: str) -> str:
         if not dst_node:
@@ -152,20 +157,18 @@ class ActorRegistery:
             return None
         return random.choice(urls)
 
+    def create_message(self, **kwargs):
+        message = ActorMessage(**kwargs)
+        return self.complete_message(message)
+
     def complete_message(self, message):
         if self.current_node and not message.src_node:
             message.src_node = self.current_node_name
-        if not message.dst_node:
-            message.dst_node = self.choice_dst_node(message.dst)
         if not message.id:
             message.id = self.generate_message_id()
-        if not self.is_local_message(message):
-            if not message.dst_url:
-                message.dst_url = self.choice_dst_url(message.dst_node)
+        if message.dst_node:
+            message.is_local = message.dst_node == self.current_node_name
         return message
-
-    def is_local_message(self, message):
-        return self.is_local_node(message.dst_node)
 
     def is_local_node(self, node_name):
         if not self.current_node or not node_name:
@@ -173,4 +176,4 @@ class ActorRegistery:
         return node_name == self.current_node_name
 
     def generate_message_id(self):
-        return self.current_node_name + ':' + str(uuid.uuid4())
+        return generate_message_id(self.current_node_name)

@@ -33,5 +33,5 @@ def main():
 
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
-    configure_logging()
+    configure_logging(enable_loguru=True, level='DEBUG')
     main()

@@ -1,4 +1,5 @@
 import logging
+import time
 
 import backdoor
 from validr import T
@@ -10,7 +11,14 @@ LOG = logging.getLogger(__name__)
 
 @actor('actor.init')
 def do_init(ctx: ActorContext):
-    ctx.hope('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+    while True:
+        try:
+            ctx.ask('registery.register', dict(node=ctx.registery.current_node.to_spec()))
+        except Exception as ex:
+            LOG.warning(f'ask registery.register failed: {ex}')
+        else:
+            break
+        time.sleep(3)
 
 
 @actor('worker.ping')
@@ -44,6 +52,7 @@ def main():
         port=8082,
         name='worker',
         storage_dir_path='data/actorlib_example_worker',
+        storage_compact_wal_delta=100,
         registery_node_spec={
             'name': 'registery',
             'modules': ['registery'],
@@ -59,6 +68,6 @@ def main():
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
     from actorlib.sentry import sentry_init
-    configure_logging()
+    configure_logging(enable_loguru=True, level='DEBUG')
     sentry_init()
     main()

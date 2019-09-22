@@ -2,6 +2,7 @@ import logging
 import asyncio
 import time
 from urllib.parse import unquote
+from collections import deque
 import concurrent.futures
 
 import yarl
@@ -177,6 +178,9 @@ def do_process_story_webpage(
     # https://github.com/grangier/python-goose
     # https://github.com/buriy/python-readability
     # https://github.com/codelucas/newspaper
+    text = text.strip()
+    if not text:
+        return
     doc = ReadabilityDocument(text)
     content = doc.summary()
     summary = shorten(story_html_to_text(content), width=300)
@@ -259,6 +263,8 @@ def _parse_found(parsed):
         author_detail = parsed_feed['author_detail']
         if author_detail:
             link = author_detail['href']
+    if not link.startswith('http'):
+        link = feed.url
     feed.link = link
     feed.author = shorten(parsed_feed["author"], 200)
     feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
@@ -273,7 +279,7 @@ def _parse_found(parsed):
 
 
 def _get_storys(entries):
-    storys = []
+    storys = deque(maxlen=300)  # limit num storys
     for data in entries:
         story = {}
         story['unique_id'] = shorten(_get_story_unique_id(data), 200)
@@ -288,6 +294,7 @@ def _get_storys(entries):
         summary = data["summary"]
         if not summary:
             summary = content
+        # TODO: performance
         summary = shorten(story_html_to_text(summary), width=300)
         story['summary'] = summary
         story['link'] = data["link"]
@@ -299,7 +306,7 @@ def _get_storys(entries):
         story['dt_published'] = _get_dt_published(data)
         story['dt_updated'] = _get_dt_updated(data)
         storys.append(story)
-    return storys
+    return list(storys)
 
 
 def _get_etag(response):

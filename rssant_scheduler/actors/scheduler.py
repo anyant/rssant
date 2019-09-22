@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 async def do_healthcheck(ctx: ActorContext):
     unhealth_count = defaultdict(lambda: 0)
     for i in range(3):
-        for node in ctx.registery.nodes:
+        for node in ctx.registery.remote_nodes:
             try:
                 await ctx.ask('actor.health', dst_node=node.name)
             except Exception as ex:
@@ -45,11 +45,8 @@ async def do_proxy_tell(
         content = T.dict.optional,
     ))
 ):
-    for i, t in enumerate(tasks):
-        await ctx.hope("scheduler.delay_tell", content=dict(
-            dst=t['dst'], content=t['content'], delay=i * 3
-        ))
-    return None
+    for t in tasks:
+        await ctx.tell(dst=t['dst'], content=t['content'])
 
 
 @actor("scheduler.proxy_ask")
@@ -59,14 +56,3 @@ async def do_proxy_ask(
     content: T.dict.optional,
 ):
     return await ctx.ask(dst, content)
-
-
-@actor("scheduler.delay_tell")
-async def do_delay_tell(
-    ctx: ActorContext,
-    dst: T.str,
-    content: T.dict.optional,
-    delay: T.float.min(0).default(1),
-):
-    await asyncio.sleep(delay)
-    await ctx.tell(dst, content)

@@ -1,20 +1,25 @@
 import logging
 import secrets
+import asyncio
+from concurrent.futures import Future as ThreadFuture
 
 from aiohttp.web import Application, run_app, Response
 
 from .message import ActorMessage, ContentEncoding, ActorMessageDecodeError, UnsupportContentEncodingError
+from .queue import ActorMessageQueue
+from .registery import ActorRegistery
+from .state import ActorStateError
 
 
 LOG = logging.getLogger(__name__)
 
 
 class MessageReceiver:
-    def __init__(self, host, port, executor, registery, subpath='', token=None):
+    def __init__(self, host, port, queue: ActorMessageQueue, registery: ActorRegistery, subpath='', token=None):
         self.host = host
         self.port = port
         self.subpath = subpath
-        self.executor = executor
+        self.queue = queue
         self.registery = registery
         self.token = token
 
@@ -51,7 +56,11 @@ class MessageReceiver:
             return await self.handle_ask(request, data, actor_ask_dst, content_encoding)
         else:
             for msg in data:
-                await self.executor.async_submit(msg)
+                msg = self.registery.complete_message(msg)
+                try:
+                    self.queue.op_inbox(msg)
+                except ActorStateError as ex:
+                    LOG.warning(ex)
             return Response(status=204)
 
     async def handle_ask(self, request, data, dst, content_encoding):
@@ -61,17 +70,20 @@ class MessageReceiver:
         dst_node = request.headers.get('actor-ask-dst-node')
         if not dst_node:
             dst_node = self.registery.current_node_name
-        dst_url = request.headers.get('actor-ask-dst-url')
-        if not dst_url:
-            dst_url = str(request.url)
         if not message_id:
             message_id = self.registery.generate_message_id()
-        msg = ActorMessage(
+        thread_future = ThreadFuture()
+        msg = self.registery.create_message(
             id=message_id, content=data, is_ask=True,
             src=src, src_node=src_node, require_ack=False,
-            dst=dst, dst_node=dst_node, dst_url=dst_url,
+            dst=dst, dst_node=dst_node, future=thread_future,
         )
-        result = await self.executor.async_handle_ask(msg)
+        try:
+            self.queue.op_inbox(msg)
+        except ActorStateError as ex:
+            LOG.warning(ex)
+            return Response(body=str(ex), status=400)
+        result = await asyncio.wrap_future(thread_future)
         if result is None:
             return Response(status=204)
         result = ActorMessage.raw_encode(result, content_encoding=content_encoding)

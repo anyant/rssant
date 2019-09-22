@@ -1,10 +1,10 @@
 from .actor import Actor, actor, collect_actors
 from .node import ActorNode
 from .message import ActorMessage
+from .queue import ActorMessageQueue
 from .client import ActorClient, AsyncActorClient
 from .registery import ActorRegistery, NodeInfo, NodeSpecSchema
 from .executor import ActorExecutor, ActorContext
-from .sender import MessageSender
 from .receiver import MessageReceiver
 
 
@@ -14,6 +14,7 @@ __all__ = (
     collect_actors,
     ActorNode,
     ActorMessage,
+    ActorMessageQueue,
     ActorClient,
     AsyncActorClient,
     ActorRegistery,
@@ -21,6 +22,5 @@ __all__ = (
     NodeSpecSchema,
     ActorExecutor,
     ActorContext,
-    MessageSender,
     MessageReceiver,
 )

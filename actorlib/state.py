@@ -1,11 +1,23 @@
-from typing import List, Dict, Tuple, Optional
 import logging
-from collections import OrderedDict
+from collections import defaultdict, deque
 
 from .message import ActorMessage
+from .helper import format_timestamp
 
 
 LOG = logging.getLogger(__name__)
+
+
+INBOX = "INBOX"
+EXECUTE = "EXECUTE"
+OUTBOX = "OUTBOX"
+EXPORT = "EXPORT"
+OK = "OK"
+ERROR = "ERROR"
+ERROR_NOTRY = "ERROR_NOTRY"
+
+MESSAGE_STATUS = (INBOX, EXECUTE, OUTBOX, OK, ERROR, ERROR_NOTRY)
+OUTBOX_MESSAGE_STATUS = (OUTBOX, EXPORT, OK, ERROR, ERROR_NOTRY)
 
 
 class ActorStateError(Exception):
@@ -24,282 +36,419 @@ class InvalidStatusError(ActorStateError):
     """Invalid message status or ack status"""
 
 
-class TooManyMessagesError(ActorStateError):
-    """Too many messages error"""
+class CompleteMessageStatus:
+    """
+    >>> s = CompleteMessageStatus(maxlen=3)
+    >>> bool(s)
+    False
+    >>> s.add(1, OK)
+    >>> s.add(2, OK)
+    >>> s.add(3, ERROR)
+    >>> s.add(4, ERROR)
+    >>> len(s)
+    3
+    >>> 1 in s
+    False
+    >>> s[2] == OK
+    True
+    >>> s[3] == ERROR
+    True
+    >>> list(s) == [(2, OK), (3, ERROR), (4, ERROR)]
+    True
+    """
 
+    def __init__(self, maxlen):
+        self.maxlen = maxlen
+        self._ids_status = {}
+        self._ids_deque = deque()
 
-BEGIN = "BEGIN"
-SEND = "SEND"
-OK = "OK"
-ERROR = "ERROR"
-ERROR_NOTRY = "ERROR_NOTRY"
+    def add(self, message_id: str, status: str):
+        if message_id in self._ids_status:
+            raise DuplicateMessageError(f'message {message_id} already complete')
+        self._ids_status[message_id] = status
+        self._ids_deque.append(message_id)
+        self._compact()
 
-MESSAGE_STATUS = (BEGIN, SEND, OK, ERROR, ERROR_NOTRY)
-SEND_MESSAGE_STATUS = (BEGIN, OK, ERROR, ERROR_NOTRY)
+    def _compact(self):
+        while len(self._ids_deque) > self.maxlen:
+            message_id = self._ids_deque.popleft()
+            self._ids_status.pop(message_id, None)
+
+    def __getitem__(self, message_id) -> str:
+        return self._ids_status[message_id]
+
+    def __iter__(self):
+        for messagd_id in self._ids_deque:
+            yield (messagd_id, self._ids_status[messagd_id])
+
+    def __contains__(self, message_id):
+        return message_id in self._ids_status
+
+    def __bool__(self):
+        return bool(self._ids_deque)
+
+    def __len__(self):
+        return len(self._ids_deque)
 
 
 class ActorState:
-    """
-    WAL + memory state
-    """
+    def __init__(self, max_complete_size=128):
+        self.max_complete_size = max_complete_size
+        # message_id -> {status, outbox_states -> [{status, executed_count, retry_at}]}
+        self.state = {}
+        # id -> message
+        self.message_objects = {}
+        # id -> outbox_message
+        self.outbox_message_objects = {}
+        # dst -> src_node -> set{message_id}
+        self.done_message_ids = defaultdict(lambda: defaultdict(set))
+        # complete message ids
+        self.complete_message_state = CompleteMessageStatus(maxlen=max_complete_size)
+        # dst -> set{src_node}
+        self.upstream = defaultdict(set)
 
-    def __init__(self, max_pending_size=10**3, max_done_size=10**6):
-        """
-        """
-        if max_pending_size is None or max_pending_size <= 0:
-            raise ValueError(f'invalid max_pending_size {max_pending_size}')
-        self.max_pending_size = max_pending_size
-        if max_done_size is None or max_done_size <= 0:
-            raise ValueError(f'invalid max_done_size {max_done_size}')
-        self.max_done_size = max_done_size
-        # state:
-        # {
-        #     MESSAGE_ID: {
-        #         "status": MESSAGE_STATUS,
-        #         "message": {
-        #             "require_ack": REQUIRE_ACK,
-        #             "dst": DST,
-        #             "src": SRC,
-        #             "src_node": SRC_NODE,
-        #         },
-        #         "send_messages": {
-        #             SEND_MESSAGE_ID: {
-        #                 "status": SEND_MESSAGE_STATUS,
-        #                 "count": SEND_MESSAGE_RETRY_COUNT,
-        #             }
-        #         }
-        #     }
-        # }
-        self._state = OrderedDict()
-        # send_messages: {
-        #     SEND_MESSAGE_ID: (PARENT_ID, SEND_MESSAGE)
-        # }
-        self._send_messages = OrderedDict()
-        self._num_begin_messages = 0
-        self._num_send_messages = 0
-        self._num_done_messages = 0
-
-    @property
-    def num_begin_messages(self):
-        return self._num_begin_messages
-
-    @property
-    def num_send_messages(self):
-        return self._num_send_messages
-
-    @property
-    def num_pending_messages(self):
-        return self.num_begin_messages + self.num_send_messages
-
-    @property
-    def num_done_messages(self):
-        return self._num_done_messages
-
-    @property
-    def num_messages(self):
-        return len(self._state)
-
-    def __repr__(self):
-        name = type(self).__name__
-        return (
-            f'<{name} begin={self.num_begin_messages} '
-            f'send={self.num_send_messages} done={self.num_done_messages}>'
-        )
-
-    def apply_begin(self, message_id, *, require_ack, dst, src, src_node) -> None:
-        LOG.info(
-            f'apply_begin {message_id} require_ack={require_ack} dst={dst} '
-            f'src={src} src_node={src_node}')
-        state = self._state.get(message_id)
-        if state is not None:
+    def stats(self):
+        stats = defaultdict(lambda: 0)
+        for state in self.state.values():
             status = state['status']
-            if status != ERROR and status != ERROR_NOTRY:
-                raise DuplicateMessageError(
-                    f'duplicate message {message_id} status={status}')
-        self._check_pending_messages()
-        if state is not None:
-            self._num_done_messages -= 1
-        message = dict(require_ack=require_ack, dst=dst, src=src, src_node=src_node)
-        self._state[message_id] = dict(status=BEGIN, message=message)
-        self._num_begin_messages += 1
-        self._check_num_messages()
+            stats['num_' + status.lower()] += 1
+            if status == OUTBOX:
+                for outbox_state in state['outbox_states'].values():
+                    outbox_status = outbox_state['status']
+                    stats['num_outbox_' + outbox_status.lower()] += 1
+        num_upstream = 0
+        for dst, state in self.upstream.items():
+            num_upstream += len(state)
+        stats.update(num_upstream=num_upstream)
+        stats.update(num_outbox=len(self.outbox_message_objects))
+        stats.update(num_non_complete=len(self.message_objects))
+        stats.update(num_complete=len(self.complete_message_state))
+        stats.update(wal_size=self.wal_size)
+        acks = []
+        num_done = 0
+        for dst, d in self.done_message_ids.items():
+            for src_node, v in d.items():
+                if v:
+                    num_done += len(v)
+                    acks.append(dict(dst=dst, src_node=src_node, size=len(v)))
+        acks = list(sorted(acks, key=lambda x: x['size']))
+        stats.update(num_done=num_done, acks=acks)
+        return stats
 
-    def apply_done(self, message_id, status) -> Dict:
-        LOG.info(f'apply_done {message_id} status={status}')
-        if status not in (OK, ERROR, ERROR_NOTRY):
-            raise InvalidStatusError(f'invalid done status {status}')
-        if message_id in self._state:
-            state = self._state[message_id]
-            current_status = state['status']
-            if current_status not in (BEGIN, SEND):
-                raise ActorStateError(
-                    f"message {message_id} already done status={current_status}")
-            if current_status == BEGIN:
-                self._num_begin_messages -= 1
-            else:  # == SEND
-                self._num_send_messages -= 1
-        else:
-            state = self._state.setdefault(message_id, {})
-        state.update(status=status)
-        send_messages = state.pop('send_messages', None)
-        if send_messages:
-            for send_msg_id in send_messages:
-                self._send_messages.pop(send_msg_id, None)
-        self._num_done_messages += 1
-        self._check_num_messages()
-        ret = dict(id=message_id, status=status, **state.get('message', {}))
-        self._compact_done_messages()
-        return ret
+    @property
+    def wal_size(self):
+        n = len(self.complete_message_state)
+        for state in self.state.values():
+            status = state['status']
+            if status in (INBOX, OK, ERROR, ERROR_NOTRY):
+                n += 1
+            elif status == EXECUTE:
+                n += 2
+            elif status == OUTBOX:
+                n += 8
+        for dst, state in self.upstream.items():
+            n += len(state)
+        return n
 
-    @staticmethod
-    def _format_send_messages(send_messages):
-        text = []
-        for x in send_messages:
-            try:
-                text.append(repr(ActorMessage.from_dict(x)))
-            except KeyError:
-                text.append(x['id'])
-        return ','.join(text)
+    def get_message(self, message_id: str) -> ActorMessage:
+        msg = self.message_objects.get(message_id)
+        if msg is None:
+            raise MessageNotExistsError(f'message {message_id} not exists')
+        return msg
 
-    def apply_send(self, message_id, send_messages: List[Dict]) -> None:
-        send_messages_text = self._format_send_messages(send_messages)
-        LOG.info(f'apply_send {message_id} send_messages={send_messages_text}')
-        if not send_messages:
-            raise ActorStateError("can not send empty messages")
-        state = self._state.get(message_id, None)
-        if state is None:
-            raise MessageNotExistsError(f'begin not apply for message {message_id}')
-        current_status = state['status']
-        if current_status != BEGIN:
-            raise ActorStateError(f"can not send messages in {current_status} status")
-        send_messages_state = {}
-        for x in send_messages:
-            self._send_messages[x['id']] = (message_id, x)
-            send_messages_state[x['id']] = dict(status=BEGIN, count=0)
-        state.update(status=SEND, send_messages=send_messages_state)
-        self._num_begin_messages -= 1
-        self._num_send_messages += 1
-        self._check_num_messages()
+    def get_outbox_message(self, outbox_message_id: str) -> ActorMessage:
+        msg = self.outbox_message_objects.get(outbox_message_id)
+        if msg is None:
+            raise MessageNotExistsError(f'outbox_message {outbox_message_id} not exists')
+        return msg
 
-    def apply_ack(self, message_id, status) -> Optional[Dict]:
-        LOG.info(f'apply_ack {message_id} status={status}')
-        if status not in (OK, ERROR, ERROR_NOTRY):
-            raise InvalidStatusError(f'invalid ack status {status}')
-        if message_id not in self._send_messages:
-            raise MessageNotExistsError(f'invalid or already acked message {message_id}')
-        parent_id, __ = self._send_messages[message_id]
-        self._check_parent_send_state(parent_id)
-        send_messages = self._state[parent_id]['send_messages']
-        send_messages[message_id].update(status=status)
-        if status == ERROR_NOTRY:
-            return self.apply_done(parent_id, ERROR_NOTRY)
-        elif status == OK:
-            all_ok = all(x['status'] == OK for x in send_messages.values())
-            if all_ok:
-                return self.apply_done(parent_id, OK)
-            else:
-                self._send_messages.pop(message_id, None)
-        self._check_num_messages()
-        return None
+    def get_state(self, message_id: str):
+        if message_id in self.complete_message_state:
+            return dict(status=self.complete_message_state[message_id])
+        return self.state.get(message_id)
 
-    def apply_retry(self, message_id) -> None:
-        LOG.info(f'apply_retry {message_id}')
-        if message_id not in self._send_messages:
-            raise MessageNotExistsError(f'invalid or already acked message {message_id}')
-        parent_id, __ = self._send_messages[message_id]
-        self._check_parent_send_state(parent_id)
-        message_state = self._state[parent_id]['send_messages'][message_id]
-        message_state.update(count=message_state['count'] + 1)
-        self._check_num_messages()
-
-    def apply_restart(self) -> None:
-        LOG.info(f'apply_restart {self}')
-        msg_ids = []
-        for msg_id, state in self._state.items():
-            if state['status'] == BEGIN:
-                msg_ids.append(msg_id)
-        for msg_id in msg_ids:
-            del self._state[msg_id]
-        self._num_begin_messages = 0
-        self._check_num_messages()
+    def get_outbox_state(self, outbox_message_id: str):
+        outbox_message = self.outbox_message_objects.get(outbox_message_id)
+        if outbox_message is None:
+            return None
+        message_id = outbox_message.parent_id
+        state = self.state[message_id]
+        outbox_state = state['outbox_states'][outbox_message.id]
+        return outbox_state
 
     def apply(self, type, **kwargs):
-        return getattr(self, 'apply_' + type)(**kwargs)
+        return getattr(self, f'apply_{type}')(**kwargs)
 
-    def _check_num_messages(self):
-        total = sum([
-            self.num_begin_messages,
-            self.num_send_messages,
-            self.num_done_messages,
-        ])
-        assert total == self.num_messages, 'num_messages not correct, bug!'
+    def apply_notify(self, *, dst, src_node: str, available: bool):
+        LOG.debug(f'apply_notify dst={dst} src_node={src_node} available={available}')
+        state = self.upstream[dst]
+        if available:
+            state.add(src_node)
+        else:
+            state.discard(src_node)
 
-    def _check_parent_send_state(self, parent_id):
-        assert parent_id in self._state, 'parent_id not in self._state, bug!'
-        parent_status = self._state[parent_id]['status']
-        assert parent_status == SEND, 'parent_status is not SEND, bug!'
+    def apply_inbox(self, *, message: ActorMessage):
+        LOG.debug(f'apply_inbox {message}')
+        state = self.get_state(message.id)
+        if state is not None:
+            current_status = state['status']
+            if current_status != ERROR and current_status != ERROR_NOTRY:
+                raise DuplicateMessageError(
+                    f'duplicate message {message.id} status={current_status}')
+        self.state[message.id] = dict(status=INBOX)
+        self.message_objects[message.id] = message
 
-    @staticmethod
-    def _is_done(status):
-        return status in (OK, ERROR, ERROR_NOTRY)
+    def apply_execute(self, *, message_id: str):
+        LOG.debug(f'apply_execute {message_id}')
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f"message {message_id} not exists")
+        current_status = state['status']
+        if current_status != INBOX:
+            raise InvalidStatusError(
+                f'can not apply_execute status={current_status} message {message_id}')
+        state.update(status=EXECUTE)
+        self.message_objects[message_id] = self.get_message(message_id).meta()
 
-    def _check_pending_messages(self):
-        if self.num_pending_messages > self.max_pending_size:
-            raise TooManyMessagesError(
-                f'too many pending messages: num_begin={self.num_begin_messages} '
-                f'num_send={self.num_send_messages}')
+    def apply_outbox(self, *, message_id: str, outbox_messages: ActorMessage):
+        LOG.debug(f'apply_outbox {message_id} outbox_messages={outbox_messages}')
+        if not outbox_messages:
+            raise ActorStateError("can not apply_outbox empty messages")
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f"message {message_id} not exists")
+        current_status = state['status']
+        if current_status != EXECUTE:
+            raise InvalidStatusError(
+                f'can not apply_outbox status={current_status} message {message_id}')
+        for x in outbox_messages:
+            if x.parent_id != message_id:
+                raise ActorStateError(
+                    f"message {message_id} outbox_message invalid parent {x.parent_id} ")
+        outbox_states = {}
+        for x in outbox_messages:
+            outbox_states[x.id] = dict(status=OUTBOX, executed_count=0, retry_at=None)
+            self.outbox_message_objects[x.id] = x
+        state.update(status=OUTBOX, outbox_states=outbox_states)
 
-    def _compact_done_messages(self):
-        skip_cnt = self.num_done_messages - self.max_done_size
-        if skip_cnt <= 0:
-            return
-        done_msg_ids = []
-        for msg_id, state in self._state.items():
-            if self._is_done(state['status']):
-                done_msg_ids.append(msg_id)
-                skip_cnt -= 1
-                if skip_cnt <= 0:
-                    break
-        for msg_id in done_msg_ids:
-            del self._state[msg_id]
-            self._num_done_messages -= 1
-        self._check_num_messages()
+    def apply_done(self, *, message_id: str, status: str):
+        LOG.debug(f'apply_done {message_id} status={status}')
+        if status not in (OK, ERROR, ERROR_NOTRY):
+            raise InvalidStatusError(f'invalid done status {status}')
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f"message {message_id} not exists")
+        current_status = state['status']
+        if current_status not in (EXECUTE, OUTBOX):
+            raise ActorStateError(
+                f"can not apply_done for message {message_id} status={current_status}")
+        message = self.get_message(message_id)
+        outbox_states = state.pop('outbox_states', None)
+        if outbox_states:
+            for outbox_message_id in outbox_states:
+                self.outbox_message_objects.pop(outbox_message_id, None)
+        state.update(status=status)
+        self.done_message_ids[message.dst][message.src_node].add(message_id)
+        if not message.require_ack:
+            self.apply_complete(message_id=message_id)
+
+    def apply_complete(self, *, message_id: str, status: str = None):
+        LOG.debug(f'apply_complete {message_id} status={status}')
+        if message_id in self.complete_message_state:
+            raise ActorStateError(f"message {message_id} already complete")
+        if message_id in self.state:
+            state = self.state[message_id]
+            current_status = state['status']
+            if current_status not in (INBOX, OK, ERROR, ERROR_NOTRY):
+                raise ActorStateError(
+                    f"can not apply_complete for message {message_id} status={current_status}")
+            if status is None:
+                status = current_status
+            if status not in (OK, ERROR, ERROR_NOTRY):
+                raise InvalidStatusError(f'invalid complete status {status}')
+            message = self.get_message(message_id)
+            self.done_message_ids[message.dst][message.src_node].discard(message_id)
+            self.message_objects.pop(message_id, None)
+            self.state.pop(message_id, None)
+            self.complete_message_state.add(message_id, status)
+        else:
+            if status not in (OK, ERROR, ERROR_NOTRY):
+                raise InvalidStatusError(f'invalid complete status {status}')
+            self.complete_message_state.add(message_id, status)
+
+    def apply_export(self, *, outbox_message_id: str, retry_at: int = None):
+        LOG.debug(f'apply_export outbox_message_id={outbox_message_id} '
+                  f'retry_at={format_timestamp(retry_at)}')
+        outbox_message = self.get_outbox_message(outbox_message_id)
+        if outbox_message.require_ack and not retry_at:
+            raise ActorStateError(
+                f"retry_at is required for require_ack outbox_message {outbox_message_id}")
+        message_id = outbox_message.parent_id
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f"message {message_id} not exists")
+        current_status = state['status']
+        if current_status != OUTBOX:
+            raise ActorStateError(
+                f"can not apply_export for message {message_id} status={current_status}")
+        outbox_state = state['outbox_states'][outbox_message.id]
+        outbox_current_status = outbox_state['status']
+        if outbox_current_status != OUTBOX:
+            raise ActorStateError(
+                f"can not apply_export for outbox_message {outbox_message.id} "
+                f"status={outbox_current_status}")
+        executed_count = outbox_state['executed_count'] + 1
+        outbox_state.update(status=EXPORT, executed_count=executed_count, retry_at=retry_at)
+        if not outbox_message.require_ack:
+            self.apply_acked(outbox_message_id=outbox_message.id, status=OK)
+
+    def _get_all_done_status(self, outbox_states):
+        """
+        not done -> None
+        all ok -> OK
+        else -> ERROR_NOTRY
+        """
+        has_error = False
+        for outbox_message_id, outbox_state in outbox_states.items():
+            status = outbox_state['status']
+            if status == OK:
+                continue
+            if status == ERROR_NOTRY:
+                has_error = True
+                continue
+            outbox_message = self.get_outbox_message(outbox_message_id)
+            if status == ERROR:
+                executed_count = outbox_state['executed_count']
+                if executed_count > outbox_message.max_retry:
+                    has_error = True
+                    continue
+            return None
+        return ERROR_NOTRY if has_error else OK
+
+    def apply_acked(self, *, outbox_message_id: str, status: str):
+        LOG.debug(f'apply_acked outbox_message_id={outbox_message_id} status={status}')
+        outbox_message = self.get_outbox_message(outbox_message_id)
+        if status not in (OK, ERROR, ERROR_NOTRY):
+            raise InvalidStatusError(f'invalid acked status {status}')
+        message_id = outbox_message.parent_id
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f'invalid or already acked message {message_id}')
+        current_status = state['status']
+        if current_status != OUTBOX:
+            raise ActorStateError(
+                f"can not apply_acked for message {message_id} status={current_status}")
+        outbox_states = state['outbox_states']
+        outbox_state = outbox_states[outbox_message.id]
+        outbox_current_status = outbox_state['status']
+        # OUTBOX: expired and self-acked  EXPORT: acked
+        if outbox_current_status not in (OUTBOX, EXPORT):
+            raise ActorStateError(
+                f"can not apply_acked for outbox_message {outbox_message.id} "
+                f"status={outbox_current_status}")
+        outbox_state.update(status=status)
+        # will execute all outbox messages before ack done status
+        done_status = self._get_all_done_status(outbox_states)
+        if done_status:
+            self.apply_done(message_id=message_id, status=done_status)
+        else:
+            if status in (OK, ERROR_NOTRY):
+                outbox_state.update(retry_at=None)
+                self.outbox_message_objects[outbox_message.id] = outbox_message.meta()
+
+    def apply_retry(self, *, outbox_message_id: str):
+        LOG.debug(f'apply_retry outbox_message_id={outbox_message_id}')
+        outbox_message = self.get_outbox_message(outbox_message_id)
+        message_id = outbox_message.parent_id
+        state = self.get_state(message_id)
+        if state is None:
+            raise MessageNotExistsError(f'invalid or already acked message {message_id}')
+        current_status = state['status']
+        if current_status != OUTBOX:
+            raise ActorStateError(
+                f"can not apply_retry for message {message_id} status={current_status}")
+        outbox_states = state['outbox_states']
+        outbox_state = outbox_states[outbox_message.id]
+        outbox_current_status = outbox_state['status']
+        if outbox_current_status not in (ERROR, EXPORT):
+            raise ActorStateError(
+                f"can not apply_retry for outbox_message {outbox_message.id} "
+                f"status={outbox_current_status}")
+        outbox_state.update(status=OUTBOX, retry_at=None)
+
+    def apply_restart(self):
+        LOG.debug(f'apply_restart')
+        message_ids = []
+        for message_id, state in self.state.items():
+            if state['status'] == EXECUTE:
+                message_ids.append(message_id)
+            elif state['status'] == INBOX:
+                message = self.get_message(message_id)
+                if message.is_ask:
+                    message_ids.append(message_id)
+        for message_id in message_ids:
+            self.apply_done(message_id=message_id, status=ERROR)
+
+    def _dump_outbox_state(self, outbox_message_id, outbox_state):
+        outbox_message = self.get_outbox_message(outbox_message_id)
+        outbox_status = outbox_state['status']
+        for i in range(outbox_state['executed_count'] - 1):
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=-1)
+            yield dict(type='retry', outbox_message_id=outbox_message_id)
+        if outbox_status == EXPORT:
+            retry_at = outbox_state['retry_at']
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=retry_at)
+        elif outbox_status in (OK, ERROR_NOTRY):
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=-1)
+            if outbox_message.require_ack:
+                yield dict(type='acked', outbox_message_id=outbox_message_id, status=outbox_status)
+        elif outbox_status == ERROR:
+            retry_at = outbox_state['retry_at']
+            yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=retry_at)
+            yield dict(type='acked', outbox_message_id=outbox_message_id, status=ERROR)
 
     def dump(self):
-        for message_id, state in self._state.items():
+        for message_id, status in self.complete_message_state:
+            yield dict(type='complete', message_id=message_id, status=status)
+        for message_id, state in self.state.items():
             status = state['status']
-            if self._is_done(status):
+            message = self.get_message(message_id)
+            yield dict(type='inbox', message=message)
+            if status in (OK, ERROR, ERROR_NOTRY):
+                yield dict(type='execute', message_id=message_id)
                 yield dict(type='done', message_id=message_id, status=status)
-            elif status == BEGIN:
-                yield dict(type='begin', message_id=message_id, **state['message'])
-            elif status == SEND:
-                yield dict(type='begin', message_id=message_id, **state['message'])
-                send_messages = []
-                for k, ack_state in state['send_messages'].items():
-                    if k in self._send_messages:
-                        __, msg = self._send_messages[k]
-                    else:
-                        msg = {'id': k}
-                    send_messages.append(msg)
-                yield dict(type='send', message_id=message_id, send_messages=send_messages)
-                for ack_message_id, ack_state in state['send_messages'].items():
-                    ack_status = ack_state['status']
-                    count = ack_state['count']
-                    for i in range(count):
-                        yield dict(type='retry', message_id=ack_message_id)
-                    if self._is_done(ack_status):
-                        yield dict(type='ack', message_id=ack_message_id, status=ack_status)
+            elif status == EXECUTE:
+                yield dict(type='execute', message_id=message_id)
+            elif status == OUTBOX:
+                yield dict(type='execute', message_id=message_id)
+                outbox_states = state['outbox_states']
+                outbox_messages = []
+                for outbox_message_id in outbox_states.keys():
+                    outbox_message = self.get_outbox_message(outbox_message_id)
+                    outbox_messages.append(outbox_message)
+                yield dict(type='outbox', message_id=message_id, outbox_messages=outbox_messages)
+                for outbox_message_id, outbox_state in outbox_states.items():
+                    yield from self._dump_outbox_state(outbox_message_id, outbox_state)
+        for dst, state in self.upstream.items():
+            for src_node in state:
+                yield dict(type='notify', dst=dst, src_node=src_node, available=True)
 
-    def get_message_state(self, message_id) -> dict:
-        state = self._state.get(message_id, None)
-        if state is None:
-            raise MessageNotExistsError(f'message {message_id} not exists')
-        return dict(id=message_id, **state)
+    def get_inbox_messages(self):
+        for message_id, state in self.state.items():
+            if state['status'] == INBOX:
+                yield self.get_message(message_id)
 
-    def query_send_messages(self) -> List[Dict[str, Tuple[dict, dict]]]:
-        ret = {}
-        for msg_id, (parent_id, msg) in self._send_messages.items():
-            self._check_parent_send_state(parent_id)
-            state = self._state[parent_id]['send_messages'][msg_id]
-            ret[msg_id] = (state, msg)
-        return ret
+    def get_outbox_messages(self):
+        for message_id, state in self.state.items():
+            if state['status'] != OUTBOX:
+                continue
+            message = self.get_message(message_id)
+            outbox_messages = []
+            outbox_states = state['outbox_states']
+            for outbox_message_id, outbox_state in outbox_states.items():
+                outbox_status = outbox_state['status']
+                if outbox_status == OUTBOX:
+                    outbox_message = self.get_outbox_message(outbox_message_id)
+                    outbox_messages.append(outbox_message)
+            if outbox_messages:
+                yield (message, outbox_messages)

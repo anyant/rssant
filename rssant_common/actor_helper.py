@@ -10,7 +10,6 @@ from django import db
 from validr import T
 import backdoor
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
-from actorlib.network_helper import LOCAL_NODE_NAME
 from actorlib.sentry import sentry_init
 
 from rssant.settings import ENV_CONFIG
@@ -98,7 +97,7 @@ def start_actor_cli(*args, actor_type, **kwargs):
     default_concurrency = kwargs.get('concurrency', 100)
 
     @click.command()
-    @click.option('--node', default=LOCAL_NODE_NAME, help='actor node name')
+    @click.option('--node', default='localhost', help='actor node name')
     @click.option('--host', default='0.0.0.0', help='listen host')
     @click.option('--port', type=int, default=default_port, help='listen port')
     @click.option('--network', multiple=True, help='network@http://host:port')
@@ -147,7 +146,7 @@ def start_actor_cli(*args, actor_type, **kwargs):
 
 
 def start_actor(actor_type, **kwargs):
-    configure_logging()
+    configure_logging(level=ENV_CONFIG.log_level)
     if ENV_CONFIG.sentry_enable:
         sentry_init(ENV_CONFIG.sentry_dsn)
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
@@ -170,10 +169,9 @@ def start_actor(actor_type, **kwargs):
         registery_node_spec=ENV_CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
         storage_dir_path=ENV_CONFIG.actor_storage_path,
-        storage_max_pending_size=ENV_CONFIG.actor_storage_max_pending_size,
-        storage_max_done_size=ENV_CONFIG.actor_storage_max_done_size,
-        storage_compact_interval=ENV_CONFIG.actor_storage_compact_interval,
-        ack_timeout=ENV_CONFIG.actor_ack_timeout,
+        storage_compact_wal_delta=ENV_CONFIG.actor_storage_compact_wal_delta,
+        queue_max_complete_size=ENV_CONFIG.actor_queue_max_complete_size,
+        max_retry_time=ENV_CONFIG.actor_max_retry_time,
         max_retry_count=ENV_CONFIG.actor_max_retry_count,
         token=ENV_CONFIG.actor_token,
         **kwargs

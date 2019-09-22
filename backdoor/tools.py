@@ -43,7 +43,6 @@ def print_top_stats(top_stats, limit=10):
 
 
 def top_diff(seconds=10, key_type='lineno', limit=10):
-    tracemalloc.start()
     snapshot1 = tracemalloc.take_snapshot()
     time.sleep(seconds)
     snapshot2 = tracemalloc.take_snapshot()
@@ -51,9 +50,7 @@ def top_diff(seconds=10, key_type='lineno', limit=10):
     print_top_stats(top_stats, limit=limit)
 
 
-def top(seconds=10, key_type='lineno', limit=10):
-    tracemalloc.start()
-    time.sleep(seconds)
+def top(key_type='lineno', limit=10):
     snapshot = tracemalloc.take_snapshot()
     snapshot = snapshot.filter_traces((
         tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),

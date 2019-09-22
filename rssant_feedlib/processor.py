@@ -1,7 +1,9 @@
 import re
 from collections import namedtuple
 from urllib.parse import urljoin
+import lxml.etree
 import lxml.html
+from lxml.html import soupparser
 from lxml.html.clean import Cleaner
 
 RE_IMG = re.compile(
@@ -125,13 +127,22 @@ def story_html_to_text(content, clean=True):
     >>> print(story_html_to_text(content, clean=False))
     hello world
     happy day
+    >>> content = '<![CDATA[hello world]]>'
+    >>> print(story_html_to_text(content))
+    hello world
     """
-    if not content:
+    if (not content) or (not content.strip()):
         return ""
-    if clean:
-        content = lxml_html_cleaner.clean_html(content)
-    r = lxml.html.fromstring(content, parser=lxml_html_parser)
-    return RE_BLANK_LINE.sub('\n', r.text_content().strip())
+    try:
+        if clean:
+            content = lxml_html_cleaner.clean_html(content).strip()
+        if not content:
+            return ""
+        r = lxml.html.fromstring(content, parser=lxml_html_parser)
+        content = r.text_content().strip()
+    except lxml.etree.ParserError:
+        content = soupparser.fromstring(content).text_content().strip()
+    return RE_BLANK_LINE.sub('\n', content)
 
 
 RE_V2EX = re.compile(r'^http(s)?://[a-zA-Z0-9_\.\-]*\.v2ex\.com', re.I)

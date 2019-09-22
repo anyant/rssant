@@ -35,9 +35,9 @@ class Actor:
     def __init__(self, handler, schema_compiler):
         self.name = handler.__actor_name__
         self.timer = handler.__actor_timer__
+        self.is_async = self._is_async_handler(handler)
         self.module = self.get_module(self.name)
         self.handler = handler
-        self.is_async = inspect.iscoroutinefunction(handler)
         params_schema = get_params(handler, self.name)
         if params_schema:
             self._validate_params = schema_compiler.compile(params_schema)
@@ -48,6 +48,18 @@ class Actor:
             self._validate_returns = schema_compiler.compile(returns_schema)
         else:
             self._validate_returns = None
+
+    @staticmethod
+    def _is_async_handler(handler):
+        is_async = handler.__actor_is_async__
+        if is_async is not None:
+            return bool(is_async)
+        if inspect.iscoroutinefunction(handler):
+            return True
+        handler_call = getattr(handler, '__call__', None)
+        if handler_call and inspect.iscoroutinefunction(handler_call):
+            return True
+        return False
 
     @staticmethod
     def get_module(name):
@@ -61,6 +73,10 @@ class Actor:
         ret = await self.handler(ctx, **params)
         return self._validate_returns(ret)
 
+    def _thread_handler(self, ctx, **params):
+        ret = self.handler(ctx, **params)
+        return self._validate_returns(ret)
+
     def __call__(self, ctx):
         if self._validate_params is None:
             params = {}
@@ -70,11 +86,11 @@ class Actor:
             return self.handler(ctx, **params)
         if self.is_async:
             return self._async_handler(ctx, **params)
-        ret = self.handler(ctx, **params)
-        return self._validate_returns(ret)
+        else:
+            return self._thread_handler(ctx, **params)
 
 
-def actor(name, timer=None):
+def actor(name, is_async=None, timer=None):
 
     if timer is not None:
         timer = parse_actor_timer(timer)
@@ -82,6 +98,7 @@ def actor(name, timer=None):
     def decorator(f):
         f.__actor_name__ = name
         f.__actor_timer__ = timer
+        f.__actor_is_async__ = is_async
         return f
 
     return decorator
@@ -117,7 +134,8 @@ def import_all_actors(import_name, pattern=".*"):
         for obj in vars(module).values():
             if not hasattr(obj, '__actor_name__'):
                 continue
-            if not (inspect.iscoroutinefunction(obj) or inspect.isfunction(obj)):
+            is_func = inspect.iscoroutinefunction(obj) or inspect.isfunction(obj)
+            if not (is_func or inspect.isclass(obj)):
                 continue
             if obj in visited:
                 continue
