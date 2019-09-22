@@ -61,8 +61,11 @@ def url_validator(compiler, schemes='http https', default_schema=None):
             value = coerce_url(value, default_schema=default_schema)
         try:
             _django_validate_url(value)
-        except ValidationError as ex:
-            raise Invalid(','.join(ex.messages).rstrip('.'))
+        except ValidationError:
+            # TODO: access ValidationError.messages will cause error when
+            # django/i18n not setup, maybe use validators package instead
+            # raise Invalid(','.join(ex.messages).rstrip('.'))
+            raise Invalid('invalid or incorrect url format')
         return value
 
     return validate
