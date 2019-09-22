@@ -346,7 +346,7 @@ class ActorMessageQueue:
         if q is None:
             concurrency = self.concurrency
             if actor.is_async:
-                concurrency *= 5
+                concurrency *= 3
             q = ActorQueue(
                 actor_name=actor_name,
                 registery=self.registery,
