@@ -4,7 +4,7 @@ import functools
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
-from validr import validator, SchemaError, Invalid, Compiler, builtin_validators
+from validr import T, validator, SchemaError, Invalid, Compiler, builtin_validators
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -46,15 +46,18 @@ def cursor_validator(compiler, keys=None, output_object=False, base64=False):
 
 
 @validator(accept=str, output=str)
-def url_validator(compiler, schemes='http https', default_schema=None):
+def url_validator(compiler, scheme='http https', default_schema=None, relaxed=False):
     """
     Args:
         default_schema: 接受没有scheme的url并尝试修正
+        relaxed: accept not strict url
     """
-    schemes = set(schemes.replace(',', ' ').split(' '))
-    _django_validate_url = URLValidator(schemes=schemes)
+    if relaxed:
+        return Compiler().compile(T.url.scheme(scheme))
+    schemes = set(scheme.replace(',', ' ').split(' '))
     if default_schema and default_schema not in schemes:
         raise SchemaError('invalid default_schema {}'.format(default_schema))
+    _django_validate_url = URLValidator(schemes=schemes)
 
     def validate(value):
         if default_schema:

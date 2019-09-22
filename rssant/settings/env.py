@@ -9,7 +9,7 @@ from actorlib.network_helper import LOCAL_NODE_NAME
 
 validate_extra_networks = compiler.compile(T.list(T.dict(
     name=T.str,
-    url=T.str,  # TODO: url
+    url=T.url.relaxed,
 )))
 
 
@@ -17,11 +17,11 @@ validate_extra_networks = compiler.compile(T.list(T.dict(
 class EnvConfig:
     debug = T.bool.default(True).desc('debug')
     log_level = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
-    root_url = T.url.default('http://localhost:6789')
-    async_url_prefix = T.url.default('http://localhost:6786/api/v1')
-    async_callback_url_prefix = T.url.default('http://localhost:6788/api/v1')
+    root_url = T.url.relaxed.default('http://localhost:6789')
+    async_url_prefix = T.url.relaxed.default('http://localhost:6786/api/v1')
+    async_callback_url_prefix = T.url.relaxed.default('http://localhost:6788/api/v1')
     scheduler_network = T.str.default('localhost')
-    scheduler_url = T.url.default('http://localhost:6790/api/v1/scheduler')
+    scheduler_url = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
     scheduler_extra_networks = T.str.optional.desc('eg: name@url,name@url')
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address = T.bool.default(False)
