@@ -20,10 +20,14 @@ def normalize_concurrency(concurrency):
     num_async_workers = concurrency // 30 + 1
     num_thread_workers = max(1, concurrency - num_async_workers)
     concurrency = num_async_workers + num_thread_workers
+    async_concurrency = concurrency * 10 / num_async_workers
+    async_pending_limit = max(10, concurrency // 10)
     return AttrDict(
         concurrency=concurrency,
         num_async_workers=num_async_workers,
         num_thread_workers=num_thread_workers,
+        async_concurrency=async_concurrency,
+        async_pending_limit=async_pending_limit,
     )
 
 
@@ -44,6 +48,8 @@ class ActorExecutor:
         self.concurrency = concurrency_info.concurrency
         self.num_async_workers = concurrency_info.num_async_workers
         self.num_thread_workers = concurrency_info.num_thread_workers
+        self.async_concurrency = concurrency_info.async_concurrency
+        self.async_pending_limit = concurrency_info.async_pending_limit
         self.threads = []
 
     @auto_restart_when_crash
@@ -60,7 +66,7 @@ class ActorExecutor:
     @auto_restart_when_crash
     async def _async_main(self):
         scheduler = await aiojobs.create_scheduler(
-            limit=self.concurrency * 5, pending_limit=max(10, self.concurrency // 2))
+            limit=self.async_concurrency, pending_limit=self.async_pending_limit)
         actor_client = AsyncActorClient(registery=self.registery, token=self.token)
         async with actor_client:
             try:

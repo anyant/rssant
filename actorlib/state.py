@@ -302,16 +302,28 @@ class ActorState:
         if not outbox_message.require_ack:
             self.apply_acked(outbox_message_id=outbox_message.id, status=OK)
 
-    @staticmethod
-    def _is_outbox_message_error_notry(outbox_message, outbox_state):
-        status = outbox_state['status']
-        if status == ERROR_NOTRY:
-            return True
-        if status == ERROR:
-            executed_count = outbox_state['executed_count']
-            if executed_count > outbox_message.max_retry:
-                return True
-        return False
+    def _get_all_done_status(self, outbox_states):
+        """
+        not done -> None
+        all ok -> OK
+        else -> ERROR_NOTRY
+        """
+        has_error = False
+        for outbox_message_id, outbox_state in outbox_states.items():
+            status = outbox_state['status']
+            if status == OK:
+                continue
+            if status == ERROR_NOTRY:
+                has_error = True
+                continue
+            outbox_message = self.get_outbox_message(outbox_message_id)
+            if status == ERROR:
+                executed_count = outbox_state['executed_count']
+                if executed_count > outbox_message.max_retry:
+                    has_error = True
+                    continue
+            return None
+        return ERROR_NOTRY if has_error else OK
 
     def apply_acked(self, *, outbox_message_id: str, status: str):
         LOG.debug(f'apply_acked outbox_message_id={outbox_message_id} status={status}')
@@ -329,19 +341,19 @@ class ActorState:
         outbox_states = state['outbox_states']
         outbox_state = outbox_states[outbox_message.id]
         outbox_current_status = outbox_state['status']
-        if outbox_current_status != EXPORT:
+        # OUTBOX: expired and self-acked  EXPORT: acked
+        if outbox_current_status not in (OUTBOX, EXPORT):
             raise ActorStateError(
                 f"can not apply_acked for outbox_message {outbox_message.id} "
                 f"status={outbox_current_status}")
         outbox_state.update(status=status)
-        if self._is_outbox_message_error_notry(outbox_message, outbox_state):
-            self.apply_done(message_id=message_id, status=ERROR_NOTRY)
-        elif status == OK:
-            outbox_state.update(retry_at=None)
-            all_ok = all(x['status'] == OK for x in outbox_states.values())
-            if all_ok:
-                self.apply_done(message_id=message_id, status=OK)
-            else:
+        # will execute all outbox messages before ack done status
+        done_status = self._get_all_done_status(outbox_states)
+        if done_status:
+            self.apply_done(message_id=message_id, status=done_status)
+        else:
+            if status in (OK, ERROR_NOTRY):
+                outbox_state.update(retry_at=None)
                 self.outbox_message_objects[outbox_message.id] = outbox_message.meta()
 
     def apply_retry(self, *, outbox_message_id: str):
@@ -386,7 +398,7 @@ class ActorState:
         if outbox_status == EXPORT:
             retry_at = outbox_state['retry_at']
             yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=retry_at)
-        elif outbox_status == OK:
+        elif outbox_status in (OK, ERROR_NOTRY):
             yield dict(type='export', outbox_message_id=outbox_message_id, retry_at=-1)
             if outbox_message.require_ack:
                 yield dict(type='acked', outbox_message_id=outbox_message_id, status=outbox_status)
@@ -400,21 +412,14 @@ class ActorState:
             yield dict(type='complete', message_id=message_id, status=status)
         for message_id, state in self.state.items():
             status = state['status']
+            message = self.get_message(message_id)
+            yield dict(type='inbox', message=message)
             if status in (OK, ERROR, ERROR_NOTRY):
-                message = self.get_message(message_id)
-                yield dict(type='inbox', message=message)
                 yield dict(type='execute', message_id=message_id)
                 yield dict(type='done', message_id=message_id, status=status)
-            elif status == INBOX:
-                message = self.get_message(message_id)
-                yield dict(type='inbox', message=message)
             elif status == EXECUTE:
-                message = self.get_message(message_id)
-                yield dict(type='inbox', message=message)
                 yield dict(type='execute', message_id=message_id)
             elif status == OUTBOX:
-                message = self.get_message(message_id)
-                yield dict(type='inbox', message=message)
                 yield dict(type='execute', message_id=message_id)
                 outbox_states = state['outbox_states']
                 outbox_messages = []

@@ -283,7 +283,7 @@ class ActorQueue:
                 retry_at = outbox_state.get('retry_at')
                 executed_count = outbox_state.get('executed_count')
                 if outbox_status == ERROR:
-                    if now > retry_at:
+                    if retry_at and now > retry_at:
                         retry_outbox_message_ids.append(outbox_message_id)
                 elif outbox_status == EXPORT:
                     if now > retry_at:
@@ -346,7 +346,7 @@ class ActorMessageQueue:
         if q is None:
             concurrency = self.concurrency
             if actor.is_async:
-                concurrency *= 10
+                concurrency *= 5
             q = ActorQueue(
                 actor_name=actor_name,
                 registery=self.registery,

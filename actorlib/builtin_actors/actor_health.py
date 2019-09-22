@@ -50,6 +50,8 @@ class ActorHealth(BuiltinActorBase):
                 concurrency=app.executor.concurrency,
                 num_async_workers=app.executor.num_async_workers,
                 num_thread_workers=app.executor.num_thread_workers,
+                async_concurrency=app.executor.async_concurrency,
+                async_pending_limit=app.executor.async_pending_limit,
             ),
         )
 

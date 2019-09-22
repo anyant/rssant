@@ -1,5 +1,4 @@
 import logging
-import copy
 import os.path
 from collections import namedtuple
 
@@ -12,7 +11,7 @@ from .state import ActorState, ActorStateError
 LOG = logging.getLogger(__name__)
 
 
-CompactPrepareInfo = namedtuple('CompactPrepareInfo', 'current_filepath, state')
+CompactPrepareInfo = namedtuple('CompactPrepareInfo', 'current_filepath, wal_items')
 
 OP_INBOX = 'inbox'
 OP_OUTBOX = 'outbox'
@@ -84,8 +83,17 @@ class ActorLocalStorage:
         self.current_storage = next_storage
         self.non_current_wal_size += current_storage.wal_size
         current_storage.close()
-        state = copy.deepcopy(state)
-        return CompactPrepareInfo(current_filepath, state)
+        wal_items = list(state.dump())
+        return CompactPrepareInfo(current_filepath, wal_items)
+
+    def _state_from_wal(self, wal_items: list):
+        state = ActorState()
+        for item in wal_items:
+            try:
+                state.apply(**item)
+            except ActorStateError as ex:
+                LOG.warning(ex)
+        return state
 
     def compact(self, prepare_info: CompactPrepareInfo):
         """
@@ -94,7 +102,8 @@ class ActorLocalStorage:
         """
         if not prepare_info:
             return
-        current_filepath, state = prepare_info
+        current_filepath, wal_items = prepare_info
+        state = self._state_from_wal(wal_items)
         try:
             # save current state to compact storage
             try:
