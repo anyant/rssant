@@ -121,7 +121,7 @@ def import_all_modules(import_name):
                     module = import_name
                 yield importlib.import_module(module)
             for filename in files:
-                if filename != "__init__.py" and filename.endswith(".py"):
+                if filename not in ("__init__.py", "__main__.py") and filename.endswith(".py"):
                     module = os.path.splitext(os.path.join(root, filename))[0]
                     module = module[len(root_path):].replace("/", ".")
                     yield importlib.import_module(f"{import_name}{module}")
