@@ -21,8 +21,9 @@ RUN apt-get update && \
     ln -s --force /usr/bin/python3 /usr/bin/python && \
     ln -s --force /usr/bin/pip3 /usr/bin/pip
 
+ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip install --no-cache-dir -r requirements.txt -i ${PYPI_MIRROR}
 
 COPY . .
 RUN python3 manage.py collectstatic

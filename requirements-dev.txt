@@ -50,6 +50,7 @@ msgpack==0.6.1
 loguru==0.3.1
 netifaces==0.10.9
 python-slugify==3.0.2
+validators==0.14.0
 
 Click==7.0
 PyYAML==3.13
@@ -76,3 +77,5 @@ psutil==5.6.3
 Pympler==0.7
 numpy==1.17.0
 pandas==0.25.1
+graphviz==0.13
+module-graph==0.0.1

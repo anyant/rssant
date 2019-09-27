@@ -1,8 +1,5 @@
 import sys
-sys.path.append('module_graph')
-
-
-import module_graph  # noqa: F402
+import module_graph
 
 
 IS_GEN = len(sys.argv) >= 2 and sys.argv[1] == 'gen'
