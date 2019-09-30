@@ -92,8 +92,8 @@ def do_find_feed(
     feed_creation_id: T.int,
     url: T.url,
 ):
-    # TODO: immediately send message to update status
-    ctx.tell('harbor_rss.update_feed_creation_status', dict(
+    # immediately send message to update status
+    ctx.ask('harbor_rss.update_feed_creation_status', dict(
         feed_creation_id=feed_creation_id,
         status=FeedStatus.UPDATING,
     ))
@@ -159,7 +159,7 @@ async def do_fetch_story(
     if not response.rssant_text:
         LOG.error(f'story#{story_id} url={unquote(url)} response text is empty!')
         return
-    await ctx.tell('worker_rss.process_story_webpage', dict(
+    await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
         text=response.rssant_text,
@@ -187,7 +187,7 @@ def do_process_story_webpage(
     summary = shorten(story_html_to_text(content), width=300)
     if not summary:
         return
-    ctx.tell('harbor_rss.update_story', dict(
+    ctx.hope('harbor_rss.update_story', dict(
         story_id=story_id,
         content=content,
         summary=summary,
@@ -198,7 +198,7 @@ def do_process_story_webpage(
     image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
     LOG.info(f'found story#{story_id} {unquote(url)} has {len(image_urls)} images')
     if image_urls:
-        ctx.tell('worker_rss.detect_story_images', dict(
+        ctx.hope('worker_rss.detect_story_images', dict(
             story_id=story_id,
             story_url=url,
             image_urls=list(image_urls),
@@ -243,7 +243,7 @@ async def do_detect_story_images(
     LOG.info(f'detect story images story_id={story_id} '
              f'num_images={len(image_urls)} finished, '
              f'ok={num_ok} error={num_error} cost={cost_ms:.0f}ms')
-    await ctx.tell('harbor_rss.update_story_images', dict(
+    await ctx.hope('harbor_rss.update_story_images', dict(
         story_id=story_id,
         story_url=story_url,
         images=images,
