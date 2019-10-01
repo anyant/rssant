@@ -25,7 +25,7 @@ ACTORS = collect_actors(__name__)
 def main():
     app = ActorNode(
         actors=ACTORS,
-        port=8083,
+        port=8088,
         storage_dir_path='data/actorlib_example_fab',
     )
     app.run()

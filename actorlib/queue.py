@@ -18,6 +18,7 @@ from .builtin_actors.name import (
     ACTOR_MESSAGE_NOTIFY_SENDER,
     ACTOR_STORAGE_COMPACTOR,
 )
+from .prometheus import metric_queue_op, ACTOR_QUEUE_INBOX_SIZE, ACTOR_QUEUE_OUTBOX_SIZE
 
 
 LOG = logging.getLogger(__name__)
@@ -402,6 +403,7 @@ class ActorMessageQueue:
             while True:
                 msg = self._op_execute(self.thread_actor_queues)
                 if msg is not None:
+                    metric_queue_op('execute', msg)
                     return msg
                 self.execute_condition.wait()
 
@@ -410,6 +412,7 @@ class ActorMessageQueue:
             with self.lock:
                 msg = self._op_execute(self.async_actor_queues)
                 if msg is not None:
+                    metric_queue_op('execute', msg)
                     return msg
             await asyncio.sleep(0.1)
 
@@ -423,6 +426,8 @@ class ActorMessageQueue:
                 LOG.warning(f'message {message_id} not exists')
                 return
             self.actor_queue(message.dst).op_outbox(message_id, outbox_messages=outbox_messages)
+            for x in outbox_messages:
+                metric_queue_op('outbox', x)
 
     def op_done(self, message_id: str, status: str):
         """
@@ -438,6 +443,7 @@ class ActorMessageQueue:
             if message.dst == ACTOR_STORAGE_COMPACTOR:
                 self.is_compacting = False
             self.execute_condition.notify()
+            metric_queue_op('done', message)
 
     def op_export(self, dst: str, dst_node: str, maxsize: int):
         """
@@ -454,6 +460,8 @@ class ActorMessageQueue:
                     if maxsize <= 0:
                         break
             self.execute_condition.notify(len(ret))
+            for x in ret:
+                metric_queue_op('export', x)
             return ret
 
     def op_notify(self, src_node: str, dst: str, available: bool):
@@ -470,6 +478,7 @@ class ActorMessageQueue:
         """
         with self.lock:
             self._op_inbox(message)
+            metric_queue_op('inbox', message)
 
     def op_acked(self, outbox_message_id: ActorMessage, status: str):
         """
@@ -480,6 +489,7 @@ class ActorMessageQueue:
             message = self.state.get_message(outbox_message.parent_id)
             self.actor_queue(message.dst).op_acked(outbox_message_id, status=status)
             self.execute_condition.notify()
+            metric_queue_op('acked', outbox_message)
 
     def op_tick(self, now: int):
         """
@@ -492,6 +502,10 @@ class ActorMessageQueue:
                 num_error_notry = actor_queue.check_timeout_and_retry(now)
                 if num_error_notry > 0:
                     self.execute_condition.notify(num_error_notry)
+                ACTOR_QUEUE_INBOX_SIZE.labels(dst=actor_queue.actor_name)\
+                    .set(actor_queue.inbox_size())
+                ACTOR_QUEUE_OUTBOX_SIZE.labels(dst=actor_queue.actor_name)\
+                    .set(actor_queue.outbox_size())
 
     def op_restart(self):
         """

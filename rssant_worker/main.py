@@ -8,4 +8,4 @@ from rssant_common.actor_helper import start_actor  # noqa: F402
 
 
 if __name__ == "__main__":
-    start_actor('worker', port=6792)
+    start_actor('worker', port=6794)

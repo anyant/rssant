@@ -11,6 +11,7 @@ from .registery import ActorRegistery
 from .client import AsyncActorClient, ActorClient
 from .queue import ActorMessageQueue
 from .context import ActorContext
+from .prometheus import ACTOR_EXECUTOR_TIME
 
 
 LOG = logging.getLogger(__name__)
@@ -93,23 +94,25 @@ class ActorExecutor:
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
-        actor = self.actors[message.dst]
-        ctx = ActorContext(
-            actor=actor, message=message,
-            registery=self.registery, queue=self.queue,
-            actor_client=actor_client)
-        ctx._thread_execute()
+        with ACTOR_EXECUTOR_TIME.labels(dst=message.dst).time():
+            actor = self.actors[message.dst]
+            ctx = ActorContext(
+                actor=actor, message=message,
+                registery=self.registery, queue=self.queue,
+                actor_client=actor_client)
+            ctx._thread_execute()
 
     async def _async_handle_message(self, message: ActorMessage, actor_client):
         if not self._is_deliverable(message):
             LOG.error(f'undeliverable message {message}')
             return
-        actor = self.actors[message.dst]
-        ctx = ActorContext(
-            actor=actor, message=message,
-            registery=self.registery, queue=self.queue,
-            actor_client=actor_client)
-        await ctx._async_execute()
+        with ACTOR_EXECUTOR_TIME.labels(dst=message.dst).time():
+            actor = self.actors[message.dst]
+            ctx = ActorContext(
+                actor=actor, message=message,
+                registery=self.registery, queue=self.queue,
+                actor_client=actor_client)
+            await ctx._async_execute()
 
     def start(self):
         for i in range(self.num_async_workers):

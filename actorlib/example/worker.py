@@ -49,7 +49,7 @@ def main():
     backdoor.setup()
     app = ActorNode(
         actors=ACTORS,
-        port=8082,
+        port=8085,
         name='worker',
         storage_dir_path='data/actorlib_example_worker',
         storage_compact_wal_delta=100,
