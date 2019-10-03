@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import aiodns
 import aiohttp
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from rssant_common.helper import (
     resolve_aiohttp_response_encoding,
     aiohttp_raise_for_status,
@@ -56,7 +56,7 @@ class AsyncFeedReader:
 
     async def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
-        if ENV_CONFIG.allow_private_address:
+        if CONFIG.allow_private_address:
             return
         await self._async_init()
         hostname = urlparse(url).hostname

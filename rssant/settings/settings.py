@@ -14,9 +14,8 @@ import os
 import sys
 import os.path
 from os.path import dirname, abspath
-from .env import load_env_config
+from rssant_config import CONFIG as ENV_CONFIG
 
-ENV_CONFIG = load_env_config()
 if ENV_CONFIG.is_celery_process is None:
     IS_CELERY_PROCESS = 'celery' in sys.argv[0]
 else:

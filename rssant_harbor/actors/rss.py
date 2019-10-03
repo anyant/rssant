@@ -15,12 +15,12 @@ from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, Fee
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
 from rssant_common.validator import compiler
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 
 
 LOG = logging.getLogger(__name__)
 
-CHECK_FEED_SECONDS = ENV_CONFIG.check_feed_minutes * 60
+CHECK_FEED_SECONDS = CONFIG.check_feed_minutes * 60
 
 StorySchemaFields = dict(
     unique_id=T.str,

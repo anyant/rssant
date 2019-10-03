@@ -10,7 +10,7 @@ from rest_auth.registration.views import (
     SocialAccountListView, SocialAccountDisconnectView
 )
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from .email_template import EMAIL_CONFIRM_TEMPLATE
 
 
@@ -33,7 +33,7 @@ class RssantAccountAdapter(DefaultAccountAdapter):
         can be `None` here.
         """
         url = 'account-confirm-email/{}'.format(emailconfirmation.key)
-        return urljoin(ENV_CONFIG.root_url, url)
+        return urljoin(CONFIG.root_url, url)
 
     def send_confirmation_mail(self, request, emailconfirmation, signup):
         username = emailconfirmation.email_address.user.username

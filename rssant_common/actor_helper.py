@@ -12,7 +12,7 @@ import backdoor
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from actorlib.sentry import sentry_init
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
 from rssant_common.logger import configure_logging
@@ -146,9 +146,9 @@ def start_actor_cli(*args, actor_type, **kwargs):
 
 
 def start_actor(actor_type, **kwargs):
-    configure_logging(level=ENV_CONFIG.log_level)
-    if ENV_CONFIG.sentry_enable:
-        sentry_init(ENV_CONFIG.sentry_dsn)
+    configure_logging(level=CONFIG.log_level)
+    if CONFIG.sentry_enable:
+        sentry_init(CONFIG.sentry_dsn)
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
     django.setup()
     backdoor.setup()
@@ -166,13 +166,13 @@ def start_actor(actor_type, **kwargs):
     start_actor_cli(
         actor_type=actor_type,
         actors=actors,
-        registery_node_spec=ENV_CONFIG.registery_node_spec,
+        registery_node_spec=CONFIG.registery_node_spec,
         schema_compiler=schema_compiler,
-        storage_dir_path=ENV_CONFIG.actor_storage_path,
-        storage_compact_wal_delta=ENV_CONFIG.actor_storage_compact_wal_delta,
-        queue_max_complete_size=ENV_CONFIG.actor_queue_max_complete_size,
-        max_retry_time=ENV_CONFIG.actor_max_retry_time,
-        max_retry_count=ENV_CONFIG.actor_max_retry_count,
-        token=ENV_CONFIG.actor_token,
+        storage_dir_path=CONFIG.actor_storage_path,
+        storage_compact_wal_delta=CONFIG.actor_storage_compact_wal_delta,
+        queue_max_complete_size=CONFIG.actor_queue_max_complete_size,
+        max_retry_time=CONFIG.actor_max_retry_time,
+        max_retry_count=CONFIG.actor_max_retry_count,
+        token=CONFIG.actor_token,
         **kwargs
     )

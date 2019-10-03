@@ -1,6 +1,6 @@
 from actorlib import ActorClient, ActorRegistery
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 
 
 class SchedulerActorClient:
@@ -8,15 +8,15 @@ class SchedulerActorClient:
         if registery is None:
             registery = self.get_registery()
         if not token:
-            token = ENV_CONFIG.actor_token
+            token = CONFIG.actor_token
         self.registery = registery
         self.client = ActorClient(registery=self.registery, token=token)
 
     @classmethod
     def get_registery(cls):
         registery = ActorRegistery(
-            current_node_spec=ENV_CONFIG.current_node_spec,
-            registery_node_spec=ENV_CONFIG.registery_node_spec,
+            current_node_spec=CONFIG.current_node_spec,
+            registery_node_spec=CONFIG.registery_node_spec,
         )
         return registery
 

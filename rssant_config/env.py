@@ -109,3 +109,6 @@ def load_env_config() -> EnvConfig:
         key = ('RSSANT_' + name).upper()
         configs[name] = os.environ.get(key, None)
     return EnvConfig(configs)
+
+
+CONFIG = load_env_config()

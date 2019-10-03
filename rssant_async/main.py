@@ -7,7 +7,7 @@ import sentry_sdk
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 import backdoor
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from rssant_common.logger import configure_logging
 from rssant_common.helper import is_main_or_wsgi
 
@@ -21,9 +21,9 @@ def create_app():
     configure_logging()
     django.setup()
     backdoor.setup()
-    if ENV_CONFIG.sentry_enable:
+    if CONFIG.sentry_enable:
         sentry_sdk.init(
-            dsn=ENV_CONFIG.sentry_dsn,
+            dsn=CONFIG.sentry_dsn,
             integrations=[AioHttpIntegration()]
         )
     api = web.Application()

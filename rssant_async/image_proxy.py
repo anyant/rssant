@@ -4,7 +4,7 @@ import yarl
 import aiohttp
 from aiohttp.web import StreamResponse, json_response
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from rssant_common.helper import get_referer_of_url, aiohttp_client_session
 from rssant_feedlib.reader import DEFAULT_USER_AGENT, PrivateAddressError
 from rssant_feedlib.async_reader import AsyncFeedReader
@@ -45,7 +45,7 @@ class ImageProxyError(Exception):
 
 
 async def check_private_address(url):
-    if ENV_CONFIG.allow_private_address:
+    if CONFIG.allow_private_address:
         return
     async with AsyncFeedReader() as reader:
         try:

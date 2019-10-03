@@ -1,7 +1,7 @@
 import json
 import aioredis
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 
 
 KEY_PREFIX = "rssant_async_api_"
@@ -16,7 +16,7 @@ class RedisDao:
     async def init(self):
         if self.pool is None:
             self.pool = await aioredis.create_redis_pool(
-                ENV_CONFIG.redis_url, minsize=5, maxsize=20)
+                CONFIG.redis_url, minsize=5, maxsize=20)
 
     async def close(self):
         if self.pool:

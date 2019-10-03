@@ -8,7 +8,7 @@ from http import HTTPStatus
 
 import requests
 
-from rssant.settings import ENV_CONFIG
+from rssant_config import CONFIG
 from rssant_common.helper import resolve_response_encoding
 
 
@@ -149,7 +149,7 @@ class FeedReader:
 
     def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
-        if ENV_CONFIG.allow_private_address:
+        if CONFIG.allow_private_address:
             return
         hostname = urlparse(url).hostname
         for ip in self._resolve_hostname(hostname):
