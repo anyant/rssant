@@ -1,6 +1,19 @@
+from aiohttp.web import Response, Request
 from prometheus_client import Histogram, Gauge, Counter
+from prometheus_client.exposition import choose_encoder, REGISTRY
 
 from .message import ActorMessage
+
+
+async def aiohttp_metrics_handler(request: Request):
+    registry = REGISTRY
+    accept = request.headers.get('Accept')
+    encoder, content_type = choose_encoder(accept)
+    if 'name[]' in request.query:
+        name = request.query['name[]']
+        registry = registry.restricted_registry(name)
+    output = encoder(registry)
+    return Response(body=output, headers={'Content-Type': content_type})
 
 
 ACTOR_QUEUE_OP = Counter(

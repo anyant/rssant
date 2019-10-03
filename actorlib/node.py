@@ -4,7 +4,7 @@ import os.path
 from itertools import chain
 
 from validr import Compiler
-from prometheus_client import start_http_server, Info
+from prometheus_client import Info
 
 from rssant_common.helper import pretty_format_json
 
@@ -31,7 +31,6 @@ class ActorNode:
         actors,
         host='0.0.0.0',
         port=8000,
-        prometheus_port=None,
         concurrency=100,
         name=None,
         subpath=None,
@@ -101,7 +100,6 @@ class ActorNode:
         )
         self.host = host
         self.port = port
-        self.prometheus_port = prometheus_port or (port + 1)
         Info("actor_node", "actor node info").info({'name': self.name})
         self.subpath = subpath or ''
         self.receiver = MessageReceiver(
@@ -148,8 +146,6 @@ class ActorNode:
         LOG.info(f'Actor Node {self.name} at http://{self.host}:{self.port}{self.subpath} started')
         LOG.info(f'current registery:\n{pretty_format_json(self.registery.to_spec())}')
         self.queue.op_restart()
-        start_http_server(port=self.prometheus_port)
-        LOG.info(f'prometheus exporter at http://{self.host}:{self.prometheus_port} started')
         try:
             for handler in self._on_startup_handlers:
                 handler(self)

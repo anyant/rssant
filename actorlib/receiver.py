@@ -9,7 +9,7 @@ from .message import ActorMessage, ContentEncoding, ActorMessageDecodeError, Uns
 from .queue import ActorMessageQueue
 from .registery import ActorRegistery
 from .state import ActorStateError
-
+from .prometheus import aiohttp_metrics_handler
 
 LOG = logging.getLogger(__name__)
 
@@ -97,6 +97,7 @@ class MessageReceiver:
     def create_app(self):
         app = Application(client_max_size=100 * 1024 * 1024)
         app.router.add_post(self.subpath, self.request_handler)
+        app.router.add_get('/metrics', aiohttp_metrics_handler)
         return app
 
     def run(self):
