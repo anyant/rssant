@@ -1,6 +1,3 @@
-import os
-
-import django
 from aiohttp import web
 from aiojobs.aiohttp import setup as setup_aiojobs
 import sentry_sdk
@@ -17,9 +14,7 @@ from .redis_dao import REDIS_DAO
 
 
 def create_app():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
     configure_logging()
-    django.setup()
     backdoor.setup()
     if CONFIG.sentry_enable:
         sentry_sdk.init(
