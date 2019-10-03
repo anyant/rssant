@@ -378,15 +378,19 @@ class ActorState:
 
     def apply_restart(self):
         LOG.debug(f'apply_restart')
-        message_ids = []
+        execute_message_ids = []
+        inbox_message_ids = []
         for message_id, state in self.state.items():
             if state['status'] == EXECUTE:
-                message_ids.append(message_id)
+                execute_message_ids.append(message_id)
             elif state['status'] == INBOX:
                 message = self.get_message(message_id)
                 if message.is_ask:
-                    message_ids.append(message_id)
-        for message_id in message_ids:
+                    inbox_message_ids.append(message_id)
+        for message_id in execute_message_ids:
+            self.apply_done(message_id=message_id, status=ERROR)
+        for message_id in inbox_message_ids:
+            self.apply_execute(message_id=message_id)
             self.apply_done(message_id=message_id, status=ERROR)
 
     def _dump_outbox_state(self, outbox_message_id, outbox_state):
