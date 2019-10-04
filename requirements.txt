@@ -86,6 +86,7 @@ pgcli==2.0.2
 pgspecial==1.11.5
 Pillow==6.1.0
 pluggy==0.12.0
+prometheus-client==0.7.1
 prompt-toolkit==2.0.9
 psutil==5.6.3
 psycopg2==2.7.7
