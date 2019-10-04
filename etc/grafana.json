@@ -46,7 +46,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1569935858262,
+  "iteration": 1570111706533,
   "links": [],
   "panels": [
     {
@@ -273,6 +273,9 @@
         {
           "expr": "histogram_quantile(0.90, rate(actor_executor_time_bucket{job=\"$job\", dst!~\"actor.*\"}[1m]))",
           "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{dst}}",
           "refId": "A"
@@ -362,7 +365,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(actor_queue_op_total{op=\"$op_type\", job=\"$job\", dst!~\"actor.*\"}[1m])",
+          "expr": "sum(rate(actor_queue_op_total{op=\"$op_type\", job=\"$job\", dst!~\"actor.*\"}[1m]) * 60) by (dst)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -413,7 +416,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "10s",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -422,9 +425,11 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "tags": [],
           "text": "All",
-          "value": "$__all"
+          "value": [
+            "$__all"
+          ]
         },
         "hide": 0,
         "includeAll": true,
@@ -497,7 +502,7 @@
     ]
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {
@@ -526,5 +531,5 @@
   "timezone": "",
   "title": "RSSAnt-Actor",
   "uid": "zlLbjW2Wk",
-  "version": 6
+  "version": 8
 }
