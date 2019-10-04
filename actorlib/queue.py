@@ -172,6 +172,7 @@ class ActorQueue:
         self.state.apply_outbox(message_id=message_id, outbox_messages=outbox_messages)
         for x in outbox_messages:
             self.push_outbox(x)
+        self.auto_schedule_fetcher()
 
     def _export_box(self, result, box, retry_base_at):
         priority, outbox_message = heapq.heappop(box)
@@ -502,6 +503,8 @@ class ActorMessageQueue:
                 num_error_notry = actor_queue.check_timeout_and_retry(now)
                 if num_error_notry > 0:
                     self.execute_condition.notify(num_error_notry)
+                # TODO: fix fetcher not auto scheduled in actor queue
+                actor_queue.auto_schedule_fetcher()
                 ACTOR_QUEUE_INBOX_SIZE.labels(dst=actor_queue.actor_name)\
                     .set(actor_queue.inbox_size())
                 ACTOR_QUEUE_OUTBOX_SIZE.labels(dst=actor_queue.actor_name)\
@@ -609,6 +612,7 @@ class ActorMessageQueue:
                 continue
             priority = actor.execute_priority()
             if min_priority is None or priority < min_priority:
+                min_priority = priority
                 min_actor = actor
         if min_actor is not None:
             return min_actor.op_execute()
