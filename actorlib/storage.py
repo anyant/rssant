@@ -182,7 +182,8 @@ class ActorLocalStorageFile:
             self._fileobj.close()
 
     def create_unpacker(self):
-        return msgpack.Unpacker(raw=False, max_buffer_size=self.unpacker_buffer_size)
+        unpacker = msgpack.Unpacker(raw=False, max_buffer_size=self.unpacker_buffer_size)
+        return MsgpackUnpackerWrapper(unpacker)
 
     def close(self):
         self._fileobj.close()
@@ -195,13 +196,18 @@ class ActorLocalStorageFile:
             if not buf:
                 break
             unpacker.feed(buf)
-            for item in unpacker:
-                item = self._message_from_dict(**item)
-                try:
-                    state.apply(**item)
-                except ActorStateError as ex:
-                    LOG.warning(ex)
-                self.wal_size += 1
+            try:
+                for item in unpacker:
+                    item = self._message_from_dict(**item)
+                    try:
+                        state.apply(**item)
+                    except ActorStateError as ex:
+                        LOG.warning(ex)
+                    self.wal_size += 1
+            except DirtyMsgpackFile as ex:
+                LOG.error('dirty msgpack file, will lost some data!', exc_info=ex)
+                self.fileobj.seek(unpacker.tell())
+                break
 
     def save(self, state: ActorState):
         for item in state.dump():
@@ -225,5 +231,31 @@ class ActorLocalStorageFile:
     def append(self, type, **kwargs):
         item = self._message_to_dict(type=type, **kwargs)
         self.fileobj.write(self.packer.pack(item))
-        self.fileobj.flush()
         self.wal_size += 1
+
+
+class DirtyMsgpackFile(Exception):
+    """Dirty msgpack file"""
+
+
+class MsgpackUnpackerWrapper:
+    def __init__(self, unpacker):
+        self._unpacker = unpacker
+
+    def __getattr__(self, *args, **kwargs):
+        return getattr(self._unpacker, *args, **kwargs)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            item = self._unpacker.__next__()
+        except UnicodeDecodeError as ex:
+            raise DirtyMsgpackFile(f'dirty msgpack file {ex}') from ex
+        else:
+            if not isinstance(item, dict):
+                raise DirtyMsgpackFile(f'dirty msgpack item type {type(item)}')
+            return item
+
+    next = __next__
