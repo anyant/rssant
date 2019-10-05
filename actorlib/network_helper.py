@@ -27,7 +27,7 @@ def get_local_node_name():
     same server <-> same node name
     different server <-> different node name
     """
-    items = ['{}-{}'.format(platform.platform(), socket.getfqdn())]
+    items = ['{}-{}'.format(platform.platform(), socket.gethostname())]
     for interface_name, ip in LOCAL_IP_LIST:
         if ip == '127.0.0.1':
             continue
