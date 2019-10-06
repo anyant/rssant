@@ -101,6 +101,9 @@ def do_save_feed_creation_result(
         except FeedCreation.DoesNotExist:
             LOG.warning(f'feed creation {feed_creation_id} not exists')
             return
+        if feed_creation.status == FeedStatus.READY:
+            LOG.info(f'feed creation {feed_creation_id} is ready')
+            return
         feed_creation.message = '\n\n'.join(messages)
         feed_creation.dt_updated = timezone.now()
         if not feed_dict:
@@ -296,7 +299,7 @@ def do_clean_feed_creation(ctx: ActorContext):
 def _retry_feed_creations(ctx: ActorContext, feed_creation_id_urls):
     feed_creation_ids = [id for (id, url) in feed_creation_id_urls]
     FeedCreation.bulk_set_pending(feed_creation_ids)
-    expire_at = time.time() + 2 * 60 * 60
+    expire_at = time.time() + 60 * 60
     for feed_creation_id, url in feed_creation_id_urls:
         ctx.hope('worker_rss.find_feed', dict(
             feed_creation_id=feed_creation_id,
