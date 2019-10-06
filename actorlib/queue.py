@@ -158,7 +158,7 @@ class ActorQueue:
         self.push_inbox(message)
 
     def op_execute(self) -> ActorMessage:
-        while True:
+        while self.inbox:
             priority, message = heapq.heappop(self.inbox)
             if message.is_expired():
                 LOG.warning(f'expired message {message}')
@@ -167,6 +167,7 @@ class ActorQueue:
             self.state.apply_execute(message_id=message.id)
             self.auto_schedule_fetcher()
             return message
+        return None
 
     def op_outbox(self, message_id: str, outbox_messages: [ActorMessage]):
         self.state.apply_outbox(message_id=message_id, outbox_messages=outbox_messages)

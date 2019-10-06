@@ -1,5 +1,6 @@
 import logging
 import os.path
+import time
 from collections import namedtuple
 
 import msgpack
@@ -33,6 +34,7 @@ class ActorLocalStorage:
         self.compact_wal_delta = compact_wal_delta
         self.non_current_wal_size = 0
         self.current_storage = ActorLocalStorageFile(filepath=self.current_filepath)
+        self.last_compact_time = None
         self.is_compacting = False
 
     @property
@@ -56,23 +58,33 @@ class ActorLocalStorage:
     def should_compact(self, state: ActorState):
         if self.is_compacting:
             return False
+        if self.last_compact_time and self.last_compact_time > time.time() - 60:
+            return False
         if self.wal_size < self.compact_wal_delta // 10:
             return False
-        state_wal_size = state.wal_size
-        if self.wal_size > state_wal_size * 3:
+        return self._real_should_compact(state.wal_size)
+
+    def _real_should_compact(self, target_wal_size):
+        if self.wal_size > target_wal_size * 3:
             return True
-        if self.wal_size - state_wal_size > self.compact_wal_delta:
+        if self.wal_size - target_wal_size > self.compact_wal_delta:
             return True
         return False
 
     def prepare_compact(self, state: ActorState) -> CompactPrepareInfo:
         if not self.should_compact(state):
             return None
-        self.is_compacting = True
+        wal_items = list(state.dump())
+        target_wal_size = len(wal_items)
+        if not self._real_should_compact(target_wal_size):
+            LOG.info(f'compact misjudge wal_size={self.wal_size} target_wal_size={target_wal_size}')
+            return None
         LOG.info(
             f'compact begin wal_size={self.wal_size} state_wal_size={state.wal_size} '
-            f'current_filepath={self.current_filepath}'
+            f'target_wal_size={target_wal_size} current_filepath={self.current_filepath}'
         )
+        self.is_compacting = True
+        self.last_compact_time = time.time()
         # switch to next storage
         current_filepath = self.current_filepath
         current_storage = self.current_storage
@@ -83,7 +95,6 @@ class ActorLocalStorage:
         self.current_storage = next_storage
         self.non_current_wal_size += current_storage.wal_size
         current_storage.close()
-        wal_items = list(state.dump())
         return CompactPrepareInfo(current_filepath, wal_items)
 
     def _state_from_wal(self, wal_items: list):

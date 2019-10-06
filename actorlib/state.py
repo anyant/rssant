@@ -137,15 +137,17 @@ class ActorState:
 
     @property
     def wal_size(self):
+        """estimation of wal size"""
         n = len(self.complete_message_state)
         for state in self.state.values():
+            n += 3
             status = state['status']
-            if status in (INBOX, OK, ERROR, ERROR_NOTRY):
-                n += 1
-            elif status == EXECUTE:
-                n += 2
-            elif status == OUTBOX:
-                n += 8
+            if status == OUTBOX:
+                for outbox_state in state['outbox_states'].values():
+                    executed_count = outbox_state.get('executed_count')
+                    if executed_count and executed_count > 0:
+                        n += (executed_count - 1) * 2
+                    n += 2
         for dst, state in self.upstream.items():
             n += len(state)
         return n
