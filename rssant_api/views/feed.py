@@ -14,6 +14,7 @@ from rssant_api.models.feed import FeedDetailSchema
 from rssant_api.models import UnionFeed, FeedCreation
 from rssant.settings import BASE_DIR
 from rssant_common.actor_client import scheduler
+from rssant_common.helper import timer
 from .helper import check_unionid
 from .errors import RssantAPIException
 
@@ -272,7 +273,8 @@ def feed_import_bookmark(request) -> FeedImportResultSchema:
 @FeedView.post('feed/import')
 def feed_import(request, text: T.str) -> FeedImportResultSchema:
     """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
-    urls = import_feed_from_text(text)
+    with timer('Import-Feed-From-Text'):
+        urls = import_feed_from_text(text)
     is_from_bookmark = len(urls) > 100
     return _create_feeds_by_urls(request.user, urls, is_from_bookmark=is_from_bookmark)
 

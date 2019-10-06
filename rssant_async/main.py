@@ -14,7 +14,7 @@ from .redis_dao import REDIS_DAO
 
 
 def create_app():
-    configure_logging()
+    configure_logging(level=CONFIG.log_level)
     backdoor.setup()
     if CONFIG.sentry_enable:
         sentry_sdk.init(

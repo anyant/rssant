@@ -713,9 +713,12 @@ class UnionFeed:
             else:
                 url_map[url] = target
         found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
+        feed_id_map = {x.id: x for x in found_feeds}
         feed_map = {x.url: x for x in found_feeds}
         q = UserFeed.objects.filter(user_id=user_id, feed__in=found_feeds).all()
         user_feed_map = {x.feed_id: x for x in q.all()}
+        for x in user_feed_map.values():
+            x.feed = feed_id_map[x.feed_id]
         # 多个url匹配到同一个feed的情况，user_feed只能保存一个，要根据feed_id去重
         new_user_feed_ids = set()
         new_user_feeds = []
@@ -732,7 +735,7 @@ class UnionFeed:
                 feed_creations.append(feed_creation)
         new_user_feeds = []
         for feed_id in new_user_feed_ids:
-            user_feed = UserFeed(user_id=user_id, feed_id=feed_id)
+            user_feed = UserFeed(user_id=user_id, feed=feed_id_map[feed_id])
             new_user_feeds.append(user_feed)
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)

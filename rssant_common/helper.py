@@ -1,12 +1,18 @@
 import os
 import json
+import time
 import codecs
+import logging
+import contextlib
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
 import cchardet
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
+
+
+LOG = logging.getLogger(__name__)
 
 
 def is_main_or_wsgi(name):
@@ -124,3 +130,16 @@ def aiohttp_client_session(*, timeout=None, **kwargs):
         timeout = aiohttp.ClientTimeout(total=timeout)
     connector = aiohttp.TCPConnector(resolver=aiohttp.AsyncResolver())
     return aiohttp.ClientSession(connector=connector, timeout=timeout, **kwargs)
+
+
+@contextlib.contextmanager
+def timer(name, response=None):
+    t_begin = time.time()
+    try:
+        yield
+    finally:
+        cost = (time.time() - t_begin) * 1000
+        if LOG.isEnabledFor(logging.DEBUG):
+            LOG.debug(f'Timer X-{name}-Time: {cost:.0f}ms')
+            if response:
+                response[f'X-{name}-Time'] = f'{cost:.0f}ms'

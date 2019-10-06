@@ -3,6 +3,7 @@ import os
 import sys
 import time
 
+from rssant_config import CONFIG
 from rssant_common.logger import configure_logging
 
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
-    configure_logging()
+    configure_logging(level=CONFIG.log_level)
     while True:
         try:
             execute_from_command_line(sys.argv)
