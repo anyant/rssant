@@ -9,11 +9,23 @@ import traceback
 from collections import defaultdict
 
 import objgraph
-import pandas as pd
 from pympler import muppy, summary
 
-from .helper import shorten
+from .server import BackdoorServer
+from .helper import shorten, format_number
 from .asyncio_tools import get_event_loops, format_async_stack, get_all_tasks
+
+
+_INIT_MEMORY_SNAPSHOT = None
+
+
+def setup():
+    global _INIT_MEMORY_SNAPSHOT
+    if tracemalloc.is_tracing():
+        _INIT_MEMORY_SNAPSHOT = tracemalloc.take_snapshot()
+    server = BackdoorServer()
+    server.start()
+    return server
 
 
 def get(name):
@@ -42,20 +54,17 @@ def print_top_stats(top_stats, limit=10):
     print("Total allocated size: %.1f KiB" % (total / 1024))
 
 
-def top_diff(seconds=10, key_type='lineno', limit=10):
-    snapshot1 = tracemalloc.take_snapshot()
-    time.sleep(seconds)
+def top_diff(key_type='lineno', limit=10):
+    if _INIT_MEMORY_SNAPSHOT is None:
+        print('tracemalloc not enabled')
+        return
     snapshot2 = tracemalloc.take_snapshot()
-    top_stats = snapshot2.compare_to(snapshot1, key_type)
+    top_stats = snapshot2.compare_to(_INIT_MEMORY_SNAPSHOT, key_type)
     print_top_stats(top_stats, limit=limit)
 
 
 def top(key_type='lineno', limit=10):
     snapshot = tracemalloc.take_snapshot()
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
     top_stats = snapshot.statistics(key_type)
     print_top_stats(top_stats, limit=limit)
 
@@ -135,25 +144,48 @@ def _get_module(x):
         return None
 
 
-def df_types(objects=None):
+def df_types(objects=None, limit=100, output=True):
     if objects is None:
         objects = gc.get_objects()
     items = []
     for x in objects:
         mod = _get_module(x)
-        type_name = mod + '.' + _get_type_name(x)
+        type_name = _get_type_name(x)
         items.append((
             mod,
             type_name,
             _super_len(x),
             sys.getsizeof(x, 0)
         ))
-    df = pd.DataFrame(items, columns=['module', 'type', 'len', 'size'])
-    df_count = df[['type']].groupby('type').size().reset_index(name='count')
-    df_sum = df[['type', 'len', 'size']].groupby('type').sum().reset_index()
-    df = df_count.merge(df_sum, on='type')
-    df = df.sort_values(['count', 'len', 'size'], ascending=False)
-    return df
+    results = defaultdict(lambda: [0, 0, 0])
+    for mod, type_name, length, size in items:
+        values = results[(mod, type_name)]
+        values[0] += 1
+        values[1] += length
+        values[2] += size
+    results = [(*k, *v) for k, v in results.items()]
+    results = list(sorted(results, key=lambda x: x[2], reverse=True))
+    if output:
+        if isinstance(output, str):
+            lines = ['module,type,count,length,size']
+            for mod, type_name, count, length, size in results[:limit]:
+                lines.append(f'{mod},{type_name},{count},{length},{size}')
+            lines = '\n'.join(lines)
+            if output == '-':
+                print(lines)
+            else:
+                with open(output, 'w') as output_file:
+                    output_file.write(lines)
+        else:
+            print('{:>30s} {:<35s} {:>6s} {:>6s} {:>6s}'.format(
+                'module', 'type', 'count', 'length', 'size'))
+            for mod, type_name, count, length, size in results[:limit]:
+                print('{:>30s} {:<35s} {:>6s} {:>6s} {:>6s}'.format(
+                    mod, type_name, format_number(count),
+                    format_number(length), format_number(size)
+                ))
+    else:
+        return results
 
 
 def print_stack():
@@ -184,3 +216,8 @@ def print_async_stack():
             print('-' * 79 + '\n')
         _print_async_tasks_stack(loop, thread)
     print("\n*** STACKTRACE - END ***\n")
+
+
+if __name__ == "__main__":
+    tracemalloc.start()
+    setup()

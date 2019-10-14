@@ -17,6 +17,14 @@ def shorten(text, width, placeholder='...'):
     return text[: max(0, width - len(placeholder))] + placeholder
 
 
+def format_number(n):
+    if n < 10**3:
+        return str(n)
+    if n < 10**6:
+        return '{}K'.format(n // 10**3)
+    return '{}M'.format(n // 10**6)
+
+
 class BackdoorRequest:
     def __init__(self, command, params=None):
         self.command = command

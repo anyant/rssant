@@ -1,4 +1,4 @@
-from .server import setup
+from .tools import setup
 
 
 __all__ = ('setup',)

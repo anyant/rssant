@@ -193,13 +193,9 @@ class BackdoorHandler:
         return response.to_dict()
 
 
-def setup():
-    server = BackdoorServer()
-    server.start()
-    return server
-
-
 if __name__ == "__main__":
     from rssant_common.logger import configure_logging
     configure_logging()
-    setup().thread.join()
+    server = BackdoorServer()
+    server.start()
+    server.thread.join()
