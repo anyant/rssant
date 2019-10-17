@@ -1,31 +1,30 @@
 # django
-Django==2.1.7
-djangorestframework==3.9.1
-django-debug-toolbar==1.11
-django-extensions==2.1.6
-django-allauth==0.38.0
-django-rest-auth==0.9.3
+Django==2.2.6
+djangorestframework==3.10.3
+django-debug-toolbar==2.0
+django-extensions==2.2.3
+django-allauth==0.40.0
 django-rest-swagger==2.2.0
-django-timezone-field==3.0
+django-timezone-field==3.1
 django-click==2.1.0
 django-optimistic-lock==1.0.0
 jsonfield==2.0.2
 
 # wsgi
-whitenoise==4.1.2
+whitenoise==4.1.4
 gunicorn==19.9.0
 
 # postgres
 psycopg2==2.7.7
 psycopg2-binary==2.7.7
 SQLAlchemy==1.2.18
-django-postgrespool2==0.2.0
+django-postgrespool2==1.0.0
 pgcli==2.0.2
 sqlparse==0.2.4
 
 # feedlibs
-requests==2.21.0
-certifi==2018.11.29
+requests==2.22.0
+certifi==2019.9.11
 chardet==3.0.4
 cchardet==2.1.4
 feedparser==5.2.1
@@ -37,9 +36,9 @@ html2text==2018.1.9
 readability-lxml==0.7.1
 
 # aiolibs
-aiohttp==3.5.4
+aiohttp==3.6.2
 aiodns==2.0.0
-aiohttp-devtools==0.13
+aiohttp-devtools==0.13.1
 aiojobs==0.2.2
 aiocontextvars==0.2.2  # Python 3.6
 
@@ -52,22 +51,22 @@ prometheus-client==0.7.1
 Brotli==1.0.7
 validr==1.1.1
 attrdict==2.0.1
-msgpack==0.6.1
+msgpack==0.6.2
 loguru==0.3.1
 netifaces==0.10.9
 python-slugify==3.0.2
 validators==0.14.0
 Click==6.7
-PyYAML==3.13
-Mako==1.0.9
+PyYAML==5.1.2
+Mako==1.1.0
 tqdm==4.31.1
 cached-property==1.5.1
 python-dotenv==0.10.2
 
 # test
-pytest==4.6.2
-pytest-cov==2.7.1
-coverage==4.5.3
+pytest==5.2.1
+pytest-cov==2.8.1
+coverage==4.5.4
 
 # package
 pip-tools==4.2.0
