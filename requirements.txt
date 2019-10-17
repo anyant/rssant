@@ -39,6 +39,7 @@ django-debug-toolbar==2.0
 django-extensions==2.2.3
 django-optimistic-lock==1.0.0
 django-postgrespool2==1.0.0
+django-rest-auth==0.9.5
 django-rest-swagger==2.2.0
 django-timezone-field==3.1
 django==2.2.6
@@ -106,7 +107,7 @@ sentry-sdk==0.9.0
 setproctitle==1.1.10      # via pgcli
 shiv==0.0.50
 simplejson==3.16.0        # via django-rest-swagger
-six==1.12.0               # via attrdict, configobj, django-click, django-extensions, packaging, pip-tools, prompt-toolkit, validators
+six==1.12.0               # via attrdict, configobj, django-click, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
 soupsieve==1.9.4          # via beautifulsoup4
 sqlalchemy==1.2.18
 sqlparse==0.2.4
