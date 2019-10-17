@@ -26,7 +26,6 @@ django.contrib.gis.*
 django.db.*oracle*
 django.db.*mysql*
 tornado.platform.windows
-raven.contrib.django.celery.models
 coreschema.encodings.corejson
 readability.compat.two
 nltk.tokenize.nist

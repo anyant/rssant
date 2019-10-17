@@ -11,7 +11,6 @@ from rssant_common.helper import format_table, get_referer_of_url, pretty_format
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_common import unionid
-from rssant_api.tasks import rss
 
 
 LOG = logging.getLogger(__name__)
@@ -73,24 +72,6 @@ def update_feed_story_publish_period(feeds=None):
 
 
 @main.command()
-@click.argument('feed-id')
-@click.option('--force', default=False, is_flag=True,
-              help='force refresh if feed or story not modified')
-def sync_feed(feed_id, force=False):
-    async_result = rss.sync_feed.delay(feed_id=feed_id, force=force)
-    LOG.info(f'celery task id {async_result.id}')
-
-
-@main.command()
-@click.argument('feed-id')
-def refresh_feed_storys(feed_id):
-    feed = Feed.objects.get(pk=feed_id)
-    storys = list(Story.objects.filter(feed_id=feed_id).order_by('offset').all())
-    LOG.info(f'refresh_feed_storys feed_id={feed_id} num_storys={len(storys)}')
-    rss.fetch_feed_storys(feed, storys, is_refresh=True)
-
-
-@main.command()
 @click.argument('unionid_text')
 def decode_unionid(unionid_text):
     numbers = unionid.decode(unionid_text)
@@ -100,22 +81,6 @@ def decode_unionid(unionid_text):
         click.echo('user_id={} feed_id={}'.format(*numbers))
     else:
         click.echo(numbers)
-
-
-@main.command()
-def clean_celery_tables():
-    sql = """
-    truncate
-    django_celery_beat_crontabschedule,
-    django_celery_beat_intervalschedule,
-    django_celery_beat_solarschedule,
-    django_celery_beat_periodictask,
-    django_celery_beat_periodictasks,
-    django_celery_results_taskresult;
-    """
-    LOG.info('truncate django_celery_* tables')
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
 
 
 @main.command()
