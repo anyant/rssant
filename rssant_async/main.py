@@ -9,8 +9,6 @@ from rssant_common.logger import configure_logging
 from rssant_common.helper import is_main_or_wsgi
 
 from .views import routes
-from .callback_client import CallbackClient
-from .redis_dao import REDIS_DAO
 
 
 def create_app():
@@ -26,9 +24,6 @@ def create_app():
     app = web.Application()
     app.add_subapp('/api/v1', api)
     setup_aiojobs(app, limit=5000, pending_limit=5000)
-    app.on_cleanup.append(lambda app: CallbackClient.close())
-    app.on_startup.append(lambda app: REDIS_DAO.init())
-    app.on_cleanup.append(lambda app: REDIS_DAO.close())
     return app
 
 

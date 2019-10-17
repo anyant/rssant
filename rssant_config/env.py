@@ -18,8 +18,6 @@ class EnvConfig:
     debug = T.bool.default(True).desc('debug')
     log_level = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url = T.url.relaxed.default('http://localhost:6789')
-    async_url_prefix = T.url.relaxed.default('http://localhost:6786/api/v1')
-    async_callback_url_prefix = T.url.relaxed.default('http://localhost:6788/api/v1')
     scheduler_network = T.str.default('localhost')
     scheduler_url = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
     scheduler_extra_networks = T.str.optional.desc('eg: name@url,name@url')
@@ -39,16 +37,12 @@ class EnvConfig:
     pg_db = T.str.default('rssant').desc('postgres database')
     pg_user = T.str.default('rssant').desc('postgres user')
     pg_password = T.str.default('rssant').desc('postgres password')
-    # celery redis
-    redis_url = T.str.default('redis://localhost:6379/0').desc('redis url')
     # github login
     github_client_id = T.str.optional
     github_secret = T.str.optional
     # sentry
     sentry_enable = T.bool.default(False)
     sentry_dsn = T.str.optional
-    # celery sentry
-    is_celery_process = T.bool.optional
     # email smtp
     admin_email = T.email.default('admin@localhost.com')
     smtp_enable = T.bool.default(False)

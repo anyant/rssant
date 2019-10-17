@@ -6,6 +6,7 @@ docker volume create rssant-postgres || true
 
 docker volume create rssant_postgres
 
+docker rm -f rssant-postgres
 docker run -d \
     --name rssant-postgres \
     --network rssant \

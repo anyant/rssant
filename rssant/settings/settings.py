@@ -11,15 +11,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
-import sys
 import os.path
 from os.path import dirname, abspath
 from rssant_config import CONFIG as ENV_CONFIG
-
-if ENV_CONFIG.is_celery_process is None:
-    IS_CELERY_PROCESS = 'celery' in sys.argv[0]
-else:
-    IS_CELERY_PROCESS = ENV_CONFIG.is_celery_process
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = dirname(dirname(dirname(abspath(__file__))))
@@ -56,8 +50,6 @@ if ENV_CONFIG.sentry_enable:
 
 INSTALLED_APPS.extend([
     'debug_toolbar',
-    'django_celery_results',
-    'django_celery_beat',
     'django_extensions',
     'rest_framework',
     'rest_framework_swagger',
@@ -173,36 +165,14 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'data', 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Sentry, 在celery进程中不要配置django的sentry
-if not IS_CELERY_PROCESS and ENV_CONFIG.sentry_enable:
+if ENV_CONFIG.sentry_enable:
     RAVEN_CONFIG = {
         'dsn': ENV_CONFIG.sentry_dsn,
     }
 
 # RSSANT
-
 RSSANT_CHECK_FEED_SECONDS = 60 * ENV_CONFIG.check_feed_minutes
 RSSANT_CONTENT_HASH_METHOD = 'sha1'
-
-# Celery tasks
-
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_BROKER_URL = ENV_CONFIG.redis_url
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_WORKER_PREFETCH_MULTIPLIER = 1
-CELERY_BEAT_SCHEDULE = {
-    'check-feed-every-10-seconds': {
-        'task': 'rssant.tasks.check_feed',
-        'schedule': 10,
-        'kwargs': {'seconds': RSSANT_CHECK_FEED_SECONDS}
-    },
-    'clean-feed-creation-every-60-seconds': {
-        'task': 'rssant.tasks.clean_feed_creation',
-        'schedule': 60,
-        'kwargs': {}
-    }
-}
-
 
 # Django All Auth
 ACCOUNT_EMAIL_REQUIRED = True
