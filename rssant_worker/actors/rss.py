@@ -79,7 +79,7 @@ def validate_feed(feed):
             story = _validate_story(story)
         except Invalid as ex:
             story_info = story.get('link') or story.get('title') or story.get('link')
-            LOG.error(f'{ex}, feed={feed_info}, story={story_info}')
+            LOG.warning(f'{ex}, feed={feed_info}, story={story_info}')
         else:
             storys.append(story)
     feed_data['storys'] = storys
@@ -340,4 +340,6 @@ def _get_story_unique_id(entry):
     unique_id = entry['id']
     if not unique_id:
         unique_id = entry['link']
+    if not unique_id:
+        unique_id = entry['title']
     return unique_id
