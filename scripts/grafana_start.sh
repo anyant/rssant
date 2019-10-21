@@ -1,5 +1,6 @@
 #!/bin/bash
 
+docker volume create rssant_grafana_storage
 docker rm -f rssant-grafana
 docker run -d \
     --name rssant-grafana \
@@ -7,7 +8,8 @@ docker run -d \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
     --restart unless-stopped \
     --memory=200M \
-    --cpus=0.2 \
+    --cpus=0.5 \
+    -v rssant_grafana_storage:/var/lib/grafana \
     -e "GF_SERVER_ROOT_URL=http://localhost:3000" \
     -e "GF_SECURITY_ADMIN_PASSWORD=grafana" \
     -p 127.0.0.1:3000:3000 \
