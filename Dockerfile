@@ -11,13 +11,13 @@ RUN apt-get update && \
         dnsutils iputils-ping iproute2
 
 ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
-ENV PIP_INDEX_URL=$PYPI_MIRROR
+ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN python3 manage.py collectstatic
+RUN python manage.py collectstatic
 
 EXPOSE 6788 6786
 
