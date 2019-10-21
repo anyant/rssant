@@ -106,7 +106,11 @@ def do_find_feed(
 
     finder = FeedFinder(url, message_handler=message_handler)
     found = finder.find()
-    feed = _parse_found(found) if found else None
+    try:
+        feed = _parse_found(found) if found else None
+    except Invalid as ex:
+        message_handler(f'invalid feed: {ex}')
+        feed = None
     ctx.tell('harbor_rss.save_feed_creation_result', dict(
         feed_creation_id=feed_creation_id,
         messages=messages,
@@ -138,7 +142,11 @@ def do_sync_feed(
     if parsed.bozo:
         LOG.warning(f'failed parse feed#{feed_id} url={unquote(url)}: {parsed.bozo_exception}')
         return
-    feed = _parse_found(parsed)
+    try:
+        feed = _parse_found(parsed)
+    except Invalid as ex:
+        LOG.warning(f'invalid feed#{feed_id} url={unquote(url)}: {ex}', exc_info=ex)
+        return
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 
 
