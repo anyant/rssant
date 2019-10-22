@@ -152,6 +152,14 @@ def do_update_feed(
         feed_dict = feed
         storys = feed_dict.pop('storys')
         feed = Feed.get_by_pk(feed_id)
+        is_feed_url_changed = feed.url != feed_dict['url']
+        if is_feed_url_changed:
+            target_feed = Feed.get_first_by_url(feed_dict['url'])
+            if target_feed:
+                LOG.info(f'merge feed#{feed.id} url={feed.url} into '
+                         f'feed#{target_feed.id} url={target_feed.url}')
+                target_feed.merge(feed)
+                return
         for k, v in feed_dict.items():
             if v != '' and v is not None:
                 setattr(feed, k, v)

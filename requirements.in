@@ -68,6 +68,7 @@ python-dotenv==0.10.2
 pytest==5.2.1
 pytest-cov==2.8.1
 coverage==4.5.4
+flask==1.1.1
 
 # package
 pip-tools==4.2.0

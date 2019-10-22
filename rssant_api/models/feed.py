@@ -20,11 +20,13 @@ class FeedStatus:
     3. 定时器扫描，Feed加入队列, status=pending
        爬虫开始抓取, status=updating
        更新内容, status=ready，更新失败 status=error
+    4. 当更新feed时发生重定向，且新URL对应的feed已存在，则将旧feed合并到新feed，旧feed标记为DISCARD
     """
     PENDING = 'pending'
     UPDATING = 'updating'
     READY = 'ready'
     ERROR = 'error'
+    DISCARD = 'discard'
 
 
 FEED_STATUS_CHOICES = extract_choices(FeedStatus)
@@ -99,6 +101,29 @@ class Feed(Model, ContentHashMixin):
         **optional, help_text="最老或18个月前发布的story的发布时间")
     dt_latest_story_published = models.DateTimeField(
         **optional, help_text="最新的story发布时间")
+
+    def merge(self, other: "Feed"):
+        """
+        Merge other feed to self by change other's userfeeds' feed_id to self id.
+        User stotys are ignored / not handled.
+        """
+        user_feeds = UserFeed.objects.only('id', 'user_id', 'feed_id')\
+            .filter(feed_id__in=(self.id, other.id)).all()
+        self_user_ids = set()
+        other_user_feeds = []
+        for user_feed in user_feeds:
+            if user_feed.feed_id == self.id:
+                self_user_ids.add(user_feed.user_id)
+            else:
+                other_user_feeds.append(user_feed)
+        updates = []
+        for user_feed in other_user_feeds:
+            if user_feed.user_id not in self_user_ids:
+                user_feed.feed_id = self.id
+                updates.append(user_feed)
+        UserFeed.objects.bulk_update(updates, ['feed_id'])
+        other.status = FeedStatus.DISCARD
+        other.save()
 
     def to_dict(self, detail=False):
         ret = dict(
