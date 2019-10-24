@@ -5,6 +5,7 @@ import lxml.etree
 import lxml.html
 from lxml.html import soupparser
 from lxml.html.clean import Cleaner
+from readability import Document as ReadabilityDocument
 
 RE_IMG = re.compile(
     r'(?:<img\s*.*?\s+src="([^"]+?)")|'
@@ -91,12 +92,24 @@ class StoryImageProcessor:
         return ''.join(content_chunks)
 
 
+def story_readability(content):
+    """
+    >>> content = '<p>hello world</p>'
+    >>> print(story_readability(content))
+    <body id="readabilityBody"><p>hello world</p></body>
+    """
+    if (not content) or (not content.strip()):
+        return ""
+    doc = ReadabilityDocument(content)
+    return doc.summary(html_partial=True) or ""
+
+
 RE_BLANK_LINE = re.compile(r'(\n\s*)(\n\s*)+')
 
 lxml_html_parser = lxml.html.HTMLParser(
     remove_blank_text=True, remove_comments=True, collect_ids=False)
 
-lxml_html_cleaner = Cleaner(
+lxml_text_html_cleaner = Cleaner(
     scripts=True,
     javascript=True,
     comments=True,
@@ -109,7 +122,10 @@ lxml_html_cleaner = Cleaner(
     frames=True,
     forms=True,
     annoying_tags=True,
-    kill_tags=set(['code', 'pre', 'img', 'video']),
+    safe_attrs_only=True,
+    add_nofollow=True,
+    remove_tags=set(['body']),
+    kill_tags=set(['code', 'pre', 'img', 'video', 'noscript']),
 )
 
 
@@ -135,7 +151,7 @@ def story_html_to_text(content, clean=True):
         return ""
     try:
         if clean:
-            content = lxml_html_cleaner.clean_html(content).strip()
+            content = lxml_text_html_cleaner.clean_html(content).strip()
         if not content:
             return ""
         r = lxml.html.fromstring(content, parser=lxml_html_parser)
@@ -143,6 +159,51 @@ def story_html_to_text(content, clean=True):
     except lxml.etree.ParserError:
         content = soupparser.fromstring(content).text_content().strip()
     return RE_BLANK_LINE.sub('\n', content)
+
+
+lxml_story_html_cleaner = Cleaner(
+    scripts=True,
+    javascript=True,
+    comments=True,
+    style=True,
+    links=True,
+    meta=True,
+    page_structure=True,
+    processing_instructions=True,
+    embedded=True,
+    frames=True,
+    forms=True,
+    annoying_tags=True,
+    safe_attrs_only=True,
+    add_nofollow=True,
+    remove_tags=set(['body']),
+    kill_tags=set(['noscript']),
+)
+
+
+def story_html_clean(content):
+    """
+    >>> content = '''<html><head><style></style></head><body>
+    ... <pre stype="xxx">
+    ...
+    ... hello world</pre>
+    ... <p>happy day</p>
+    ... </body></html>
+    ... '''
+    >>> print(story_html_clean(content))
+    <div>
+    <pre>
+    <BLANKLINE>
+    hello world</pre>
+    <p>happy day</p>
+    </div>
+    """
+    if (not content) or (not content.strip()):
+        return ""
+    content = lxml_story_html_cleaner.clean_html(content).strip()
+    if not content:
+        return ""
+    return content
 
 
 RE_V2EX = re.compile(r'^http(s)?://[a-zA-Z0-9_\.\-]*\.v2ex\.com', re.I)

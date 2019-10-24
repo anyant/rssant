@@ -9,12 +9,12 @@ import yarl
 from validr import T, Invalid
 from attrdict import AttrDict
 from django.utils import timezone
-from readability import Document as ReadabilityDocument
+
 from actorlib import actor, ActorContext
 
 from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
-from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
+from rssant_feedlib.processor import StoryImageProcessor, story_readability, story_html_to_text, story_html_clean
 from rssant_feedlib.blacklist import compile_url_blacklist
 
 from rssant.helper.content_hash import compute_hash_base64
@@ -167,10 +167,15 @@ async def do_fetch_story(
     if not response.rssant_text:
         LOG.error(f'story#{story_id} url={unquote(url)} response text is empty!')
         return
+    content = response.rssant_text
+    if len(content) >= 1024 * 1024:
+        content = story_html_clean(content)
+        if len(content) >= 1024 * 1024:
+            LOG.error(f'too large story#{story_id} size={len(content)} url={url}')
     await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
-        text=response.rssant_text,
+        text=content,
     ))
 
 
@@ -179,7 +184,7 @@ def do_process_story_webpage(
     ctx: ActorContext,
     story_id: T.int,
     url: T.url,
-    text: T.str,
+    text: T.str.maxlen(5 * 1024 * 1024),
 ):
     # https://github.com/dragnet-org/dragnet
     # https://github.com/misja/python-boilerpipe
@@ -190,8 +195,7 @@ def do_process_story_webpage(
     text = text.strip()
     if not text:
         return
-    doc = ReadabilityDocument(text)
-    content = doc.summary()
+    content = story_readability(text)
     summary = shorten(story_html_to_text(content), width=300)
     if not summary:
         return
@@ -299,6 +303,7 @@ def _get_storys(entries):
             content = data["description"]
         if not content:
             content = data["summary"]
+        content = story_html_clean(content)
         story['content'] = content
         summary = data["summary"]
         if not summary:

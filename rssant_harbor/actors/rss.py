@@ -181,7 +181,7 @@ def do_update_feed(
         )
     need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
-        if need_fetch_story:
+        if need_fetch_story and (not story.content):
             ctx.hope('worker_rss.fetch_story', dict(
                 url=story.link,
                 story_id=str(story.id)
