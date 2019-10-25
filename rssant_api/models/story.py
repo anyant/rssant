@@ -6,6 +6,7 @@ from validr import T
 from rssant_feedlib.processor import story_html_to_text
 from rssant_common.validator import StoryUnionId, FeedUnionId
 from rssant_common.detail import Detail
+from rssant_api.monthly_story_count import MonthlyStoryCount
 from .helper import Model, ContentHashMixin, models, optional, User
 from .feed import Feed, UserFeed
 from .errors import FeedNotFoundError, StoryNotFoundError
@@ -106,7 +107,7 @@ class Story(Model, ContentHashMixin):
         storys = Story._dedup_sort_storys(storys)
         with transaction.atomic():
             feed = Feed.objects\
-                .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+                .only('_version', 'monthly_story_count_data', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
                 .get(pk=feed_id)
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
@@ -148,6 +149,7 @@ class Story(Model, ContentHashMixin):
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
                 early_dt_published = new_story_objects[0].dt_published
                 num_reallocate = Story._reallocate_offset(feed.id, early_dt_published)
+                Story._update_feed_monthly_story_count(feed, new_story_objects)
                 Story._update_feed_story_publish_period(feed, total_storys=offset)
             else:
                 num_reallocate = 0
@@ -192,6 +194,39 @@ class Story(Model, ContentHashMixin):
     def reallocate_offset(feed_id, early_dt_published=None):
         with transaction.atomic():
             return Story._reallocate_offset(feed_id, early_dt_published=early_dt_published)
+
+    @staticmethod
+    def _update_feed_monthly_story_count(feed, new_story_objects):
+        monthly_story_count = MonthlyStoryCount.load(feed.monthly_story_count_data)
+        for story in new_story_objects:
+            if not story.dt_published:
+                continue
+            year, month = story.dt_published.year, story.dt_published.month
+            count = monthly_story_count.get(year, month)
+            monthly_story_count.put(year, month, count + 1)
+        feed.monthly_story_count_data = monthly_story_count.dump()
+        feed.save()
+
+    @staticmethod
+    def refresh_feed_monthly_story_count(feed_id):
+        count_sql = """
+        SELECT
+            CAST(EXTRACT(YEAR FROM dt_published) AS INTEGER) AS year,
+            CAST(EXTRACT(MONTH FROM dt_published) AS INTEGER) AS month,
+            count(1) as count
+        FROM rssant_api_story
+        WHERE feed_id = %s AND dt_published IS NOT NULL
+        GROUP BY
+            CAST(EXTRACT(YEAR FROM dt_published) AS INTEGER),
+            CAST(EXTRACT(MONTH FROM dt_published) AS INTEGER);
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(count_sql, [feed_id])
+            items = [map(int, row) for row in cursor.fetchall()]
+        monthly_story_count_data = MonthlyStoryCount(items).dump()
+        with transaction.atomic():
+            Feed.objects.filter(pk=feed_id)\
+                .update(monthly_story_count_data=monthly_story_count_data)
 
     @staticmethod
     def _update_feed_story_publish_period(feed, total_storys):

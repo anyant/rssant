@@ -7,6 +7,7 @@ from validr import T
 
 from rssant_common.validator import FeedUnionId
 from rssant_common.detail import Detail
+from rssant_api.monthly_story_count import MonthlyStoryCount
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
@@ -91,6 +92,8 @@ class Feed(Model, ContentHashMixin):
     content_length = models.IntegerField(
         **optional, help_text='length of content')
     # 其他
+    monthly_story_count_data = models.BinaryField(
+        **optional, max_length=514, help_text="monthly story count data")
     total_storys = models.IntegerField(
         **optional, default=0, help_text="Number of total storys")
     story_publish_period = models.IntegerField(
@@ -154,6 +157,10 @@ class Feed(Model, ContentHashMixin):
                 dt_synced=self.dt_synced,
             )
         return ret
+
+    @property
+    def monthly_story_count(self):
+        return MonthlyStoryCount.load(self.monthly_story_count_data)
 
     @staticmethod
     def get_by_pk(feed_id):
