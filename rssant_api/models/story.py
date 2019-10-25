@@ -222,7 +222,12 @@ class Story(Model, ContentHashMixin):
         """
         with connection.cursor() as cursor:
             cursor.execute(count_sql, [feed_id])
-            items = [map(int, row) for row in cursor.fetchall()]
+            rows = list(cursor.fetchall())
+        items = []
+        for row in rows:
+            year, month, count = map(int, row)
+            if 1970 <= year <= 9999:
+                items.append((year, month, count))
         monthly_story_count_data = MonthlyStoryCount(items).dump()
         with transaction.atomic():
             Feed.objects.filter(pk=feed_id)\
