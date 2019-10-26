@@ -7,10 +7,53 @@ from lxml.html import soupparser
 from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
 
+from .importer import RE_URL
+
 RE_IMG = re.compile(
     r'(?:<img\s*.*?\s+src="([^"]+?)")|'
     r'(?:<source\s*.*?\s+srcset="([^"]+?)")',
     re.I | re.M)
+
+RE_LINK = re.compile(r'<a\s*.*?\s+href="([^"]+?)"', re.I | re.M)
+
+
+def story_image_count(content):
+    if not content:
+        return 0
+    return len(RE_IMG.findall(content))
+
+
+def story_url_count(content):
+    """
+    >>> content = '''
+    ... <p><a class="xxx" href="https://rss.anyant.com/1">link1</a>
+    ... http://www.example.com
+    ... baidu.com asp.net
+    ... <a href="https://rss.anyant.com/2" target="_blank">link2</a>
+    ... </p>
+    ... '''
+    >>> story_url_count(content)
+    3
+    """
+    if not content:
+        return 0
+    return len(RE_URL.findall(content))
+
+
+def story_link_count(content):
+    """
+    >>> content = '''
+    ... <p><a class="xxx" href="https://rss.anyant.com/1">link1</a>
+    ... <a href="https://rss.anyant.com/2" target="_blank">link2</a>
+    ... </p>
+    ... '''
+    >>> story_link_count(content)
+    2
+    """
+    if not content:
+        return 0
+    return len(RE_LINK.findall(content))
+
 
 StoryImageIndexItem = namedtuple('StoryImageIndexItem', 'pos, endpos, value')
 
@@ -28,6 +71,8 @@ class StoryImageProcessor:
     ... </picture>
     ... <img data-src="/error.jpg" src="/ok.jpg">
     ... '''
+    >>> story_image_count(content)
+    5
     >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
     >>> image_indexs = processor.parse()
     >>> len(image_indexs)

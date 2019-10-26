@@ -12,6 +12,7 @@ from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
+from rssant_api.monthly_story_count import id_of_month, month_of_id
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
 from rssant_common.validator import compiler
@@ -179,15 +180,67 @@ def do_update_feed(
             'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
             feed.id, len(storys), len(modified_storys), num_reallocate
         )
+    feed.refresh_from_db()
     need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
-        if need_fetch_story and (not story.content):
-            ctx.hope('worker_rss.fetch_story', dict(
+        if not story.link:
+            continue
+        if need_fetch_story and (not is_fulltext_story(feed, story)):
+            ctx.tell('worker_rss.fetch_story', dict(
                 url=story.link,
                 story_id=str(story.id)
             ))
-        elif story.link:
+        else:
             _process_story_images(ctx, story, is_refresh)
+
+
+def is_productive_feed(monthly_story_count, date):
+    """
+    eg: news, forum, bbs, daily reports
+    """
+    year, month = date.year, date.month
+    if not (1970 <= year <= 9999):
+        return True
+    month_id = id_of_month(year, month)
+    count_18m = []
+    for i in range(18):
+        year_month = month_of_id(max(0, month_id - i))
+        count_18m.insert(0, monthly_story_count.get(*year_month))
+    if sum(count_18m) <= 0:
+        return True
+    freq_3m = max(count_18m[-3:]) / 30
+    count_18m_non_zero = [x for x in count_18m if x > 0]
+    freq_18m = sum(count_18m_non_zero) / len(count_18m_non_zero) / 30
+    freq = max(freq_3m, freq_18m)
+    if freq >= 1:
+        return True
+    return False
+
+
+def is_fulltext_story(feed, story):
+    """
+    detect whether the full content is already in rss feed.
+
+    see also: https://github.com/pictuga/morss/issues/27
+    """
+    if not story.content:
+        return False
+    if len(story.content) >= 2000:
+        return True
+    if not story.dt_published:
+        return True
+    if is_productive_feed(feed.monthly_story_count, story.dt_published):
+        return True
+    link_count = processor.story_link_count(story.content)
+    if link_count >= 2:
+        return True
+    url_count = processor.story_url_count(story.content)
+    if url_count >= 3:
+        return True
+    image_count = processor.story_image_count(story.content)
+    if image_count >= 1:
+        return True
+    return False
 
 
 def _is_feed_need_fetch_storys(feed):
