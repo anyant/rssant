@@ -5,7 +5,6 @@ from urllib.parse import unquote
 from collections import deque
 import concurrent.futures
 
-import yarl
 from validr import T, Invalid
 from attrdict import AttrDict
 from django.utils import timezone
@@ -14,7 +13,7 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
-from rssant_feedlib.processor import StoryImageProcessor, story_readability, story_html_to_text, story_html_clean
+from rssant_feedlib.processor import story_readability, story_html_to_text, story_html_clean
 from rssant_feedlib.blacklist import compile_url_blacklist
 
 from rssant.helper.content_hash import compute_hash_base64
@@ -205,16 +204,6 @@ def do_process_story_webpage(
         summary=summary,
         url=url,
     ))
-    processer = StoryImageProcessor(url, content)
-    image_indexs = processer.parse()
-    image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
-    LOG.info(f'found story#{story_id} {unquote(url)} has {len(image_urls)} images')
-    if image_urls:
-        ctx.hope('worker_rss.detect_story_images', dict(
-            story_id=story_id,
-            story_url=url,
-            image_urls=list(image_urls),
-        ))
 
 
 @actor('worker_rss.detect_story_images')
@@ -231,7 +220,7 @@ async def do_detect_story_images(
                 return url, FeedResponseStatus.REFERER_DENY.value
             status, response = await reader.read(
                 url,
-                referer="https://rss.anyant.com/story/",
+                referer="https://rss.anyant.com/",
                 ignore_content=True
             )
             return url, status

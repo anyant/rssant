@@ -1,6 +1,7 @@
 import logging
 import time
 import random
+from collections import defaultdict
 
 import yarl
 from validr import T
@@ -10,8 +11,8 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
-from rssant_feedlib.processor import StoryImageProcessor, story_html_to_text
-from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation
+from rssant_feedlib.processor import StoryImageProcessor
+from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
 from rssant_api.monthly_story_count import id_of_month, month_of_id
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
@@ -147,7 +148,7 @@ def do_update_feed(
     ctx: ActorContext,
     feed_id: T.int,
     feed: FeedSchema,
-    is_refresh: T.bool.default(False),
+    is_refresh: T.bool.default(False).desc('Deprecated'),
 ):
     with transaction.atomic():
         feed_dict = feed
@@ -191,7 +192,7 @@ def do_update_feed(
                 story_id=str(story.id)
             ))
         else:
-            _process_story_images(ctx, story, is_refresh)
+            _detect_story_images(ctx, story)
 
 
 def is_productive_feed(monthly_story_count, date):
@@ -251,19 +252,67 @@ def _is_feed_need_fetch_storys(feed):
     return True
 
 
-def _process_story_images(ctx, story, is_refresh):
-    story_text = story_html_to_text(story.content)
-    if is_refresh or len(story_text) < 1000:
-        processer = StoryImageProcessor(story.link, story.content)
-        image_indexs = processer.parse()
-        image_urls = {str(yarl.URL(x.value)) for x in image_indexs}
-        LOG.info(f'found story#{story.id} {story.link} has {len(image_urls)} images')
-        if image_urls:
-            ctx.hope('worker_rss.detect_story_images', dict(
-                story_id=story.id,
-                story_url=story.link,
-                image_urls=list(image_urls),
-            ))
+def normalize_url(url):
+    """
+    >>> print(normalize_url('https://rss.anyant.com/^_^'))
+    https://rss.anyant.com/%5E_%5E
+    """
+    return str(yarl.URL(url))
+
+
+RSSANT_IMAGE_TAG = 'rssant=1'
+
+
+def is_replaced_image(url):
+    """
+    >>> is_replaced_image('https://rss.anyant.com/123.jpg?rssant=1')
+    True
+    """
+    return url and RSSANT_IMAGE_TAG in url
+
+
+def _image_urls_of_indexs(image_indexs):
+    image_urls = []
+    for x in image_indexs:
+        url = normalize_url(x.value)
+        if not is_replaced_image(url):
+            image_urls.append(url)
+    return image_urls
+
+
+def _detect_story_images(ctx, story):
+    image_processor = StoryImageProcessor(story.link, story.content)
+    image_urls = _image_urls_of_indexs(image_processor.parse())
+    if not image_urls:
+        return
+    image_statuses = ImageInfo.batch_detect_images(image_urls)
+    num_todo_image_urls = 0
+    todo_url_roots = defaultdict(list)
+    for url in image_urls:
+        status = image_statuses.get(url)
+        if status is None:
+            num_todo_image_urls += 1
+            url_root = ImageInfo.extract_url_root(url)
+            todo_url_roots[url_root].append(url)
+    LOG.info(
+        f'story#{story.id} {story.link} has {len(image_urls)} images, '
+        f'need detect {num_todo_image_urls} images '
+        f'from {len(todo_url_roots)} url_roots'
+    )
+    if todo_url_roots:
+        todo_urls = []
+        for items in todo_url_roots.values():
+            if len(items) > 3:
+                todo_urls.extend(random.sample(items, 3))
+            else:
+                todo_urls.extend(items)
+        ctx.hope('worker_rss.detect_story_images', dict(
+            story_id=story.id,
+            story_url=story.link,
+            image_urls=list(set(todo_urls)),
+        ))
+    else:
+        _replace_story_images(story.id)
 
 
 @actor('harbor_rss.update_story')
@@ -281,6 +330,7 @@ def do_update_story(
         story.content = content
         story.summary = summary
         story.save()
+    _detect_story_images(ctx, story)
 
 
 IMAGE_REFERER_DENY_STATUS = set([
@@ -301,20 +351,49 @@ def do_update_story_images(
         status = T.int,
     ))
 ):
-    image_replaces = {}
+    # save image info
+    url_root_status = {}
     for img in images:
-        if img['status'] in IMAGE_REFERER_DENY_STATUS:
-            new_url_data = encode_image_url(img['url'], story_url)
-            image_replaces[img['url']] = '/api/v1/image/{}'.format(new_url_data)
-    LOG.info(f'detect story#{story_id} {story_url} '
-             f'has {len(image_replaces)} referer deny images')
+        url_root = ImageInfo.extract_url_root(img['url'])
+        value = (img['status'], img['url'])
+        if url_root in url_root_status:
+            url_root_status[url_root] = max(value, url_root_status[url_root])
+        else:
+            url_root_status[url_root] = value
     with transaction.atomic():
-        story = Story.objects.get(pk=story_id)
-        processor = StoryImageProcessor(story_url, story.content)
-        image_indexs = processor.parse()
-        content = processor.process(image_indexs, image_replaces)
-        story.content = content
-        story.save()
+        image_info_objects = []
+        for url_root, (status, url) in url_root_status.items():
+            image_info_objects.append(ImageInfo(
+                url_root=url_root,
+                sample_url=url,
+                referer=story_url,
+                status_code=status,
+            ))
+        LOG.info(f'bulk create {len(image_info_objects)} ImageInfo objects')
+        ImageInfo.objects.bulk_create(image_info_objects)
+    _replace_story_images(story_id)
+
+
+def _replace_story_images(story_id):
+    story = Story.objects.get(pk=story_id)
+    image_processor = StoryImageProcessor(story.link, story.content)
+    image_indexs = image_processor.parse()
+    image_urls = _image_urls_of_indexs(image_indexs)
+    if not image_urls:
+        return
+    image_statuses = ImageInfo.batch_detect_images(image_urls)
+    image_replaces = {}
+    for url, status in image_statuses.items():
+        if status in IMAGE_REFERER_DENY_STATUS:
+            new_url_data = encode_image_url(url, story.link)
+            image_replaces[url] = '/api/v1/image/{}?{}'.format(new_url_data, RSSANT_IMAGE_TAG)
+    LOG.info(f'story#{story_id} {story.link} '
+             f'replace {len(image_replaces)} referer deny images')
+    # image_processor.process will (1) fix relative url (2) replace image url
+    # call image_processor.process regardless of image_replaces is empty or not
+    content = image_processor.process(image_indexs, image_replaces)
+    story.content = content
+    story.save()
 
 
 @actor('harbor_rss.check_feed')

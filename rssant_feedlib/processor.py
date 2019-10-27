@@ -1,6 +1,7 @@
+import typing
 import re
 from collections import namedtuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote
 import lxml.etree
 import lxml.html
 from lxml.html import soupparser
@@ -99,7 +100,7 @@ class StoryImageProcessor:
     def is_data_url(self, url):
         return url.startswith('data:')
 
-    def parse(self) -> [StoryImageIndexItem]:
+    def parse(self) -> typing.List[StoryImageIndexItem]:
         if not self.content:
             return []
         content = self.content
@@ -120,9 +121,10 @@ class StoryImageProcessor:
         return image_indexs
 
     def process(self, image_indexs, images) -> str:
+        images = {quote(k): v for k, v in images.items()}
         new_image_indexs = []
         for idx in image_indexs:
-            new_url = images.get(idx.value)
+            new_url = images.get(quote(idx.value))
             if new_url:
                 idx = StoryImageIndexItem(idx.pos, idx.endpos, new_url)
             new_image_indexs.append(idx)
