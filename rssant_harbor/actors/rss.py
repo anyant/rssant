@@ -116,7 +116,10 @@ def do_save_feed_creation_result(
         url = feed_dict['url']
         feed = Feed.get_first_by_url(url)
         if not feed:
-            feed = Feed(url=url, status=FeedStatus.READY, dt_updated=timezone.now())
+            now = timezone.now()
+            feed = Feed(
+                url=url, status=FeedStatus.READY,
+                dt_updated=now, dt_checked=now, dt_synced=now)
             feed.save()
         feed_creation.status = FeedStatus.READY
         feed_creation.feed_id = feed.id
