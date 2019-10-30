@@ -56,6 +56,42 @@ def story_link_count(content):
     return len(RE_LINK.findall(content))
 
 
+RE_MATHJAX = re.compile((
+    r'(MathJax)|(AsciiMath)|(MathML)|'          # keywords
+    r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
+    r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
+    r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
+    r'(<(code|pre)>\$[^\$]+?\$</(code|pre)>)|'  # <code>$...$</code> or <pre>$...$</pre>
+    r'(<(code|pre)>\`[^\`]+\`</(code|pre)>)'    # <code>`...`</code> or <pre>`...`</pre>
+), re.I)
+
+
+def story_has_mathjax(content):
+    r"""
+    >>> story_has_mathjax('2.7.5/MathJax.js?config=TeX-MML-AM_CHTML')
+    True
+    >>> story_has_mathjax('hi $$x^2$$ ok?')
+    True
+    >>> story_has_mathjax('hi \(x^2\), ok?')
+    True
+    >>> story_has_mathjax('hi \[x^2\], ok?')
+    True
+    >>> story_has_mathjax('hi $$x^2$$ ok?')
+    True
+    >>> story_has_mathjax('hi <code>$x^2$</code> ok?')
+    True
+    >>> story_has_mathjax('hi <pre>$x^2$</pre> ok?')
+    True
+    >>> story_has_mathjax('hi <code>`x^2`</code> ok?')
+    True
+    >>> story_has_mathjax('hi <pre>`x^2`</pre> ok?')
+    True
+    """
+    if not content:
+        return False
+    return bool(RE_MATHJAX.search(content))
+
+
 StoryImageIndexItem = namedtuple('StoryImageIndexItem', 'pos, endpos, value')
 
 

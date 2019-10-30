@@ -13,7 +13,7 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
-from rssant_feedlib.processor import story_readability, story_html_to_text, story_html_clean
+from rssant_feedlib.processor import story_readability, story_html_to_text, story_html_clean, story_has_mathjax
 from rssant_feedlib.blacklist import compile_url_blacklist
 
 from rssant.helper.content_hash import compute_hash_base64
@@ -39,6 +39,7 @@ StorySchema = T.dict(
     content_hash_base64=T.str,
     author=T.str.optional,
     link=T.url.optional,
+    has_mathjax=T.bool.optional,
     dt_published=T.datetime.optional,
     dt_updated=T.datetime.optional,
     summary=T.str.optional,
@@ -292,6 +293,7 @@ def _get_storys(entries):
             content = data["description"]
         if not content:
             content = data["summary"]
+        story['has_mathjax'] = story_has_mathjax(content)
         content = story_html_clean(content)
         story['content'] = content
         summary = data["summary"]

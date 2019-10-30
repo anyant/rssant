@@ -18,6 +18,7 @@ StorySchema = T.dict(
     unique_id=T.str.optional,
     title=T.str.optional,
     link=T.str.optional,
+    has_mathjax=T.bool.optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     dt_created=T.datetime.object.optional,

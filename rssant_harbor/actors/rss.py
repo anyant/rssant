@@ -30,6 +30,7 @@ StorySchemaFields = dict(
     content_hash_base64=T.str,
     author=T.str.optional,
     link=T.str.optional,
+    has_mathjax=T.bool.optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     summary=T.str.optional,
@@ -325,6 +326,7 @@ def do_update_story(
     story_id: T.int,
     content: T.str,
     summary: T.str,
+    has_mathjax: T.bool.optional,
     url: T.url,
 ):
     with transaction.atomic():
@@ -332,6 +334,8 @@ def do_update_story(
         story.link = url
         story.content = content
         story.summary = summary
+        if has_mathjax is not None:
+            story.has_mathjax = has_mathjax
         story.save()
     _detect_story_images(ctx, story)
 

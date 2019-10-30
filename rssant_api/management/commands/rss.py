@@ -11,6 +11,7 @@ from rssant_common.helper import format_table, get_referer_of_url, pretty_format
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_common import unionid
+from rssant_feedlib.processor import story_has_mathjax
 
 
 LOG = logging.getLogger(__name__)
@@ -27,6 +28,14 @@ def _get_feed_ids(option_feeds):
     else:
         feed_ids = [feed.id for feed in Feed.objects.only('id').all()]
     return feed_ids
+
+
+def _get_story_ids(option_storys):
+    if option_storys:
+        story_ids = option_storys.strip().split(',')
+    else:
+        story_ids = [story.id for story in Story.objects.only('id').all()]
+    return story_ids
 
 
 @main.command()
@@ -79,6 +88,19 @@ def update_feed_monthly_story_count(feeds=None):
     for feed_id in tqdm.tqdm(feed_ids, ncols=80, ascii=True):
         with transaction.atomic():
             Story.refresh_feed_monthly_story_count(feed_id)
+
+
+@main.command()
+@click.option('--storys', help="story ids, separate by ','")
+def update_story_has_mathjax(storys=None):
+    story_ids = _get_story_ids(storys)
+    LOG.info('total %s storys', len(story_ids))
+    for story_id in tqdm.tqdm(story_ids, ncols=80, ascii=True):
+        with transaction.atomic():
+            story = Story.objects.only('id', 'content', '_version').get(pk=story_id)
+            if story_has_mathjax(story.content):
+                story.has_mathjax = True
+                story.save()
 
 
 @main.command()

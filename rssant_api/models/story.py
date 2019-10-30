@@ -67,6 +67,7 @@ class Story(Model, ContentHashMixin):
     title = models.CharField(max_length=200, help_text="标题")
     link = models.TextField(help_text="文章链接")
     author = models.CharField(max_length=200, **optional, help_text='作者')
+    has_mathjax = models.BooleanField(**optional, default=False, help_text='')
     dt_published = models.DateTimeField(help_text="发布时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
@@ -137,6 +138,7 @@ class Story(Model, ContentHashMixin):
                 story.title = data["title"]
                 story.link = data["link"]
                 story.author = data["author"]
+                story.has_mathjax = data['has_mathjax']
                 # 发布时间只第一次赋值，不更新
                 if not story.dt_published:
                     story.dt_published = data['dt_published']
@@ -394,6 +396,10 @@ class UnionStory:
         return self._story.link
 
     @property
+    def has_mathjax(self):
+        return self._story.has_mathjax
+
+    @property
     def dt_published(self):
         return self._story.dt_published
 
@@ -449,6 +455,7 @@ class UnionStory:
             offset=self.offset,
             title=self.title,
             link=self.link,
+            has_mathjax=self.has_mathjax,
             is_watched=self.is_watched,
             is_favorited=self.is_favorited,
         )
