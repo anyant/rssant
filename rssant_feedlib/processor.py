@@ -61,8 +61,8 @@ RE_MATHJAX = re.compile((
     r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
     r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
     r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
-    r'(<(code|pre)>\$[^\$]+?\$</(code|pre)>)|'  # <code>$...$</code> or <pre>$...$</pre>
-    r'(<(code|pre)>\`[^\`]+\`</(code|pre)>)'    # <code>`...`</code> or <pre>`...`</pre>
+    r'(\$[^\$]+?\$)|'                           # $...$
+    r'(\`[^\`]+?\`)'                             # `...`
 ), re.I)
 
 
@@ -78,13 +78,9 @@ def story_has_mathjax(content):
     True
     >>> story_has_mathjax('hi $$x^2$$ ok?')
     True
-    >>> story_has_mathjax('hi <code>$x^2$</code> ok?')
+    >>> story_has_mathjax('hi $x^2$ ok?')
     True
-    >>> story_has_mathjax('hi <pre>$x^2$</pre> ok?')
-    True
-    >>> story_has_mathjax('hi <code>`x^2`</code> ok?')
-    True
-    >>> story_has_mathjax('hi <pre>`x^2`</pre> ok?')
+    >>> story_has_mathjax('hi `x^2` ok?')
     True
     """
     if not content:
