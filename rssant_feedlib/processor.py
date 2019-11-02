@@ -225,11 +225,18 @@ def story_html_to_text(content, clean=True):
     >>> content = '<![CDATA[hello world]]>'
     >>> print(story_html_to_text(content))
     hello world
+    >>> print(story_html_to_text('<pre><code>hi</code></pre>'))
+    <BLANKLINE>
     """
     if (not content) or (not content.strip()):
         return ""
     try:
         if clean:
+            # https://bugs.launchpad.net/lxml/+bug/1851029
+            # The html cleaner raise AssertionError when both
+            # root tag and child tag in kill_tags set.
+            if content.startswith('<pre'):
+                content = '<div>' + content + '</div>'
             content = lxml_text_html_cleaner.clean_html(content).strip()
         if not content:
             return ""
