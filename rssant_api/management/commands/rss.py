@@ -11,7 +11,7 @@ from rssant_common.helper import format_table, get_referer_of_url, pretty_format
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_common import unionid
-from rssant_feedlib.processor import story_has_mathjax
+from rssant_feedlib import processor
 
 
 LOG = logging.getLogger(__name__)
@@ -98,8 +98,22 @@ def update_story_has_mathjax(storys=None):
     for story_id in tqdm.tqdm(story_ids, ncols=80, ascii=True):
         with transaction.atomic():
             story = Story.objects.only('id', 'content', '_version').get(pk=story_id)
-            if story_has_mathjax(story.content):
+            if processor.story_has_mathjax(story.content):
                 story.has_mathjax = True
+                story.save()
+
+
+@main.command()
+@click.option('--storys', help="story ids, separate by ','")
+def process_story_links(storys=None):
+    story_ids = _get_story_ids(storys)
+    LOG.info('total %s storys', len(story_ids))
+    for story_id in tqdm.tqdm(story_ids, ncols=80, ascii=True):
+        with transaction.atomic():
+            story = Story.objects.only('id', 'content', '_version').get(pk=story_id)
+            content = processor.process_story_links(story.content, story.link)
+            if story.content != content:
+                story.content = content
                 story.save()
 
 

@@ -5,6 +5,7 @@ from urllib.parse import urljoin, quote
 import lxml.etree
 import lxml.html
 from lxml.html import soupparser
+from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
 
@@ -91,6 +92,18 @@ def story_has_mathjax(content):
 StoryImageIndexItem = namedtuple('StoryImageIndexItem', 'pos, endpos, value')
 
 
+def is_data_url(url):
+    return url and url.startswith('data:')
+
+
+def make_absolute_url(url, base_href):
+    if not base_href:
+        return url
+    if not url.startswith('http://') and not url.startswith('https://'):
+        url = urljoin(base_href, url)
+    return url
+
+
 class StoryImageProcessor:
     """
     >>> content = '''
@@ -125,12 +138,7 @@ class StoryImageProcessor:
         self.content = content
 
     def fix_relative_url(self, url):
-        if not url.startswith('http://') and not url.startswith('https://'):
-            url = urljoin(self.story_url, url)
-        return url
-
-    def is_data_url(self, url):
-        return url.startswith('data:')
+        return make_absolute_url(url, self.story_url)
 
     def parse(self) -> typing.List[StoryImageIndexItem]:
         if not self.content:
@@ -145,7 +153,7 @@ class StoryImageProcessor:
             img_src, source_srcset = match.groups()
             startpos, endpos = match.span(1) if img_src else match.span(2)
             img_url = (img_src or source_srcset).strip()
-            if not self.is_data_url(img_url):
+            if not is_data_url(img_url):
                 img_url = self.fix_relative_url(img_url)
                 idx = StoryImageIndexItem(startpos, endpos, img_url)
                 image_indexs.append(idx)
@@ -171,6 +179,60 @@ class StoryImageProcessor:
         return ''.join(content_chunks)
 
 
+IMG_EXT_SRC_ATTRS = ['data-src', 'data-original', 'data-origin']
+RE_IMAGE_URL = re.compile(
+    '(img|image|pic|picture|photo|png|jpg|jpeg|webp|bpg|ico|exif|tiff|gif|svg|bmp)', re.I)
+
+
+def is_image_url(url):
+    if not url:
+        return False
+    if is_data_url(url):
+        return False
+    return bool(RE_IMAGE_URL.search(url))
+
+
+def process_story_links(content, story_link):
+    """
+    NOTE: Don't process_story_links after StoryImageProcessor, the replaced
+        image urls will broken.
+    >>> x = '<a href="/story/123.html">汉字</a>'
+    >>> result = process_story_links(x, 'http://blog.example.com/index.html')
+    >>> expect = '<a href="http://blog.example.com/story/123.html" target="_blank" rel="nofollow">汉字</a>'
+    >>> assert list(sorted(result)) == list(sorted(expect)), result
+    >>> x = '<img data-src="/story/123.png">'
+    >>> result = process_story_links(x, 'http://blog.example.com/index.html')
+    >>> expect = '<img data-src="/story/123.png" src="http://blog.example.com/story/123.png">'
+    >>> assert list(sorted(result)) == list(sorted(expect)), result
+    """
+    if not content:
+        return content
+    dom = lxml.html.fromstring(content)
+    for a in dom.iter('a'):
+        url = a.get('href')
+        if url:
+            a.set('href', make_absolute_url(url, story_link))
+        a.set('target', '_blank')
+        a.set('rel', 'nofollow')
+    for x in dom.iter('img'):
+        ext_src = None
+        for key in IMG_EXT_SRC_ATTRS:
+            value = x.get(key)
+            if is_image_url(value):
+                ext_src = value
+                break
+        if ext_src:
+            src = make_absolute_url(ext_src, story_link)
+            x.set('src', src)
+    # also make image, video... other links absolute
+    if story_link:
+        dom.make_links_absolute(story_link)
+    result = lxml.html.tostring(dom, encoding='unicode')
+    if isinstance(result, bytes):
+        result = result.decode('utf-8')
+    return result
+
+
 def story_readability(content):
     """
     >>> content = '<p>hello world</p>'
@@ -188,6 +250,7 @@ RE_BLANK_LINE = re.compile(r'(\n\s*)(\n\s*)+')
 lxml_html_parser = lxml.html.HTMLParser(
     remove_blank_text=True, remove_comments=True, collect_ids=False)
 
+
 lxml_text_html_cleaner = Cleaner(
     scripts=True,
     javascript=True,
@@ -201,8 +264,6 @@ lxml_text_html_cleaner = Cleaner(
     frames=True,
     forms=True,
     annoying_tags=True,
-    safe_attrs_only=True,
-    add_nofollow=True,
     remove_tags=set(['body']),
     kill_tags=set(['code', 'pre', 'img', 'video', 'noscript']),
 )
@@ -247,6 +308,9 @@ def story_html_to_text(content, clean=True):
     return RE_BLANK_LINE.sub('\n', content)
 
 
+RSSANT_HTML_SAFE_ATTRS = set(lxml_safe_attrs) | set(IMG_EXT_SRC_ATTRS)
+RSSANT_HTML_SAFE_ATTRS.update({'srcset'})
+
 lxml_story_html_cleaner = Cleaner(
     scripts=True,
     javascript=True,
@@ -261,6 +325,7 @@ lxml_story_html_cleaner = Cleaner(
     forms=True,
     annoying_tags=True,
     safe_attrs_only=True,
+    safe_attrs=RSSANT_HTML_SAFE_ATTRS,
     add_nofollow=True,
     remove_tags=set(['body']),
     kill_tags=set(['noscript']),

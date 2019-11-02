@@ -13,7 +13,10 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
-from rssant_feedlib.processor import story_readability, story_html_to_text, story_html_clean, story_has_mathjax
+from rssant_feedlib.processor import (
+    story_readability, story_html_to_text, story_html_clean,
+    story_has_mathjax, process_story_links,
+)
 from rssant_feedlib.blacklist import compile_url_blacklist
 
 from rssant.helper.content_hash import compute_hash_base64
@@ -196,6 +199,7 @@ def do_process_story_webpage(
     if not text:
         return
     content = story_readability(text)
+    content = process_story_links(content, url)
     summary = shorten(story_html_to_text(content), width=300)
     if not summary:
         return
@@ -295,6 +299,7 @@ def _get_storys(entries):
             content = data["summary"]
         story['has_mathjax'] = story_has_mathjax(content)
         content = story_html_clean(content)
+        content = process_story_links(content, data["link"])
         story['content'] = content
         summary = data["summary"]
         if not summary:
