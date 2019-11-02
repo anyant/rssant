@@ -81,6 +81,5 @@ objgraph==3.4.1
 pyinstrument==3.0.1
 pyinstrument-cext==0.2.0
 memory-profiler==0.55.0
-Pympler==0.7
 graphviz==0.13
 module-graph==0.0.1

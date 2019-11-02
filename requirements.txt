@@ -87,7 +87,6 @@ pycparser==2.19           # via cffi
 pygments==2.4.2           # via aiohttp-devtools, cli-helpers, pgcli
 pyinstrument-cext==0.2.0
 pyinstrument==3.0.1
-pympler==0.7
 pynliner==0.8.0
 pyparsing==2.4.2          # via packaging, validr
 pytest-cov==2.8.1
@@ -126,4 +125,4 @@ zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip==19.3.1               # via pipdeptree, shiv
-# setuptools==41.4.0        # via shiv
+# setuptools==41.6.0        # via shiv

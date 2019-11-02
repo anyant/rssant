@@ -68,19 +68,19 @@ RE_MATHJAX = re.compile((
 
 def story_has_mathjax(content):
     r"""
-    >>> story_has_mathjax('2.7.5/MathJax.js?config=TeX-MML-AM_CHTML')
+    >>> story_has_mathjax(r'2.7.5/MathJax.js?config=TeX-MML-AM_CHTML')
     True
-    >>> story_has_mathjax('hi $$x^2$$ ok?')
+    >>> story_has_mathjax(r'hi $$x^2$$ ok?')
     True
-    >>> story_has_mathjax('hi \(x^2\), ok?')
+    >>> story_has_mathjax(r'hi \(x^2\), ok?')
     True
-    >>> story_has_mathjax('hi \[x^2\], ok?')
+    >>> story_has_mathjax(r'hi \[x^2\], ok?')
     True
-    >>> story_has_mathjax('hi $$x^2$$ ok?')
+    >>> story_has_mathjax(r'hi $$x^2$$ ok?')
     True
-    >>> story_has_mathjax('hi $x^2$ ok?')
+    >>> story_has_mathjax(r'hi $x^2$ ok?')
     True
-    >>> story_has_mathjax('hi `x^2` ok?')
+    >>> story_has_mathjax(r'hi `x^2` ok?')
     True
     """
     if not content:

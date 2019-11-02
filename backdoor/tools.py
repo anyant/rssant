@@ -9,10 +9,9 @@ import traceback
 from collections import defaultdict
 
 import objgraph
-from pympler import muppy, summary
 
 from .server import BackdoorServer
-from .helper import shorten, format_number
+from .helper import format_number
 from .asyncio_tools import get_event_loops, format_async_stack, get_all_tasks
 
 
@@ -82,24 +81,6 @@ def gc_top(seconds=10, limit=10):
     gc.set_debug(False)
     gc.garbage.clear()
     gc.collect()
-
-
-def top_types(types=None):
-    all_objects = muppy.get_objects()
-    summary.print_(summary.summarize(all_objects))
-    if types is not None:
-        if isinstance(types, (list, tuple, set)):
-            types = list(types)
-        else:
-            types = [types]
-    else:
-        types = []
-    for t in types:
-        print('###' + repr(t))
-        objs = muppy.filter(all_objects, Type=t)
-        top10 = list(reversed(sorted(objs, key=len)))[:10]
-        for x in top10:
-            print(len(x), shorten(repr(x), 60))
 
 
 def _super_len(x):
