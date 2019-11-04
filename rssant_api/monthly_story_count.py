@@ -1,5 +1,6 @@
 import typing
 import struct
+import math
 
 
 def month_of_id(month_id) -> typing.Tuple[int, int]:
@@ -43,6 +44,45 @@ def _check_year_month(year, month):
         raise ValueError(f'year must between 1970 and 9999')
     if not (1 <= month <= 12):
         raise ValueError(f'month must between 1 and 12')
+
+
+def dryness_formula(days: int, num_storys: int) -> int:
+    """
+    Dryness(0~1000)
+
+    >>> assert dryness_formula(30, 255) == 0, '255 storys per month'
+    >>> assert dryness_formula(30, 127) == 125, '127 storys per month'
+    >>> assert dryness_formula(30, 63) == 250, '63 storys per month'
+    >>> assert dryness_formula(30, 31) == 375, '31 storys per month'
+    >>> assert dryness_formula(30, 15) == 500, '15 storys per month'
+    >>> assert dryness_formula(30, 7) == 625, '7 storys per month'
+    >>> assert dryness_formula(30, 3) == 750, '3 storys per month'
+    >>> assert dryness_formula(30, 1) == 875, '1 storys per month'
+    >>> assert dryness_formula(30, 0) == 1000, '0 storys per month'
+    """
+    v = math.log2(256 / (num_storys / days * 30 + 1))
+    return max(0, min(1000, round(v / 8 * 1000)))
+
+
+def _dryness_formula_test():
+    items = [
+        (30, 255, '255 storys per month'),
+        (30, 127, '127 storys per month'),
+        (30, 63, '63 storys per month'),
+        (30, 31, '31 storys per month'),
+        (30, 15, '15 storys per month'),
+        (30, 7, '7 storys per month'),
+        (30, 3, '3 storys per month'),
+        (30, 1, '1 storys per month'),
+        (30, 0, '0 storys per month'),
+        (1, 1, 'daily'),
+        (7, 1, 'weekly'),
+        (365, 12, 'monthly'),
+        (365, 1, 'yearly'),
+    ]
+    for days, num_story, desc in items:
+        dryness = dryness_formula(days, num_story)
+        print(f'>>> assert dryness_formula({days}, {num_story}) == {dryness}, {desc!r}')
 
 
 class MonthlyStoryCount:
@@ -107,6 +147,39 @@ class MonthlyStoryCount:
 
     def __bool__(self):
         return bool(self._data)
+
+    def _compute_dryness(self, month_id_count_s):
+        if not month_id_count_s:
+            return 1000
+        month_id_begin, __ = month_id_count_s[0]
+        month_id_end, __ = month_id_count_s[-1]
+        num_months = month_id_end - month_id_begin + 1
+        num_storys = sum(x for __, x in month_id_count_s)
+        return dryness_formula(num_months * 30, num_storys)
+
+    def dryness(self):
+        """
+        compute dryness over all time windows.
+
+        >>> x = MonthlyStoryCount()
+        >>> x.put(2019, 1, 1)
+        >>> x.dryness()
+        875
+        >>> x.put(2019, 1, 20)
+        >>> x.put(2019, 2, 10)
+        >>> x.dryness()
+        500
+        >>> x.put(2019, 3, 15)
+        >>> x.dryness()
+        500
+        """
+        month_id_count_s = [
+            (id_of_month(year, month), count) for year, month, count in self]
+        dryness = self._compute_dryness(month_id_count_s)
+        for i in range(1, len(month_id_count_s)):
+            v = self._compute_dryness(month_id_count_s[-i:])
+            dryness = min(dryness, v)
+        return dryness
 
     @classmethod
     def load(cls, data: bytes):

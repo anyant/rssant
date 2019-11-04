@@ -105,6 +105,9 @@ class Feed(Model, ContentHashMixin):
     dt_latest_story_published = models.DateTimeField(
         **optional, help_text="最新的story发布时间")
 
+    def dryness(self):
+        pass
+
     def merge(self, other: "Feed"):
         """
         Merge other feed to self by change other's userfeeds' feed_id to self id.
