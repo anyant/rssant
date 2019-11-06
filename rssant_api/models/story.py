@@ -33,6 +33,8 @@ USER_STORY_DETAIL_FEILDS = [f'story__{x}' for x in STORY_DETAIL_FEILDS]
 FEED_STORY_PUBLISH_PERIOD_FIELDS = [
     'id',
     'total_storys',
+    'dryness',
+    'dt_first_story_published',
     'story_publish_period',
     'offset_early_story',
     'dt_early_story_published',
@@ -76,7 +78,7 @@ class Story(Model, ContentHashMixin):
     content = models.TextField(**optional, help_text="文章内容")
 
     @staticmethod
-    def get_by_offset(feed_id, offset, detail=False):
+    def get_by_offset(feed_id, offset, detail=False) -> 'Story':
         q = Story.objects.filter(feed_id=feed_id, offset=offset)
         if not detail:
             q = q.defer(*STORY_DETAIL_FEILDS)
@@ -108,7 +110,10 @@ class Story(Model, ContentHashMixin):
         storys = Story._dedup_sort_storys(storys)
         with transaction.atomic():
             feed = Feed.objects\
-                .only('_version', 'monthly_story_count_data', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
+                .only(
+                    '_version', 'dryness', 'monthly_story_count_data',
+                    *FEED_STORY_PUBLISH_PERIOD_FIELDS
+                )\
                 .get(pk=feed_id)
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
@@ -206,7 +211,7 @@ class Story(Model, ContentHashMixin):
             year, month = story.dt_published.year, story.dt_published.month
             count = monthly_story_count.get(year, month)
             monthly_story_count.put(year, month, count + 1)
-        feed.monthly_story_count_data = monthly_story_count.dump()
+        feed.monthly_story_count = monthly_story_count
         feed.save()
 
     @staticmethod
@@ -230,15 +235,20 @@ class Story(Model, ContentHashMixin):
             year, month, count = map(int, row)
             if 1970 <= year <= 9999:
                 items.append((year, month, count))
-        monthly_story_count_data = MonthlyStoryCount(items).dump()
+        monthly_story_count = MonthlyStoryCount(items)
         with transaction.atomic():
-            Feed.objects.filter(pk=feed_id)\
-                .update(monthly_story_count_data=monthly_story_count_data)
+            feed = Feed.objects.filter(pk=feed_id).get()
+            feed.monthly_story_count = monthly_story_count
+            feed.save()
 
     @staticmethod
     def _update_feed_story_publish_period(feed, total_storys):
         if total_storys <= 0:
             return False  # is_updated
+        first_story = Story.objects\
+            .only('id', 'offset', 'dt_published')\
+            .get(feed_id=feed.id, offset=0)
+        dt_first_story_published = first_story.dt_published
         latest_story = Story.objects\
             .only('id', 'offset', 'dt_published')\
             .get(feed_id=feed.id, offset=total_storys - 1)
@@ -266,6 +276,7 @@ class Story(Model, ContentHashMixin):
             or (feed.total_storys != total_storys)
         )
         feed.total_storys = total_storys
+        feed.dt_first_story_published = dt_first_story_published
         feed.offset_early_story = offset_early_story
         feed.dt_latest_story_published = dt_latest_story_published
         feed.dt_early_story_published = dt_early_story_published

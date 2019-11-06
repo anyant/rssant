@@ -1,6 +1,10 @@
 import typing
+import logging
 import struct
 import math
+
+
+LOG = logging.getLogger(__name__)
 
 
 def month_of_id(month_id) -> typing.Tuple[int, int]:
@@ -46,6 +50,9 @@ def _check_year_month(year, month):
         raise ValueError(f'month must between 1 and 12')
 
 
+MAX_DRYNESS = 1000
+
+
 def dryness_formula(days: int, num_storys: int) -> int:
     """
     Dryness(0~1000)
@@ -59,8 +66,10 @@ def dryness_formula(days: int, num_storys: int) -> int:
     >>> assert dryness_formula(30, 3) == 750, '3 storys per month'
     >>> assert dryness_formula(30, 1) == 875, '1 storys per month'
     >>> assert dryness_formula(30, 0) == 1000, '0 storys per month'
+    >>> assert dryness_formula(1, 0) == 1000, '0 storys per day'
+    >>> assert dryness_formula(0, 0) == 1000, '0 storys'
     """
-    v = math.log2(256 / (num_storys / days * 30 + 1))
+    v = math.log2(256 / (num_storys / (days + 1) * 31 + 1))
     return max(0, min(1000, round(v / 8 * 1000)))
 
 
@@ -75,6 +84,8 @@ def _dryness_formula_test():
         (30, 3, '3 storys per month'),
         (30, 1, '1 storys per month'),
         (30, 0, '0 storys per month'),
+        (1, 0, '0 storys per day'),
+        (0, 0, '0 storys'),
         (1, 1, 'daily'),
         (7, 1, 'weekly'),
         (365, 12, 'monthly'),
@@ -148,38 +159,54 @@ class MonthlyStoryCount:
     def __bool__(self):
         return bool(self._data)
 
-    def _compute_dryness(self, month_id_count_s):
-        if not month_id_count_s:
-            return 1000
-        month_id_begin, __ = month_id_count_s[0]
-        month_id_end, __ = month_id_count_s[-1]
-        num_months = month_id_end - month_id_begin + 1
-        num_storys = sum(x for __, x in month_id_count_s)
-        return dryness_formula(num_months * 30, num_storys)
+    @staticmethod
+    def _average_dryness(month_id_dryness_s):
+        """
+        >>> y = [500, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 500]
+        >>> len(y)
+        12
+        >>> MonthlyStoryCount._average_dryness(list(zip(range(12), y)))
+        667
+        """
+        if not month_id_dryness_s:
+            return MAX_DRYNESS
+        # exponential moving average, modified on single value series
+        alpha = 2 / 3
+        t, s = month_id_dryness_s[0]
+        for month_id, dryness in month_id_dryness_s[1:]:
+            for _ in range(t + 1, month_id):
+                s = alpha * MAX_DRYNESS + (1 - alpha) * s
+            s = alpha * dryness + (1 - alpha) * s
+            t = month_id
+        return round(s)
 
     def dryness(self):
         """
-        compute dryness over all time windows.
+        compute dryness over historys.
 
         >>> x = MonthlyStoryCount()
         >>> x.put(2019, 1, 1)
         >>> x.dryness()
         875
-        >>> x.put(2019, 1, 20)
-        >>> x.put(2019, 2, 10)
+        >>> x.put(2019, 1, 15)
+        >>> x.put(2019, 2, 15)
         >>> x.dryness()
         500
-        >>> x.put(2019, 3, 15)
+        >>> x = MonthlyStoryCount()
+        >>> x.put(2019, 1, 15)
+        >>> x.put(2019, 12, 15)
         >>> x.dryness()
         500
         """
-        month_id_count_s = [
-            (id_of_month(year, month), count) for year, month, count in self]
-        dryness = self._compute_dryness(month_id_count_s)
-        for i in range(1, len(month_id_count_s)):
-            v = self._compute_dryness(month_id_count_s[-i:])
-            dryness = min(dryness, v)
-        return dryness
+        month_id_dryness_s = []
+        for year, month, count in self:
+            month_id = id_of_month(year, month)
+            dryness = dryness_formula(30, count)
+            month_id_dryness_s.append((month_id, dryness))
+        dryness_1 = self._average_dryness(month_id_dryness_s)
+        dryness_2 = self._average_dryness(month_id_dryness_s[1:])
+        dryness_3 = self._average_dryness(month_id_dryness_s[:-1])
+        return min([dryness_1, dryness_2, dryness_3])
 
     @classmethod
     def load(cls, data: bytes):

@@ -39,6 +39,8 @@ FeedDetailSchema = T.detail.fields("""
     author
     version
     link
+    dryness
+    dt_first_story_published
     story_publish_period
     offset_early_story
     dt_early_story_published
@@ -94,19 +96,23 @@ class Feed(Model, ContentHashMixin):
     # 其他
     monthly_story_count_data = models.BinaryField(
         **optional, max_length=514, help_text="monthly story count data")
+    dryness = models.IntegerField(
+        **optional, default=0, help_text="Dryness of the feed")
+    dt_first_story_published = models.DateTimeField(
+        **optional, help_text="最老的story发布时间")
     total_storys = models.IntegerField(
         **optional, default=0, help_text="Number of total storys")
+    # Deprecated
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
+    # Deprecated
     offset_early_story = models.IntegerField(
         **optional, help_text="最老或18个月前发布的story的offset")
+    # Deprecated
     dt_early_story_published = models.DateTimeField(
         **optional, help_text="最老或18个月前发布的story的发布时间")
     dt_latest_story_published = models.DateTimeField(
         **optional, help_text="最新的story发布时间")
-
-    def dryness(self):
-        pass
 
     def merge(self, other: "Feed"):
         """
@@ -143,6 +149,8 @@ class Feed(Model, ContentHashMixin):
             total_storys=self.total_storys,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
+            dryness=self.dryness,
+            dt_first_story_published=self.dt_first_story_published,
             story_publish_period=self.story_publish_period,
             offset_early_story=self.offset_early_story,
             dt_early_story_published=self.dt_early_story_published,
@@ -165,12 +173,21 @@ class Feed(Model, ContentHashMixin):
     def monthly_story_count(self):
         return MonthlyStoryCount.load(self.monthly_story_count_data)
 
+    @monthly_story_count.setter
+    def monthly_story_count(self, value: MonthlyStoryCount):
+        if value is None:
+            self.monthly_story_count_data = None
+            self.dryness = None
+        else:
+            self.monthly_story_count_data = value.dump()
+            self.dryness = value.dryness()
+
     @staticmethod
-    def get_by_pk(feed_id):
+    def get_by_pk(feed_id) -> 'Feed':
         return Feed.objects.get(pk=feed_id)
 
     @staticmethod
-    def get_first_by_url(url):
+    def get_first_by_url(url) -> 'Feed':
         return Feed.objects.filter(url=url).first()
 
     @staticmethod
@@ -537,6 +554,14 @@ class UnionFeed:
         if self._user_feed.dt_created:
             return self._user_feed.dt_created
         return self._feed.dt_created
+
+    @property
+    def dryness(self):
+        return self._feed.dryness
+
+    @property
+    def dt_first_story_published(self):
+        return self._feed.dt_first_story_published
 
     @property
     def story_publish_period(self):
