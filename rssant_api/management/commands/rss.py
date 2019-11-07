@@ -73,6 +73,9 @@ def fix_feed_total_storys(dry_run=False):
 @main.command()
 @click.option('--feeds', help="feed ids, separate by ','")
 def update_feed_story_publish_period(feeds=None):
+    """
+    Deprecated since v3.1
+    """
     with transaction.atomic():
         feed_ids = _get_feed_ids(feeds)
         LOG.info('total %s feeds', len(feed_ids))

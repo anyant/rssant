@@ -102,13 +102,13 @@ class Feed(Model, ContentHashMixin):
         **optional, help_text="最老的story发布时间")
     total_storys = models.IntegerField(
         **optional, default=0, help_text="Number of total storys")
-    # Deprecated
+    # Deprecated since v3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
-    # Deprecated
+    # Deprecated since v3.1
     offset_early_story = models.IntegerField(
         **optional, help_text="最老或18个月前发布的story的offset")
-    # Deprecated
+    # Deprecated since v3.1
     dt_early_story_published = models.DateTimeField(
         **optional, help_text="最老或18个月前发布的story的发布时间")
     dt_latest_story_published = models.DateTimeField(

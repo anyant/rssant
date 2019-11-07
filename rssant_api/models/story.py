@@ -157,7 +157,7 @@ class Story(Model, ContentHashMixin):
                 early_dt_published = new_story_objects[0].dt_published
                 num_reallocate = Story._reallocate_offset(feed.id, early_dt_published)
                 Story._update_feed_monthly_story_count(feed, new_story_objects)
-                Story._update_feed_story_publish_period(feed, total_storys=offset)
+                Story._update_feed_story_dt_published_total_storys(feed, total_storys=offset)
             else:
                 num_reallocate = 0
             return modified_story_objects, num_reallocate
@@ -242,7 +242,29 @@ class Story(Model, ContentHashMixin):
             feed.save()
 
     @staticmethod
+    def _update_feed_story_dt_published_total_storys(feed, total_storys):
+        if total_storys <= 0:
+            return
+        first_story = Story.objects\
+            .only('id', 'offset', 'dt_published')\
+            .filter(feed_id=feed.id, offset=0)\
+            .first()
+        latest_story = Story.objects\
+            .only('id', 'offset', 'dt_published')\
+            .filter(feed_id=feed.id, offset=total_storys - 1)\
+            .first()
+        feed.total_storys = total_storys
+        if first_story:
+            feed.dt_first_story_published = first_story.dt_published
+        if latest_story:
+            feed.dt_latest_story_published = latest_story.dt_published
+        feed.save()
+
+    @staticmethod
     def _update_feed_story_publish_period(feed, total_storys):
+        """
+        Deprecated since v3.1
+        """
         if total_storys <= 0:
             return False  # is_updated
         first_story = Story.objects\
@@ -286,6 +308,9 @@ class Story(Model, ContentHashMixin):
 
     @staticmethod
     def update_feed_story_publish_period(feed_id):
+        """
+        Deprecated since v3.1
+        """
         with transaction.atomic():
             feed = Feed.objects\
                 .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
