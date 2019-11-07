@@ -292,7 +292,11 @@ def _get_storys(entries):
         story['unique_id'] = shorten(_get_story_unique_id(data), 200)
         content = ''
         if data["content"]:
-            content = "\n<br/>\n".join([x["value"] for x in data["content"]])
+            # both content and summary will in content list, peek the longest
+            for x in data["content"]:
+                value = x["value"]
+                if value and len(value) > len(content):
+                    content = value
         if not content:
             content = data["description"]
         if not content:
