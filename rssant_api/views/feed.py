@@ -196,6 +196,13 @@ def feed_delete(request, feed_unionid: T.feed_unionid.object):
         return Response({"message": "订阅不存在"}, status=400)
 
 
+@FeedView.post('feed/all/delete')
+def feed_delete_all(request, ids: T.list(T.feed_unionid.object).optional) -> T.dict(num_deleted=T.int):
+    check_unionid(request, ids)
+    num_deleted = UnionFeed.delete_all(user_id=request.user.id, ids=ids)
+    return dict(num_deleted=num_deleted)
+
+
 def _read_request_file(request, name='file'):
     fileobj = request.FILES.get(name)
     if not fileobj:

@@ -743,6 +743,18 @@ class UnionFeed:
         return len(updates)
 
     @staticmethod
+    def delete_all(user_id, ids=None) -> int:
+        if ids is not None and not ids:
+            return 0
+        feed_ids = [x.feed_id for x in ids]
+        q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
+        if ids is not None:
+            q = q.filter(feed_id__in=feed_ids)
+        q = q.only('_version', 'id')
+        num_deleted, details = q.delete()
+        return num_deleted
+
+    @staticmethod
     def create_by_url(*, user_id, url):
         feed = None
         target = FeedUrlMap.find_target(url)
