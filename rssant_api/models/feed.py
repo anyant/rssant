@@ -679,7 +679,7 @@ class UnionFeed:
             deteted_ids.append(FeedUnionId(user_id, feed_id))
         updates = []
         for user_feed in user_feeds:
-            feed_id = user_feed.id
+            feed_id = user_feed.feed_id
             dt_updated = user_feed.feed.dt_updated
             if feed_id not in hints or not dt_updated:
                 updates.append(feed_id)
