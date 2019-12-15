@@ -11,6 +11,7 @@ from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
 from .schema import validate_opml
 from .blacklist import compile_url_blacklist
+from .helper import lxml_call
 
 LOG = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ is_in_blacklist = compile_url_blacklist(BLACKLIST_CONTENT)
 def parse_opml(text):
     result = {}
     result['items'] = items = []
-    root = ElementTree.fromstring(text)
+    root = lxml_call(ElementTree.fromstring, text)
     title = root.find('./head/title')
     if title is not None:
         title = title.text

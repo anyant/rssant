@@ -10,6 +10,7 @@ from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
 
 from .importer import RE_URL
+from .helper import lxml_call
 
 RE_IMG = re.compile(
     r'(?:<img\s*.*?\s+src="([^"]+?)")|'
@@ -207,7 +208,7 @@ def process_story_links(content, story_link):
     """
     if not content:
         return content
-    dom = lxml.html.fromstring(content)
+    dom = lxml_call(lxml.html.fromstring, content)
     for a in dom.iter('a'):
         url = a.get('href')
         if url:
@@ -288,6 +289,13 @@ def story_html_to_text(content, clean=True):
     hello world
     >>> print(story_html_to_text('<pre><code>hi</code></pre>'))
     <BLANKLINE>
+    >>> content = '''
+    ... <?xml version="1.0" encoding="utf-8"?>
+    ... <?xml-stylesheet type="text/xsl" href="/res/preview.xsl"?>
+    ... <p>中文传媒精选</p>
+    ... '''
+    >>> print(story_html_to_text(content))
+    中文传媒精选
     """
     if (not content) or (not content.strip()):
         return ""
@@ -298,13 +306,13 @@ def story_html_to_text(content, clean=True):
             # root tag and child tag in kill_tags set.
             if content.startswith('<pre'):
                 content = '<div>' + content + '</div>'
-            content = lxml_text_html_cleaner.clean_html(content).strip()
+            content = lxml_call(lxml_text_html_cleaner.clean_html, content).strip()
         if not content:
             return ""
-        r = lxml.html.fromstring(content, parser=lxml_html_parser)
+        r = lxml_call(lxml.html.fromstring, content, parser=lxml_html_parser)
         content = r.text_content().strip()
     except lxml.etree.ParserError:
-        content = soupparser.fromstring(content).text_content().strip()
+        content = lxml_call(soupparser.fromstring, content).text_content().strip()
     return RE_BLANK_LINE.sub('\n', content)
 
 
@@ -348,10 +356,17 @@ def story_html_clean(content):
     hello world</pre>
     <p>happy day</p>
     </div>
+    >>> content = '''
+    ... <?xml version="1.0" encoding="utf-8"?>
+    ... <?xml-stylesheet type="text/xsl" href="/res/preview.xsl"?>
+    ... <p>中文传媒精选</p>
+    ... '''
+    >>> print(story_html_clean(content))
+    <p>中文传媒精选</p>
     """
     if (not content) or (not content.strip()):
         return ""
-    content = lxml_story_html_cleaner.clean_html(content).strip()
+    content = lxml_call(lxml_story_html_cleaner.clean_html, content).strip()
     if not content:
         return ""
     return content
