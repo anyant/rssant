@@ -746,9 +746,9 @@ class UnionFeed:
     def delete_all(user_id, ids=None) -> int:
         if ids is not None and not ids:
             return 0
-        feed_ids = [x.feed_id for x in ids]
         q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
         if ids is not None:
+            feed_ids = [x.feed_id for x in ids]
             q = q.filter(feed_id__in=feed_ids)
         q = q.only('_version', 'id')
         num_deleted, details = q.delete()
