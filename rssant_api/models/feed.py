@@ -102,6 +102,8 @@ class Feed(Model, ContentHashMixin):
         **optional, help_text="最老的story发布时间")
     total_storys = models.IntegerField(
         **optional, default=0, help_text="Number of total storys")
+    retention_offset = models.IntegerField(
+        **optional, default=0, help_text="stale story == offset < retention_offset")
     # Deprecated since v3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
@@ -228,6 +230,21 @@ class Feed(Model, ContentHashMixin):
             feed_ids = [x['feed_id'] for x in feeds]
             cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
         return feeds
+
+    @staticmethod
+    def take_retention_feeds(retention=5000, limit=10):
+        sql_check = """
+        SELECT id, url FROM rssant_api_feed
+        WHERE total_storys - retention_offset > %s
+        ORDER BY id LIMIT %s
+        """
+        params = [retention, limit]
+        with connection.cursor() as cursor:
+            cursor.execute(sql_check, params)
+            feeds = []
+            for feed_id, url in cursor.fetchall():
+                feeds.append(dict(feed_id=feed_id, url=url))
+            return feeds
 
 
 class RawFeed(Model, ContentHashMixin):

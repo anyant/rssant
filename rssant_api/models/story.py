@@ -69,7 +69,10 @@ class Story(Model, ContentHashMixin):
     title = models.CharField(max_length=200, help_text="标题")
     link = models.TextField(help_text="文章链接")
     author = models.CharField(max_length=200, **optional, help_text='作者')
-    has_mathjax = models.BooleanField(**optional, default=False, help_text='')
+    has_mathjax = models.BooleanField(
+        **optional, default=False, help_text='has MathJax')
+    is_user_marked = models.BooleanField(
+        **optional, default=False, help_text='is user favorited or watched ever')
     dt_published = models.DateTimeField(help_text="发布时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
@@ -155,7 +158,7 @@ class Story(Model, ContentHashMixin):
             if new_story_objects:
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
                 early_dt_published = new_story_objects[0].dt_published
-                num_reallocate = Story._reallocate_offset(feed.id, early_dt_published)
+                num_reallocate = Story._reallocate_offset(feed, early_dt_published)
                 Story._update_feed_monthly_story_count(feed, new_story_objects)
                 Story._update_feed_story_dt_published_total_storys(feed, total_storys=offset)
             else:
@@ -163,23 +166,24 @@ class Story(Model, ContentHashMixin):
             return modified_story_objects, num_reallocate
 
     @staticmethod
-    def _reallocate_offset(feed_id, early_dt_published=None):
+    def _reallocate_offset(feed, early_dt_published=None):
         if early_dt_published:
             should_reallocate = timezone.now() - early_dt_published > ONE_MONTH
             if not should_reallocate:
                 return 0
-        early_story_offset = 0
+        early_story_offset = feed.retention_offset or 0
         if early_dt_published:
             # 找出第一个比early_dt_published更早的story
             early_story = Story.objects\
                 .only('id', 'offset')\
-                .filter(feed_id=feed_id, dt_published__lt=early_dt_published)\
+                .filter(feed_id=feed.id, dt_published__lt=early_dt_published)\
+                .filter(offset__gte=feed.retention_offset)\
                 .order_by('-dt_published')\
                 .first()
             if early_story:
                 early_story_offset = early_story.offset
         # 所有可能需要重排的story
-        q = Story.objects.filter(feed_id=feed_id)\
+        q = Story.objects.filter(feed_id=feed.id)\
             .only('_version', 'id', 'offset', 'dt_published', 'unique_id')\
             .filter(offset__gte=early_story_offset)\
             .order_by('dt_published', 'unique_id')
@@ -200,7 +204,8 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def reallocate_offset(feed_id, early_dt_published=None):
         with transaction.atomic():
-            return Story._reallocate_offset(feed_id, early_dt_published=early_dt_published)
+            feed = Feed.get_by_pk(feed_id)
+            return Story._reallocate_offset(feed, early_dt_published=early_dt_published)
 
     @staticmethod
     def _update_feed_monthly_story_count(feed, new_story_objects):
@@ -345,6 +350,33 @@ class Story(Model, ContentHashMixin):
         with connection.cursor() as cursor:
             cursor.execute(sql)
             return list(cursor.fetchall())
+
+    @staticmethod
+    def set_user_marked_by_id(story_id, is_user_marked=True):
+        Story.objects.filter(pk=story_id)\
+            .update(is_user_marked=is_user_marked)
+
+    @staticmethod
+    def delete_by_retention_offset(feed_id, retention_offset):
+        """
+        delete storys < retention_offset and not is_user_marked
+        """
+        n, __ = Story.objects\
+            .filter(feed_id=feed_id, offset__lt=retention_offset)\
+            .exclude(is_user_marked=True)\
+            .delete()
+        return n
+
+    @staticmethod
+    def delete_by_retention(feed_id, retention=5000):
+        feed = Feed.get_by_pk(feed_id)
+        retention_offset = feed.total_storys - retention
+        if retention_offset > (feed.retention_offset or 0):
+            n = Story.delete_by_retention_offset(feed_id, retention_offset)
+            feed.retention_offset = retention_offset
+            feed.save()
+            return n
+        return 0
 
 
 class UserStory(Model):
@@ -642,23 +674,27 @@ class UnionStory:
         union_story = UnionStory.get_by_id(story_unionid)
         user_feed_id = union_story._user_feed_id
         user_story = union_story._user_story
-        if user_story is None:
-            user_id, feed_id, offset = story_unionid
-            user_story = UserStory(
-                user_id=user_id,
-                feed_id=feed_id,
-                user_feed_id=user_feed_id,
-                story_id=union_story._story.id,
-                offset=union_story._story.offset
-            )
-        if is_favorited is not None:
-            user_story.is_favorited = is_favorited
-            user_story.dt_favorited = timezone.now()
-        if is_watched is not None:
-            user_story.is_watched = is_watched
-            user_story.dt_watched = timezone.now()
-        user_story.save()
-        union_story._user_story = user_story
+        with transaction.atomic():
+            if user_story is None:
+                user_id, feed_id, offset = story_unionid
+                user_story = UserStory(
+                    user_id=user_id,
+                    feed_id=feed_id,
+                    user_feed_id=user_feed_id,
+                    story_id=union_story._story.id,
+                    offset=union_story._story.offset
+                )
+            if is_favorited is not None:
+                user_story.is_favorited = is_favorited
+                user_story.dt_favorited = timezone.now()
+            if is_watched is not None:
+                user_story.is_watched = is_watched
+                user_story.dt_watched = timezone.now()
+            user_story.save()
+            if is_favorited or is_watched:
+                union_story._story.is_user_marked = True
+                union_story._story.save()
+            union_story._user_story = user_story
         return union_story
 
     @staticmethod

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.db import transaction, connection
 import djclick as click
 
-from rssant_api.models import Feed, Story, UnionFeed
+from rssant_api.models import Feed, Story, UnionFeed, UserStory
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
@@ -143,6 +143,20 @@ def update_story_has_mathjax(storys=None):
             if processor.story_has_mathjax(story.content):
                 story.has_mathjax = True
                 story.save()
+
+
+@main.command()
+def update_story_is_user_marked():
+    user_storys = list(
+        UserStory.objects
+        .exclude(is_watched=False, is_favorited=False)
+        .all()
+    )
+    LOG.info('total %s user marked storys', len(user_storys))
+    if not user_storys:
+        return
+    for user_story in tqdm.tqdm(user_storys, ncols=80, ascii=True):
+        Story.set_user_marked_by_id(user_story.story_id)
 
 
 @main.command()

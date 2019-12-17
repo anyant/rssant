@@ -24,6 +24,7 @@ class EnvConfig:
     secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address = T.bool.default(False)
     check_feed_minutes = T.int.min(1).default(30)
+    feed_story_retention = T.int.min(1).default(5000).desc('max storys to keep per feed')
     # actor
     actor_storage_path = T.str.optional
     actor_storage_compact_wal_delta = T.int.min(1).default(5000)
