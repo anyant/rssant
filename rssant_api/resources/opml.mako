@@ -5,7 +5,7 @@
     </head>
     <body>
     % for feed in feeds:
-        <outline text="${ feed['link'] }" title="${ feed['title'] }" type="${ feed['version'] }" xmlUrl="${ feed['url'] }"/>
+        <outline text=${ feed['link'] } title=${ feed['title'] } type=${ feed['version'] } xmlUrl=${ feed['url'] }/>
     % endfor
     </body>
 </opml>

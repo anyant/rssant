@@ -5,6 +5,7 @@ from django.http.response import HttpResponse
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 from xml.sax.saxutils import escape as xml_escape
+from xml.sax.saxutils import quoteattr as xml_quote
 from mako.template import Template
 
 from rssant_feedlib.importer import import_feed_from_text
@@ -264,7 +265,7 @@ def feed_export_opml(request, download: T.bool.default(False)):
     feeds = [x.to_dict() for x in feeds]
     for user_feed in feeds:
         for field in ['title', 'link', 'url', 'version']:
-            user_feed[field] = xml_escape(user_feed[field] or '')
+            user_feed[field] = xml_quote(xml_escape(user_feed[field] or ''))
     tmpl = Template(filename=OPML_TEMPLATE_PATH)
     content = tmpl.render(feeds=feeds)
     response = HttpResponse(content, content_type='text/xml')
