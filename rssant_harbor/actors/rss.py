@@ -170,6 +170,7 @@ def do_update_feed(
             if v != '' and v is not None:
                 setattr(feed, k, v)
         now = timezone.now()
+        now_sub_30d = now - timezone.timedelta(days=30)
         if not feed.dt_updated:
             feed.dt_updated = now
         feed.dt_checked = feed.dt_synced = now
@@ -179,7 +180,9 @@ def do_update_feed(
             if not s['dt_updated']:
                 s['dt_updated'] = now
             if not s['dt_published']:
-                s['dt_published'] = now
+                # set dt_published to now - 30d to avoid these storys
+                # take over mushroom page, i.e. Story.query_recent_by_user
+                s['dt_published'] = now_sub_30d
         modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
         LOG.info(
             'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
