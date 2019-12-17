@@ -232,11 +232,11 @@ class Feed(Model, ContentHashMixin):
         return feeds
 
     @staticmethod
-    def take_retention_feeds(retention=5000, limit=10):
+    def take_retention_feeds(retention=5000, limit=5):
         sql_check = """
         SELECT id, url FROM rssant_api_feed
         WHERE total_storys - retention_offset > %s
-        ORDER BY id LIMIT %s
+        ORDER BY RANDOM() LIMIT %s
         """
         params = [retention, limit]
         with connection.cursor() as cursor:

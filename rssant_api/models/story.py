@@ -369,13 +369,14 @@ class Story(Model, ContentHashMixin):
 
     @staticmethod
     def delete_by_retention(feed_id, retention=5000):
-        feed = Feed.get_by_pk(feed_id)
-        retention_offset = feed.total_storys - retention
-        if retention_offset > (feed.retention_offset or 0):
-            n = Story.delete_by_retention_offset(feed_id, retention_offset)
-            feed.retention_offset = retention_offset
-            feed.save()
-            return n
+        with transaction.atomic():
+            feed = Feed.get_by_pk(feed_id)
+            retention_offset = feed.total_storys - retention
+            if retention_offset > (feed.retention_offset or 0):
+                n = Story.delete_by_retention_offset(feed_id, retention_offset)
+                feed.retention_offset = retention_offset
+                feed.save()
+                return n
         return 0
 
 
