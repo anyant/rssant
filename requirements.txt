@@ -115,7 +115,7 @@ tqdm==4.31.1
 uritemplate==3.0.0        # via coreapi
 urllib3==1.25.6           # via requests, sentry-sdk
 validators==0.14.0
-validr==1.1.1
+validr==1.1.2
 watchgod==0.5             # via aiohttp-devtools
 wcwidth==0.1.7            # via prompt-toolkit, pytest, tabulate
 werkzeug==0.16.0          # via flask
@@ -125,4 +125,4 @@ zipp==0.6.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip==19.3.1               # via pipdeptree, shiv
-# setuptools==41.6.0        # via shiv
+# setuptools==42.0.2        # via shiv

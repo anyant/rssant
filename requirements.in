@@ -50,7 +50,7 @@ prometheus-client==0.7.1
 
 # helpers
 Brotli==1.0.7
-validr==1.1.1
+validr==1.1.2
 attrdict==2.0.1
 msgpack==0.6.2
 loguru==0.3.1
