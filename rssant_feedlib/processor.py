@@ -9,8 +9,14 @@ from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
 
+from validr import T, Invalid
+from rssant_common.validator import compiler
+
 from .importer import RE_URL
 from .helper import lxml_call
+
+
+validate_url = compiler.compile(T.url)
 
 RE_IMG = re.compile(
     r'(?:<img\s*[^<>]*?\s+src="([^"]+?)")|'
@@ -125,12 +131,13 @@ class StoryImageProcessor:
     ...     srcset="/abc.jpg
     ...         " type="image/jpeg">
     ...     <img src="/abc.jpg" alt="Design System实践"><img src="https://image.example.com/2019/12/21/xxx.jpg" alt="xxx image">
+    ...     <img src="http://file///invalid.png">
     ...     <img src="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D" alt="DataURL">
     ... </picture>
     ... <img data-src="/error.jpg" src="/ok.jpg">
     ... '''
     >>> story_image_count(content)
-    6
+    7
     >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
     >>> image_indexs = processor.parse()
     >>> len(image_indexs)
@@ -169,8 +176,13 @@ class StoryImageProcessor:
             img_url = (img_src or source_srcset).strip()
             if not is_data_url(img_url) and not is_replaced_image(img_url):
                 img_url = self.fix_relative_url(img_url)
-                idx = StoryImageIndexItem(startpos, endpos, img_url)
-                image_indexs.append(idx)
+                try:
+                    validate_url(img_url)
+                except Invalid:
+                    pass
+                else:
+                    idx = StoryImageIndexItem(startpos, endpos, img_url)
+                    image_indexs.append(idx)
             pos = endpos
         return image_indexs
 
