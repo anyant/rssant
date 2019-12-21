@@ -3,6 +3,7 @@ import json
 import time
 import codecs
 import logging
+import socket
 import contextlib
 from urllib.parse import urlparse, urlunparse
 
@@ -125,10 +126,13 @@ def aiohttp_raise_for_status(response: aiohttp.ClientResponse):
 
 
 def aiohttp_client_session(*, timeout=None, **kwargs):
-    # use aiodns and support number timeout
+    """use aiodns and support number timeout"""
     if isinstance(timeout, (int, float)):
         timeout = aiohttp.ClientTimeout(total=timeout)
-    connector = aiohttp.TCPConnector(resolver=aiohttp.AsyncResolver())
+    resolver = aiohttp.AsyncResolver()
+    # Fix: No route to host. https://github.com/saghul/aiodns/issues/22
+    family = socket.AF_INET
+    connector = aiohttp.TCPConnector(resolver=resolver, family=family)
     return aiohttp.ClientSession(connector=connector, timeout=timeout, **kwargs)
 
 
