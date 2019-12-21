@@ -97,6 +97,17 @@ def is_data_url(url):
     return url and url.startswith('data:')
 
 
+RSSANT_IMAGE_TAG = 'rssant=1'
+
+
+def is_replaced_image(url):
+    """
+    >>> is_replaced_image('https://rss.anyant.com/123.jpg?rssant=1')
+    True
+    """
+    return url and RSSANT_IMAGE_TAG in url
+
+
 def make_absolute_url(url, base_href):
     if not base_href:
         return url
@@ -156,7 +167,7 @@ class StoryImageProcessor:
             img_src, source_srcset = match.groups()
             startpos, endpos = match.span(1) if img_src else match.span(2)
             img_url = (img_src or source_srcset).strip()
-            if not is_data_url(img_url):
+            if not is_data_url(img_url) and not is_replaced_image(img_url):
                 img_url = self.fix_relative_url(img_url)
                 idx = StoryImageIndexItem(startpos, endpos, img_url)
                 image_indexs.append(idx)

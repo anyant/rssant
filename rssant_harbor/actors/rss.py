@@ -11,7 +11,7 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
-from rssant_feedlib.processor import StoryImageProcessor
+from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
 from rssant_api.monthly_story_count import id_of_month, month_of_id
 from rssant_common.image_url import encode_image_url
@@ -265,17 +265,6 @@ def normalize_url(url):
     https://rss.anyant.com/%5E_%5E
     """
     return str(yarl.URL(url))
-
-
-RSSANT_IMAGE_TAG = 'rssant=1'
-
-
-def is_replaced_image(url):
-    """
-    >>> is_replaced_image('https://rss.anyant.com/123.jpg?rssant=1')
-    True
-    """
-    return url and RSSANT_IMAGE_TAG in url
 
 
 def _image_urls_of_indexs(image_indexs):
