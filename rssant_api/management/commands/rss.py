@@ -12,6 +12,7 @@ from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_common import unionid
 from rssant_feedlib import processor
+from rssant_common.actor_client import scheduler
 
 
 LOG = logging.getLogger(__name__)
@@ -171,6 +172,20 @@ def process_story_links(storys=None):
             if story.content != content:
                 story.content = content
                 story.save()
+
+
+@main.command()
+@click.option('--storys', help="story ids, separate by ','")
+def update_story_images(storys=None):
+    story_ids = _get_story_ids(storys)
+    LOG.info('total %s storys', len(story_ids))
+    for story_id in tqdm.tqdm(story_ids, ncols=80, ascii=True):
+        story = Story.objects.get(pk=story_id)
+        scheduler.tell('harbor_rss.update_story_images', dict(
+            story_id=story_id,
+            story_url=story.link,
+            images=[],
+        ))
 
 
 @main.command()
