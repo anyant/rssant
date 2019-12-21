@@ -3,6 +3,7 @@ import logging
 import yarl
 import aiohttp
 from aiohttp.web import StreamResponse, json_response
+from aiohttp import HttpVersion11
 
 from rssant_config import CONFIG
 from rssant_common.helper import get_referer_of_url, aiohttp_client_session
@@ -79,6 +80,15 @@ async def image_proxy(request, url, referer=None):
     if not referer or is_referer_force_url(url):
         referer = get_referer_of_url(url)
     LOG.info(f'proxy image {url} referer={referer}')
+    session = response = None
+
+    async def do_cleanup():
+        nonlocal session, response
+        if response:
+            response.close()
+        if session:
+            await session.close()
+
     try:
         await check_private_address(url)
         headers = {'User-Agent': DEFAULT_USER_AGENT}
@@ -99,12 +109,24 @@ async def image_proxy(request, url, referer=None):
                      f'failed {response.status}, will try without referer')
             response.close()
             response = await get_response(session, response.url, headers)
+        is_chunked = response.headers.get('Transfer-Encoding', '').lower() == 'chunked'
+        # using chunked encoding is forbidden for HTTP/1.0
+        if is_chunked and request.version < HttpVersion11:
+            version = 'HTTP/{0.major}.{0.minor}'.format(request.version)
+            error_msg = f"using chunked encoding is forbidden for {version}"
+            LOG.info(f'proxy image {url} referer={referer} failed: {error_msg}')
+            response.close()
+            raise ImageProxyError(error_msg)
     except ImageProxyError as ex:
+        await do_cleanup()
         return ex.to_response()
+    except Exception:
+        await do_cleanup()
+        raise
     try:
         my_response = StreamResponse(status=response.status)
         # 'Content-Length', 'Content-Type', 'Transfer-Encoding'
-        if response.headers.get('Transfer-Encoding', '').lower() == 'chunked':
+        if is_chunked:
             my_response.enable_chunked_encoding()
         elif response.headers.get('Transfer-Encoding'):
             my_response.headers['Transfer-Encoding'] = response.headers['Transfer-Encoding']
@@ -120,8 +142,7 @@ async def image_proxy(request, url, referer=None):
                 my_response.headers[h] = response.headers[h]
         await my_response.prepare(request)
     except Exception:
-        response.close()
-        await session.close()
+        await do_cleanup()
         raise
     try:
         content_length = 0
@@ -134,6 +155,5 @@ async def image_proxy(request, url, referer=None):
             await my_response.write(chunk)
         await my_response.write_eof()
     finally:
-        response.close()
-        await session.close()
+        await do_cleanup()
     return my_response
