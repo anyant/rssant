@@ -13,8 +13,8 @@ from .importer import RE_URL
 from .helper import lxml_call
 
 RE_IMG = re.compile(
-    r'(?:<img\s*.*?\s+src="([^"]+?)")|'
-    r'(?:<source\s*.*?\s+srcset="([^"]+?)")',
+    r'(?:<img\s*[^<>]*?\s+src="([^"]+?)")|'
+    r'(?:<source\s*[^<>]*?\s+srcset="([^"]+?)")',
     re.I | re.M)
 
 RE_LINK = re.compile(r'<a\s*.*?\s+href="([^"]+?)"', re.I | re.M)
@@ -113,17 +113,17 @@ class StoryImageProcessor:
     ...     <source
     ...     srcset="/abc.jpg
     ...         " type="image/jpeg">
-    ...     <img src="/abc.jpg" alt="Design System实践">
+    ...     <img src="/abc.jpg" alt="Design System实践"><img src="https://image.example.com/2019/12/21/xxx.jpg" alt="xxx image">
     ...     <img src="data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D" alt="DataURL">
     ... </picture>
     ... <img data-src="/error.jpg" src="/ok.jpg">
     ... '''
     >>> story_image_count(content)
-    5
+    6
     >>> processor = StoryImageProcessor("https://rss.anyant.com/story/123", content)
     >>> image_indexs = processor.parse()
     >>> len(image_indexs)
-    4
+    5
     >>> image_indexs[0].value
     'https://rss.anyant.com/abc.webp'
     >>> image_indexs[1].value
@@ -131,8 +131,10 @@ class StoryImageProcessor:
     >>> image_indexs[2].value
     'https://rss.anyant.com/abc.jpg'
     >>> image_indexs[3].value
+    'https://image.example.com/2019/12/21/xxx.jpg'
+    >>> image_indexs[4].value
     'https://rss.anyant.com/ok.jpg'
-    """
+    """  # noqa: E501
 
     def __init__(self, story_url, content):
         self.story_url = story_url
