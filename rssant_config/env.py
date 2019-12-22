@@ -26,9 +26,9 @@ class EnvConfig:
     check_feed_minutes = T.int.min(1).default(30)
     feed_story_retention = T.int.min(1).default(5000).desc('max storys to keep per feed')
     # actor
-    actor_storage_path = T.str.optional
+    actor_storage_path = T.str.default('data/actor_storage')
     actor_storage_compact_wal_delta = T.int.min(1).default(5000)
-    actor_queue_max_complete_size = T.int.min(0).default(5000)
+    actor_queue_max_complete_size = T.int.min(0).default(500)
     actor_max_retry_time = T.int.min(1).default(600)
     actor_max_retry_count = T.int.min(0).default(1)
     actor_token = T.str.optional

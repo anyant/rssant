@@ -108,6 +108,7 @@ six==1.12.0               # via attrdict, configobj, django-click, django-extens
 soupsieve==1.9.4          # via beautifulsoup4
 sqlalchemy==1.2.18
 sqlparse==0.2.4
+supervisor==4.1.0
 tabulate[widechars]==0.8.5  # via cli-helpers
 terminaltables==3.1.0     # via cli-helpers, validr
 text-unidecode==1.2       # via python-slugify

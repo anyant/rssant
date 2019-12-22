@@ -1,6 +1,9 @@
 .git/
 .vscode/
 /data/
+/static/
+/box/data/
+/box/logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

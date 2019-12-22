@@ -1,5 +1,9 @@
 .vscode/
 /data/
+/static/
+/box/web/
+/box/data/
+/box/logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
