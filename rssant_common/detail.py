@@ -28,7 +28,7 @@ True
 >>> validate('f1+f2')
 Traceback (most recent call last):
 ...
-validr._exception.Invalid: invalid detail value, value=f1+f2
+validr._exception_c.Invalid: invalid detail value, value=f1+f2
 """
 import re
 from validr import Invalid, SchemaError, validator
@@ -166,7 +166,7 @@ def _parse_fields(fields, extra_fields):
     >>> _parse_fields('a,b', 'b,c,d')
     Traceback (most recent call last):
     ...
-    validr._exception.SchemaError: duplicated fields b
+    validr._exception_c.SchemaError: duplicated fields b
     """
     def _parse_one(text, error_message):
         if not text:
