@@ -124,3 +124,106 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 如需停止服务，执行: `docker rm -f rssant`  
 如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
 
+### 开发环境
+
+#### 系统级依赖
+
+- Linux 或 Mac OSX
+- [Docker](https://developer.aliyun.com/mirror/docker-ce)
+- Python + [pyenv](https://github.com/pyenv/pyenv-installer)
+- Node.js + [nvm](https://github.com/nvm-sh/nvm#install--update-script)
+
+#### 后端
+
+安装依赖
+
+```
+git clone git@gitee.com:anyant/rssant.git
+cd rssant
+pyenv virtualenv -p python3.7 3.7.4 rssant
+pyenv local rssant
+pip install -r requirements.txt
+```
+
+启动数据库
+
+```
+./scripts/postgres_start.sh
+```
+
+初始化数据库
+
+```
+python manage.py migrate
+python manage.py runscript django_db_init
+```
+
+开多个终端，分别启动以下服务
+
+```
+python manage.py runserver 6788
+
+python -m rssant_async.main
+
+python -m rssant_scheduler.main --concurrency 10
+
+python -m rssant_harbor.main --concurrency 10
+
+python -m rssant_worker.main --concurrency 10
+```
+
+访问 http://127.0.0.1:6788/doc/v1/  账号: admin 密码: admin
+
+访问 http://127.0.0.1:6788/docs/v1/#api-v1-feed-import-create   
+点击 Interact，输入任意博客地址，例如: `https://www.ruanyifeng.com/blog/` , 然后提交。  
+请求应当正常返回，后台任务控制台会输出查找订阅的日志信息。  
+
+单元测试
+
+```
+pytest
+```
+
+打包
+
+```
+docker build -t rssant/api:latest .
+```
+
+#### 前端
+
+```
+git clone git@gitee.com:anyant/rssant-web.git
+cd rssant-web
+npm install
+npm run serve
+```
+
+访问 http://127.0.0.1:6789/ 即可看到前端页面。
+
+打包
+
+```
+docker build -t rssant/web:latest .
+```
+
+#### rssant/box
+
+将前端代码放到 box/web 目录下
+
+```
+cd rssant
+git clone git@gitee.com:anyant/rssant-web.git box/web
+```
+
+打包
+
+```
+./box/build.sh
+```
+
+运行
+
+```
+./box/run.sh
+```
