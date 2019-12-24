@@ -24,7 +24,7 @@
 蚁阅基于Docker部署，服务器环境要求:
 
 - Linux, 1G 内存
-- Docker
+- [Docker](https://developer.aliyun.com/mirror/docker-ce) + [镜像加速器](https://juejin.im/post/5cd2cf01f265da0374189441)
 
 #### 第一步，准备配置文件
 
@@ -86,7 +86,7 @@ docker run -ti --name rssant -d \
     -v rssant-postgres-logs:/var/log/postgresql \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
     --restart unless-stopped \
-    rssant/box:latest
+    guyskk/rssant:latest
 
 docker logs --tail 1000 -f rssant
 ```
@@ -126,12 +126,27 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 如需停止服务，执行: `docker rm -f rssant`  
 如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
 
+## 反馈与协作
+
+蚁阅主仓库托管在 [码云](https://gitee.com/anyant/rssant) 上，[GitHub](https://github.com/anyant/rssant) 主要作为镜像仓库。  
+
+码云和 GitHub 均可提交 Issue:
+- https://gitee.com/anyant/rssant/issues
+- https://github.com/anyant/rssant/issues
+
+码云和 GitHub 也均可提交 Pull Request:
+- https://gitee.com/anyant/rssant/pulls
+- https://github.com/anyant/rssant/pulls
+
+如果你有码云账号，建议到码云提交 Pull Request。  
+非常感谢你的支持！
+
 ## 开发环境
 
 #### 系统级依赖
 
 - Linux 或 Mac OSX
-- [Docker](https://developer.aliyun.com/mirror/docker-ce)
+- [Docker](https://developer.aliyun.com/mirror/docker-ce) + [镜像加速器](https://juejin.im/post/5cd2cf01f265da0374189441)
 - Python + [pyenv](https://github.com/pyenv/pyenv-installer)
 - Node.js + [nvm](https://github.com/nvm-sh/nvm#install--update-script)
 
@@ -229,18 +244,3 @@ git clone git@gitee.com:anyant/rssant-web.git box/web
 ```
 ./box/run.sh
 ```
-
-## 反馈与协作
-
-蚁阅主仓库托管在 [码云](https://gitee.com/anyant/rssant) 上，[GitHub](https://github.com/anyant/rssant) 主要作为镜像仓库。  
-
-码云和 GitHub 均可提交 Issue:
-- https://gitee.com/anyant/rssant/issues
-- https://github.com/anyant/rssant/issues
-
-码云和 GitHub 也均可提交 Pull Request:
-- https://gitee.com/anyant/rssant/pulls
-- https://github.com/anyant/rssant/pulls
-
-如果你有码云账号，建议到码云提交 Pull Request。  
-非常感谢你的支持！
