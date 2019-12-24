@@ -1,8 +1,10 @@
 def lxml_call(f, text: str, *args, **kwargs):
-    # Fix ValueError: Unicode strings with encoding declaration are not supported.
-    #     Please use bytes input or XML fragments without declaration.
-    # See also: https://stackoverflow.com/questions/15830421/xml-unicode-strings-with-encoding-declaration-are-not-supported
-    #           https://lxml.de/parsing.html
+    '''
+    Fix ValueError: Unicode strings with encoding declaration are not supported.
+        Please use bytes input or XML fragments without declaration.
+    See also: https://stackoverflow.com/questions/15830421/xml-unicode-strings-with-encoding-declaration-are-not-supported
+              https://lxml.de/parsing.html
+    '''  # noqa: E501
     text = text.strip()
     try:
         r = f(text, *args, **kwargs)

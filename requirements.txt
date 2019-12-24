@@ -44,7 +44,9 @@ django==2.2.8
 djangorestframework==3.10.3
 dnspython==1.16.0         # via email-validator
 email-validator==1.0.4    # via validr
+entrypoints==0.3          # via flake8
 feedparser==5.2.1
+flake8==3.7.9
 flask==1.1.1
 graphviz==0.13
 gunicorn==19.9.0
@@ -60,6 +62,7 @@ loguru==0.3.1
 lxml==4.3.3
 mako==1.1.0
 markupsafe==1.1.1         # via jinja2, mako
+mccabe==0.6.1             # via flake8
 memory-profiler==0.55.0
 module-graph==0.0.1
 more-itertools==7.2.0     # via pytest, zipp
@@ -82,13 +85,16 @@ psycopg2-binary==2.7.7
 psycopg2==2.7.7
 py==1.8.0                 # via pytest
 pycares==3.0.0            # via aiodns
+pycodestyle==2.5.0
 pycparser==2.19           # via cffi
+pyflakes==2.1.1           # via flake8
 pygments==2.4.2           # via aiohttp-devtools, cli-helpers, pgcli
 pyinstrument-cext==0.2.0
 pyinstrument==3.0.1
 pynliner==0.8.0
 pyparsing==2.4.2          # via packaging, validr
 pytest-cov==2.8.1
+pytest-flake8==1.0.4
 pytest==5.3.2
 python-dotenv==0.10.2
 python-slugify==3.0.2

@@ -13,15 +13,17 @@
 
 开箱即用地址: https://rss.anyant.com (建议用手机浏览器访问)  
 
+<p>
 <img src="docs/pictures/rssant-home.png" width="33%" alt="首页" />
 <img src="docs/pictures/rssant-list.png" width="33%" alt="故事列表" />
 <img src="docs/pictures/rssant-story.png" width="33%" alt="故事内容" />
+</p>
 
-### 部署文档
+## 部署文档
 
 蚁阅基于Docker部署，服务器环境要求:
 
-- Linux, 2G内存
+- Linux, 1G 内存
 - Docker
 
 #### 第一步，准备配置文件
@@ -124,7 +126,7 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 如需停止服务，执行: `docker rm -f rssant`  
 如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
 
-### 开发环境
+## 开发环境
 
 #### 系统级依赖
 
@@ -178,7 +180,7 @@ python -m rssant_worker.main --concurrency 10
 点击 Interact，输入任意博客地址，例如: `https://www.ruanyifeng.com/blog/` , 然后提交。  
 请求应当正常返回，后台任务控制台会输出查找订阅的日志信息。  
 
-单元测试
+测试
 
 ```
 pytest
@@ -227,3 +229,18 @@ git clone git@gitee.com:anyant/rssant-web.git box/web
 ```
 ./box/run.sh
 ```
+
+## 反馈与协作
+
+蚁阅主仓库托管在 [码云](https://gitee.com/anyant/rssant) 上，[GitHub](https://github.com/anyant/rssant) 主要作为镜像仓库。  
+
+码云和 GitHub 均可提交 Issue:
+- https://gitee.com/anyant/rssant/issues
+- https://github.com/anyant/rssant/issues
+
+码云和 GitHub 也均可提交 Pull Request:
+- https://gitee.com/anyant/rssant/pulls
+- https://github.com/anyant/rssant/pulls
+
+如果你有码云账号，建议到码云提交 Pull Request。  
+非常感谢你的支持！
