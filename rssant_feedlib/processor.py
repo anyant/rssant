@@ -1,5 +1,6 @@
 import typing
 import re
+import logging
 from collections import namedtuple
 from urllib.parse import urljoin, quote
 import lxml.etree
@@ -8,12 +9,16 @@ from lxml.html import soupparser
 from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
+from django.utils.html import escape as html_escape
 
 from validr import T, Invalid
 from rssant_common.validator import compiler
 
 from .importer import RE_URL
-from .helper import lxml_call
+from .helper import lxml_call, LXMLError
+
+
+LOG = logging.getLogger(__name__)
 
 
 validate_url = compiler.compile(T.url)
@@ -321,6 +326,11 @@ def story_html_to_text(content, clean=True):
     ... '''
     >>> print(story_html_to_text(content))
     中文传媒精选
+    >>> story_html_to_text('') == ''
+    True
+    >>> # lxml can not parse below content, we handled the exception
+    >>> content = "<?phpob_start();echo file_get_contents($_GET['pdf_url']);ob_flush();?>"
+    >>> assert story_html_to_text(content)
     """
     if (not content) or (not content.strip()):
         return ""
@@ -336,8 +346,12 @@ def story_html_to_text(content, clean=True):
             return ""
         r = lxml_call(lxml.html.fromstring, content, parser=lxml_html_parser)
         content = r.text_content().strip()
-    except lxml.etree.ParserError:
-        content = lxml_call(soupparser.fromstring, content).text_content().strip()
+    except LXMLError:
+        try:
+            content = lxml_call(soupparser.fromstring, content).text_content().strip()
+        except LXMLError as ex:
+            LOG.info(f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex)
+            content = html_escape(content)
     return RE_BLANK_LINE.sub('\n', content)
 
 

@@ -5,13 +5,12 @@ from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
 
 from validr import T, Invalid
-from xml.etree.ElementTree import ParseError
 
 from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
 from .schema import validate_opml
 from .blacklist import compile_url_blacklist
-from .helper import lxml_call
+from .helper import lxml_call, LXMLError
 
 LOG = logging.getLogger(__name__)
 
@@ -178,7 +177,7 @@ def import_feed_from_text(text, filename=None) -> [str]:
         LOG.info('import text maybe OPML/XML, try parse it by OPML/XML parser')
         try:
             opml_result = parse_opml(text)
-        except (Invalid, ParseError) as ex:
+        except (Invalid, LXMLError) as ex:
             LOG.warning('parse opml failed, will fallback to general text parser', exc_info=ex)
         else:
             for item in opml_result['items']:
