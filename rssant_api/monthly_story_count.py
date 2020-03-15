@@ -50,6 +50,18 @@ def _check_year_month(year, month):
         raise ValueError(f'month must between 1 and 12')
 
 
+def is_valid_year_month(year, month):
+    """
+    >>> is_valid_year_month(1970, 12)
+    True
+    >>> is_valid_year_month(1970, 0)
+    False
+    >>> is_valid_year_month(1969, 12)
+    False
+    """
+    return (1970 <= year <= 9999) and (1 <= month <= 12)
+
+
 MAX_DRYNESS = 1000
 
 
@@ -158,6 +170,8 @@ class MonthlyStoryCount:
 
     def __bool__(self):
         return bool(self._data)
+
+    is_valid_year_month = staticmethod(is_valid_year_month)
 
     @staticmethod
     def _average_dryness(month_id_dryness_s):

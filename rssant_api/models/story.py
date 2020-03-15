@@ -214,6 +214,8 @@ class Story(Model, ContentHashMixin):
             if not story.dt_published:
                 continue
             year, month = story.dt_published.year, story.dt_published.month
+            if not MonthlyStoryCount.is_valid_year_month(year, month):
+                continue
             count = monthly_story_count.get(year, month)
             monthly_story_count.put(year, month, count + 1)
         feed.monthly_story_count = monthly_story_count
