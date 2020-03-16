@@ -45,7 +45,7 @@ djangorestframework==3.10.3
 dnspython==1.16.0         # via email-validator
 email-validator==1.0.4    # via validr
 entrypoints==0.3          # via flake8
-feedparser==5.2.1
+feedparser==6.0.0b3
 flake8==3.7.9
 flask==1.1.1
 graphviz==0.13
@@ -107,6 +107,7 @@ requests-oauthlib==1.2.0  # via django-allauth
 requests==2.22.0
 sentry-sdk==0.9.0
 setproctitle==1.1.10      # via pgcli
+sgmllib3k==1.0.0          # via feedparser
 shiv==0.0.50
 simplejson==3.16.0        # via django-rest-swagger
 six==1.12.0               # via attrdict, configobj, django-click, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
