@@ -80,7 +80,7 @@ pipdeptree==0.13.2
 shiv==0.0.50
 
 # backdoor
-psutil==5.6.3
+psutil==5.6.6
 objgraph==3.4.1
 pyinstrument==3.0.1
 pyinstrument-cext==0.2.0
