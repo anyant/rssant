@@ -402,10 +402,17 @@ def story_html_clean(content):
     ... '''
     >>> print(story_html_clean(content))
     <p>中文传媒精选</p>
+    >>> # lxml can not parse below content, we handled the exception
+    >>> content = '<!-- build time:Mon Mar 16 2020 19:23:52 GMT+0800 (GMT+08:00) --><!-- rebuild by neat -->'
+    >>> assert story_html_clean(content)
     """
     if (not content) or (not content.strip()):
         return ""
-    content = lxml_call(lxml_story_html_cleaner.clean_html, content).strip()
+    try:
+        content = lxml_call(lxml_story_html_cleaner.clean_html, content).strip()
+    except LXMLError as ex:
+        LOG.info(f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex)
+        content = html_escape(content)
     if not content:
         return ""
     return content
