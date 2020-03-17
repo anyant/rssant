@@ -140,13 +140,22 @@ class AsyncFeedReader:
                 asyncio.TimeoutError, concurrent.futures.TimeoutError):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
         except (ssl.SSLError, ssl.CertificateError,
-                aiohttp.ClientSSLError, aiohttp.ServerFingerprintMismatch):
+                aiohttp.ServerFingerprintMismatch,
+                aiohttp.ClientSSLError,
+                aiohttp.ClientConnectorSSLError,
+                aiohttp.ClientConnectorCertificateError):
             status = FeedResponseStatus.SSL_ERROR.value
-        except aiohttp.ClientProxyConnectionError:
+        except (aiohttp.ClientProxyConnectionError,
+                aiohttp.ClientHttpProxyError):
             status = FeedResponseStatus.PROXY_ERROR.value
-        except (ConnectionError, aiohttp.ServerDisconnectedError,
-                aiohttp.ServerConnectionError):
+        except (ConnectionError,
+                aiohttp.ServerDisconnectedError,
+                aiohttp.ServerConnectionError,
+                aiohttp.ClientConnectionError,
+                aiohttp.ClientConnectorError):
             status = FeedResponseStatus.CONNECTION_RESET.value
+        except (aiohttp.WSServerHandshakeError, aiohttp.ClientOSError):
+            status = FeedResponseStatus.CONNECTION_ERROR.value
         except aiohttp.ClientPayloadError:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except UnicodeDecodeError:
@@ -154,11 +163,11 @@ class AsyncFeedReader:
         except FeedReaderError as ex:
             status = ex.status
             response = ex.response
-        except aiohttp.ClientResponseError as ex:
+        except (aiohttp.ClientResponseError, aiohttp.ContentTypeError) as ex:
             status = ex.status
             if ex.history:
                 response = ex.history[-1]
-        except aiohttp.ClientError:
+        except (aiohttp.ClientError, aiohttp.InvalidURL):
             status = FeedResponseStatus.UNKNOWN_ERROR.value
         else:
             status = response.status
