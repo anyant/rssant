@@ -457,3 +457,10 @@ def do_clean_by_retention(ctx: ActorContext):
         url = feed['url']
         n = Story.delete_by_retention(feed_id, retention=retention)
         LOG.info(f'deleted {n} storys of feed#{feed_id} {url} by retention')
+
+
+@actor('harbor_rss.clean_image_info_by_retention')
+@django_context
+def do_clean_image_info_by_retention(ctx: ActorContext):
+    num_rows = ImageInfo.delete_by_retention()
+    LOG.info('delete {} outdated imageinfos'.format(num_rows))

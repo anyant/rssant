@@ -42,6 +42,11 @@ async def do_schedule_clean_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_by_retention', expire_at=time.time() + 180)
 
 
+@actor('scheduler.schedule_clean_image_info_by_retention', timer='1m')
+async def do_schedule_clean_image_info_by_retention(ctx: ActorContext):
+    await ctx.tell('harbor_rss.clean_image_info_by_retention', expire_at=time.time() + 180)
+
+
 @actor("scheduler.proxy_tell")
 async def do_proxy_tell(
     ctx: ActorContext,

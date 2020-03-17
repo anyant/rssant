@@ -1,6 +1,14 @@
 import typing
 from urllib.parse import urlparse
+
+from django.db import connection
+from django.utils import timezone
+
 from .helper import Model, models, optional
+
+
+POSITIVE_STATUS_TTL = timezone.timedelta(days=7)
+NEGTIVE_STATUS_TTL = timezone.timedelta(hours=12)
 
 
 class ImageInfo(Model):
@@ -34,11 +42,17 @@ class ImageInfo(Model):
         SELECT DISTINCT ON (url_root)
             id, url_root, status_code
         FROM rssant_api_imageinfo
-        WHERE url_root = ANY(%s) AND status_code > 0
+        WHERE url_root = ANY(%s) AND (
+            (status_code > 0 AND dt_created > %s) OR
+            (status_code <= 0 AND dt_created > %s)
+        )
         ORDER BY url_root, dt_created DESC
         """
+        now = timezone.now()
+        dt_pos = now - POSITIVE_STATUS_TTL
+        dt_neg = now - NEGTIVE_STATUS_TTL
         url_root_map = {}
-        rows = cls.objects.raw(sql, [list(url_roots)])
+        rows = cls.objects.raw(sql, [list(url_roots), dt_pos, dt_neg])
         for row in rows:
             url_root_map[row.url_root] = row.status_code
         return url_root_map
@@ -80,3 +94,22 @@ class ImageInfo(Model):
             if status_code is not None:
                 result[image_url] = status_code
         return result
+
+    @classmethod
+    def delete_by_retention(cls, limit=5000):
+        now = timezone.now()
+        dt_pos = now - POSITIVE_STATUS_TTL
+        dt_neg = now - NEGTIVE_STATUS_TTL
+        # https://stackoverflow.com/questions/5170546/how-do-i-delete-a-fixed-number-of-rows-with-sorting-in-postgresql
+        sql = """
+        DELETE FROM rssant_api_imageinfo
+        WHERE ctid IN (
+            SELECT ctid FROM rssant_api_imageinfo
+            WHERE (status_code > 0 and dt_created < %s)
+                OR (status_code <= 0 and dt_created < %s)
+            LIMIT %s
+        )
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [dt_pos, dt_neg, limit])
+            return cursor.rowcount
