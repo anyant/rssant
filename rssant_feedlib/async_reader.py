@@ -45,13 +45,24 @@ class AsyncFeedReader:
             self.session = aiohttp_client_session(timeout=self.request_timeout)
 
     async def _resolve_hostname(self, hostname):
-        addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)
+        """
+        Note on addrinfo:
         # https://pycares.readthedocs.io/en/latest/channel.html#pycares.Channel.query
         # extra type ares_host_result: addresses, aliases, name
+        # example: <ares_host_result> name=fn0wz54v.dayugslb.com, aliases=['gitee.com'], addresses=['180.97.125.228']
+        # example dig gitee.com:
+        ;; QUESTION SECTION:
+        ;gitee.com.			IN	A
+
+        ;; ANSWER SECTION:
+        gitee.com.		300	IN	CNAME	fn0wz54v.dayugslb.com.
+        fn0wz54v.dayugslb.com.	300	IN	A	180.97.125.228
+        """
+        addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)
         if getattr(addrinfo, 'addresses', None):
             for ip in addrinfo.addresses:
                 yield ip
-        elif getattr(addrinfo, 'host'):
+        elif getattr(addrinfo, 'host', None):
             yield addrinfo.host
 
     async def check_private_address(self, url):
