@@ -16,6 +16,8 @@ class ImageInfo(Model):
     Image info for detact anti-stealing-link and auto image proxy.
     """
 
+    URL_ROOT_MAX_LENGTH = 120
+
     class Meta:
         indexes = [
             models.Index(fields=["url_root", "dt_created"]),
@@ -25,7 +27,7 @@ class ImageInfo(Model):
         display_fields = ['url_root']
 
     url_root = models.CharField(
-        max_length=120, help_text="eg: https://image.example.com/root-path")
+        max_length=URL_ROOT_MAX_LENGTH, help_text="eg: https://image.example.com/root-path")
     sample_url = models.TextField(
         **optional, help_text='sample image url')
     user_agent = models.TextField(
@@ -66,6 +68,9 @@ class ImageInfo(Model):
         >>> url = 'https://image.example.com/123.png?key=value'
         >>> print(ImageInfo.extract_url_root(url))
         https://image.example.com
+        >>> url = 'https://image.badurl.com/' + 'x' * 120
+        >>> print(ImageInfo.extract_url_root(url))
+        https://image.badurl.com
         """
         p = urlparse(url)
         p.scheme, p.netloc, p.path
@@ -77,6 +82,8 @@ class ImageInfo(Model):
         else:
             root_path = ''
         url_root = f'{scheme}://{p.netloc}{root_path}'
+        if len(url_root) >= cls.URL_ROOT_MAX_LENGTH:
+            url_root = f'{scheme}://{p.netloc}'
         return url_root
 
     @classmethod
