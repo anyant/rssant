@@ -168,13 +168,15 @@ async def do_fetch_story(
     if not (response and status == 200):
         return
     if not response.rssant_text:
-        LOG.error(f'story#{story_id} url={unquote(url)} response text is empty!')
+        msg = 'story#%s url=%s response text is empty!'
+        LOG.error(msg, story_id, unquote(url))
         return
     content = response.rssant_text
     if len(content) >= 1024 * 1024:
         content = story_html_clean(content)
         if len(content) >= 1024 * 1024:
-            LOG.error(f'too large story#{story_id} size={len(content)} url={url}')
+            msg = 'too large story#%s size=%s url=%s'
+            LOG.error(msg, story_id, len(content), url)
     await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
