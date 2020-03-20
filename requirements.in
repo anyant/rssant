@@ -67,7 +67,6 @@ python-dotenv==0.10.2
 
 # test
 pytest==5.3.2
-pytest-flake8==1.0.4
 pytest-cov==2.8.1
 flake8==3.7.9
 pycodestyle==2.5.0

@@ -1,0 +1,10 @@
+[flake8]
+ignore=
+    *.py E251 W503 E704
+per-file-ignores=
+    */__init__.py:F401
+max-line-length=120
+exclude=
+    rssant_api/migrations/
+    static/
+    data/
