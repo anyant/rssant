@@ -90,7 +90,8 @@ def feed_query(
     deleted_ids=T.list(T.feed_unionid),
 ):
     """Feed query"""
-    check_unionid(request, [x['id'] for x in hints])
+    if hints:
+        check_unionid(request, [x['id'] for x in hints])
     total, feeds, deleted_ids = UnionFeed.query_by_user(
         user_id=request.user.id, hints=hints, detail=detail)
     feeds = [x.to_dict() for x in feeds]
