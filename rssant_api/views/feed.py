@@ -87,7 +87,7 @@ def feed_query(
     size=T.int.optional,
     feeds=T.list(FeedSchema).maxlen(5000),
     deleted_size=T.int.optional,
-    deleted_ids=T.list(T.int),
+    deleted_ids=T.list(T.feed_unionid),
 ):
     """Feed query"""
     check_unionid(request, [x['id'] for x in hints])

@@ -556,15 +556,17 @@ class UnionFeed:
     def num_unread_storys(self):
         return self._feed.total_storys - self._user_feed.story_offset
 
+    @staticmethod
+    def _union_dt_updated(dt_1, dt_2):
+        if dt_1 and dt_2:
+            return max(dt_1, dt_2)
+        else:
+            return dt_1 or dt_2
+
     @property
     def dt_updated(self):
-        if self._user_feed.dt_updated and self._feed.dt_updated:
-            if self._user_feed.dt_updated > self._feed.dt_updated:
-                return self._user_feed.dt_updated
-            else:
-                return self._feed.dt_updated
-        else:
-            return self._user_feed.dt_updated or self._feed.dt_updated
+        return self._union_dt_updated(
+            self._user_feed.dt_updated, self._feed.dt_updated)
 
     @property
     def dt_created(self):
@@ -687,7 +689,7 @@ class UnionFeed:
             return len(union_feeds), union_feeds, []
         hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
         q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
-        q = q.only("id", 'feed_id', 'feed__dt_updated')
+        q = q.only("id", 'feed_id', 'dt_updated', 'feed__dt_updated')
         user_feeds = list(q.all())
         total = len(user_feeds)
         feed_ids = {user_feed.feed_id for user_feed in user_feeds}
@@ -697,7 +699,8 @@ class UnionFeed:
         updates = []
         for user_feed in user_feeds:
             feed_id = user_feed.feed_id
-            dt_updated = user_feed.feed.dt_updated
+            dt_updated = UnionFeed._union_dt_updated(
+                user_feed.dt_updated, user_feed.feed.dt_updated)
             if feed_id not in hints or not dt_updated:
                 updates.append(feed_id)
             elif dt_updated > hints[feed_id]:
@@ -749,10 +752,12 @@ class UnionFeed:
             q = q.filter(feed_id__in=feed_ids)
         q = q.only('_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys')
         updates = []
+        now = timezone.now()
         for user_feed in q.all():
             num_unread = user_feed.feed.total_storys - user_feed.story_offset
             if num_unread > 0:
                 user_feed.story_offset = user_feed.feed.total_storys
+                user_feed.dt_updated = now
                 updates.append(user_feed)
         with transaction.atomic():
             for user_feed in updates:
