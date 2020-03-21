@@ -31,8 +31,8 @@
 配置文件保存为 `~/rssant/rssant.env` 。
 
 ```bash
-# 关闭DEBUG请置0
-RSSANT_DEBUG=1
+# 关闭DEBUG，请勿在开发测试之外开启DEBUG
+RSSANT_DEBUG=0
 
 # 请随机生成一个字符串
 RSSANT_SECRET_KEY=SECRET

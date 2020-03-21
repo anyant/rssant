@@ -15,7 +15,7 @@ validate_extra_networks = compiler.compile(T.list(T.dict(
 
 @modelclass(compiler=compiler)
 class EnvConfig:
-    debug = T.bool.default(True).desc('debug')
+    debug = T.bool.default(False).desc('debug')
     log_level = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url = T.url.relaxed.default('http://localhost:6789')
     scheduler_network = T.str.default('localhost')
