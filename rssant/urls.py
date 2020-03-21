@@ -32,6 +32,8 @@ swagger_view = get_swagger_view(title=API_TITLE)
 
 urlpatterns = [
     path('', views.index),
+    path('changelog', views.changelog_html),
+    path('changelog.atom', views.changelog_atom),
     path('admin/', admin.site.urls),
     path('docs/v1/', docs_view),
     path('docs/v1/', include('rest_framework.urls', namespace='rest_framework')),
