@@ -183,10 +183,10 @@ def do_update_feed(
                 # set dt_published to now - 30d to avoid these storys
                 # take over mushroom page, i.e. Story.query_recent_by_user
                 s['dt_published'] = now_sub_30d
-        modified_storys, num_reallocate = Story.bulk_save_by_feed(feed.id, storys)
+        modified_storys = Story.bulk_save_by_feed(feed.id, storys)
         LOG.info(
-            'feed#%s save storys total=%s num_modified=%s num_reallocate=%s',
-            feed.id, len(storys), len(modified_storys), num_reallocate
+            'feed#%s save storys total=%s num_modified=%s',
+            feed.id, len(storys), len(modified_storys)
         )
     feed.refresh_from_db()
     need_fetch_story = _is_feed_need_fetch_storys(feed)

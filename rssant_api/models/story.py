@@ -109,7 +109,7 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100, force=False):
         if not storys:
-            return [], 0  # modified_story_objects, num_reallocate
+            return []  # modified_story_objects
         storys = Story._dedup_sort_storys(storys)
         with transaction.atomic():
             feed = Feed.objects\
@@ -157,55 +157,9 @@ class Story(Model, ContentHashMixin):
                 modified_story_objects.append(story)
             if new_story_objects:
                 Story.objects.bulk_create(new_story_objects, batch_size=batch_size)
-                early_dt_published = new_story_objects[0].dt_published
-                num_reallocate = Story._reallocate_offset(feed, early_dt_published)
                 Story._update_feed_monthly_story_count(feed, new_story_objects)
                 Story._update_feed_story_dt_published_total_storys(feed, total_storys=offset)
-            else:
-                num_reallocate = 0
-            return modified_story_objects, num_reallocate
-
-    @staticmethod
-    def _reallocate_offset(feed, early_dt_published=None):
-        if early_dt_published:
-            should_reallocate = timezone.now() - early_dt_published > ONE_MONTH
-            if not should_reallocate:
-                return 0
-        early_story_offset = feed.retention_offset or 0
-        if early_dt_published:
-            # 找出第一个比early_dt_published更早的story
-            early_story = Story.objects\
-                .only('id', 'offset')\
-                .filter(feed_id=feed.id, dt_published__lt=early_dt_published)\
-                .filter(offset__gte=feed.retention_offset)\
-                .order_by('-dt_published')\
-                .first()
-            if early_story:
-                early_story_offset = early_story.offset
-        # 所有可能需要重排的story
-        q = Story.objects.filter(feed_id=feed.id)\
-            .only('_version', 'id', 'offset', 'dt_published', 'unique_id')\
-            .filter(offset__gte=early_story_offset)\
-            .order_by('dt_published', 'unique_id')
-        storys = list(q.all())
-        updates = []
-        for offset, story in enumerate(storys):
-            offset = offset + early_story_offset
-            if story.offset != offset:
-                # 需要重排，先将 offset 变负数，避免违反 (feed_id, offset) unique 约束
-                story.offset = -offset - 1
-                story.save()
-                updates.append(story)
-        for story in updates:
-            story.offset = -(story.offset + 1)
-            story.save()
-        return len(updates)
-
-    @staticmethod
-    def reallocate_offset(feed_id, early_dt_published=None):
-        with transaction.atomic():
-            feed = Feed.get_by_pk(feed_id)
-            return Story._reallocate_offset(feed, early_dt_published=early_dt_published)
+            return modified_story_objects
 
     @staticmethod
     def _update_feed_monthly_story_count(feed, new_story_objects):

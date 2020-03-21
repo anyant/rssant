@@ -40,20 +40,6 @@ def _get_story_ids(option_storys):
 
 
 @main.command()
-@click.option('--feeds', help="feed ids, separate by ','")
-def fix_story_offset(feeds=None):
-    with transaction.atomic():
-        feed_ids = _get_feed_ids(feeds)
-        LOG.info('total %s feeds', len(feed_ids))
-        num_fixed = 0
-        for feed_id in tqdm.tqdm(feed_ids, ncols=80, ascii=True):
-            num_reallocate = Story.reallocate_offset(feed_id)
-            if num_reallocate > 0:
-                num_fixed += 1
-        LOG.info('correct %s feeds', num_fixed)
-
-
-@main.command()
 @click.option('--dry-run', is_flag=True)
 def fix_feed_total_storys(dry_run=False):
     incorrect_feeds = Story.query_feed_incorrect_total_storys()
