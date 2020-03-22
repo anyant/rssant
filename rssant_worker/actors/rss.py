@@ -176,7 +176,7 @@ async def do_fetch_story(
         content = story_html_clean(content)
         if len(content) >= 1024 * 1024:
             msg = 'too large story#%s size=%s url=%s'
-            LOG.error(msg, story_id, len(content), url)
+            LOG.warning(msg, story_id, len(content), url)
     await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
