@@ -4,16 +4,19 @@ from collections import defaultdict
 import tqdm
 from django.utils import timezone
 from django.db import transaction, connection
+from django.contrib.auth import get_user_model
 import djclick as click
 
-from rssant_api.models import Feed, Story, UnionFeed, UserStory
+from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_common import unionid
 from rssant_feedlib import processor
 from rssant_common.actor_client import scheduler
+from rssant_config import CONFIG
 
+User = get_user_model()
 
 LOG = logging.getLogger(__name__)
 
@@ -273,3 +276,26 @@ def fix_user_story_offset():
             UserStory.objects.filter(pk=us_id).update(offset=-us_offset)
         for us_id, us_offset, story_offset in tqdm.tqdm(items, ncols=80, ascii=True):
             UserStory.objects.filter(pk=us_id).update(offset=story_offset)
+
+
+@main.command()
+def subscribe_changelog():
+    changelog_url = CONFIG.root_url.rstrip('/') + '/changelog.atom'
+    feed = Feed.objects.get(url=changelog_url)
+    if not feed:
+        click.echo(f'not found changelog feed url={changelog_url}')
+        return
+    click.echo(f'changelog feed {feed}')
+    users = list(User.objects.all())
+    click.echo(f'total {len(users)} users')
+    for user in tqdm.tqdm(users, ncols=80, ascii=True):
+        with transaction.atomic():
+            user_feed = UserFeed.objects\
+                .filter(user_id=user.id, feed_id=feed.id).first()
+            if not user_feed:
+                user_feed = UserFeed(
+                    user_id=user.id,
+                    feed_id=feed.id,
+                    is_from_bookmark=False,
+                )
+                user_feed.save()
