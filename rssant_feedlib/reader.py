@@ -197,10 +197,15 @@ class FeedReader:
             self.check_private_address(prepared.url)
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
         response = self.session.send(prepared, timeout=(6.5, self.request_timeout), stream=True)
-        response.raise_for_status()
-        self.check_content_type(response)
-        self._read_content(response)
-        resolve_response_encoding(response)
+        try:
+            response.raise_for_status()
+            self.check_content_type(response)
+            self._read_content(response)
+            resolve_response_encoding(response)
+        finally:
+            # Fix: Requests memory leak
+            # https://github.com/psf/requests/issues/4601
+            response.close()
         return response
 
     def read(self, *args, **kwargs):

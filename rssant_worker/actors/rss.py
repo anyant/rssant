@@ -130,9 +130,9 @@ def do_sync_feed(
     etag: T.str.optional,
     last_modified: T.str.optional,
 ):
-    reader = FeedReader()
     params = dict(etag=etag, last_modified=last_modified)
-    status_code, response = reader.read(url, **params)
+    with FeedReader() as reader:
+        status_code, response = reader.read(url, **params)
     LOG.info(f'read feed#{feed_id} url={unquote(url)} status_code={status_code}')
     if status_code != 200 or not response:
         return
