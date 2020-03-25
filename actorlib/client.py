@@ -129,6 +129,7 @@ class ActorClient(ActorClientBase):
             except requests.RequestException as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
+            r.close()
             r.raise_for_status()
 
     def send(self, *messages: List[ActorMessage]):
@@ -148,6 +149,7 @@ class ActorClient(ActorClientBase):
             except requests.RequestException as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise
+            r.close()
             r.raise_for_status()
             return self._decode_ask_response(r.content, r.headers)
 

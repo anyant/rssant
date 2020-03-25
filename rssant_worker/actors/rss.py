@@ -107,8 +107,8 @@ def do_find_feed(
         LOG.info(msg)
         messages.append(msg)
 
-    finder = FeedFinder(url, message_handler=message_handler)
-    found = finder.find()
+    with FeedFinder(url, message_handler=message_handler) as finder:
+        found = finder.find()
     try:
         feed = _parse_found(found) if found else None
     except Invalid as ex:
