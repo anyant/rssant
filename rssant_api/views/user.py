@@ -13,23 +13,33 @@ UserSchema = T.dict(
     username=T.str,
     avatar_url=T.str.optional,
     token=T.str.optional,
+    social_accounts=T.list(T.dict(
+        provider=T.str,
+        avatar_url=T.str.optional,
+    )).optional
 )
 
 UserView = RestRouter(permission_classes=[AllowAny])
 
 
 def serialize_user(user):
-    try:
-        social_account = SocialAccount.objects.get(user=user)
-        avatar_url = social_account.get_avatar_url()
-    except SocialAccount.DoesNotExist:
-        avatar_url = None
+    avatar_url = None
+    social_accounts_info = []
+    social_accounts = list(SocialAccount.objects.filter(user=user).all())
+    for acc in social_accounts:
+        if not avatar_url:
+            avatar_url = acc.get_avatar_url()
+        social_accounts_info.append(dict(
+            provider=acc.provider,
+            avatar_url=acc.get_avatar_url(),
+        ))
     token, created = Token.objects.get_or_create(user=user)
     return dict(
         id=user.id,
         username=user.username,
         avatar_url=avatar_url,
         token=token.key,
+        social_accounts=social_accounts_info,
     )
 
 

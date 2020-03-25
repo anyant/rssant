@@ -193,6 +193,7 @@ SOCIAL_APP_GITHUB = {
     'secret': ENV_CONFIG.github_secret,
 }
 ACCOUNT_ADAPTER = 'rssant.auth.RssantAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'rssant.auth.RssantSocialAccountAdapter'
 REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'rssant.auth_serializer.RssantPasswordResetSerializer'
 }
