@@ -52,9 +52,6 @@ FeedSchema = T.dict(
     story_offset=T.int.min(0).optional,
     dryness=T.int.min(0).max(1000).optional,
     dt_first_story_published=T.datetime.object.optional.invalid_to_default,
-    story_publish_period=T.int.min(0).optional,
-    offset_early_story=T.int.min(0).optional,
-    dt_early_story_published=T.datetime.object.optional.invalid_to_default,
     dt_latest_story_published=T.datetime.object.optional.invalid_to_default,
 ).remove_empty
 

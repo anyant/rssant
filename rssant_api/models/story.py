@@ -30,17 +30,6 @@ StoryDetailSchema = T.detail.fields("""
 STORY_DETAIL_FEILDS = Detail.from_schema(False, StoryDetailSchema).exclude_fields
 USER_STORY_DETAIL_FEILDS = [f'story__{x}' for x in STORY_DETAIL_FEILDS]
 
-FEED_STORY_PUBLISH_PERIOD_FIELDS = [
-    'id',
-    'total_storys',
-    'dryness',
-    'dt_first_story_published',
-    'story_publish_period',
-    'offset_early_story',
-    'dt_early_story_published',
-    'dt_latest_story_published',
-]
-
 
 def convert_summary(summary):
     return story_html_to_text(summary)
@@ -114,8 +103,13 @@ class Story(Model, ContentHashMixin):
         with transaction.atomic():
             feed = Feed.objects\
                 .only(
-                    '_version', 'dryness', 'monthly_story_count_data',
-                    *FEED_STORY_PUBLISH_PERIOD_FIELDS
+                    '_version',
+                    'id',
+                    'dryness',
+                    'monthly_story_count_data',
+                    'total_storys',
+                    'dt_first_story_published',
+                    'dt_latest_story_published',
                 )\
                 .get(pk=feed_id)
             offset = feed.total_storys
@@ -220,64 +214,6 @@ class Story(Model, ContentHashMixin):
         if latest_story:
             feed.dt_latest_story_published = latest_story.dt_published
         feed.save()
-
-    @staticmethod
-    def _update_feed_story_publish_period(feed, total_storys):
-        """
-        Deprecated since v3.1
-        """
-        if total_storys <= 0:
-            return False  # is_updated
-        first_story = Story.objects\
-            .only('id', 'offset', 'dt_published')\
-            .get(feed_id=feed.id, offset=0)
-        dt_first_story_published = first_story.dt_published
-        latest_story = Story.objects\
-            .only('id', 'offset', 'dt_published')\
-            .get(feed_id=feed.id, offset=total_storys - 1)
-        dt_latest_story_published = latest_story.dt_published
-        dt_18_months_ago = dt_latest_story_published - MONTH_18
-        # 找出第一个比dt_18_months_ago更晚的story
-        early_story = Story.objects\
-            .only('id', 'offset', 'dt_published')\
-            .filter(feed_id=feed.id, dt_published__gte=dt_18_months_ago)\
-            .order_by('dt_published')\
-            .first()
-        if not early_story:
-            early_story = Story.objects\
-                .only('id', 'offset', 'dt_published')\
-                .filter(feed_id=feed.id, offset=0)\
-                .get()
-        offset_early_story = early_story.offset
-        dt_early_story_published = early_story.dt_published
-        dt_published_days = (dt_latest_story_published - dt_early_story_published).days
-        num_published_storys = total_storys - offset_early_story
-        assert num_published_storys > 0, 'num_published_storys <= 0 when compute story_publish_period!'
-        story_publish_period = round(max(dt_published_days, 1) / num_published_storys)
-        is_updated = (
-            (feed.offset_early_story != offset_early_story)
-            or (feed.total_storys != total_storys)
-        )
-        feed.total_storys = total_storys
-        feed.dt_first_story_published = dt_first_story_published
-        feed.offset_early_story = offset_early_story
-        feed.dt_latest_story_published = dt_latest_story_published
-        feed.dt_early_story_published = dt_early_story_published
-        feed.story_publish_period = story_publish_period
-        feed.save()
-        return is_updated
-
-    @staticmethod
-    def update_feed_story_publish_period(feed_id):
-        """
-        Deprecated since v3.1
-        """
-        with transaction.atomic():
-            feed = Feed.objects\
-                .only('_version', *FEED_STORY_PUBLISH_PERIOD_FIELDS)\
-                .get(pk=feed_id)
-            return Story._update_feed_story_publish_period(
-                feed, total_storys=feed.total_storys)
 
     @staticmethod
     def fix_feed_total_storys(feed_id):

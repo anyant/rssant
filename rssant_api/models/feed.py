@@ -41,9 +41,6 @@ FeedDetailSchema = T.detail.fields("""
     link
     dryness
     dt_first_story_published
-    story_publish_period
-    offset_early_story
-    dt_early_story_published
     dt_latest_story_published
 """).extra_fields("""
     description
@@ -104,13 +101,13 @@ class Feed(Model, ContentHashMixin):
         **optional, default=0, help_text="Number of total storys")
     retention_offset = models.IntegerField(
         **optional, default=0, help_text="stale story == offset < retention_offset")
-    # Deprecated since v3.1
+    # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
-    # Deprecated since v3.1
+    # Deprecated since v0.3.1
     offset_early_story = models.IntegerField(
         **optional, help_text="最老或18个月前发布的story的offset")
-    # Deprecated since v3.1
+    # Deprecated since v0.3.1
     dt_early_story_published = models.DateTimeField(
         **optional, help_text="最老或18个月前发布的story的发布时间")
     dt_latest_story_published = models.DateTimeField(
@@ -153,9 +150,6 @@ class Feed(Model, ContentHashMixin):
             dt_created=self.dt_created,
             dryness=self.dryness,
             dt_first_story_published=self.dt_first_story_published,
-            story_publish_period=self.story_publish_period,
-            offset_early_story=self.offset_early_story,
-            dt_early_story_published=self.dt_early_story_published,
             dt_latest_story_published=self.dt_latest_story_published,
         )
         if detail:
@@ -581,18 +575,6 @@ class UnionFeed:
     @property
     def dt_first_story_published(self):
         return self._feed.dt_first_story_published
-
-    @property
-    def story_publish_period(self):
-        return self._feed.story_publish_period
-
-    @property
-    def offset_early_story(self):
-        return self._feed.offset_early_story
-
-    @property
-    def dt_early_story_published(self):
-        return self._feed.dt_early_story_published
 
     @property
     def dt_latest_story_published(self):

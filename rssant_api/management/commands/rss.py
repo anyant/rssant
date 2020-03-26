@@ -62,19 +62,6 @@ def fix_feed_total_storys(dry_run=False):
 
 @main.command()
 @click.option('--feeds', help="feed ids, separate by ','")
-def update_feed_story_publish_period(feeds=None):
-    """
-    Deprecated since v3.1
-    """
-    with transaction.atomic():
-        feed_ids = _get_feed_ids(feeds)
-        LOG.info('total %s feeds', len(feed_ids))
-        for feed_id in tqdm.tqdm(feed_ids, ncols=80, ascii=True):
-            Story.update_feed_story_publish_period(feed_id)
-
-
-@main.command()
-@click.option('--feeds', help="feed ids, separate by ','")
 def update_feed_monthly_story_count(feeds=None):
     feed_ids = _get_feed_ids(feeds)
     LOG.info('total %s feeds', len(feed_ids))
