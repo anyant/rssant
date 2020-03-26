@@ -46,6 +46,7 @@ StoryOutputSchemaFields.update(
 FeedSchemaFields = dict(
     url=T.url,
     title=T.str,
+    content_length=T.int.optional,
     content_hash_base64=T.str,
     link=T.str.optional,
     author=T.str.optional,
@@ -346,8 +347,8 @@ def do_update_story_images(
     story_id: T.int,
     story_url: T.url,
     images: T.list(T.dict(
-        url = T.url,
-        status = T.int,
+        url=T.url,
+        status=T.int,
     ))
 ):
     # save image info

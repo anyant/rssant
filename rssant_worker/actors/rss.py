@@ -52,6 +52,7 @@ StorySchema = T.dict(
 FeedSchema = T.dict(
     url=T.url,
     title=T.str,
+    content_length=T.int,
     content_hash_base64=T.str,
     link=T.url.optional,
     author=T.str.optional,
@@ -262,6 +263,7 @@ def _parse_found(parsed):
     feed = AttrDict()
     res = parsed.response
     feed.url = _get_url(res)
+    feed.content_length = len(res.content)
     feed.content_hash_base64 = compute_hash_base64(res.content)
     parsed_feed = parsed.feed
     feed.title = shorten(parsed_feed["title"], 200)
