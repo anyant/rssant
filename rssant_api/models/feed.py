@@ -101,6 +101,8 @@ class Feed(Model, ContentHashMixin):
         **optional, default=0, help_text="Number of total storys")
     retention_offset = models.IntegerField(
         **optional, default=0, help_text="stale story == offset < retention_offset")
+    freeze_level = models.IntegerField(
+        **optional, default=1, help_text="freeze level, 1: normal, N: slow down N times")
     # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
@@ -200,14 +202,27 @@ class Feed(Model, ContentHashMixin):
         """
         if not timeout_seconds:
             timeout_seconds = 3 * outdate_seconds
-        now = timezone.now()
-        dt_outdate_before = now - timezone.timedelta(seconds=outdate_seconds)
-        dt_timeout_before = now - timezone.timedelta(seconds=timeout_seconds)
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
         sql_check = """
         SELECT id, url FROM rssant_api_feed AS feed
-        WHERE (status=ANY(%s) AND dt_checked < %s) OR (dt_checked < %s)
-            OR (dt_checked is NULL)
+        WHERE
+            (
+                dt_checked IS NULL
+            )
+            OR
+            (
+                (freeze_level IS NULL OR freeze_level < 1) AND (
+                    (status=ANY(%s) AND NOW() - dt_checked > %s * '1s'::interval)
+                    OR
+                    (NOW() - dt_checked > %s * '1s'::interval)
+                )
+            )
+            OR
+            (
+                (status=ANY(%s) AND NOW() - dt_checked > %s * freeze_level * '1s'::interval)
+                OR
+                (NOW() - dt_checked > %s * freeze_level * '1s'::interval)
+            )
         ORDER BY id LIMIT %s
         """
         sql_update_status = """
@@ -215,8 +230,12 @@ class Feed(Model, ContentHashMixin):
         SET status=%s, dt_checked=%s
         WHERE id=ANY(%s)
         """
-        params = [statuses, dt_outdate_before, dt_timeout_before, limit]
+        params = [
+            statuses, outdate_seconds, timeout_seconds,
+            statuses, outdate_seconds, timeout_seconds, limit
+        ]
         feeds = []
+        now = timezone.now()
         with connection.cursor() as cursor:
             cursor.execute(sql_check, params)
             for feed_id, url in cursor.fetchall():
@@ -239,6 +258,79 @@ class Feed(Model, ContentHashMixin):
             for feed_id, url in cursor.fetchall():
                 feeds.append(dict(feed_id=feed_id, url=url))
             return feeds
+
+    def unfreeze(self):
+        self.freeze_level = 1
+        self.save()
+
+    @staticmethod
+    def refresh_freeze_level():
+        """
+        冻结策略:
+            1. 无人订阅，冻结1个月。有人订阅时解冻。
+            2. 创建时间>=7天，且2年无更新，冻结1个月。有更新时解冻。
+            3. 创建时间>=7天，且没有任何内容，冻结7天。有更新时解冻。
+            4. 其余订阅参照冻结时间表格。
+        统计数据:
+            - 90%的订阅小于300KB
+            - 99%的订阅小于1500KB
+            - 资讯新闻(dryness<500)占40%
+            - 周更博客(500<dryness<750)占30%
+            - 月更博客(dryness>750)占30%
+        +------------+----------+------------+----------+
+        |   冻结时间  |  300k以下 | 300k~1500k | 1500k以上 |
+        +------------+----------+------------+----------+
+        |   资讯新闻  |    1H    |     1H     |    3H    |
+        |   周更博客  |    1H    |     2H     |    9H    |
+        |   月更博客  |    4H    |     8H     |    9H    |
+        +------------+----------+------------+----------+
+        """
+        # https://stackoverflow.com/questions/7869592/how-to-do-an-update-join-in-postgresql
+        sql = """
+        WITH t AS (
+        SELECT
+            feed.id AS id,
+            CASE
+                WHEN (
+                    userfeed.id is NULL
+                ) THEN 31 * 24
+                WHEN (
+                    (feed.dt_created <= NOW() - INTERVAL '7 days')
+                    and (feed.dt_latest_story_published <= NOW() - INTERVAL '2 years')
+                ) THEN 30 * 24
+                WHEN (
+                    (feed.dt_created <= NOW() - INTERVAL '7 days')
+                    and (feed.dt_latest_story_published is NULL and total_storys <= 0)
+                ) THEN 7 * 24
+                WHEN (
+                    feed.content_length >= 1500 * 1024 AND feed.dryness >= 500
+                ) THEN 9
+                WHEN (
+                    feed.content_length >= 1500 * 1024
+                ) THEN 3
+                WHEN (
+                    feed.dryness >= 750 AND feed.content_length >= 300 * 1024
+                ) THEN 8
+                WHEN (
+                    feed.dryness >= 750
+                ) THEN 4
+                WHEN (
+                    feed.dryness >= 500 AND feed.content_length >= 300 * 1024
+                ) THEN 2
+                ELSE 1
+            END AS freeze_level
+        FROM rssant_api_feed AS feed
+        LEFT OUTER JOIN rssant_api_userfeed AS userfeed
+        ON feed.id = userfeed.feed_id
+        )
+        UPDATE rssant_api_feed AS feed
+        SET freeze_level = t.freeze_level
+        FROM t
+        WHERE feed.id = t.id
+        ;
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
 
 
 class RawFeed(Model, ContentHashMixin):
@@ -769,6 +861,7 @@ class UnionFeed:
             if user_feed:
                 raise FeedExistError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed)
+            feed.unfreeze()
             user_feed.save()
             return UnionFeed(feed, user_feed), None
         else:
@@ -799,12 +892,15 @@ class UnionFeed:
         new_user_feed_ids = set()
         new_user_feeds = []
         feed_creations = []
+        unfreeze_feed_ids = set()
         for url in urls:
             feed = feed_map.get(url_map.get(url))
             if feed:
                 if feed.id in user_feed_map:
                     continue
                 new_user_feed_ids.add(feed.id)
+                if feed.freeze_level and feed.freeze_level > 1:
+                    unfreeze_feed_ids.add(feed.id)
             else:
                 feed_creation = FeedCreation(
                     user_id=user_id, url=url, is_from_bookmark=is_from_bookmark)
@@ -815,6 +911,8 @@ class UnionFeed:
             new_user_feeds.append(user_feed)
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
+        if unfreeze_feed_ids:
+            Feed.objects.filter(pk__in=unfreeze_feed_ids).update(freeze_level=1)
         existed_feeds = UnionFeed._merge_user_feeds(user_feed_map.values())
         union_feeds = UnionFeed._merge_user_feeds(new_user_feeds)
         return FeedCreateResult(

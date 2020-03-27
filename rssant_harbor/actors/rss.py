@@ -190,6 +190,8 @@ def do_update_feed(
             feed.id, len(storys), len(modified_storys)
         )
     feed.refresh_from_db()
+    if modified_storys:
+        feed.unfreeze()
     need_fetch_story = _is_feed_need_fetch_storys(feed)
     for story in modified_storys:
         if not story.link:
@@ -465,3 +467,12 @@ def do_clean_by_retention(ctx: ActorContext):
 def do_clean_image_info_by_retention(ctx: ActorContext):
     num_rows = ImageInfo.delete_by_retention()
     LOG.info('delete {} outdated imageinfos'.format(num_rows))
+
+
+@actor('harbor_rss.feed_refresh_freeze_level')
+@django_context
+def do_feed_refresh_freeze_level(ctx: ActorContext):
+    begin_time = time.time()
+    Feed.refresh_freeze_level()
+    cost = time.time() - begin_time
+    LOG.info('feed_refresh_freeze_level cost {:.1f}ms'.format(cost * 1000))

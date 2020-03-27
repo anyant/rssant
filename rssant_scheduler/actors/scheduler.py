@@ -47,12 +47,17 @@ async def do_schedule_clean_image_info_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_image_info_by_retention', expire_at=time.time() + 180)
 
 
+@actor('scheduler.schedule_feed_refresh_freeze_level', timer='20m')
+async def do_schedule_feed_refresh_freeze_level(ctx: ActorContext):
+    await ctx.tell('harbor_rss.feed_refresh_freeze_level', expire_at=time.time() + 600)
+
+
 @actor("scheduler.proxy_tell")
 async def do_proxy_tell(
     ctx: ActorContext,
     tasks: T.list(T.dict(
-        dst = T.str,
-        content = T.dict.optional,
+        dst=T.str,
+        content=T.dict.optional,
     ))
 ):
     for t in tasks:
