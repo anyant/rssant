@@ -254,8 +254,20 @@ def is_fulltext_story(feed, story):
     return False
 
 
+def is_rssant_changelog(url: str):
+    """
+    >>> is_rssant_changelog('http://localhost:6789/changelog?version=1.0.0')
+    True
+    """
+    return url.startswith(CONFIG.root_url) and 'changelog' in url
+
+
 def _is_feed_need_fetch_storys(feed):
-    checkers = [processor.is_v2ex, processor.is_hacknews, processor.is_github, processor.is_pypi]
+    checkers = [
+        processor.is_v2ex, processor.is_hacknews,
+        processor.is_github, processor.is_pypi,
+        is_rssant_changelog,
+    ]
     for check in checkers:
         if check(feed.url):
             return False
