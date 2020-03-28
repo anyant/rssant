@@ -11,7 +11,9 @@ su - postgres -c 'while true; do /usr/bin/pg_isready; status=$?; if [[ $status -
 su - postgres -c 'psql -f /app/box/initdb.sql'
 
 # django migrate & initdb
-python manage.py migrate && python manage.py runscript django_db_init
+python manage.py runscript django_pre_migrate
+python manage.py migrate
+python manage.py runscript django_db_init
 
 touch /app/data/initdb.ready
 exit 0
