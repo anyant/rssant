@@ -8,7 +8,7 @@ RUN npm install --loglevel info ${NPM_REGISTERY}
 COPY box/web .
 RUN npm run build
 
-FROM python:3.7.4-stretch
+FROM python:3.7.7-stretch
 
 RUN mkdir -p /app
 WORKDIR /app
