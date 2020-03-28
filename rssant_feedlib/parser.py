@@ -46,7 +46,11 @@ def _process_headers(self, headers=None, url=None):
 def _parse(content, headers, validate=True):
     """解析Feed，返回结果可以pickle序列化，便于多进程中使用"""
     stream = BytesIO(content)
-    feed = feedparser.parse(stream, response_headers=headers)
+    feed = feedparser.parse(
+        stream, response_headers=headers,
+        sanitize_html=False,
+        resolve_relative_uris=False,
+    )
     bozo = feed.bozo
     if not feed.bozo:
         # 没有title的feed视为错误
