@@ -285,13 +285,16 @@ def _parse_found(parsed):
     feed.last_modified = _get_last_modified(res)
     feed.encoding = res.encoding
     feed.version = shorten(parsed.version, 200)
-    feed.storys = _get_storys(parsed.entries)
+    entries = list(parsed.entries)  # entries will be modified by _get_storys
+    del parsed, res, parsed_feed  # release memory in advance
+    feed.storys = _get_storys(entries)
     return validate_feed(feed)
 
 
-def _get_storys(entries):
+def _get_storys(entries: list):
     storys = deque(maxlen=300)  # limit num storys
-    for data in entries:
+    while entries:
+        data = entries.pop()
         story = {}
         story['unique_id'] = shorten(_get_story_unique_id(data), 200)
         content = ''
