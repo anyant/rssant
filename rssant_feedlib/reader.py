@@ -167,7 +167,7 @@ class FeedReader:
             raise ContentTypeNotSupportError(
                 f'content-type {content_type} not support', response=response)
 
-    def _read_content(self, response):
+    def _read_content(self, response: requests.Response):
         content_length = response.headers.get('Content-Length')
         if content_length:
             content_length = int(content_length)
@@ -176,14 +176,14 @@ class FeedReader:
                     content_length, self.max_content_length)
                 raise ContentTooLargeError(msg, response=response)
         content_length = 0
-        content = []
-        for data in response.iter_content(chunk_size=8 * 1024):
+        content = bytearray()
+        for data in response.iter_content(chunk_size=64 * 1024):
             content_length += len(data)
             if content_length > self.max_content_length:
                 msg = 'Content length larger than limit {}'.format(self.max_content_length)
                 raise ContentTooLargeError(msg, response=response)
-            content.append(data)
-        response._content = b''.join(content)
+            content.extend(data)
+        response._content = bytes(content)
 
     def _read(self, url, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}

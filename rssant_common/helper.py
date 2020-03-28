@@ -60,7 +60,7 @@ def detect_response_encoding(content):
     """
     # response.apparent_encoding使用chardet检测编码，有些情况会非常慢
     # 换成cchardet实现，性能可以提升100倍
-    encoding = cchardet.detect(content)['encoding']
+    encoding = cchardet.detect(bytes(content[:4096]))['encoding']
     if encoding:
         encoding = encoding.lower()
         # 解决常见的乱码问题，chardet没检测出来基本就是windows-1254编码
