@@ -47,6 +47,11 @@ async def do_schedule_clean_image_info_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_image_info_by_retention', expire_at=time.time() + 180)
 
 
+@actor('scheduler.schedule_clean_feedurlmap_by_retention', timer='30m')
+async def do_schedule_clean_feedurlmap_by_retention(ctx: ActorContext):
+    await ctx.tell('harbor_rss.clean_feedurlmap_by_retention', expire_at=time.time() + 180)
+
+
 @actor('scheduler.schedule_feed_refresh_freeze_level', timer='20m')
 async def do_schedule_feed_refresh_freeze_level(ctx: ActorContext):
     await ctx.tell('harbor_rss.feed_refresh_freeze_level', expire_at=time.time() + 600)

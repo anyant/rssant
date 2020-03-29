@@ -481,6 +481,13 @@ def do_clean_image_info_by_retention(ctx: ActorContext):
     LOG.info('delete {} outdated imageinfos'.format(num_rows))
 
 
+@actor('harbor_rss.clean_feedurlmap_by_retention')
+@django_context
+def do_clean_feedurlmap_by_retention(ctx: ActorContext):
+    num_rows = FeedUrlMap.delete_by_retention()
+    LOG.info('delete {} outdated feedurlmap'.format(num_rows))
+
+
 @actor('harbor_rss.feed_refresh_freeze_level')
 @django_context
 def do_feed_refresh_freeze_level(ctx: ActorContext):

@@ -518,6 +518,8 @@ class FeedUrlMap(Model):
     """起始 URL 到 Feed URL 直接关联，用于加速FeedFinder"""
 
     NOT_FOUND = '#'  # 特殊Target
+    NOT_FOUND_TTL = timezone.timedelta(hours=4)
+    OK_TTL = timezone.timedelta(days=180)
 
     class Meta:
         indexes = [
@@ -533,11 +535,8 @@ class FeedUrlMap(Model):
 
     @classmethod
     def find_target(cls, source):
-        q = cls.objects.filter(source=source).order_by('-dt_created')
-        url_map = q.first()
-        if url_map:
-            return url_map.target
-        return None
+        url_map = cls.find_all_target([source])
+        return url_map.get(source)
 
     @classmethod
     def find_all_target(cls, source_list):
@@ -545,14 +544,34 @@ class FeedUrlMap(Model):
         SELECT DISTINCT ON (source)
             id, source, target
         FROM rssant_api_feedurlmap
-        WHERE source = ANY(%s)
+        WHERE source=ANY(%s) AND (target!=%s OR dt_created>%s)
         ORDER BY source, dt_created DESC
         """
+        dt_ttl = timezone.now() - cls.NOT_FOUND_TTL
+        params = [list(source_list), cls.NOT_FOUND, dt_ttl]
         url_map = {}
-        items = cls.objects.raw(sql, [list(source_list)])
+        items = cls.objects.raw(sql, params)
         for item in items:
             url_map[item.source] = item.target
         return url_map
+
+    @classmethod
+    def delete_by_retention(cls, limit=5000):
+        sql = """
+        DELETE FROM rssant_api_feedurlmap
+        WHERE ctid IN (
+            SELECT ctid FROM rssant_api_feedurlmap
+            WHERE (target=%s AND dt_created<%s) OR (dt_created<%s)
+            LIMIT %s
+        )
+        """
+        now = timezone.now()
+        dt_not_found_ttl = now - cls.NOT_FOUND_TTL
+        dt_ok_ttl = now - cls.OK_TTL
+        params = [cls.NOT_FOUND, dt_not_found_ttl, dt_ok_ttl, limit]
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            return cursor.rowcount
 
 
 class FeedCreateResult:
