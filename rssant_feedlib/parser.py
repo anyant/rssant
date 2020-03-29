@@ -7,6 +7,11 @@ from validr import mark_index
 from .schema import validate_feed, validate_story
 
 
+# TODO: verify performance between 5.2.1 and 6.0.0b3
+feedparser.RESOLVE_RELATIVE_URIS = False
+feedparser.SANITIZE_HTML = False
+
+
 class FeedParserResult:
     def __init__(self, feed, entries, version, bozo, bozo_exception):
         self.feed = feed
@@ -48,8 +53,8 @@ def _parse(content, headers, validate=True):
     stream = BytesIO(content)
     feed = feedparser.parse(
         stream, response_headers=headers,
-        sanitize_html=False,
-        resolve_relative_uris=False,
+        # sanitize_html=False,
+        # resolve_relative_uris=False,
     )
     bozo = feed.bozo
     if not feed.bozo:
