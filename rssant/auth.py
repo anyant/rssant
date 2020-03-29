@@ -91,6 +91,16 @@ class RssantSocialAccountAdapter(DefaultSocialAccountAdapter):
         self._log_social_login(sociallogin)
         # TODO: connect verified email and existing user
 
+    def authentication_error(
+        self,
+        request,
+        provider_id,
+        error=None,
+        exception=None,
+        extra_context=None,
+    ):
+        LOG.error(f'social-login error={error} exception={exception} provider_id={provider_id}')
+
 
 urlpaterns = [
     path('auth/', include('rest_auth.urls')),
