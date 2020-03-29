@@ -40,7 +40,7 @@ def unsafe_kill_thread(thread_id):
 
 
 parse_actor_timer = internal_schema_compiler.compile(
-    T.interval.min('1s').max('24h'))
+    T.timedelta.min('1s').max('24h').object)
 
 
 def _get_function_name(fn):

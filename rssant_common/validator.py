@@ -123,24 +123,6 @@ def create_unionid_validator(tuple_class):
     return unionid_validator
 
 
-def dict_validator(compiler, schema):
-    schema = schema.copy()
-    remove_empty = schema.params.pop('remove_empty', False)
-    origin_validate = builtin_validators['dict'](compiler, schema)
-
-    def validate(value):
-        value = origin_validate(value)
-        if value and remove_empty:
-            value = {k: v for k, v in value.items() if v is not None and v != ''}
-        return value
-
-    attrs = ['__schema__', '__module__', '__name__', '__qualname__']
-    for k in attrs:
-        setattr(validate, k, getattr(origin_validate, k, None))
-
-    return validate
-
-
 def str_validator(compiler, schema):
     """
     >>> from validr import T
@@ -176,63 +158,6 @@ def str_validator(compiler, schema):
     return validate
 
 
-INTERVAL_UNITS = {'s': 1, 'm': 60, 'h': 60 * 60, 'd': 24 * 60 * 60}
-
-
-def parse_interval(t) -> datetime.timedelta:
-    if isinstance(t, datetime.timedelta):
-        return t
-    if isinstance(t, (int, float)):
-        seconds = t
-    else:
-        seconds = int(t[:-1]) * INTERVAL_UNITS[t[-1]]
-    return datetime.timedelta(seconds=seconds)
-
-
-@validator(accept=str, output=object)
-def interval_validator(compiler, min='0s', max='365d'):
-    """Time interval validator, convert value to seconds
-
-    Supported time units:
-        s: seconds, eg: 10s
-        m: minutes, eg: 10m
-        h: hours, eg: 1h
-        d: days, eg: 7d
-    """
-    try:
-        min = parse_interval(min)
-    except (IndexError, KeyError, ValueError):
-        raise SchemaError('invalid min value') from None
-    try:
-        max = parse_interval(max)
-    except (IndexError, KeyError, ValueError):
-        raise SchemaError('invalid max value') from None
-
-    def validate(value):
-        try:
-            value = parse_interval(value)
-        except (IndexError, KeyError, ValueError):
-            raise Invalid("invalid interval") from None
-        if value < min:
-            raise Invalid("interval must >= {}".format(min))
-        if value > max:
-            raise Invalid("interval must <= {}".format(max))
-        return value
-    return validate
-
-
-@validator(accept=str, output=str)
-def enum_validator(compiler, items):
-    items = set(items.replace(',', ' ').split())
-
-    def validate(value):
-        if value in items:
-            return value
-        raise Invalid('value must be one of {}'.format(items))
-
-    return validate
-
-
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
@@ -240,10 +165,7 @@ VALIDATORS = {
     'feed_unionid': create_unionid_validator(FeedUnionId),
     'story_unionid': create_unionid_validator(StoryUnionId),
     'detail': detail_validator,
-    'dict': dict_validator,
     'str': str_validator,
-    'interval': interval_validator,
-    'enum': enum_validator,
 }
 
 

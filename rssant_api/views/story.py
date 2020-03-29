@@ -29,7 +29,7 @@ StorySchema = T.dict(
     dt_favorited=T.datetime.object.optional,
     summary=T.str.optional,
     content=T.str.optional,
-).remove_empty
+).slim
 
 StoryResultSchema = T.dict(
     total=T.int.optional,

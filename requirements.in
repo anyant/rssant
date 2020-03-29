@@ -51,14 +51,14 @@ prometheus-client==0.7.1
 
 # helpers
 Brotli==1.0.7
-validr==1.1.2
+validr==1.2.0b2
 attrdict==2.0.1
 msgpack==0.6.2
 loguru==0.3.1
 netifaces==0.10.9
 python-slugify==3.0.2
 validators==0.14.0
-Click==6.7
+Click==7.1.1
 PyYAML==5.1.2
 Mako==1.1.0
 tqdm==4.31.1
@@ -77,7 +77,7 @@ flask==1.1.1
 autopep8==1.5
 
 # package
-pip-tools==4.2.0
+pip-tools==4.5.1
 pipdeptree==0.13.2
 shiv==0.0.50
 
