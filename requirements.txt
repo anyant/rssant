@@ -58,7 +58,7 @@ importlib-metadata==1.6.0  # via pluggy, pytest
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
 jinja2==2.11.1            # via coreschema, flask
-jsonfield==2.0.2
+jsonfield==3.1.0
 loguru==0.3.1
 lxml==4.3.3
 mako==1.1.0
