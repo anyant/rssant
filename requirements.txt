@@ -50,7 +50,7 @@ graphviz==0.13            # via -r requirements.in, objgraph
 gunicorn==20.0.4          # via -r requirements.in
 html2text==2020.1.16      # via -r requirements.in
 humanize==0.5.1           # via pgcli
-idna==2.8                 # via requests, validr, yarl
+idna==2.9                 # via requests, validr, yarl
 importlib-metadata==1.5.0  # via pluggy, pytest
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
