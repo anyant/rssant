@@ -57,7 +57,7 @@ idna==2.9                 # via email-validator, requests, yarl
 importlib-metadata==1.6.0  # via pluggy, pytest
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
-jinja2==2.10.3            # via coreschema, flask
+jinja2==2.11.1            # via coreschema, flask
 jsonfield==2.0.2
 loguru==0.3.1
 lxml==4.3.3
