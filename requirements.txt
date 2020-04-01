@@ -19,7 +19,7 @@ bs4==0.0.1
 cached-property==1.5.1
 cchardet==2.1.6
 certifi==2019.11.28
-cffi==1.13.0              # via pycares
+cffi==1.14.0              # via pycares
 chardet==3.0.4
 cli-helpers[styles]==1.2.1  # via pgcli
 click==6.7
