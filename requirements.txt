@@ -19,7 +19,7 @@ bs4==0.0.1                # via -r requirements.in
 cached-property==1.5.1    # via -r requirements.in
 cchardet==2.1.6           # via -r requirements.in
 certifi==2019.11.28       # via -r requirements.in, requests, sentry-sdk
-cffi==1.13.0              # via pycares
+cffi==1.14.0              # via pycares
 chardet==3.0.4            # via -r requirements.in, aiohttp, readability-lxml, requests
 cli-helpers[styles]==1.2.1  # via pgcli
 click==7.1.1              # via -r requirements.in, aiohttp-devtools, flask, pgcli, pgspecial, pip-tools, shiv
