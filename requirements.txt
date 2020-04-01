@@ -68,7 +68,7 @@ mccabe==0.6.1             # via flake8
 memory-profiler==0.57.0
 module-graph==0.0.1
 more-itertools==8.2.0     # via pytest
-msgpack==0.6.2
+msgpack==1.0.0
 multidict==4.5.2          # via aiohttp, yarl
 netifaces==0.10.9
 oauthlib==3.1.0           # via requests-oauthlib
