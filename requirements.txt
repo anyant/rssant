@@ -65,7 +65,7 @@ mako==1.1.2
 markdown==3.2.1
 markupsafe==1.1.1         # via jinja2, mako
 mccabe==0.6.1             # via flake8
-memory-profiler==0.55.0
+memory-profiler==0.57.0
 module-graph==0.0.1
 more-itertools==7.2.0     # via pytest
 msgpack==0.6.2
