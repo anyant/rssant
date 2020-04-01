@@ -60,7 +60,7 @@ itypes==1.1.0             # via coreapi
 jinja2==2.11.1            # via coreschema, flask
 jsonfield==3.1.0
 loguru==0.3.2
-lxml==4.3.3
+lxml==4.5.0
 mako==1.1.0
 markdown==3.2.1
 markupsafe==1.1.1         # via jinja2, mako
