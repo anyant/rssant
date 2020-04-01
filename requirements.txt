@@ -54,7 +54,7 @@ gunicorn==20.0.4
 html2text==2020.1.16
 humanize==2.2.0           # via pgcli
 idna==2.9                 # via email-validator, requests, yarl
-importlib-metadata==1.5.0  # via pluggy, pytest
+importlib-metadata==1.6.0  # via pluggy, pytest
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
 jinja2==2.10.3            # via coreschema, flask
