@@ -76,7 +76,7 @@ pgcli==2.0.2              # via -r requirements.in
 pgspecial==1.11.7         # via pgcli
 pip-tools==4.5.1          # via -r requirements.in
 pipdeptree==0.13.2        # via -r requirements.in
-pluggy==0.13.0            # via pytest
+pluggy==0.13.1            # via pytest
 prometheus-client==0.7.1  # via -r requirements.in
 prompt-toolkit==2.0.10    # via pgcli
 psutil==5.6.6             # via -r requirements.in, memory-profiler
