@@ -1,39 +1,41 @@
 # django
-Django==2.2.10
-djangorestframework==3.10.3
-django-debug-toolbar==2.0
-django-extensions==2.2.3
-django-allauth==0.40.0
+django==2.2.12
+djangorestframework==3.11.0
+django-debug-toolbar==2.2
+django-extensions==2.2.9
+django-allauth==0.41.0
 django-rest-auth==0.9.5
 django-rest-swagger==2.2.0
-django-timezone-field==3.1
+django-timezone-field==4.0
 django-optimistic-lock==1.0.0
-jsonfield==2.0.2
+jsonfield==3.1.0
 
 # wsgi
-whitenoise==4.1.4
-gunicorn==19.9.0
+whitenoise==5.0.1
+gunicorn==20.0.4
 supervisor==4.1.0
 
 # postgres
 psycopg2==2.7.7
 psycopg2-binary==2.7.7
-SQLAlchemy==1.3.12
-django-postgrespool2==1.0.0
+SQLAlchemy==1.3.15
+django-postgrespool2==1.0.1
 pgcli==2.0.2
 sqlparse==0.2.4
 
 # feedlibs
 requests==2.22.0
-certifi==2019.9.11
+urllib3==1.25.8
+yarl==1.4.2
+certifi==2019.11.28
 chardet==3.0.4
-cchardet==2.1.4
+cchardet==2.1.6
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
-lxml==4.3.3
+lxml==4.5.0
 bs4==0.0.1
-beautifulsoup4==4.7.1
+beautifulsoup4==4.8.2
 pynliner==0.8.0
-html2text==2018.1.9
+html2text==2020.1.16
 readability-lxml==0.7.1
 
 # aiolibs
@@ -52,22 +54,22 @@ prometheus-client==0.7.1
 Brotli==1.0.7
 validr==1.2.0b2
 attrdict==2.0.1
-msgpack==0.6.2
+msgpack==1.0.0
 loguru==0.3.1
 netifaces==0.10.9
 python-slugify==3.0.2
 validators==0.14.0
 Click==7.1.1
-PyYAML==5.1.2
-Mako==1.1.0
-tqdm==4.31.1
+PyYAML==5.3.1
+Mako==1.1.2
+tqdm==4.44.1
 cached-property==1.5.1
-python-dotenv==0.10.2
+python-dotenv==0.12.0
 markdown==3.2.1
 packaging==19.2
 
 # test
-pytest==5.3.2
+pytest==5.4.1
 pytest-cov==2.8.1
 flake8==3.7.9
 pycodestyle==2.5.0
@@ -78,13 +80,13 @@ autopep8==1.5
 # package
 pip-tools==4.5.1
 pipdeptree==0.13.2
-shiv==0.0.50
+shiv==0.1.1
 
 # backdoor
 psutil==5.6.6
 objgraph==3.4.1
-pyinstrument==3.0.1
-pyinstrument-cext==0.2.0
-memory-profiler==0.55.0
+pyinstrument==3.1.3
+pyinstrument-cext==0.2.2
+memory-profiler==0.57.0
 graphviz==0.13
 module-graph==0.0.1
