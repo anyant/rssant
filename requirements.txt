@@ -51,7 +51,7 @@ flake8==3.7.9
 flask==1.1.1
 graphviz==0.13.2
 gunicorn==20.0.4
-html2text==2018.1.9
+html2text==2020.1.16
 humanize==0.5.1           # via pgcli
 idna==2.8                 # via email-validator, requests, yarl
 importlib-metadata==1.5.0  # via pluggy, pytest
