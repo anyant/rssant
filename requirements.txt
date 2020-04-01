@@ -26,7 +26,7 @@ click==7.1.1
 configobj==5.0.6          # via cli-helpers, pgcli
 coreapi==2.3.3            # via django-rest-swagger, openapi-codec
 coreschema==0.0.4         # via coreapi
-coverage==4.5.4
+coverage==5.0.4
 cssselect==1.1.0          # via readability-lxml
 cssutils==1.0.2           # via pynliner
 decorator==4.4.0          # via validators
