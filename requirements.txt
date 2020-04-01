@@ -97,7 +97,7 @@ pynliner==0.8.0
 pyparsing==2.4.6          # via packaging, validr
 pytest-cov==2.8.1
 pytest==5.4.1
-python-dotenv==0.10.2
+python-dotenv==0.12.0
 python-slugify==3.0.2
 python3-openid==3.1.0     # via django-allauth
 pytz==2019.3              # via django, django-timezone-field
