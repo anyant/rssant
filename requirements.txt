@@ -85,7 +85,7 @@ prompt-toolkit==3.0.5    # via pgcli
 psutil==5.7.0
 psycopg2-binary==2.8.4
 psycopg2==2.8.4
-py==1.8.0                 # via pytest
+py==1.8.1                 # via pytest
 pycares==3.0.0            # via aiodns
 pycodestyle==2.5.0
 pycparser==2.19           # via cffi
