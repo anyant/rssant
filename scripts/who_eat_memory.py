@@ -9,8 +9,7 @@ if IS_GEN and __name__ == "__main__":
     module_graph.setup_hooker(save_to=INPUT_FILEPATH, verbose=True)
 
 
-import os  # noqa: F402
-import django  # noqa: F402
+import rssant_common.django_setup  # noqa: F401,F402
 from rssant_common.logger import configure_logging  # noqa: F402
 from module_graph.traveler import ModuleTraveler  # noqa: F402
 from module_graph.render import render_graph  # noqa: F402
@@ -39,15 +38,9 @@ whitenoise.django*
 """
 
 
-def django_setup():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-    django.setup()
-    configure_logging(level='DEBUG')
-
-
 if __name__ == "__main__":
     if IS_GEN:
-        django_setup()
+        configure_logging(level='DEBUG')
         traveler = ModuleTraveler(ignore=IGNORE)
         traveler.run()
     else:

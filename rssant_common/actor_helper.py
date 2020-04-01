@@ -1,17 +1,16 @@
 import logging
 import time
 import functools
-import os.path
 from urllib.parse import urlparse
 
 import click
-import django
 from django import db
 from validr import T
 import backdoor
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from actorlib.sentry import sentry_init
 
+import rssant_common.django_setup  # noqa:F401
 from rssant_config import CONFIG
 from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
@@ -149,8 +148,6 @@ def start_actor(actor_type, **kwargs):
     configure_logging(level=CONFIG.log_level)
     if CONFIG.sentry_enable:
         sentry_init(CONFIG.sentry_dsn)
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-    django.setup()
     backdoor.setup()
     is_scheduler = actor_type == 'scheduler'
     actors = list(collect_actors(f'rssant_{actor_type}'))

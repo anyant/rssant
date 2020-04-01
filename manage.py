@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-import os
 import sys
 import time
 
+import rssant_common.django_setup  # noqa:F401
 from rssant_config import CONFIG
 from rssant_common.logger import configure_logging
 
 
 if __name__ == '__main__':
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-    os.environ.setdefault('SERVER_WSGI', 'true')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

@@ -28,7 +28,7 @@ True
 >>> validate('f1+f2')
 Traceback (most recent call last):
 ...
-validr._exception_c.Invalid: invalid detail value, value=f1+f2
+validr._exception_c.Invalid: invalid detail value, value='f1+f2'
 """
 import re
 from validr import Invalid, SchemaError, validator

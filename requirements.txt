@@ -22,7 +22,7 @@ certifi==2019.9.11        # via -r requirements.in, requests, sentry-sdk
 cffi==1.13.0              # via pycares
 chardet==3.0.4            # via -r requirements.in, aiohttp, readability-lxml, requests
 cli-helpers[styles]==1.2.1  # via pgcli
-click==7.1.1              # via -r requirements.in, aiohttp-devtools, django-click, flask, pgcli, pgspecial, pip-tools, shiv
+click==7.1.1              # via -r requirements.in, aiohttp-devtools, flask, pgcli, pgspecial, pip-tools, shiv
 configobj==5.0.6          # via cli-helpers, pgcli
 coreapi==2.3.3            # via django-rest-swagger, openapi-codec
 coreschema==0.0.4         # via coreapi
@@ -33,7 +33,6 @@ decorator==4.4.0          # via validators
 defusedxml==0.6.0         # via python3-openid
 devtools==0.5.1           # via aiohttp-devtools
 django-allauth==0.40.0    # via -r requirements.in
-django-click==2.1.0       # via -r requirements.in
 django-debug-toolbar==2.0  # via -r requirements.in
 django-extensions==2.2.3  # via -r requirements.in
 django-optimistic-lock==1.0.0  # via -r requirements.in
@@ -109,7 +108,7 @@ setproctitle==1.1.10      # via pgcli
 sgmllib3k==1.0.0          # via feedparser
 shiv==0.0.50              # via -r requirements.in
 simplejson==3.16.0        # via django-rest-swagger
-six==1.12.0               # via attrdict, configobj, django-click, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
+six==1.12.0               # via attrdict, configobj, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
 soupsieve==1.9.4          # via beautifulsoup4
 sqlalchemy==1.3.12        # via -r requirements.in, django-postgrespool2
 sqlparse==0.2.4           # via -r requirements.in, django, django-debug-toolbar, pgcli, pgspecial

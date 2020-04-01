@@ -1,5 +1,1 @@
-import os
-import django
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-django.setup()
+import rssant_common.django_setup  # noqa:F401

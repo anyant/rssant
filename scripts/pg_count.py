@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 
@@ -6,8 +5,8 @@ import click
 import django.apps
 from django.db import connection
 
+import rssant_common.django_setup  # noqa:F401
 from rssant_common.helper import pretty_format_json
-
 
 sql_count_limit = '''
 SELECT count(*) as row_count
@@ -88,8 +87,6 @@ def pg_verify(result, expect_result, bias):
 @click.option('--verify-bias', type=float, default=0.003)
 @click.argument('filepath', type=str, default='-')
 def main(verify, filepath, verify_bias):
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'rssant.settings')
-    django.setup()
     if verify:
         if verify != '-':
             with open(verify) as f:

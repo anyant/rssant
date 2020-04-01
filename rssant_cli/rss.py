@@ -2,11 +2,12 @@ import logging
 from collections import defaultdict
 
 import tqdm
+import click
 from django.utils import timezone
 from django.db import transaction, connection
 from django.contrib.auth import get_user_model
-import djclick as click
 
+import rssant_common.django_setup  # noqa:F401
 from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
@@ -16,7 +17,6 @@ from rssant_feedlib import processor
 from rssant_common.actor_client import scheduler
 from rssant_config import CONFIG
 
-User = get_user_model()
 
 LOG = logging.getLogger(__name__)
 
@@ -273,6 +273,7 @@ def subscribe_changelog():
         click.echo(f'not found changelog feed url={changelog_url}')
         return
     click.echo(f'changelog feed {feed}')
+    User = get_user_model()
     users = list(User.objects.all())
     click.echo(f'total {len(users)} users')
     for user in tqdm.tqdm(users, ncols=80, ascii=True):
@@ -286,3 +287,7 @@ def subscribe_changelog():
                     is_from_bookmark=False,
                 )
                 user_feed.save()
+
+
+if __name__ == "__main__":
+    main()

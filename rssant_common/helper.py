@@ -19,7 +19,8 @@ LOG = logging.getLogger(__name__)
 def is_main_or_wsgi(name):
     is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
     is_wsgi = bool(os.getenv('SERVER_WSGI'))
-    return name == '__main__' or is_gunicorn or is_wsgi
+    is_run_main = bool(os.getenv('RUN_MAIN'))
+    return name == '__main__' or is_gunicorn or is_wsgi or is_run_main
 
 
 def pretty_format_json(data):
