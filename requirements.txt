@@ -114,7 +114,7 @@ simplejson==3.17.0        # via django-rest-swagger
 six==1.14.0               # via attrdict, configobj, django-click, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
 soupsieve==2.0          # via beautifulsoup4
 sqlalchemy==1.3.15
-sqlparse==0.2.4
+sqlparse==0.3.1
 supervisor==4.1.0
 tabulate[widechars]==0.8.5  # via cli-helpers
 terminaltables==3.1.0     # via cli-helpers, validr
