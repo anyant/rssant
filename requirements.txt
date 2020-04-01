@@ -44,7 +44,7 @@ django-timezone-field==4.0
 django==3.0.5
 djangorestframework==3.11.0
 dnspython==1.16.0         # via email-validator
-email-validator==1.0.4    # via validr
+email-validator==1.0.5    # via validr
 entrypoints==0.3          # via flake8
 feedparser==6.0.0b3
 flake8==3.7.9
