@@ -80,7 +80,7 @@ pluggy==0.13.0            # via pytest
 prometheus-client==0.7.1  # via -r requirements.in
 prompt-toolkit==2.0.10    # via pgcli
 psutil==5.6.6             # via -r requirements.in, memory-profiler
-psycopg2-binary==2.7.7    # via -r requirements.in
+psycopg2-binary==2.8.4    # via -r requirements.in
 psycopg2==2.7.7           # via -r requirements.in, pgcli, pgspecial
 py==1.8.0                 # via pytest
 pycares==3.0.0            # via aiodns
