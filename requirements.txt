@@ -34,7 +34,7 @@ defusedxml==0.6.0         # via python3-openid
 devtools==0.5.1           # via aiohttp-devtools
 django-allauth==0.41.0
 django-click==2.1.0
-django-debug-toolbar==2.0
+django-debug-toolbar==2.2
 django-extensions==2.2.3
 django-optimistic-lock==1.0.0
 django-postgrespool2==1.0.0
