@@ -103,7 +103,7 @@ raven==6.10.0             # via -r requirements.in
 readability-lxml==0.7.1   # via -r requirements.in
 requests-oauthlib==1.2.0  # via django-allauth
 requests==2.22.0          # via -r requirements.in, coreapi, django-allauth, requests-oauthlib
-sentry-sdk==0.9.0         # via -r requirements.in
+sentry-sdk==0.14.3         # via -r requirements.in
 setproctitle==1.1.10      # via pgcli
 sgmllib3k==1.0.0          # via feedparser
 shiv==0.1.1               # via -r requirements.in
