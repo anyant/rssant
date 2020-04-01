@@ -46,7 +46,7 @@ entrypoints==0.3          # via flake8
 feedparser==6.0.0b3       # via -r requirements.in
 flake8==3.7.9             # via -r requirements.in
 flask==1.1.1              # via -r requirements.in
-graphviz==0.13            # via -r requirements.in, objgraph
+graphviz==0.13.2            # via -r requirements.in, objgraph
 gunicorn==20.0.4          # via -r requirements.in
 html2text==2020.1.16      # via -r requirements.in
 humanize==0.5.1           # via pgcli
