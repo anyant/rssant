@@ -109,7 +109,7 @@ requests==2.23.0
 sentry-sdk==0.14.3
 setproctitle==1.1.10      # via pgcli
 sgmllib3k==1.0.0          # via feedparser
-shiv==0.0.50
+shiv==0.1.1
 simplejson==3.16.0        # via django-rest-swagger
 six==1.12.0               # via attrdict, configobj, django-click, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, validators
 soupsieve==1.9.4          # via beautifulsoup4
