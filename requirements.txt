@@ -13,7 +13,7 @@ async-timeout==3.0.1      # via aiohttp
 attrdict==2.0.1
 attrs==19.3.0             # via aiohttp, pytest
 autopep8==1.5
-beautifulsoup4==4.7.1
+beautifulsoup4==4.8.2
 brotli==1.0.7
 bs4==0.0.1
 cached-property==1.5.1
