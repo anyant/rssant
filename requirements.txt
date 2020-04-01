@@ -29,7 +29,7 @@ coreschema==0.0.4         # via coreapi
 coverage==4.5.4           # via -r requirements.in, pytest-cov
 cssselect==1.1.0          # via readability-lxml
 cssutils==1.0.2           # via pynliner
-decorator==4.4.0          # via validators
+decorator==4.4.2          # via validators
 defusedxml==0.6.0         # via python3-openid
 devtools==0.5.1           # via aiohttp-devtools
 django-allauth==0.41.0    # via -r requirements.in
