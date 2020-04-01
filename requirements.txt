@@ -17,7 +17,7 @@ beautifulsoup4==4.8.2
 brotli==1.0.7
 bs4==0.0.1
 cached-property==1.5.1
-cchardet==2.1.4
+cchardet==2.1.6
 certifi==2019.9.11
 cffi==1.13.0              # via pycares
 chardet==3.0.4
