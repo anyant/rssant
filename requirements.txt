@@ -87,7 +87,7 @@ pycares==3.0.0            # via aiodns
 pycodestyle==2.5.0        # via -r requirements.in, autopep8, flake8
 pycparser==2.19           # via cffi
 pyflakes==2.1.1           # via flake8
-pygments==2.4.2           # via aiohttp-devtools, cli-helpers, pgcli
+pygments==2.6.1           # via aiohttp-devtools, cli-helpers, pgcli
 pyinstrument-cext==0.2.2  # via -r requirements.in, pyinstrument
 pyinstrument==3.1.3       # via -r requirements.in
 pynliner==0.8.0           # via -r requirements.in
