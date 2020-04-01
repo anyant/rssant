@@ -41,7 +41,7 @@ django-postgrespool2==1.0.1
 django-rest-auth==0.9.5
 django-rest-swagger==2.2.0
 django-timezone-field==4.0
-django==2.2.10
+django==3.0.5
 djangorestframework==3.10.3
 dnspython==1.16.0         # via email-validator
 email-validator==1.0.4    # via validr
