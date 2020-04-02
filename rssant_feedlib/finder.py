@@ -169,13 +169,23 @@ class FeedFinder:
         message_handler: callable (str) -> None
     """
 
-    def __init__(self, start_url, message_handler=None, max_trys=10, reader=None, validate=True):
+    def __init__(
+        self,
+        start_url,
+        message_handler=None,
+        max_trys=10,
+        reader=None,
+        validate=True,
+        rss_proxy_url=None,
+        rss_proxy_token=None,
+    ):
         start_url = coerce_url(start_url)
         self._set_start_url(start_url)
         self.message_handler = message_handler
         self.max_trys = max_trys
         if reader is None:
-            reader = FeedReader()
+            reader = FeedReader(
+                rss_proxy_url=rss_proxy_url, rss_proxy_token=rss_proxy_token)
             self._close_reader = True
         else:
             self._close_reader = False
@@ -183,6 +193,10 @@ class FeedFinder:
         self.validate = validate
         self._links = {start_url: ScoredLink(start_url, 1.0)}
         self._visited = set()
+
+    @property
+    def has_rss_proxy(self):
+        return self.reader.has_rss_proxy
 
     def _log(self, msg):
         if self.message_handler:
@@ -199,9 +213,9 @@ class FeedFinder:
         self.netloc = netloc
         self.path = path
 
-    def _read(self, url, current_try):
+    def _read(self, url, current_try, use_proxy=False):
         self._visited.add(url)
-        status, res = self.reader.read(url)
+        status, res = self.reader.read(url, use_proxy=use_proxy)
         is_ok = status == requests.codes.ok
         if is_ok and current_try == 0 and res.history:
             # 发生了重定向，重新设置start_url
@@ -376,14 +390,24 @@ class FeedFinder:
         return ret
 
     def find(self):
-        for current_try in range(self.max_trys):
+        use_proxy = False
+        current_try = 0
+        while current_try < self.max_trys:
+            current_try += 1
             url = self._pop_candidate()
             if not url:
                 self._log(f"No more candidate url")
                 break
             self._log(f"#{current_try} try {url}")
-            status, res = self._read(url, current_try)
-            shoud_abort = status not in {200, 404}
+            status, res = self._read(url, current_try, use_proxy=use_proxy)
+            if self.has_rss_proxy and not use_proxy:
+                if FeedResponseStatus.is_need_proxy(status):
+                    current_try += 1
+                    self._log(f'#{current_try} try use proxy')
+                    status, res = self._read(url, current_try, use_proxy=True)
+                    if status in (200, 404):
+                        use_proxy = True
+            shoud_abort = status not in (200, 404)
             if shoud_abort:
                 self._log('The url is unable to connect or likely not contain feed, abort!')
                 break
@@ -402,6 +426,7 @@ class FeedFinder:
             title = result.feed["title"]
             msg = f"Feed: version={version}, title={title}, has {len(entries)} entries"
             self._log(msg)
+            result.use_proxy = use_proxy
             return result
         self._log('Not found any valid feed!')
         return None

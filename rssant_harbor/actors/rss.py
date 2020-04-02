@@ -45,6 +45,7 @@ StoryOutputSchemaFields.update(
 
 FeedSchemaFields = dict(
     url=T.url,
+    use_proxy=T.bool.default(False),
     title=T.str,
     content_length=T.int.optional,
     content_hash_base64=T.str,
@@ -422,6 +423,7 @@ def do_check_feed(ctx: ActorContext):
         ctx.hope('worker_rss.sync_feed', dict(
             feed_id=feed['feed_id'],
             url=feed['url'],
+            use_proxy=feed['use_proxy'],
         ), expire_at=expire_at)
 
 

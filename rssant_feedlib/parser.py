@@ -19,6 +19,7 @@ class FeedParserResult:
         self.bozo = bozo
         self.bozo_exception = bozo_exception
         self.response = None
+        self.use_proxy = False
 
 
 def _process_response(response):
