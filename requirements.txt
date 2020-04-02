@@ -95,7 +95,7 @@ pyparsing==2.4.2          # via packaging, validr
 pytest-cov==2.8.1         # via -r requirements.in
 pytest==5.4.1             # via -r requirements.in, pytest-cov
 python-dotenv==0.12.0     # via -r requirements.in
-python-slugify==3.0.2     # via -r requirements.in
+python-slugify==4.0.0     # via -r requirements.in
 python3-openid==3.1.0     # via django-allauth
 pytz==2019.3              # via django, django-timezone-field
 pyyaml==5.3.1             # via -r requirements.in
