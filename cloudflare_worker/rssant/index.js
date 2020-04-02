@@ -3,85 +3,84 @@
  *
  * Parameters
  *  - token
+ *  - method
  *  - url
+ *  - body
  *  - headers
  *
  * Response
- *  - status
- *  - statusText
- *  - url
- *  - headers
- *  - body
- *  - error
+ *  x-rss-proxy-status
+ *  body stream
  */
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request))
 })
 
-function isNil(x) {
-  return x === null || x === undefined
+function isBlank(x) {
+  return x === null || x === undefined || x === ''
+}
+
+function errorResponse(status, message) {
+  return new Response(message, {
+    status: status,
+    headers: {
+      'content-type': 'text/plain;charset=utf-8',
+    },
+  })
 }
 
 async function handleRequest(request) {
   let requestURL = new URL(request.url)
   if (request.method !== 'POST' || requestURL.pathname !== '/rss-proxy') {
-    return new Response('404 Not Found', {
-      status: 404,
-      headers: {
-        'content-type': 'text/html;charset=UTF-8',
-      },
-    })
+    return errorResponse(404, '404 Not Found')
   }
-  const params = await request.json()
+  let params = null
+  const contentType = request.headers.get('content-type')
+  if (isBlank(contentType) || !contentType.includes('application/json')) {
+    return errorResponse(400, 'content-type: application/json is required')
+  }
+  try {
+    params = await request.json()
+  } catch (e) {
+    return errorResponse(400, 'invalid request body')
+  }
   const token = params['token']
   // TOKEN is global environment variable:
   // https://developers.cloudflare.com/workers/reference/apis/environment-variables/
-  if (isNil(token) || token !== TOKEN) {
-    return new Response('Who are you?', {
-      status: 403,
-      headers: {
-        'content-type': 'text/html;charset=UTF-8',
-      },
-    })
+  if (isBlank(token) || token !== TOKEN) {
+    return errorResponse(403, 'invalid token')
   }
   const url = params['url']
-  const headers = params['headers'] || {}
-  if (isNil(url)) {
-    return new Response('url is required', {
-      status: 400,
-      headers: {
-        'content-type': 'text/html;charset=UTF-8',
-      },
-    })
+  if (isBlank(url)) {
+    return errorResponse(400, 'url is required')
   }
+  const method = params['method'] || 'GET'
+  const body = params['body']
+  const headers = params['headers'] || {}
   let proxy_response = null
   let proxy_body = null
-  let result = { url: url }
-  let error = null
+  let proxy_headers = new Headers()
+  let proxy_error = null
   try {
     proxy_response = await fetch(url, {
-      method: 'GET',
+      method: method,
       headers: headers,
+      body: body,
+      redirect: 'follow',
     })
-    proxy_body = await proxy_response.text()
+    proxy_body = proxy_response.body
   } catch (e) {
-    error = e
+    proxy_error = e
+    proxy_body = e.stack || e
   }
-  if (!isNil(proxy_response)) {
-    result.status = proxy_response.status
-    result.statusText = proxy_response.statusText
-    result.headers = proxy_response.headers
+  if (!isBlank(proxy_response)) {
+    for (var pair of proxy_response.headers.entries()) {
+      proxy_headers.append(pair[0], pair[1])
+    }
+    proxy_headers.append('x-rss-proxy-status', proxy_response.status)
   }
-  if (!isNil(proxy_body)) {
-    result.body = proxy_body
+  if (!isBlank(proxy_error)) {
+    proxy_headers.append('x-rss-proxy-status', 'ERROR')
   }
-  if (!isNil(error)) {
-    result.error = error.toString()
-  }
-  const init = {
-    headers: {
-      'content-type': 'application/json;charset=UTF-8',
-    },
-  }
-  return new Response(JSON.stringify(result), init)
+  return new Response(proxy_body, { headers: proxy_headers })
 }
