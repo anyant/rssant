@@ -121,7 +121,7 @@ uritemplate==3.0.0        # via coreapi
 urllib3==1.25.8           # via -r requirements.in, requests, sentry-sdk
 validators==0.14.0        # via -r requirements.in
 validr==1.2.0b2           # via -r requirements.in
-watchgod==0.5             # via aiohttp-devtools
+watchgod==0.6             # via aiohttp-devtools
 wcwidth==0.1.7            # via prompt-toolkit, pytest, tabulate
 werkzeug==0.16.0          # via flask
 whitenoise==5.0.1         # via -r requirements.in
