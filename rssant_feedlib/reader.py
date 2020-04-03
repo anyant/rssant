@@ -4,6 +4,7 @@ import socket
 import ssl
 import ipaddress
 import logging
+import typing
 from urllib.parse import urlparse
 from http import HTTPStatus
 
@@ -275,7 +276,7 @@ class FeedReader:
         response.raise_for_status()
         return response
 
-    def read(self, *args, use_proxy=False, **kwargs):
+    def read(self, *args, use_proxy=False, **kwargs) -> typing.Tuple[int, requests.Response]:
         response = None
         try:
             if use_proxy:

@@ -173,10 +173,12 @@ async def do_fetch_story(
     ctx: ActorContext,
     story_id: T.int,
     url: T.url,
+    use_proxy: T.bool.default(False),
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
-    async with AsyncFeedReader() as reader:
-        status, response = await reader.read(url)
+    async with AsyncFeedReader(**_get_proxy_options()) as reader:
+        use_proxy = use_proxy and reader.has_rss_proxy
+        status, response = await reader.read(url, use_proxy=use_proxy)
     if response and response.url:
         url = str(response.url)
     LOG.info(f'fetch story#{story_id} url={unquote(url)} status={status} finished')
