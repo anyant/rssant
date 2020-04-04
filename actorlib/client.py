@@ -47,7 +47,7 @@ class ActorClientBase:
             msg = self.registery.complete_message(msg)
             dst_url = self._dst_url_of(msg)
             if not dst_url:
-                LOG.error(f'no dst_url for message {msg}')
+                LOG.warning(f'no dst_url for message {msg}')
                 continue
             groups[dst_url].append(msg)
         return groups
@@ -124,7 +124,7 @@ class ActorClient(ActorClientBase):
                 r = self.session.post(
                     dst_url, data=data, headers=self.headers, timeout=self.timeout)
             except requests.ConnectionError as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 return
             except requests.RequestException as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
@@ -179,7 +179,7 @@ class AsyncActorClient(ActorClientBase):
                 async with self.session.post(dst_url, data=data, headers=self.headers) as r:
                     await r.read()
             except aiohttp.ClientConnectionError as ex:
-                LOG.error(f'failed to send message to {dst_url}: {ex}')
+                LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 return
             except aiohttp.ClientError as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
