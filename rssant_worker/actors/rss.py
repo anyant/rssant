@@ -23,6 +23,7 @@ from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
 from rssant_common.validator import compiler
+from rssant_config import CONFIG
 
 
 LOG = logging.getLogger(__name__)
@@ -51,6 +52,7 @@ StorySchema = T.dict(
 
 FeedSchema = T.dict(
     url=T.url,
+    use_proxy=T.bool.default(False),
     title=T.str,
     content_length=T.int,
     content_hash_base64=T.str,
@@ -90,6 +92,16 @@ def validate_feed(feed):
     return feed_data
 
 
+def _get_proxy_options():
+    options = {}
+    if CONFIG.rss_proxy_enable:
+        options.update(
+            rss_proxy_url=CONFIG.rss_proxy_url,
+            rss_proxy_token=CONFIG.rss_proxy_token,
+        )
+    return options
+
+
 @actor('worker_rss.find_feed')
 def do_find_feed(
     ctx: ActorContext,
@@ -108,7 +120,8 @@ def do_find_feed(
         LOG.info(msg)
         messages.append(msg)
 
-    with FeedFinder(url, message_handler=message_handler) as finder:
+    options = dict(message_handler=message_handler, **_get_proxy_options())
+    with FeedFinder(url, **options) as finder:
         found = finder.find()
     try:
         feed = _parse_found(found) if found else None
@@ -127,12 +140,13 @@ def do_sync_feed(
     ctx: ActorContext,
     feed_id: T.int,
     url: T.url,
+    use_proxy: T.bool.default(False),
     content_hash_base64: T.str.optional,
     etag: T.str.optional,
     last_modified: T.str.optional,
 ):
-    params = dict(etag=etag, last_modified=last_modified)
-    with FeedReader() as reader:
+    params = dict(etag=etag, last_modified=last_modified, use_proxy=use_proxy)
+    with FeedReader(**_get_proxy_options()) as reader:
         status_code, response = reader.read(url, **params)
     LOG.info(f'read feed#{feed_id} url={unquote(url)} status_code={status_code}')
     if status_code != 200 or not response:
@@ -159,10 +173,12 @@ async def do_fetch_story(
     ctx: ActorContext,
     story_id: T.int,
     url: T.url,
+    use_proxy: T.bool.default(False),
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
-    async with AsyncFeedReader() as reader:
-        status, response = await reader.read(url)
+    async with AsyncFeedReader(**_get_proxy_options()) as reader:
+        use_proxy = use_proxy and reader.has_rss_proxy
+        status, response = await reader.read(url, use_proxy=use_proxy)
     if response and response.url:
         url = str(response.url)
     LOG.info(f'fetch story#{story_id} url={unquote(url)} status={status} finished')
@@ -262,6 +278,7 @@ async def do_detect_story_images(
 def _parse_found(parsed):
     feed = AttrDict()
     res = parsed.response
+    feed.use_proxy = parsed.use_proxy
     feed.url = _get_url(res)
     feed.content_length = len(res.content)
     feed.content_hash_base64 = compute_hash_base64(res.content)

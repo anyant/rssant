@@ -13,7 +13,6 @@ from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
-from rssant_api.monthly_story_count import id_of_month, month_of_id
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
 from rssant_common.validator import compiler
@@ -45,6 +44,7 @@ StoryOutputSchemaFields.update(
 
 FeedSchemaFields = dict(
     url=T.url,
+    use_proxy=T.bool.default(False),
     title=T.str,
     content_length=T.int.optional,
     content_hash_base64=T.str,
@@ -192,43 +192,21 @@ def do_update_feed(
     feed.refresh_from_db()
     if modified_storys:
         feed.unfreeze()
-    need_fetch_story = _is_feed_need_fetch_storys(feed)
+    need_fetch_story = _is_feed_need_fetch_storys(feed, modified_storys)
     for story in modified_storys:
         if not story.link:
             continue
-        if need_fetch_story and (not is_fulltext_story(feed, story)):
+        if need_fetch_story and (not is_fulltext_story(story)):
             ctx.tell('worker_rss.fetch_story', dict(
                 url=story.link,
+                use_proxy=feed.use_proxy,
                 story_id=str(story.id)
             ))
         else:
             _detect_story_images(ctx, story)
 
 
-def is_productive_feed(monthly_story_count, date):
-    """
-    eg: news, forum, bbs, daily reports
-    """
-    year, month = date.year, date.month
-    if not (1970 <= year <= 9999):
-        return True
-    month_id = id_of_month(year, month)
-    count_18m = []
-    for i in range(18):
-        year_month = month_of_id(max(0, month_id - i))
-        count_18m.insert(0, monthly_story_count.get(*year_month))
-    if sum(count_18m) <= 0:
-        return True
-    freq_3m = max(count_18m[-3:]) / 30
-    count_18m_non_zero = [x for x in count_18m if x > 0]
-    freq_18m = sum(count_18m_non_zero) / len(count_18m_non_zero) / 30
-    freq = max(freq_3m, freq_18m)
-    if freq >= 1:
-        return True
-    return False
-
-
-def is_fulltext_story(feed, story):
+def is_fulltext_story(story):
     """
     detect whether the full content is already in rss feed.
 
@@ -237,10 +215,6 @@ def is_fulltext_story(feed, story):
     if not story.content:
         return False
     if len(story.content) >= 2000:
-        return True
-    if not story.dt_published:
-        return True
-    if is_productive_feed(feed.monthly_story_count, story.dt_published):
         return True
     link_count = processor.story_link_count(story.content)
     if link_count >= 2:
@@ -262,7 +236,7 @@ def is_rssant_changelog(url: str):
     return url.startswith(CONFIG.root_url) and 'changelog' in url
 
 
-def _is_feed_need_fetch_storys(feed):
+def _is_feed_need_fetch_storys(feed, modified_storys):
     checkers = [
         processor.is_v2ex, processor.is_hacknews,
         processor.is_github, processor.is_pypi,
@@ -271,6 +245,13 @@ def _is_feed_need_fetch_storys(feed):
     for check in checkers:
         if check(feed.url):
             return False
+    # eg: news, forum, bbs, daily reports
+    if feed.dryness is not None and feed.dryness < 500:
+        return False
+    has_storys = feed.total_storys is not None \
+        and feed.total_storys > len(modified_storys)
+    if has_storys and len(modified_storys) > 10:
+        return False
     return True
 
 
@@ -422,6 +403,7 @@ def do_check_feed(ctx: ActorContext):
         ctx.hope('worker_rss.sync_feed', dict(
             feed_id=feed['feed_id'],
             url=feed['url'],
+            use_proxy=feed['use_proxy'],
         ), expire_at=expire_at)
 
 

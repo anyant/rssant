@@ -14,44 +14,52 @@ validate_extra_networks = compiler.compile(T.list(T.dict(
 
 
 @modelclass(compiler=compiler)
-class EnvConfig:
-    debug = T.bool.default(False).desc('debug')
-    log_level = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
-    root_url = T.url.relaxed.default('http://localhost:6789')
-    scheduler_network = T.str.default('localhost')
-    scheduler_url = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
-    scheduler_extra_networks = T.str.optional.desc('eg: name@url,name@url')
-    secret_key = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
-    allow_private_address = T.bool.default(False)
-    check_feed_minutes = T.int.min(1).default(30)
-    feed_story_retention = T.int.min(1).default(5000).desc('max storys to keep per feed')
+class ConfigModel:
+    pass
+
+
+class EnvConfig(ConfigModel):
+    debug: bool = T.bool.default(False).desc('debug')
+    log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
+    root_url: str = T.url.relaxed.default('http://localhost:6789')
+    scheduler_network: str = T.str.default('localhost')
+    scheduler_url: str = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
+    scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
+    secret_key: str = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
+    allow_private_address: bool = T.bool.default(False)
+    check_feed_minutes: int = T.int.min(1).default(30)
+    feed_story_retention: int = T.int.min(1).default(5000).desc('max storys to keep per feed')
     # actor
-    actor_storage_path = T.str.default('data/actor_storage')
-    actor_storage_compact_wal_delta = T.int.min(1).default(5000)
-    actor_queue_max_complete_size = T.int.min(0).default(500)
-    actor_max_retry_time = T.int.min(1).default(600)
-    actor_max_retry_count = T.int.min(0).default(1)
-    actor_token = T.str.optional
+    actor_storage_path: str = T.str.default('data/actor_storage')
+    actor_storage_compact_wal_delta: int = T.int.min(1).default(5000)
+    actor_queue_max_complete_size: int = T.int.min(0).default(500)
+    actor_max_retry_time: int = T.int.min(1).default(600)
+    actor_max_retry_count: int = T.int.min(0).default(1)
+    actor_token: str = T.str.optional
     # postgres database
-    pg_host = T.str.default('localhost').desc('postgres host')
-    pg_port = T.int.default(5432).desc('postgres port')
-    pg_db = T.str.default('rssant').desc('postgres database')
-    pg_user = T.str.default('rssant').desc('postgres user')
-    pg_password = T.str.default('rssant').desc('postgres password')
+    pg_host: str = T.str.default('localhost').desc('postgres host')
+    pg_port: int = T.int.default(5432).desc('postgres port')
+    pg_db: str = T.str.default('rssant').desc('postgres database')
+    pg_user: str = T.str.default('rssant').desc('postgres user')
+    pg_password: str = T.str.default('rssant').desc('postgres password')
     # github login
-    github_client_id = T.str.optional
-    github_secret = T.str.optional
+    github_client_id: str = T.str.optional
+    github_secret: str = T.str.optional
     # sentry
-    sentry_enable = T.bool.default(False)
-    sentry_dsn = T.str.optional
+    sentry_enable: bool = T.bool.default(False)
+    sentry_dsn: str = T.str.optional
     # email smtp
-    admin_email = T.email.default('admin@localhost.com')
-    smtp_enable = T.bool.default(False)
-    smtp_host = T.str.optional
-    smtp_port = T.int.min(0).optional
-    smtp_username = T.str.optional
-    smtp_password = T.str.optional
-    smtp_use_ssl = T.bool.default(False)
+    admin_email: str = T.email.default('admin@localhost.com')
+    smtp_enable: bool = T.bool.default(False)
+    smtp_host: str = T.str.optional
+    smtp_port: int = T.int.min(0).optional
+    smtp_username: str = T.str.optional
+    smtp_password: str = T.str.optional
+    smtp_use_ssl: bool = T.bool.default(False)
+    # rss proxy
+    rss_proxy_url: str = T.url.optional
+    rss_proxy_token: str = T.str.optional
+    rss_proxy_enable: bool = T.bool.default(False)
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:

@@ -1,12 +1,15 @@
 import socket
 import ssl
 import asyncio
+import logging
+import typing
 import concurrent.futures
 import ipaddress
 from urllib.parse import urlparse
 
 import aiodns
 import aiohttp
+import yarl
 
 from rssant_config import CONFIG
 from rssant_common.helper import (
@@ -16,7 +19,16 @@ from rssant_common.helper import (
 )
 
 from .reader import DEFAULT_USER_AGENT, FeedResponseStatus, is_webpage
-from .reader import PrivateAddressError, ContentTooLargeError, ContentTypeNotSupportError, FeedReaderError
+from .reader import (
+    PrivateAddressError,
+    ContentTooLargeError,
+    ContentTypeNotSupportError,
+    RSSProxyError,
+    FeedReaderError,
+)
+
+
+LOG = logging.getLogger(__name__)
 
 
 class AsyncFeedReader:
@@ -28,6 +40,8 @@ class AsyncFeedReader:
         max_content_length=10 * 1024 * 1024,
         allow_private_address=False,
         allow_non_webpage=False,
+        rss_proxy_url=None,
+        rss_proxy_token=None,
     ):
         self._close_session = session is None
         self.session = session
@@ -37,6 +51,12 @@ class AsyncFeedReader:
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
         self.allow_non_webpage = allow_non_webpage
+        self.rss_proxy_url = rss_proxy_url
+        self.rss_proxy_token = rss_proxy_token
+
+    @property
+    def has_rss_proxy(self):
+        return bool(self.rss_proxy_url)
 
     async def _async_init(self):
         if self.resolver is None:
@@ -110,7 +130,7 @@ class AsyncFeedReader:
         response.rssant_content = content
         response.rssant_text = text
 
-    async def _read(self, url, etag=None, last_modified=None, referer=None, headers=None, ignore_content=False):
+    def _prepare_headers(self, etag=None, last_modified=None, referer=None, headers=None):
         if headers is None:
             headers = {}
         headers['User-Agent'] = self.user_agent
@@ -120,6 +140,56 @@ class AsyncFeedReader:
             headers["If-Modified-Since"] = last_modified
         if referer:
             headers["Referer"] = referer
+        return headers
+
+    async def _read_by_proxy(
+            self, url, etag=None, last_modified=None, referer=None,
+            headers=None, ignore_content=False) -> aiohttp.ClientResponse:
+        if not self.has_rss_proxy:
+            raise ValueError("rss_proxy_url not provided")
+        headers = self._prepare_headers(
+            etag=etag,
+            last_modified=last_modified,
+            referer=referer,
+            headers=headers,
+        )
+        data = dict(
+            url=url,
+            token=self.rss_proxy_token,
+            headers=headers,
+        )
+        await self._async_init()
+        async with self.session.post(self.rss_proxy_url, json=data) as response:
+            response: aiohttp.ClientResponse
+            # TODO: avoid use private field response._url
+            url_obj = yarl.URL(url).with_fragment(None)
+            response._url = url_obj
+            response._cache['url'] = url_obj
+            if response.status != 200:
+                status = response.status
+                message = await response.text()
+                LOG.error("rss-proxy error status=%s message=%s", status, message)
+                raise RSSProxyError(status, message, response=response)
+            proxy_status = response.headers.get('x-rss-proxy-status', None)
+            if proxy_status.upper() == 'ERROR':
+                message = await response.text()
+                raise RSSProxyError(proxy_status, message, response=response)
+            response.status = int(proxy_status)
+            aiohttp_raise_for_status(response)
+            self.check_content_type(response)
+            if not ignore_content:
+                await self._read_content(response)
+        return response
+
+    async def _read(
+            self, url, etag=None, last_modified=None, referer=None,
+            headers=None, ignore_content=False) -> aiohttp.ClientResponse:
+        headers = self._prepare_headers(
+            etag=etag,
+            last_modified=last_modified,
+            referer=referer,
+            headers=headers,
+        )
         await self._async_init()
         if not self.allow_private_address:
             await self.check_private_address(url)
@@ -130,10 +200,13 @@ class AsyncFeedReader:
                 await self._read_content(response)
         return response
 
-    async def read(self, *args, **kwargs):
+    async def read(self, *args, use_proxy=False, **kwargs) -> typing.Tuple[int, aiohttp.ClientResponse]:
         response = None
         try:
-            response = await self._read(*args, **kwargs)
+            if use_proxy:
+                response = await self._read_by_proxy(*args, **kwargs)
+            else:
+                response = await self._read(*args, **kwargs)
         except (socket.gaierror, aiodns.error.DNSError):
             status = FeedResponseStatus.DNS_ERROR.value
         except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,

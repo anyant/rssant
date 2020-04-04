@@ -40,6 +40,8 @@ FeedDetailSchema = T.detail.fields("""
     version
     link
     dryness
+    freeze_level
+    use_proxy
     dt_first_story_published
     dt_latest_story_published
 """).extra_fields("""
@@ -103,6 +105,8 @@ class Feed(Model, ContentHashMixin):
         **optional, default=0, help_text="stale story == offset < retention_offset")
     freeze_level = models.IntegerField(
         **optional, default=1, help_text="freeze level, 1: normal, N: slow down N times")
+    use_proxy = models.BooleanField(
+        **optional, default=False, help_text="use proxy or not")
     # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
@@ -150,12 +154,14 @@ class Feed(Model, ContentHashMixin):
             total_storys=self.total_storys,
             dt_updated=self.dt_updated,
             dt_created=self.dt_created,
-            dryness=self.dryness,
             dt_first_story_published=self.dt_first_story_published,
             dt_latest_story_published=self.dt_latest_story_published,
         )
         if detail:
             ret.update(
+                dryness=self.dryness,
+                freeze_level=self.freeze_level,
+                use_proxy=self.use_proxy,
                 description=self.description,
                 encoding=self.encoding,
                 etag=self.etag,
@@ -204,7 +210,7 @@ class Feed(Model, ContentHashMixin):
             timeout_seconds = 3 * outdate_seconds
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
         sql_check = """
-        SELECT id, url FROM rssant_api_feed AS feed
+        SELECT id, url, use_proxy FROM rssant_api_feed AS feed
         WHERE
             (
                 dt_checked IS NULL
@@ -238,8 +244,8 @@ class Feed(Model, ContentHashMixin):
         now = timezone.now()
         with connection.cursor() as cursor:
             cursor.execute(sql_check, params)
-            for feed_id, url in cursor.fetchall():
-                feeds.append(dict(feed_id=feed_id, url=url))
+            for feed_id, url, use_proxy in cursor.fetchall():
+                feeds.append(dict(feed_id=feed_id, url=url, use_proxy=use_proxy))
             feed_ids = [x['feed_id'] for x in feeds]
             cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
         return feeds
@@ -682,6 +688,14 @@ class UnionFeed:
     @property
     def dryness(self):
         return self._feed.dryness
+
+    @property
+    def freeze_level(self):
+        return self._feed.freeze_level
+
+    @property
+    def use_proxy(self):
+        return self._feed.use_proxy
 
     @property
     def dt_first_story_published(self):

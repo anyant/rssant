@@ -3,6 +3,8 @@ import enum
 import socket
 import ssl
 import ipaddress
+import logging
+import typing
 from urllib.parse import urlparse
 from http import HTTPStatus
 
@@ -10,6 +12,9 @@ import requests
 
 from rssant_config import CONFIG
 from rssant_common.helper import resolve_response_encoding
+
+
+LOG = logging.getLogger(__name__)
 
 
 DEFAULT_RSSANT_USER_AGENT = (
@@ -30,6 +35,7 @@ class FeedResponseStatus(enum.Enum):
     UNKNOWN_ERROR = -100
     CONNECTION_ERROR = -200
     PROXY_ERROR = -300
+    RSS_PROXY_ERROR = -301
     RESPONSE_ERROR = -400
     DNS_ERROR = -201
     PRIVATE_ADDRESS_ERROR = -202
@@ -68,6 +74,19 @@ class FeedResponseStatus(enum.Enum):
             except ValueError:
                 return f'RSSANT_E{abs(value)}'
 
+    @classmethod
+    def is_need_proxy(cls, value):
+        return value in _NEED_PROXY_STATUS_SET
+
+
+_NEED_PROXY_STATUS_SET = {x.value for x in [
+    FeedResponseStatus.CONNECTION_ERROR,
+    FeedResponseStatus.DNS_ERROR,
+    FeedResponseStatus.CONNECTION_TIMEOUT,
+    FeedResponseStatus.READ_TIMEOUT,
+    FeedResponseStatus.CONNECTION_RESET,
+]}
+
 
 class FeedReaderError(Exception):
     """FeedReaderError"""
@@ -91,6 +110,11 @@ class ContentTooLargeError(FeedReaderError):
 class ContentTypeNotSupportError(FeedReaderError):
     """ContentTypeNotSupportError"""
     status = FeedResponseStatus.CONTENT_TYPE_NOT_SUPPORT_ERROR.value
+
+
+class RSSProxyError(FeedReaderError):
+    """RSSProxyError"""
+    status = FeedResponseStatus.RSS_PROXY_ERROR.value
 
 
 RE_WEBPAGE_CONTENT_TYPE = re.compile(
@@ -124,6 +148,8 @@ class FeedReader:
         max_content_length=10 * 1024 * 1024,
         allow_private_address=False,
         allow_non_webpage=False,
+        rss_proxy_url=None,
+        rss_proxy_token=None,
     ):
         if session is None:
             session = requests.session()
@@ -136,6 +162,12 @@ class FeedReader:
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
         self.allow_non_webpage = allow_non_webpage
+        self.rss_proxy_url = rss_proxy_url
+        self.rss_proxy_token = rss_proxy_token
+
+    @property
+    def has_rss_proxy(self):
+        return bool(self.rss_proxy_url)
 
     def _resolve_hostname(self, hostname):
         addrinfo = socket.getaddrinfo(hostname, None)
@@ -185,18 +217,17 @@ class FeedReader:
             content.extend(data)
         response._content = bytes(content)
 
-    def _read(self, url, etag=None, last_modified=None):
+    def _prepare_headers(self, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}
         if etag:
             headers["ETag"] = etag
         if last_modified:
             headers["If-Modified-Since"] = last_modified
-        req = requests.Request('GET', url, headers=headers)
-        prepared = self.session.prepare_request(req)
-        if not self.allow_private_address:
-            self.check_private_address(prepared.url)
+        return headers
+
+    def _send_request(self, request):
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
-        response = self.session.send(prepared, timeout=(6.5, self.request_timeout), stream=True)
+        response = self.session.send(request, timeout=(6.5, self.request_timeout), stream=True)
         try:
             response.raise_for_status()
             self.check_content_type(response)
@@ -208,10 +239,50 @@ class FeedReader:
             response.close()
         return response
 
-    def read(self, *args, **kwargs):
+    def _read(self, url, etag=None, last_modified=None):
+        headers = self._prepare_headers(etag=etag, last_modified=last_modified)
+        req = requests.Request('GET', url, headers=headers)
+        prepared = self.session.prepare_request(req)
+        if not self.allow_private_address:
+            self.check_private_address(prepared.url)
+        response = self._send_request(prepared)
+        return response
+
+    def _read_by_proxy(self, url, etag=None, last_modified=None):
+        if not self.has_rss_proxy:
+            raise ValueError("rss_proxy_url not provided")
+        headers = self._prepare_headers(etag=etag, last_modified=last_modified)
+        data = dict(
+            url=url,
+            token=self.rss_proxy_token,
+            headers=headers,
+        )
+        req = requests.Request('POST', self.rss_proxy_url, json=data)
+        prepared = self.session.prepare_request(req)
+        try:
+            response = self._send_request(prepared)
+        except requests.HTTPError as ex:
+            response.url = url
+            status = ex.response.status_code
+            message = ex.response.text
+            LOG.error("rss-proxy error status=%s message=%s", status, message)
+            raise RSSProxyError(status, message, response=ex.response) from ex
+        response.url = url
+        proxy_status = response.headers.get('x-rss-proxy-status', None)
+        if proxy_status.upper() == 'ERROR':
+            message = response.text
+            raise RSSProxyError(proxy_status, message, response=response)
+        response.status_code = int(proxy_status)
+        response.raise_for_status()
+        return response
+
+    def read(self, *args, use_proxy=False, **kwargs) -> typing.Tuple[int, requests.Response]:
         response = None
         try:
-            response = self._read(*args, **kwargs)
+            if use_proxy:
+                response = self._read_by_proxy(*args, **kwargs)
+            else:
+                response = self._read(*args, **kwargs)
         except socket.gaierror:
             status = FeedResponseStatus.DNS_ERROR.value
         except requests.exceptions.ReadTimeout:

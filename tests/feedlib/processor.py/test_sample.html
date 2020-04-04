@@ -1,0 +1,237 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard">
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=gb2312" />
+   <meta name="generator" content="Movable Type 3.2b5" />
+
+   <link rel="stylesheet" href="https://blog.codingnow.com/styles-site.css" type="text/css" />
+   <link rel="stylesheet" type="text/css" media="all" href="/mtcolorer.css" />
+   <link rel="alternate" type="application/atom+xml" title="Atom" href="https://blog.codingnow.com/atom.xml" />
+   <link rel="alternate" type="application/rss+xml" title="RSS 2.0" href="https://blog.codingnow.com/index.xml" />
+
+   <title>云风的 BLOG: skynet 版的 cache server 改进</title>
+
+   <link rel="start" href="https://blog.codingnow.com/" title="Home" />
+   <link rel="prev" href="https://blog.codingnow.com/2020/01/skeleton_system.html" title="不适合采用 System 的一种情况" />
+   <link rel="next" href="https://blog.codingnow.com/2020/02/git_clone_from_shallow_bundle.html" title="git shallow clone 的一个问题" />
+
+   <!--
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:trackback="http://madskills.com/public/xml/rss/module/trackback/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rdf:Description
+    rdf:about="https://blog.codingnow.com/2020/02/skynet_cache_server_refine.html"
+    trackback:ping="https://blog.codingnow.com/cgi-bin/mt/mt-tb.cgi/1103"
+    dc:title="skynet 版的 cache server 改进"
+    dc:identifier="https://blog.codingnow.com/2020/02/skynet_cache_server_refine.html"
+    dc:subject="skynet"
+    dc:description="去年我实现的 Unity cache server 的替代品 已经逐渐在公司内部取代 Unity 官方的版本。反应还不错，性能，可维护性以及稳定性都超过官方版本。 最近疫情严重，公司安排所有人员在家办公，今天是开工第三天。前两天比较混乱，毕竟在家办公的决定是在假期中间做出的，并没有预先准备，我们的这个 cacheserver 也在第一天受到了极大的考验，暴露出一个问题，好在只是内存用量预警，并没有出任何差错。我花了一天多的时间排查和解决问题，感觉这是一个极好的案例，值得记录一下。..."
+    dc:creator="Cloud"
+    dc:date="2020-02-05T11:36:24+08:00" />
+</rdf:RDF>
+-->
+
+
+   
+
+   <script type="text/javascript" src="https://blog.codingnow.com/mt-site.js"></script>
+</head>
+<body class="layout-one-column" onload="individualArchivesOnLoad(commenter_name)">
+   <div id="container">
+      <div id="container-inner" class="pkg">
+
+         <div id="banner">
+            <div id="banner-inner" class="pkg">
+               <h1 id="banner-header"><a href="https://blog.codingnow.com/" accesskey="1">云风的 BLOG</a></h1>
+               <h2 id="banner-description">思绪来得快去得也快，偶尔会在这里停留</h2>
+            </div>
+         </div>
+
+         <div id="pagebody">
+            <div id="pagebody-inner" class="pkg">
+               <div id="alpha">
+                  <div id="alpha-inner" class="pkg">
+
+                     <p class="content-nav">
+                        <a href="https://blog.codingnow.com/2020/01/skeleton_system.html">&laquo; 不适合采用 System 的一种情况</a> |
+                        <a href="https://blog.codingnow.com/">返回首页</a>
+                        | <a href="https://blog.codingnow.com/2020/02/git_clone_from_shallow_bundle.html">git shallow clone 的一个问题 &raquo;</a>
+                     </p>
+
+                     <a id="a001143"></a>
+                     <div class="entry" id="entry-1143">
+                        <h3 class="entry-header">skynet 版的 cache server 改进</h3>
+                        <div class="entry-content">
+                           <div class="entry-body">
+                              <p>去年我实现的 <a href="https://blog.codingnow.com/2019/07/skynet_unity_cache_server.html">Unity cache server 的替代品</a> 已经逐渐在公司内部取代 Unity 官方的版本。反应还不错，性能，可维护性以及稳定性都超过官方版本。</p>
+
+<p>最近疫情严重，公司安排所有人员在家办公，今天是开工第三天。前两天比较混乱，毕竟在家办公的决定是在假期中间做出的，并没有预先准备，我们的这个 cacheserver 也在第一天受到了极大的考验，暴露出一个问题，好在只是内存用量预警，并没有出任何差错。我花了一天多的时间排查和解决问题，感觉这是一个极好的案例，值得记录一下。</p>
+
+                           </div>
+                           <div id="more" class="entry-more">
+                              <p>周一复工那一天，公司内网的 cache server 服务器突然内存使用量峰值超过了 20G ，接近硬件配置的 32G ，SA 预警。好在不久以后就回落，并稳定下来。</p>
+
+<p>这个服务器是基于 skynet 编写的，一开始只有 200 行左右的一个单一 lua 文件，非常简单。我认为设计和实现都是清晰可靠的。设计的时候就考虑过大用户量大数据量的应用场景（我们在生产环境运行的这个服务器实际管理数据已经超过了 800G），最多会有几百用户的并发。重新实现的原因是因为原版占用内存太多，所以内存使用量本来就是设计的主要考量因素。</p>
+
+<p>我没有采用一个连接一个 agent 的方案，而是使用了固定数量的 agent ，用简单的负载均衡方法把外部连接分摊进去。</p>
+
+<p>另外，还加了一个几十行的 C 模块，用来绕过 lua 虚拟机直接发送大文件。因为，如果把文件读入 Lua 虚拟机后，会增加额外的内存以及 gc 的负担。skynet 提供了 C API ，直接从 C 层打开读取本地文件并从网络发送走更直接高效。</p>
+
+<p>考虑到大数据文件可能很大，在 C 模块里，我还特地按 4K 一个数据块的处理，并没有把大文件一次读入内存。</p>
+
+<p>结合实际情况，我猜测了内存峰值出现的原因：大量数据积压在 skynet 内部的待发送队列中。</p>
+
+<p>这是 skynet 当初设计的一个权衡下的结果。skynet 的网络发送 api 被设计成非阻塞，原子性，且在连接没有断开时一定发送成功的。这样可以方面业务层使用。业务层不用像使用 posix 标准 send 那样，还要检查返回值，看真的发送了多少字节。</p>
+
+<p>而 skynet 的大多数应用场景，重头在业务处理，而不是 IO 消耗，一般不会出现 IO 积压的情况。但 cacheserver 这个业务不同，是典型的重 IO 环境。虽然通讯协议是串行的，一个一个文件处理，但客户端却可以一次性提交很多文件请求，每个请求都只有几十个字节，但回应的文件却可以很大。加上发送 api 是非阻塞的，这样就会导致大量待发送的数据进入 skynet 的网络层。</p>
+
+<p>为什么这半年一直没有出现问题呢？因为我们一直是在速度很快的内网使用这个服务器（也是官方推荐的使用方法）。而且使用是渐进的，不会突然请求很多文件。而这次，大量同事在家办公，使用 vpn 连入内网，连接速度很慢。在第一天，家中的开发环境是全新的，需要全量拉所有的资源数据。种种因素加起来，在高并发高数据量的情况下，问题就暴露了出来。</p>
+
+<p>其实这个问题之前也有人遇到过，<a href="https://github.com/cloudwu/skynet/issues/1004">见这个 issue</a> 。只是我虽然帮别人解决了需求，自己并未实践此类业务。解决方法并不复杂，使用 socket.warning 设置回调即可。当发送缓冲区过载，skynet 会发送一个 warning 消息给发送服务，告知缓冲区太长；这个时候业务应该停止发送数据（或进一步的测试一下带宽，限制流量），等到缓冲区清空（同样也会收到消息），再继续发送。</p>
+
+<p>值得注意的是，如果加入 socket.warning 消息的监控，就不能再在 C 库函数中发送整个数据文件了。因为，如果文件过大，在发送的过程中，是没有机会处理新的消息，并挂起发送过程的。</p>
+
+<p>我的修改方案是给 C 的发送函数增加了 offset 选项，并可以返回已经发送的字节数。当一次发送量超过一个阈值后，就中断返回。由 lua 调用方来决策是否应该挂起等待，或继续发送。最终添加了几十行代码就解决了这次的问题。</p>
+
+<hr />
+
+<p>2 月 6 日补充：修改后的版本，这两天生产环境监控，内存峰值在 30M 以下。</p>
+
+                           </div>
+                        </div>
+                        <p class="entry-footer">
+                           <span class="post-footers">云风 提交于 February  5, 2020 11:36 AM</span> <span class="separator">|</span> <a class="permalink" href="https://blog.codingnow.com/2020/02/skynet_cache_server_refine.html">固定链接</a>
+                        </p>
+                     </div>
+
+                     
+
+                                          <div id="comments" class="comments">
+                        <div class="comments-content">
+                                                      <h3 class="comments-header">Comments</h3>
+                           <a id="c048430"></a>
+                           <div class="comment" id="comment-48430">
+                              <div class="comment-content">
+                                 <p>云风好，期待这个cache server能开源</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                  Vincent  | (4) 
+                                 <a href="#comment-48430">March 27, 2020 08:40 PM</a> 
+                              </p>
+                           </div>
+                                                      
+                           <a id="c048399"></a>
+                           <div class="comment" id="comment-48399">
+                              <div class="comment-content">
+                                 <p>云风好，请问类似skynet这种，基于c和lua技术栈的服务器引擎，是怎么做性能profile的？盼复，谢谢</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                  lubaosheng  | (3) 
+                                 <a href="#comment-48399">March  9, 2020 11:57 AM</a> 
+                              </p>
+                           </div>
+                                                      
+                           <a id="c048367"></a>
+                           <div class="comment" id="comment-48367">
+                              <div class="comment-content">
+                                 <p>有个疑问，修改后的版本实际上没法和原来的版本进行一样条件的对比吧？修改后的版本已经不会面临所有同事全量拉一遍资源的问题了，那么这个对比好像条件就有点不一致了</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                  noname  | (2) 
+                                 <a href="#comment-48367">February 12, 2020 11:23 AM</a> 
+                              </p>
+                           </div>
+                                                      
+                           <a id="c048363"></a>
+                           <div class="comment" id="comment-48363">
+                              <div class="comment-content">
+                                 <p>传输文件可以考虑内存映射, 把缓存交给OS来处理, 没有内存和发送积压问题.<br />
+不过文件太多时需要注意打开文件的数量限制.</p>
+                              </div>
+                              <p class="comment-footer">
+                                 Posted by:
+                                  dwing  | (1) 
+                                 <a href="#comment-48363">February  6, 2020 11:51 AM</a> 
+                              </p>
+                           </div>
+                           
+                        </div>
+
+                         
+                        <form method="post" action="https://blog.codingnow.com/cgi-bin/mt/mt-comments.cgi" name="comments_form" onsubmit="if (this.bakecookie.checked) rememberMe(this)">
+                           <input type="hidden" name="static" value="1" />
+                           <input type="hidden" name="entry_id" value="1143" />
+                           
+                           <div class="comments-open" id="comments-open">
+                              <h2 class="comments-open-header">Post a comment</h2>
+                             <center><b>非这个主题相关的留言请到：<a href="http://www.codingnow.com/2004/board">留言本</a></b></center>
+                              
+                              <div class="comments-open-content">
+                                 <script type="text/javascript">
+                                 <!--
+                                // writeTypeKeyGreeting(commenter_name, 1143);
+                                 //-->
+                                 </script>
+                              
+                                 
+
+                                 <div id="comments-open-data">
+                                    <div id="name-email">
+                                       <p>
+                                          <label for="comment-author">名字：</label>
+                                          <input id="comment-author" name="author" size="30" />
+                                       </p>
+                                       <p>
+                                          <label for="comment-email">Email 地址：</label>
+                                          <input id="comment-email" name="email" size="30" />
+                                       </p>
+                                    <p>
+                                      <label for="comment-fcode"><b>为了验证您是人类</b>，请将六加一的结果（阿拉伯数字七）填写在下面：</label>
+                                       <input id="comment-fcode" name="fcode" size="30" />
+                                    </p>
+                                    </div>
+                                    <p>
+                                       <label for="comment-url">URL:</label>
+                                       <input id="comment-url" name="url" size="30" />
+                                    </p>
+                                    <p>
+                                       <label for="comment-bake-cookie"><input type="checkbox"
+                                          id="comment-bake-cookie" name="bakecookie" onclick="if (!this.checked) forgetMe(document.comments_form)" value="1" />
+                                          记住我的信息？</label>
+                                    </p>
+                                 </div>
+
+                                 <p id="comments-open-text">
+                                    <label for="comment-text">留言：<br>（不欢迎在留言中粘贴程序代码）</label>
+                                    <textarea id="comment-text" name="text" rows="10" cols="30"></textarea>
+                                 </p>
+                                 <div id="comments-open-footer" class="comments-open-footer">
+                                    <input type="submit" accesskey="s" name="post" id="comment-post" value="提交" />
+                                 </div>
+                              </div>
+                           </div>
+                        </form>
+                        
+                     </div>
+                     
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-1194145-1', 'auto');
+  ga('send', 'pageview');
+</script>
+</body>
+</html>
