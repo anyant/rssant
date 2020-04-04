@@ -2,7 +2,7 @@ import typing
 import re
 import logging
 from collections import namedtuple
-from urllib.parse import urljoin, quote
+from urllib.parse import urljoin, quote, unquote, urlsplit, urlunsplit
 import lxml.etree
 import lxml.html
 from lxml.html import soupparser
@@ -124,6 +124,85 @@ def make_absolute_url(url, base_href):
         return url
     if not url.startswith('http://') and not url.startswith('https://'):
         url = urljoin(base_href, url)
+    return url
+
+
+TOP_DOMAINS = set("""
+com
+org
+net
+edu
+gov
+tk
+de
+uk
+cn
+info
+ru
+nl
+im
+me
+io
+tech
+top
+xyz
+""".strip().split())
+
+RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/$]'.format('|'.join(TOP_DOMAINS)))
+
+
+def normlize_url(url: str):
+    """
+    Normalize URL
+
+    Note: not support urn and magnet
+        urn:kill-the-newsletter:2wqcdaqwddn9lny1ewzy
+        magnet:?xt=urn:btih:28774CFFE3B4715054E192FF
+    """
+    url = (url or '').strip()
+    if not url:
+        return url
+    url = url.replace('：//', '://')
+    url = url.replace('%3A//', '://')
+    if url.startswith('://'):
+        url = 'http' + url
+    if not url.startswith('http'):
+        # ignore urn: or magnet:
+        if re.match(r'^[a-zA-Z0-9]+:', url):
+            return url
+        # ignore simple texts
+        if not re.match(r'^[a-zA-Z0-9]+(\.|\:|\/)', url):
+            return url
+        url = 'http://' + url
+    # fix: http://www.example.comhttp://www.example.com/hello
+    if url.count('://') >= 2:
+        matchs = list(re.finditer(r'https?://', url))
+        if matchs:
+            url = url[matchs[-1].start(0):]
+        else:
+            url = 'http://' + url.split('://')[-1]
+    match = re.search(r'\.[^.]+?(\/|$)', url)
+    if match:
+        # fix: http://example.com%5Cblog
+        match_text = unquote(match.group(0))
+        match_text = match_text.replace('\\', '/')
+        # fix: .comxxx -> .com/xxx
+        stick_match = RE_STICK_DOMAIN.match(match_text[1:])
+        if stick_match:
+            top_domain = stick_match.group(1)
+            pre_len = 1 + len(top_domain)
+            match_text = match_text[:pre_len] + '/' + match_text[pre_len:]
+        url = url[:match.start()] + match_text + url[match.end():]
+    scheme, netloc, path, query, fragment = urlsplit(url)
+    # remove needless port
+    if scheme == 'http' and netloc.endswith(':80'):
+        netloc = netloc.split(':')[0]
+    if scheme == 'https' and netloc.endswith(':443'):
+        netloc = netloc.split(':')[0]
+    # fix: http://example.com//blog
+    path = re.sub(r'^\/\/+', '/', path)
+    path = quote(path)
+    url = urlunsplit((scheme, netloc, path, query, fragment))
     return url
 
 

@@ -15,7 +15,7 @@ from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import FeedFinder, FeedReader, FeedParser
 from rssant_feedlib.processor import (
     story_readability, story_html_to_text, story_html_clean,
-    story_has_mathjax, process_story_links,
+    story_has_mathjax, process_story_links, normlize_url, validate_url,
 )
 from rssant_feedlib.blacklist import compile_url_blacklist
 
@@ -313,7 +313,6 @@ def _get_storys(entries: list):
     while entries:
         data = entries.pop()
         story = {}
-        story['unique_id'] = shorten(_get_story_unique_id(data), 200)
         content = ''
         if data["content"]:
             # both content and summary will in content list, peek the longest
@@ -326,20 +325,28 @@ def _get_storys(entries: list):
         if not content:
             content = data["summary"]
         story['has_mathjax'] = story_has_mathjax(content)
+        link = normlize_url(data["link"])
+        valid_link = ''
+        if link:
+            try:
+                valid_link = validate_url(link)
+            except Invalid:
+                LOG.warning(f'invalid story link {link!r}')
+        story['link'] = valid_link
         content = story_html_clean(content)
-        content = process_story_links(content, data["link"])
+        content = process_story_links(content, valid_link)
         story['content'] = content
         summary = data["summary"]
         if not summary:
             summary = content
-        # TODO: performance
         summary = shorten(story_html_to_text(summary), width=300)
         story['summary'] = summary
-        story['link'] = data["link"]
-        title = shorten(data["title"] or story['link'] or story['unique_id'], 200)
+        title = shorten(data["title"] or link or summary, 200)
+        unique_id = shorten(data['id'] or link or title, 200)
         content_hash_base64 = compute_hash_base64(content, summary, title)
         story['title'] = title
         story['content_hash_base64'] = content_hash_base64
+        story['unique_id'] = unique_id
         story['author'] = shorten(data["author"], 200)
         story['dt_published'] = _get_dt_published(data)
         story['dt_updated'] = _get_dt_updated(data)
@@ -371,12 +378,3 @@ def _get_dt_updated(data, default=None):
     if t and t > timezone.now():
         t = default
     return t
-
-
-def _get_story_unique_id(entry):
-    unique_id = entry['id']
-    if not unique_id:
-        unique_id = entry['link']
-    if not unique_id:
-        unique_id = entry['title']
-    return unique_id
