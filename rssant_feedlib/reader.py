@@ -85,6 +85,7 @@ _NEED_PROXY_STATUS_SET = {x.value for x in [
     FeedResponseStatus.CONNECTION_TIMEOUT,
     FeedResponseStatus.READ_TIMEOUT,
     FeedResponseStatus.CONNECTION_RESET,
+    FeedResponseStatus.PRIVATE_ADDRESS_ERROR,
 ]}
 
 
