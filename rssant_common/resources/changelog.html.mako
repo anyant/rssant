@@ -36,18 +36,16 @@
             font-weight: bold;
             outline: none;
         }
-        .changelog-content > p {
-            padding-left: 24px;
-        }
-        .changelog-content > ul,
-        .changelog-content > ol {
-            padding-left: 46px;
+        .changelog-content {
+            margin-top: 16px;
+            margin-left: 24px;
+            overflow: scroll;
         }
     </style>
 </head>
 
 <body>
-    <div class="main">
+    <div class="main markdown-body">
         <h2>${ title }</h2>
         % for item in changelogs:
         <details class="changelog" ${ 'open' if loop.index == 0 else '' }>
