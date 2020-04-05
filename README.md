@@ -58,6 +58,12 @@ RSSANT_SMTP_USE_SSL=true
 RSSANT_SMTP_USERNAME=
 RSSANT_SMTP_PASSWORD=
 
+# RSS代理功能
+# 参考项目 cloudflare_worker/rssant 目录下的说明部署代理
+RSSANT_RSS_PROXY_ENABLE=false
+RSSANT_RSS_PROXY_URL=https://<your-cloudflare-worker>.workers.dev/rss-proxy
+RSSANT_RSS_PROXY_TOKEN=
+
 # 以下配置保持不动
 RSSANT_SCHEDULER_NETWORK=rssant
 RSSANT_PG_DB=rssant
