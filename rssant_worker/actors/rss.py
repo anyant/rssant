@@ -165,6 +165,8 @@ def do_sync_feed(
     except Invalid as ex:
         LOG.warning(f'invalid feed#{feed_id} url={unquote(url)}: {ex}', exc_info=ex)
         return
+    if use_proxy:
+        feed['use_proxy'] = use_proxy
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 
 
