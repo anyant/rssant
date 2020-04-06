@@ -17,8 +17,9 @@ WORKDIR /app
 COPY etc/apt-sources.list /etc/apt/sources.list
 RUN apt-get update && \
     apt-get install -y \
-        git vim tree xz-utils lsof strace htop dstat gdb \
-        tcpdump dnsutils iputils-ping iproute2
+        git neovim tree xz-utils lsof strace htop tcpdump dstat gdb \
+        dnsutils iputils-ping iproute2 && \
+    ln -s -f /usr/bin/nvim /usr/bin/vim && ln -s -f /usr/bin/nvim /usr/bin/vi
 
 # install nginx
 RUN apt-get update && apt-get install -y nginx

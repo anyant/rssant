@@ -11,7 +11,7 @@ import rssant_common.django_setup  # noqa:F401
 from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
-from rssant_feedlib.reader import FeedResponseStatus
+from rssant_feedlib.reader import FeedResponseStatus, FeedReader
 from rssant_common import unionid
 from rssant_feedlib import processor
 from rssant_common.actor_client import scheduler
@@ -287,6 +287,51 @@ def subscribe_changelog():
                     is_from_bookmark=False,
                 )
                 user_feed.save()
+
+
+@main.command()
+def update_feed_use_proxy():
+    if not CONFIG.rss_proxy_enable:
+        click.echo('rss proxy not enable!')
+        return
+    blacklist = [
+        '%博客园%',
+        '%微信%',
+        '%新浪%',
+        '%的评论%',
+        '%Comments on%',
+    ]
+    sql = """
+    select * from rssant_api_feed
+    where (NOT title LIKE ANY(%s)) AND (
+        dt_created >= '2020-04-01' or
+        (total_storys <= 5 and dt_updated <= '2019-12-01')
+    )
+    """
+    feeds = list(Feed.objects.raw(sql, [blacklist]))
+    click.echo(f'{len(feeds)} feeds need check')
+    reader = FeedReader(
+        rss_proxy_url=CONFIG.rss_proxy_url,
+        rss_proxy_token=CONFIG.rss_proxy_token,
+    )
+    proxy_feeds = []
+    with reader:
+        for i, feed in enumerate(feeds):
+            click.echo(f'#{i} {feed}')
+            status, _ = reader.read(feed.url)
+            click.echo(f'    #{i} status={FeedResponseStatus.name_of(status)}')
+            if FeedResponseStatus.is_need_proxy(status):
+                proxy_status, _ = reader.read(feed.url, use_proxy=True)
+                click.echo(f'    #{i} proxy_status={FeedResponseStatus.name_of(proxy_status)}')
+                if proxy_status == 200:
+                    proxy_feeds.append(feed)
+    click.echo(f'{len(proxy_feeds)} feeds need use proxy')
+    if proxy_feeds:
+        with transaction.atomic():
+            for feed in tqdm.tqdm(proxy_feeds, ncols=80, ascii=True):
+                feed.refresh_from_db()
+                feed.use_proxy = True
+                feed.save()
 
 
 if __name__ == "__main__":
