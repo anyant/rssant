@@ -14,10 +14,9 @@ async def test_async_read_by_proxy(url):
         rss_proxy_url=CONFIG.rss_proxy_url,
         rss_proxy_token=CONFIG.rss_proxy_token,
     ) as reader:
-        status, response = await reader.read(url, use_proxy=True)
-    assert status == 200
-    assert response.status == 200
-    assert str(response.url) == url
+        response = await reader.read(url, use_proxy=True)
+    assert response.ok
+    assert response.url == url
 
 
 @pytest.mark.parametrize('url', [
@@ -27,7 +26,6 @@ async def test_async_read_by_proxy(url):
 @pytest.mark.asyncio
 async def test_read(url):
     async with AsyncFeedReader() as reader:
-        status, response = await reader.read(url)
-    assert status == 200
-    assert response.status == 200
-    assert str(response.url) == url
+        response = await reader.read(url)
+    assert response.ok
+    assert response.url == url

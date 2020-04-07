@@ -13,8 +13,7 @@ def test_read_by_proxy(url):
         rss_proxy_url=CONFIG.rss_proxy_url,
         rss_proxy_token=CONFIG.rss_proxy_token,
     ) as reader:
-        status, response = reader.read(url, use_proxy=True)
-    assert status == 200
+        response = reader.read(url, use_proxy=True)
     assert response.ok
     assert response.url == url
 
@@ -25,7 +24,6 @@ def test_read_by_proxy(url):
 ])
 def test_read(url):
     with FeedReader() as reader:
-        status, response = reader.read(url)
-    assert status == 200
+        response = reader.read(url)
     assert response.ok
     assert response.url == url
