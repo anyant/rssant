@@ -126,8 +126,10 @@ class RawFeedParser:
 
     def _extract_story(self, item):
         story = {}
-        story['content'] = self._get_story_content(item)
-        story['summary'] = item["summary"]
+        content = self._get_story_content(item)
+        summary = item["summary"] if item["summary"] != content else None
+        story['content'] = content
+        story['summary'] = summary
         url = item["link"]
         title = item["title"]
         unique_id = item['id'] or url or title
@@ -180,13 +182,14 @@ class RawFeedParser:
         item: atoma.JSONFeedItem
         for item in feed.items or []:
             ident = item.id_ or item.url or item.title
-            content = item.content_html or item.content_text
+            content = item.content_html or item.content_text or item.summary
+            summary = item.summary if item.summary != content else None
             story = dict(
                 ident=ident,
                 url=item.url,
-                content=content,
                 title=item.title,
-                summary=item.summary,
+                content=content,
+                summary=summary,
                 image_url=item.image or item.banner_image,
                 dt_published=item.date_published,
                 dt_updated=item.date_modified,
