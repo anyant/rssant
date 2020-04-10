@@ -1,14 +1,15 @@
 import logging
-import cgi
+from typing import Tuple
 from urllib.parse import urlsplit, urlunsplit, unquote, urljoin
 
 from bs4 import BeautifulSoup
-import requests
 
 from rssant_common.helper import coerce_url
 
-from .parser import FeedParser
-from .reader import FeedReader, FeedResponseStatus
+from .raw_parser import RawFeedParser, FeedParserError
+from .parser import FeedParser, FeedResult
+from .reader import FeedReader
+from .response import FeedResponse, FeedResponseStatus
 
 
 LOG = logging.getLogger(__name__)
@@ -215,66 +216,43 @@ class FeedFinder:
 
     def _read(self, url, current_try, use_proxy=False):
         self._visited.add(url)
-        status, res = self.reader.read(url, use_proxy=use_proxy)
-        is_ok = status == requests.codes.ok
-        if is_ok and current_try == 0 and res.history:
+        res = self.reader.read(url, use_proxy=use_proxy)
+        if res.ok and current_try == 0 and res.history:
             # 发生了重定向，重新设置start_url
             url = res.url
             self._log(f'resolve redirect, set start url to {unquote(url)}')
             self._set_start_url(url)
-        if not is_ok:
-            error_name = FeedResponseStatus.name_of(status)
-            msg = '{} {} when request {!r}'.format(status, error_name, url)
+        if not res.ok:
+            error_name = FeedResponseStatus.name_of(res.status)
+            msg = '{} {} when request {!r}'.format(res.status, error_name, url)
             self._log(msg)
-        return status, res
+        return res
 
-    def _parse(self, response):
-        content_type = response.headers.get('content-type', '').lower()
-        mime_type, __ = cgi.parse_header(content_type)
-        if mime_type:
-            msg = f'Content-Type {mime_type} is considered not feed'
-            for key in CONTENT_TYPE_NOT_FEED:
-                if key in mime_type:
-                    self._log(msg)
-                    return None
-        # 取前200个字符，快速判断
-        head200 = response.text[:200].strip().lower()
-        if 'json' in mime_type or head200.startswith('{'):
-            return self._parse_feed(response)
-        if '<!doctype html>' in head200[:50]:
+    def _parse(self, response: FeedResponse) -> FeedResult:
+        if response.content_type.is_html:
             msg = "the response content is HTML, not XML feed"
             self._log(msg)
             self._parse_html(response)
             return None
-        # 判断是HTML还是XMLFeed
-        p_html = 0
-        p_feed = 0
-        if 'html' in mime_type:
-            p_html += 0.5
-        if 'xml' in mime_type:
-            p_feed += 0.5
-        for key, score in CONTENT_HTML:
-            if key in head200:
-                p_html += score
-        for key, score in CONTENT_XML_FEED:
-            if key in head200:
-                p_feed += score
-        if (p_html + 1) / (p_feed + 1) > 1.0:
-            msg = "the response content is considered HTML, not XML feed"
+        if response.content_type.is_other:
+            msg = "the response content is not any feed type"
             self._log(msg)
-            self._parse_html(response)
             return None
-        return self._parse_feed(response)
-
-    def _parse_feed(self, response):
-        result = FeedParser.parse_response(response, validate=self.validate)
-        if not result.bozo:
-            return result
-        msg = f"{result.bozo_exception}, (...total {result.bozo} errors)"
-        self._log(msg)
+        raw_parser = RawFeedParser(validate=False)
+        try:
+            result = raw_parser.parse(response)
+        except FeedParserError as ex:
+            self._log(str(ex))
+            return None
+        if result.warning:
+            self._log(f"warning: {result.warning}")
+        parser = FeedParser()
+        result = parser.parse(result)
+        return result
 
     def _parse_html(self, response):
-        links = self._find_links(response.text, response.url)
+        text = response.content.decode(response.encoding)
+        links = self._find_links(text, response.url)
         # 按得分从高到低排序，取前 max_trys 个
         links = list(sorted(links, key=lambda x: x.score, reverse=True))
         links = links[: self.max_trys]
@@ -322,7 +300,8 @@ class FeedFinder:
         if not (url.startswith('http://') or url.startswith('https://')):
             url = urljoin(page_url, url)  # 处理相对路径
         scheme, netloc, path, query, fragment = urlsplit(url)
-        if (not netloc) or netloc != self.netloc:
+        base_netloc = '.'.join(netloc.rsplit('.', 2)[-2:])
+        if (not netloc) or base_netloc not in self.netloc:
             return None
         if not scheme:
             scheme = self.scheme
@@ -389,7 +368,7 @@ class FeedFinder:
             return self._pop_candidate()
         return ret
 
-    def find(self):
+    def find(self) -> Tuple[FeedResponse, FeedResult]:
         use_proxy = False
         current_try = 0
         while current_try < self.max_trys:
@@ -399,20 +378,19 @@ class FeedFinder:
                 self._log(f"No more candidate url")
                 break
             self._log(f"#{current_try} try {url}")
-            status, res = self._read(url, current_try, use_proxy=use_proxy)
+            res = self._read(url, current_try, use_proxy=use_proxy)
             if self.has_rss_proxy and not use_proxy:
-                if FeedResponseStatus.is_need_proxy(status):
+                if FeedResponseStatus.is_need_proxy(res.status):
                     current_try += 1
                     self._log(f'#{current_try} try use proxy')
-                    status, res = self._read(url, current_try, use_proxy=True)
-                    if status in (200, 404):
+                    res = self._read(url, current_try, use_proxy=True)
+                    if res.status in (200, 404):
                         use_proxy = True
-            shoud_abort = status not in (200, 404)
+            shoud_abort = res.status not in (200, 404)
             if shoud_abort:
                 self._log('The url is unable to connect or likely not contain feed, abort!')
                 break
-            is_ok = status == requests.codes.ok
-            if not is_ok:
+            if not res.ok or not res.content:
                 if current_try == 0 and not self._links:
                     msg = f'{url} not contain links, will guess some links from it'
                     self._log(msg)
@@ -421,14 +399,13 @@ class FeedFinder:
             result = self._parse(res)
             if result is None:
                 continue
-            entries = result.entries
-            version = result.version
+            num_storys = len(result.storys)
+            version = result.feed['version']
             title = result.feed["title"]
-            msg = f"Feed: version={version}, title={title}, has {len(entries)} entries"
+            msg = f"Feed: version={version}, title={title}, has {num_storys} storys"
             self._log(msg)
-            result.use_proxy = use_proxy
-            return result
-        self._log('Not found any valid feed!')
+            return res, result
+        self._log('Not found any feed!')
         return None
 
     def __enter__(self):
@@ -456,11 +433,11 @@ def _main():
     ]
     for url in urls:
         print("-" * 80)
-        finder = FeedFinder(url)
-        result = finder.find()
-        if result:
-            print(f"Got: " + str(result.feed)[:300] + "\n")
-        finder.close()
+        with FeedFinder(url) as finder:
+            found = finder.find()
+            if found:
+                response, result = found
+                print(f"Got: response={response} result={result}")
 
 
 if __name__ == "__main__":

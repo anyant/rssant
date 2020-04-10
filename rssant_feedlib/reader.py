@@ -256,7 +256,7 @@ class FeedReader:
                 status = ex.response.status_code
             else:
                 status = FeedResponseStatus.UNKNOWN_ERROR.value
-        builder = FeedResponseBuilder()
+        builder = FeedResponseBuilder(use_proxy=use_proxy)
         builder.url(url)
         builder.status(status)
         builder.content(content)

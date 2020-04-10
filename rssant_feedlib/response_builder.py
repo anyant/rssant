@@ -13,6 +13,19 @@ RE_CONTENT_XML = re.compile(rb'(<\?xml|<xml|<rss|<atom|<feed|<channel)')
 RE_CONTENT_HTML = re.compile(rb'(<!doctype html>|<html|<head|<body)')
 
 
+CONTENT_TYPE_NOT_FEED = {
+    'application/octet-stream',
+    'application/javascript',
+    'application/vnd.',
+    'text/css',
+    'text/csv',
+    'image/',
+    'font/',
+    "audio/",
+    'video/',
+}
+
+
 def detect_content_type(content: bytes, content_type_header: str = None) -> FeedContentType:
     """
     >>> detect_content_type(b'<!DOCTYPE HTML>')
@@ -22,6 +35,12 @@ def detect_content_type(content: bytes, content_type_header: str = None) -> Feed
     >>> detect_content_type(b'<?xml version="1.0" encoding="utf-8"?>')
     <FeedContentType.XML>
     """
+    if content_type_header:
+        mime_type, __ = cgi.parse_header(content_type_header)
+        if mime_type:
+            for key in CONTENT_TYPE_NOT_FEED:
+                if key in mime_type:
+                    return FeedContentType.OTHER
     head = bytes(content[:500]).strip().lower()
     if head.startswith(b'{') or head.startswith(b'['):
         return FeedContentType.JSON
@@ -138,13 +157,15 @@ class FeedResponseBuilder:
         '_status',
         '_url',
         '_headers',
+        '_use_proxy',
     )
 
-    def __init__(self):
+    def __init__(self, *, use_proxy=False):
         self._content = None
         self._status = None
         self._url = None
         self._headers = None
+        self._use_proxy = use_proxy
 
     def content(self, value: bytes):
         self._content = value
@@ -160,8 +181,11 @@ class FeedResponseBuilder:
 
     def build(self) -> FeedResponse:
         content_type = encoding = None
-        if self._content and self._headers:
-            content_type_header = self._headers.get('content-type')
+        if self._content:
+            if self._headers:
+                content_type_header = self._headers.get('content-type')
+            else:
+                content_type_header = None
             content_type = detect_content_type(self._content, content_type_header)
             encoding = detect_content_encoding(self._content, content_type_header)
         etag = last_modified = None
@@ -176,5 +200,6 @@ class FeedResponseBuilder:
             etag=etag,
             last_modified=last_modified,
             encoding=encoding,
-            content_type=content_type
+            content_type=content_type,
+            use_proxy=self._use_proxy,
         )

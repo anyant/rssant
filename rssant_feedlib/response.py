@@ -66,9 +66,26 @@ class FeedContentType(enum.Enum):
     HTML = 'HTML'
     JSON = 'JSON'
     XML = 'XML'
+    OTHER = 'OTHER'
 
     def __repr__(self):
         return '<%s.%s>' % (self.__class__.__name__, self.name)
+
+    @property
+    def is_html(self) -> bool:
+        return self == FeedContentType.HTML
+
+    @property
+    def is_xml(self) -> bool:
+        return self == FeedContentType.XML
+
+    @property
+    def is_json(self) -> bool:
+        return self == FeedContentType.JSON
+
+    @property
+    def is_other(self) -> bool:
+        return self == FeedContentType.OTHER
 
 
 class FeedResponse:
@@ -81,6 +98,7 @@ class FeedResponse:
         '_etag',
         '_last_modified',
         '_content_type',
+        '_use_proxy',
     )
 
     def __init__(
@@ -92,6 +110,7 @@ class FeedResponse:
         last_modified: str = None,
         encoding: str = None,
         content_type: FeedContentType = None,
+        use_proxy: bool = None,
     ):
         self._content = content
         self._status = status if status is not None else HTTPStatus.OK.value
@@ -99,7 +118,8 @@ class FeedResponse:
         self._encoding = encoding
         self._etag = etag
         self._last_modified = last_modified
-        self._content_type = content_type
+        self._content_type = content_type or FeedContentType.OTHER
+        self._use_proxy = use_proxy
 
     def __repr__(self):
         name = type(self).__name__
@@ -143,13 +163,9 @@ class FeedResponse:
         return self._encoding
 
     @property
-    def is_html(self) -> bool:
-        return self._content_type == FeedContentType.HTML
+    def content_type(self) -> FeedContentType:
+        return self._content_type
 
     @property
-    def is_xml(self) -> bool:
-        return self._content_type == FeedContentType.XML
-
-    @property
-    def is_json(self) -> bool:
-        return self._content_type == FeedContentType.JSON
+    def use_proxy(self) -> bool:
+        return self._use_proxy

@@ -237,7 +237,7 @@ class AsyncFeedReader:
             status = ex.status
         except (aiohttp.ClientError, aiohttp.InvalidURL):
             status = FeedResponseStatus.UNKNOWN_ERROR.value
-        builder = FeedResponseBuilder()
+        builder = FeedResponseBuilder(use_proxy=use_proxy)
         builder.url(url)
         builder.status(status)
         builder.content(content)
