@@ -1,18 +1,27 @@
 import typing
 import json
+import logging
+import datetime
+import time
 from io import BytesIO
 
 import atoma
 import feedparser
+from django.utils import timezone
+from dateutil.parser import parse as parse_datetime
 from validr import mark_index, T
 
 from rssant_common.validator import compiler
 from .response import FeedResponse
 
 
+LOG = logging.getLogger(__name__)
+
+
 feedparser.RESOLVE_RELATIVE_URIS = False
 feedparser.SANITIZE_HTML = False
 
+UTC = datetime.timezone.utc
 
 RawFeedSchema = T.dict(
     version=T.str,
@@ -55,6 +64,15 @@ class RawFeedResult:
         self._storys = storys
         self._warning = warning
 
+    def __repr__(self):
+        return '<{} url={!r} version={!r} title={!r} has {} storys>'.format(
+            type(self).__name__,
+            self.feed['url'],
+            self.feed['version'],
+            self.feed['title'],
+            len(self.storys),
+        )
+
     @property
     def feed(self) -> RawFeedSchema:
         return self._feed
@@ -78,19 +96,19 @@ class RawFeedParser:
         self._validate = validate
 
     def _get_feed_home_url(self, feed: feedparser.FeedParserDict) -> str:
-        link = feed.feed["link"]
+        link = feed.feed.get("link")
         if not link.startswith('http'):
             # 有些link属性不是URL，用author_detail的href代替
             # 例如：'http://www.cnblogs.com/grenet/'
-            author_detail = feed.feed['author_detail']
+            author_detail = feed.feed.get('author_detail')
             if author_detail:
-                link = author_detail['href']
+                link = author_detail.get('href')
         return link
 
     def _get_feed_title(self, feed: feedparser.FeedParserDict) -> str:
-        return feed.feed["title"] or \
-            feed.feed["subtitle"] or \
-            feed.feed["description"]
+        return feed.feed.get("title") or \
+            feed.feed.get("subtitle") or \
+            feed.feed.get("description")
 
     def _get_author_info(self, item: dict) -> dict:
         detail = item.get('author_detail')
@@ -112,33 +130,55 @@ class RawFeedParser:
 
     def _get_story_content(self, item) -> str:
         content = ''
-        if item["content"]:
+        if item.get("content"):
             # both content and summary will in content list, peek the longest
             for x in item["content"]:
-                value = x["value"]
+                value = x.get("value")
                 if value and len(value) > len(content):
                     content = value
         if not content:
-            content = item["description"]
+            content = item.get("description")
         if not content:
-            content = item["summary"]
-        return content
+            content = item.get("summary")
+        return content or ''
+
+    def _normlize_date(self, value) -> datetime.datetime:
+        if not value:
+            return None
+        if isinstance(value, list) and len(value) == 9:
+            value = tuple(value)
+        if isinstance(value, tuple):
+            value = datetime.datetime.fromtimestamp(time.mktime(value), tz=UTC)
+        elif not isinstance(value, datetime.datetime):
+            value = parse_datetime(value)
+            if value is None:
+                return None
+        if not timezone.is_aware(value):
+            value = timezone.make_aware(value, timezone=UTC)
+        # https://bugs.python.org/issue13305
+        if value.year < 1000:
+            return None
+        return value
 
     def _extract_story(self, item):
         story = {}
         content = self._get_story_content(item)
-        summary = item["summary"] if item["summary"] != content else None
-        story['content'] = content
-        story['summary'] = summary
-        url = item["link"]
-        title = item["title"]
-        unique_id = item['id'] or url or title
+        summary = item.get("summary")
+        if summary == content:
+            summary = None
+        story['content'] = content or ''
+        story['summary'] = summary or ''
+        url = item.get("link")
+        title = item.get("title")
+        unique_id = item.get('id') or url or title
+        if not unique_id:
+            return None
         story['ident'] = unique_id
         story['url'] = url
         story['title'] = title
         story['image_url'] = self._get_story_image_url(item)
-        story['dt_published'] = item["published_parsed"]
-        story['dt_updated'] = item["updated_parsed"]
+        story['dt_published'] = self._normlize_date(item.get("published_parsed"))
+        story['dt_updated'] = self._normlize_date(item.get("updated_parsed"))
         story.update(self._get_author_info(item))
         return story
 
@@ -180,9 +220,12 @@ class RawFeedParser:
         )
         storys = []
         item: atoma.JSONFeedItem
-        for item in feed.items or []:
+        for i, item in enumerate(feed.items or []):
             ident = item.id_ or item.url or item.title
-            content = item.content_html or item.content_text or item.summary
+            if not ident:
+                LOG.warning("feed %s story#%s no ident, skip it", response.url, i)
+                continue
+            content = item.content_html or item.content_text or item.summary or ''
             summary = item.summary if item.summary != content else None
             story = dict(
                 ident=ident,
@@ -210,11 +253,13 @@ class RawFeedParser:
 
     def _parse(self, response: FeedResponse) -> RawFeedResult:
         assert response.ok and response.content
-        if response.is_json:
+        if response.content_type.is_json:
             return self._parse_json_feed(response)
         warning = []
-        if response.is_html:
+        if response.content_type.is_html:
             warning.append('feed content type is html')
+        if response.content_type.is_other:
+            warning.append('feed content type is not any feed type')
         stream = BytesIO(response.content)
         # tell feedparser to use detected encoding
         headers = {
@@ -240,8 +285,8 @@ class RawFeedParser:
         if (not has_entries) and warning:
             raise FeedParserError(warning)
         # extract feed info
-        icon_url = feed.feed["icon"] or feed.feed["logo"]
-        description = feed.feed["description"] or feed.feed["subtitle"]
+        icon_url = feed.feed.get("icon") or feed.feed.get("logo")
+        description = feed.feed.get("description") or feed.feed.get("subtitle")
         feed_info = dict(
             version=feed_version,
             title=feed_title,
@@ -253,8 +298,12 @@ class RawFeedParser:
         )
         # extract storys info
         storys = []
-        for item in feed.entries:
-            storys.append(self._extract_story(item))
+        for i, item in enumerate(feed.entries):
+            story = self._extract_story(item)
+            if not story:
+                LOG.warning("feed %s story#%s no ident, skip it", response.url, i)
+                continue
+            storys.append(story)
         result = RawFeedResult(feed_info, storys, warning=warning)
         return result
 

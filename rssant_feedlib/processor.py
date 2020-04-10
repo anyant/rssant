@@ -151,7 +151,7 @@ xyz
 RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/$]'.format('|'.join(TOP_DOMAINS)))
 
 
-def normlize_url(url: str):
+def normlize_url(url: str, base_url: str = None):
     """
     Normalize URL
 
@@ -173,7 +173,11 @@ def normlize_url(url: str):
         # ignore simple texts
         if not re.match(r'^[a-zA-Z0-9]+(\.|\:|\/)', url):
             return url
-        url = 'http://' + url
+        if url.startswith('/'):
+            if base_url:
+                url = urljoin(base_url, url)
+        else:
+            url = 'http://' + url
     # fix: http://www.example.comhttp://www.example.com/hello
     if url.count('://') >= 2:
         matchs = list(re.finditer(r'https?://', url))
