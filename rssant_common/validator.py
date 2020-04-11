@@ -1,5 +1,4 @@
 import datetime
-import time
 import functools
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
@@ -78,11 +77,7 @@ def url_validator(compiler, scheme='http https', default_schema=None, relaxed=Fa
 def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=False):
     def validate(value):
         try:
-            if isinstance(value, list) and len(value) == 9:
-                value = tuple(value)
-            if isinstance(value, tuple):
-                value = datetime.datetime.fromtimestamp(time.mktime(value), tz=timezone.utc)
-            elif not isinstance(value, datetime.datetime):
+            if not isinstance(value, datetime.datetime):
                 value = parse_datetime(value)
                 if value is None:
                     raise Invalid('not well formatted datetime')
@@ -90,7 +85,9 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
                 value = timezone.make_aware(value, timezone=timezone.utc)
             # https://bugs.python.org/issue13305
             if value.year < 1000:
-                raise Invalid('not support datetime before 1000-01-01')
+                raise Invalid('not support datetime before year 1000')
+            if value.year > 2999:
+                raise Invalid('not support datetime after year 2999')
             if output_object:
                 return value
             else:

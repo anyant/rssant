@@ -30,6 +30,7 @@ RawFeedSchema = T.dict(
     home_url=T.str.optional,
     icon_url=T.str.optional,
     description=T.str.optional,
+    dt_updated=T.datetime.optional,
     author_name=T.str.optional,
     author_url=T.str.optional,
     author_avatar_url=T.str.optional,
@@ -158,6 +159,8 @@ class RawFeedParser:
         # https://bugs.python.org/issue13305
         if value.year < 1000:
             return None
+        if value.year > 2999:
+            return None
         return value
 
     def _extract_story(self, item):
@@ -226,6 +229,7 @@ class RawFeedParser:
             url=response.url,
             home_url=feed.home_page_url,
             description=feed.description,
+            dt_updated=None,
             icon_url=feed.icon or feed.favicon,
             **self._get_json_feed_author(feed.author),
         )
@@ -301,6 +305,8 @@ class RawFeedParser:
         # extract feed info
         icon_url = feed.feed.get("icon") or feed.feed.get("logo")
         description = feed.feed.get("description") or feed.feed.get("subtitle")
+        dt_updated = self._get_date(feed.feed, 'dt_updated') or \
+            self._get_date(feed.feed, 'dt_published')
         feed_info = dict(
             version=feed_version,
             title=feed_title,
@@ -308,6 +314,7 @@ class RawFeedParser:
             home_url=self._get_feed_home_url(feed),
             icon_url=icon_url,
             description=description,
+            dt_updated=dt_updated,
             **self._get_author_info(feed.feed),
         )
         # extract storys info
