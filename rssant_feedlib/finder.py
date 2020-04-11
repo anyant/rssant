@@ -245,13 +245,15 @@ class FeedFinder:
             self._log(str(ex))
             return None
         if result.warnings:
-            self._log(f"warnings: {';'.join(result.warnings)}")
+            msg = f"warnings: {';'.join(result.warnings)}"
+            self._log(msg)
+            LOG.warning(msg)
         parser = FeedParser()
         result = parser.parse(result)
         return result
 
     def _parse_html(self, response):
-        text = response.content.decode(response.encoding)
+        text = response.content.decode(response.encoding, errors='ignore')
         links = self._find_links(text, response.url)
         # 按得分从高到低排序，取前 max_trys 个
         links = list(sorted(links, key=lambda x: x.score, reverse=True))

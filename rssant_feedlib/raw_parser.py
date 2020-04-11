@@ -30,7 +30,7 @@ RawFeedSchema = T.dict(
     home_url=T.str.optional,
     icon_url=T.str.optional,
     description=T.str.optional,
-    dt_updated=T.datetime.optional,
+    dt_updated=T.datetime.object.optional,
     author_name=T.str.optional,
     author_url=T.str.optional,
     author_avatar_url=T.str.optional,
@@ -44,8 +44,8 @@ RawStorySchema = T.dict(
     content=T.str.optional,
     summary=T.str.optional,
     image_url=T.str.optional,
-    dt_published=T.datetime.optional,
-    dt_updated=T.datetime.optional,
+    dt_published=T.datetime.object.optional,
+    dt_updated=T.datetime.object.optional,
     author_name=T.str.optional,
     author_url=T.str.optional,
     author_avatar_url=T.str.optional,
@@ -146,14 +146,22 @@ class RawFeedParser:
     def _normlize_date(self, value) -> datetime.datetime:
         if not value:
             return None
-        if isinstance(value, list) and len(value) == 9:
-            value = tuple(value)
-        if isinstance(value, tuple):
-            value = datetime.datetime.fromtimestamp(time.mktime(value), tz=UTC)
-        elif not isinstance(value, datetime.datetime):
-            value = parse_datetime(value)
-            if value is None:
-                return None
+        try:
+            if isinstance(value, list) and len(value) == 9:
+                value = tuple(value)
+            if isinstance(value, tuple):
+                try:
+                    timestamp = time.mktime(value)
+                except OverflowError:
+                    return None
+                value = datetime.datetime.fromtimestamp(timestamp, tz=UTC)
+            elif not isinstance(value, datetime.datetime):
+                value = parse_datetime(value)
+                if value is None:
+                    return None
+        except Exception as ex:
+            LOG.warning('normlize date failed, value=%r: %s', value, ex)
+            return None
         if not timezone.is_aware(value):
             value = timezone.make_aware(value, timezone=UTC)
         # https://bugs.python.org/issue13305
@@ -178,7 +186,7 @@ class RawFeedParser:
             return None
         story['ident'] = unique_id
         story['url'] = url
-        story['title'] = title
+        story['title'] = title or unique_id
         story['image_url'] = self._get_story_image_url(item)
         story['dt_published'] = self._get_date(item, 'published_parsed')
         story['dt_updated'] = self._get_date(item, 'updated_parsed')

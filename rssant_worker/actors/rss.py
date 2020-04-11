@@ -2,7 +2,6 @@ import logging
 import asyncio
 import time
 from urllib.parse import unquote
-from collections import deque
 import concurrent.futures
 
 from validr import T, Invalid
@@ -11,11 +10,15 @@ from django.utils import timezone
 
 from actorlib import actor, ActorContext
 
-from rssant_feedlib.async_reader import AsyncFeedReader, FeedResponseStatus
-from rssant_feedlib import FeedFinder, FeedReader, FeedParser
+from rssant_feedlib import AsyncFeedReader, FeedResponseStatus
+from rssant_feedlib import (
+    FeedFinder, FeedReader,
+    FeedParser, RawFeedParser,
+    RawFeedResult, FeedResponse, FeedParserError,
+)
 from rssant_feedlib.processor import (
     story_readability, story_html_to_text, story_html_clean,
-    story_has_mathjax, process_story_links, normlize_url, validate_url,
+    process_story_links
 )
 from rssant_feedlib.blacklist import compile_url_blacklist
 
@@ -146,27 +149,32 @@ def do_sync_feed(
     last_modified: T.str.optional,
 ):
     params = dict(etag=etag, last_modified=last_modified, use_proxy=use_proxy)
-    with FeedReader(**_get_proxy_options()) as reader:
-        status_code, response = reader.read(url, **params)
-    LOG.info(f'read feed#{feed_id} url={unquote(url)} status_code={status_code}')
-    if status_code != 200 or not response:
+    options = _get_proxy_options()
+    options.update(allow_private_address=CONFIG.allow_private_address)
+    with FeedReader(**options) as reader:
+        response = reader.read(url, **params)
+    LOG.info(f'read feed#{feed_id} url={unquote(url)} response.status={response.status}')
+    if response.status != 200 or not response.content:
         return
     new_hash = compute_hash_base64(response.content)
     if new_hash == content_hash_base64:
         LOG.info(f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!')
         return
     LOG.info(f'parse feed#{feed_id} url={unquote(url)}')
-    parsed = FeedParser.parse_response(response)
-    if parsed.bozo:
-        LOG.warning(f'failed parse feed#{feed_id} url={unquote(url)}: {parsed.bozo_exception}')
+    try:
+        raw_result = RawFeedParser().parse(response)
+    except FeedParserError as ex:
+        LOG.warning(f'failed parse feed#{feed_id} url={unquote(url)}: {ex}')
+        return
+    if raw_result.warnings:
+        warnings = '; '.join(raw_result.warnings)
+        LOG.warning(f'warning parse feed#{feed_id} url={unquote(url)}: {warnings}')
         return
     try:
-        feed = _parse_found(parsed)
+        feed = _parse_found((response, raw_result))
     except Invalid as ex:
         LOG.warning(f'invalid feed#{feed_id} url={unquote(url)}: {ex}', exc_info=ex)
         return
-    if use_proxy:
-        feed['use_proxy'] = use_proxy
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 
 
@@ -178,19 +186,25 @@ async def do_fetch_story(
     use_proxy: T.bool.default(False),
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
-    async with AsyncFeedReader(**_get_proxy_options()) as reader:
+    options = _get_proxy_options()
+    options.update(allow_private_address=CONFIG.allow_private_address)
+    async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_rss_proxy
-        status, response = await reader.read(url, use_proxy=use_proxy)
+        response = await reader.read(url, use_proxy=use_proxy)
     if response and response.url:
         url = str(response.url)
-    LOG.info(f'fetch story#{story_id} url={unquote(url)} status={status} finished')
-    if not (response and status == 200):
+    LOG.info(f'fetch story#{story_id} url={unquote(url)} status={response.status} finished')
+    if not (response and response.ok):
         return
-    if not response.rssant_text:
+    if not response.content:
         msg = 'story#%s url=%s response text is empty!'
         LOG.error(msg, story_id, unquote(url))
         return
-    content = response.rssant_text
+    try:
+        content = response.content.decode(response.encoding)
+    except UnicodeDecodeError as ex:
+        LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
+        content = response.content.decode(response.encoding, errors='ignore')
     if len(content) >= 1024 * 1024:
         content = story_html_clean(content)
         if len(content) >= 1024 * 1024:
@@ -241,16 +255,20 @@ async def do_detect_story_images(
     image_urls: T.list(T.url).unique,
 ):
     LOG.info(f'detect story images story_id={story_id} num_images={len(image_urls)} begin')
-    async with AsyncFeedReader(allow_non_webpage=True) as reader:
+    options = dict(
+        allow_non_webpage=True,
+        allow_private_address=CONFIG.allow_private_address,
+    )
+    async with AsyncFeedReader(**options) as reader:
         async def _read(url):
             if is_referer_deny_url(url):
                 return url, FeedResponseStatus.REFERER_DENY.value
-            status, response = await reader.read(
+            response = await reader.read(
                 url,
                 referer="https://rss.anyant.com/",
                 ignore_content=True
             )
-            return url, status
+            return url, response.status
         futs = []
         for url in image_urls:
             futs.append(asyncio.ensure_future(_read(url)))
@@ -278,110 +296,59 @@ async def do_detect_story_images(
     ))
 
 
-def _parse_found(parsed):
+def _parse_found(found):
+    response: FeedResponse
+    raw_result: RawFeedResult
+    response, raw_result = found
     feed = AttrDict()
-    res = parsed.response
-    feed.use_proxy = parsed.use_proxy
-    feed.url = _get_url(res)
-    feed.content_length = len(res.content)
-    feed.content_hash_base64 = compute_hash_base64(res.content)
-    parsed_feed = parsed.feed
-    feed.title = shorten(parsed_feed["title"], 200)
-    link = parsed_feed["link"]
-    if not link.startswith('http'):
-        # 有些link属性不是URL，用author_detail的href代替
-        # 例如：'http://www.cnblogs.com/grenet/'
-        author_detail = parsed_feed['author_detail']
-        if author_detail:
-            link = author_detail['href']
-    if not link.startswith('http'):
-        link = feed.url
-    feed.link = link
-    feed.author = shorten(parsed_feed["author"], 200)
-    feed.icon = parsed_feed["icon"] or parsed_feed["logo"]
-    feed.description = parsed_feed["description"] or parsed_feed["subtitle"]
-    feed.dt_updated = _get_dt_updated(parsed_feed)
-    feed.etag = _get_etag(res)
-    feed.last_modified = _get_last_modified(res)
-    feed.encoding = res.encoding
-    feed.version = shorten(parsed.version, 200)
-    entries = list(parsed.entries)  # entries will be modified by _get_storys
-    del parsed, res, parsed_feed  # release memory in advance
-    feed.storys = _get_storys(entries)
+
+    # feed response
+    feed.use_proxy = response.use_proxy
+    feed.url = response.url
+    feed.content_length = len(response.content)
+    feed.content_hash_base64 = compute_hash_base64(response.content)
+    feed.etag = response.etag
+    feed.last_modified = response.last_modified
+    feed.encoding = response.encoding
+    del found, response  # release memory in advance
+
+    # parse feed and storys
+    result = FeedParser().parse(raw_result)
+    del raw_result  # release memory in advance
+
+    feed.title = result.feed['title']
+    feed.link = result.feed['home_url']
+    feed.author = result.feed['author_name']
+    feed.icon = result.feed['icon_url']
+    feed.description = result.feed['description']
+    feed.dt_updated = result.feed['dt_updated']
+    feed.version = result.feed['version']
+    feed.storys = _get_storys(result.storys)
+    del result  # release memory in advance
+
     return validate_feed(feed)
 
 
 def _get_storys(entries: list):
-    storys = deque(maxlen=300)  # limit num storys
-    while entries:
-        data = entries.pop()
+    storys = []
+    now = timezone.now()
+    for data in entries:
         story = {}
-        content = ''
-        if data["content"]:
-            # both content and summary will in content list, peek the longest
-            for x in data["content"]:
-                value = x["value"]
-                if value and len(value) > len(content):
-                    content = value
-        if not content:
-            content = data["description"]
-        if not content:
-            content = data["summary"]
-        story['has_mathjax'] = story_has_mathjax(content)
-        link = normlize_url(data["link"])
-        valid_link = ''
-        if link:
-            try:
-                valid_link = validate_url(link)
-            except Invalid:
-                LOG.warning(f'invalid story link {link!r}')
-        story['link'] = valid_link
-        content = story_html_clean(content)
-        if len(content) >= 1024 * 1024:
-            msg = 'too large story link=%r content length=%s, will only save plain text!'
-            LOG.warning(msg, link, len(content))
-            content = story_html_to_text(content)
-        content = process_story_links(content, valid_link)
-        story['content'] = content
-        summary = data["summary"]
-        if not summary:
-            summary = content
-        summary = shorten(story_html_to_text(summary), width=300)
+        content = data['content']
+        summary = data['summary']
+        title = data['title']
+        story['has_mathjax'] = data['has_mathjax']
+        story['link'] = data['url']
         story['summary'] = summary
-        title = shorten(data["title"] or link or summary, 200)
-        unique_id = shorten(data['id'] or link or title, 200)
+        story['content'] = content
         content_hash_base64 = compute_hash_base64(content, summary, title)
         story['title'] = title
         story['content_hash_base64'] = content_hash_base64
-        story['unique_id'] = unique_id
-        story['author'] = shorten(data["author"], 200)
-        story['dt_published'] = _get_dt_published(data)
-        story['dt_updated'] = _get_dt_updated(data)
+        story['unique_id'] = data['ident']
+        story['author'] = data["author_name"]
+        dt_published = data['dt_published']
+        dt_updated = data['dt_updated']
+        story['dt_published'] = min(dt_published or dt_updated or now, now)
+        story['dt_updated'] = min(dt_updated or dt_published or now, now)
         storys.append(story)
-    return list(storys)
-
-
-def _get_etag(response):
-    return response.headers.get("ETag")
-
-
-def _get_last_modified(response):
-    return response.headers.get("Last-Modified")
-
-
-def _get_url(response):
-    return response.url
-
-
-def _get_dt_published(data, default=None):
-    t = data["published_parsed"] or data["updated_parsed"] or default
-    if t and t > timezone.now():
-        t = default
-    return t
-
-
-def _get_dt_updated(data, default=None):
-    t = data["updated_parsed"] or data["published_parsed"] or default
-    if t and t > timezone.now():
-        t = default
-    return t
+    return storys
