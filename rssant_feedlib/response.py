@@ -97,7 +97,8 @@ class FeedResponse:
         '_encoding',
         '_etag',
         '_last_modified',
-        '_content_type',
+        '_mime_type',
+        '_feed_type',
         '_use_proxy',
     )
 
@@ -109,7 +110,8 @@ class FeedResponse:
         etag: str = None,
         last_modified: str = None,
         encoding: str = None,
-        content_type: FeedContentType = None,
+        mime_type: str = None,
+        feed_type: FeedContentType = None,
         use_proxy: bool = None,
     ):
         self._content = content
@@ -118,16 +120,17 @@ class FeedResponse:
         self._encoding = encoding
         self._etag = etag
         self._last_modified = last_modified
-        self._content_type = content_type or FeedContentType.OTHER
+        self._mime_type = mime_type
+        self._feed_type = feed_type or FeedContentType.OTHER
         self._use_proxy = use_proxy
 
     def __repr__(self):
         name = type(self).__name__
         length = len(self._content) if self._content else 0
-        content_type = self._content_type.value if self._content_type else None
+        feed_type = self._feed_type.value if self._feed_type else None
         return (
             f'<{name} {self.status} url={self.url!r} length={length} '
-            f'encoding={self.encoding!r} content_type={content_type!r}>'
+            f'encoding={self.encoding!r} feed_type={feed_type!r}>'
         )
 
     @property
@@ -163,8 +166,12 @@ class FeedResponse:
         return self._encoding
 
     @property
-    def content_type(self) -> FeedContentType:
-        return self._content_type
+    def mime_type(self) -> str:
+        return self._mime_type
+
+    @property
+    def feed_type(self) -> FeedContentType:
+        return self._feed_type
 
     @property
     def use_proxy(self) -> bool:

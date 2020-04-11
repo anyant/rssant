@@ -253,12 +253,12 @@ class RawFeedParser:
 
     def _parse(self, response: FeedResponse) -> RawFeedResult:
         assert response.ok and response.content
-        if response.content_type.is_json:
+        if response.feed_type.is_json:
             return self._parse_json_feed(response)
         warning = []
-        if response.content_type.is_html:
+        if response.feed_type.is_html:
             warning.append('feed content type is html')
-        if response.content_type.is_other:
+        if response.feed_type.is_other:
             warning.append('feed content type is not any feed type')
         stream = BytesIO(response.content)
         # tell feedparser to use detected encoding

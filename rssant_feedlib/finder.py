@@ -229,12 +229,12 @@ class FeedFinder:
         return res
 
     def _parse(self, response: FeedResponse) -> FeedResult:
-        if response.content_type.is_html:
+        if response.feed_type.is_html:
             msg = "the response content is HTML, not XML feed"
             self._log(msg)
             self._parse_html(response)
             return None
-        if response.content_type.is_other:
+        if response.feed_type.is_other:
             msg = "the response content is not any feed type"
             self._log(msg)
             return None

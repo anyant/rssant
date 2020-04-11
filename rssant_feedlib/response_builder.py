@@ -13,7 +13,7 @@ RE_CONTENT_XML = re.compile(rb'(<\?xml|<xml|<rss|<atom|<feed|<channel)')
 RE_CONTENT_HTML = re.compile(rb'(<!doctype html>|<html|<head|<body)')
 
 
-CONTENT_TYPE_NOT_FEED = {
+MIME_TYPE_NOT_FEED = {
     'application/octet-stream',
     'application/javascript',
     'application/vnd.',
@@ -26,21 +26,19 @@ CONTENT_TYPE_NOT_FEED = {
 }
 
 
-def detect_content_type(content: bytes, content_type_header: str = None) -> FeedContentType:
+def detect_feed_type(content: bytes, mime_type: str = None) -> FeedContentType:
     """
-    >>> detect_content_type(b'<!DOCTYPE HTML>')
+    >>> detect_feed_type(b'<!DOCTYPE HTML>')
     <FeedContentType.HTML>
-    >>> detect_content_type(b'{"hello": "world"}')
+    >>> detect_feed_type(b'{"hello": "world"}')
     <FeedContentType.JSON>
-    >>> detect_content_type(b'<?xml version="1.0" encoding="utf-8"?>')
+    >>> detect_feed_type(b'<?xml version="1.0" encoding="utf-8"?>')
     <FeedContentType.XML>
     """
-    if content_type_header:
-        mime_type, __ = cgi.parse_header(content_type_header)
-        if mime_type:
-            for key in CONTENT_TYPE_NOT_FEED:
-                if key in mime_type:
-                    return FeedContentType.OTHER
+    if mime_type:
+        for key in MIME_TYPE_NOT_FEED:
+            if key in mime_type:
+                return FeedContentType.OTHER
     head = bytes(content[:500]).strip().lower()
     if head.startswith(b'{') or head.startswith(b'['):
         return FeedContentType.JSON
@@ -82,10 +80,10 @@ def _detect_chardet_encoding(content: bytes) -> str:
     return encoding
 
 
-def _detect_http_encoding(content_type: str) -> str:
-    _, params = cgi.parse_header(content_type)
+def _parse_content_type_header(content_type: str) -> typing.Tuple[str, str]:
+    mime_type, params = cgi.parse_header(content_type)
     encoding = params.get('charset', '').replace("'", "")
-    return encoding
+    return mime_type, encoding
 
 
 def _normalize_encoding(encoding: str) -> str:
@@ -121,7 +119,7 @@ class EncodingChecker:
         return encoding
 
 
-def detect_content_encoding(content: bytes, content_type_header: str = None):
+def detect_content_encoding(content: bytes, http_encoding: str = None):
     """
     >>> detect_content_encoding(b'hello', 'text/xml;charset=utf-8')
     'utf-8'
@@ -135,8 +133,8 @@ def detect_content_encoding(content: bytes, content_type_header: str = None):
     """
     content = bytes(content[:2000])  # only need peek partial content
     checker = EncodingChecker(content)
-    if content_type_header:
-        encoding = checker.check(_detect_http_encoding(content_type_header))
+    if http_encoding:
+        encoding = checker.check(http_encoding)
         if encoding is not None:
             return encoding
     encoding = checker.check(_detect_xml_encoding(content))
@@ -180,14 +178,14 @@ class FeedResponseBuilder:
         self._headers = headers
 
     def build(self) -> FeedResponse:
-        content_type = encoding = None
+        mime_type = feed_type = encoding = http_encoding = None
+        if self._headers:
+            content_type_header = self._headers.get('content-type')
+            if content_type_header:
+                mime_type, http_encoding = _parse_content_type_header(content_type_header)
         if self._content:
-            if self._headers:
-                content_type_header = self._headers.get('content-type')
-            else:
-                content_type_header = None
-            content_type = detect_content_type(self._content, content_type_header)
-            encoding = detect_content_encoding(self._content, content_type_header)
+            feed_type = detect_feed_type(self._content, mime_type)
+            encoding = detect_content_encoding(self._content, http_encoding)
         etag = last_modified = None
         if self._headers:
             etag = self._headers.get("etag")
@@ -200,6 +198,7 @@ class FeedResponseBuilder:
             etag=etag,
             last_modified=last_modified,
             encoding=encoding,
-            content_type=content_type,
+            mime_type=mime_type,
+            feed_type=feed_type,
             use_proxy=self._use_proxy,
         )
