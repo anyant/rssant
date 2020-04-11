@@ -1,4 +1,5 @@
 import random
+import time
 
 import pytest
 
@@ -104,18 +105,32 @@ def test_feed_checksum_error():
         FeedChecksum(items)
 
 
+def _format_t(t):
+    return '{:.1f}ms'.format(t * 1000)
+
+
 def benchmark_feed_checksum():
     for n in range(100, 1001, 100):
         storys = _random_storys(n)
         checksum = FeedChecksum()
+        t0 = time.monotonic()
         for ident, content in storys:
             if not checksum.update(ident, content):
                 print(f'n={n} content conflict')
+        t1 = time.monotonic()
         for ident, content in storys:
             if checksum.update(ident, content):
                 print(f'n={n} ident conflict')
+        t2 = time.monotonic()
         data = checksum.dump()
+        t3 = time.monotonic()
         print(f'{n} items, {len(data)} bytes')
+        FeedChecksum.load(data)
+        t4 = time.monotonic()
+        print('{} items, update: {} + {}'.format(
+            n, _format_t(t1 - t0), _format_t(t2 - t1)))
+        print('{} items, dump {}, load {}'.format(
+            n, _format_t(t3 - t2), _format_t(t4 - t3)))
 
 
 if __name__ == "__main__":

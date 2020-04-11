@@ -7,12 +7,12 @@ import hashlib
 
 class FeedChecksum:
     """
-    At most: (4 + 8) * 300 = 3.6KB, can not compress
-    +---------+------------------+--------------------+
-    | 1 byte  |             (4 + 8) * N bytes         |
-    +---------+------------------+--------------------+
-    | version | story_ident_hash | story_content_hash |
-    +---------+------------------+--------------------+
+    size of 300 items: (4 + 8) * 300 = 3.6KB, can not compress
+    +---------+----------------------+------------------------+
+    | 1 byte  |           4 * N bytes + 8 * N bytes           |
+    +---------+----------------------+------------------------+
+    | version |     ident_hash ...   |     content_hash ...   |
+    +---------+----------------------+------------------------+
     """
 
     _key_len = 4
@@ -53,8 +53,8 @@ class FeedChecksum:
             1. 有更新但内容哈希值没变，导致误判为无更新。不能接受。
             2. 多个ID哈希值一样，导致误判为有更新。可以接受。
         """
-        if not ident or not content:
-            raise ValueError('ident and content can not empty')
+        if not ident:
+            raise ValueError('ident can not be empty')
         key = self._hash(ident, self._key_len)
         old_sum = self._map.get(key)
         new_sum = self._hash(content, self._val_len)
@@ -71,19 +71,17 @@ class FeedChecksum:
 
     def dump(self, limit=None) -> bytes:
         length = len(self._map)
-        buffer_n = length if limit is None else min(length, limit)
-        buffer = bytearray(1 + self._key_val_len * buffer_n)
-        struct.pack_into('>B', buffer, 0, self.version)
+        keys_buffer = bytearray()
+        vals_buffer = bytearray()
+        version_bytes = struct.pack('>B', self.version)
         items = self._map.items()
         if limit is not None and length > limit:
             items = itertools.islice(items, length - limit, length)
-        offset = 1
         for key, value in items:
             self._check_key_value(key, value)
-            buffer[offset: offset + self._key_len] = key
-            buffer[offset + self._key_len: offset + self._key_val_len] = value
-            offset += self._key_val_len
-        return bytes(buffer)
+            keys_buffer.extend(key)
+            vals_buffer.extend(value)
+        return version_bytes + keys_buffer + vals_buffer
 
     @classmethod
     def load(cls, data: bytes) -> "FeedChecksum":
@@ -93,10 +91,13 @@ class FeedChecksum:
         n, remain = divmod(len(data) - 1, cls._key_val_len)
         if remain != 0:
             raise ValueError(f'unexpect data length {len(data)}')
+        keys_buffer = memoryview(data)[1: 1 + n * cls._key_len]
+        vals_buffer = memoryview(data)[1 + n * cls._key_len:]
+        key_packer = struct.Struct(str(cls._key_len) + 's')
+        val_packer = struct.Struct(str(cls._val_len) + 's')
         items = []
-        for i in range(n):
-            offset = 1 + i * cls._key_val_len
-            key = data[offset: offset + cls._key_len]
-            value = data[offset + cls._key_len: offset + cls._key_val_len]
+        keys_iter = key_packer.iter_unpack(keys_buffer)
+        vals_iter = val_packer.iter_unpack(vals_buffer)
+        for (key,), (value,) in zip(keys_iter, vals_iter):
             items.append((key, value))
         return cls(items, version=version)
