@@ -1,0 +1,74 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" >
+<HTML>
+	<HEAD>
+		<title>和讯博客 -- 系统维护中</title>
+		<style type="text/css">
+<!--
+body {
+	font-family: "宋体";
+	margin: 0px;
+	padding: 0px;
+}
+#wrapper {
+    BORDER-RIGHT: #4497fd 1px solid;
+    PADDING-RIGHT: 30px; 
+    BACKGROUND-POSITION: center top; 
+    BORDER-TOP: #4497fd 1px solid; 
+    MARGIN-TOP: 80px; 
+    PADDING-LEFT: 30px; 
+    FONT-SIZE: 12px; 
+    BACKGROUND-IMAGE: url(http://blog.hexun.com/img/bg.gif); 
+    PADDING-BOTTOM: 10px; 
+    MARGIN-LEFT: auto; 
+    BORDER-LEFT: #4497fd 1px solid; 
+    WIDTH: 443px; 
+    LINE-HEIGHT: 20px; 
+    MARGIN-RIGHT: auto; 
+    PADDING-TOP: 45px; 
+    BORDER-BOTTOM: #4497fd 1px solid; 
+    BACKGROUND-REPEAT: repeat-x; 
+    FONT-FAMILY: "宋体"; 
+    HEIGHT: 220px; 
+    TEXT-ALIGN: justify;
+}
+.padding_top {
+	padding-top: 15px;
+}
+.padding_bottom {
+	padding-bottom: 15px;
+}
+.indent {
+	text-indent: -12px;
+	padding-left: 12px;
+}
+.indent1 {
+    PADDING-LEFT: 12px; 
+    text-align:center; 
+    margin-top:30px;
+} 
+.blue {
+	color: #075EC8;
+}
+a:link,a:visited {
+	color: #A40000;
+	text-decoration: none;
+}
+a:hover {
+	color: #6A0000;
+	text-decoration: none;
+}
+//-->
+</style>
+	</HEAD>
+	<body>
+		<div align=center>
+			<div id="wrapper">
+				<div class="padding_bottom"><img src="http://post.blog.hexun.com/img/upgrade.gif" alt="" /></div>
+				<div><span class="blue">　　和讯博客正在进行系统维护，请您稍后重试，或者<a href="http://www.hexun.com" target=_top>返回和讯首页</a>查看更多精彩内容。</span></div>
+				<div class="indent1" id="auto"></div>
+			</div>
+		<!--Microsoft OLE DB Provider for ODBC Drivers-->
+		</div>
+	</body>
+</HTML>

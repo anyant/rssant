@@ -11,7 +11,7 @@ from .response import FeedContentType, FeedResponse
 
 RE_CONTENT_XML = re.compile(rb'(<\?xml|<xml|<rss|<atom|<feed|<channel)')
 RE_CONTENT_HTML = re.compile(rb'(<!doctype html>|<html|<head|<body)')
-
+RE_CONTENT_MARKUP = re.compile(rb'[<>]')
 
 MIME_TYPE_NOT_FEED = {
     'application/octet-stream',
@@ -19,6 +19,7 @@ MIME_TYPE_NOT_FEED = {
     'application/vnd.',
     'text/css',
     'text/csv',
+    'text/javascript',
     'image/',
     'font/',
     "audio/",
@@ -50,7 +51,16 @@ def detect_feed_type(content: bytes, mime_type: str = None) -> FeedContentType:
         return FeedContentType.XML
     if RE_CONTENT_HTML.search(head):
         return FeedContentType.HTML
-    return FeedContentType.XML
+    if mime_type:
+        if 'xml' in mime_type:
+            return FeedContentType.XML
+        if 'html' in mime_type:
+            return FeedContentType.HTML
+        if 'json' in mime_type:
+            return FeedContentType.JSON
+    if RE_CONTENT_MARKUP.search(head):
+        return FeedContentType.XML
+    return FeedContentType.OTHER
 
 
 # Capture the value of the XML processing instruction's encoding attribute.
