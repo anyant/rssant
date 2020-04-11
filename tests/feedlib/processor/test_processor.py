@@ -58,3 +58,16 @@ def test_normalize_url():
     for url, expect in cases:
         norm = normlize_url(url)
         assert norm == expect, f'url={url!r} normlize={norm!r} expect={expect!r}'
+
+
+def test_normalize_base_url():
+    base_url = 'http://blog.example.com/feed.xml'
+    url = '/post/123.html'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/post/123.html'
+    url = 'post/123.html'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/post/123.html'
+    url = '/'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/'

@@ -97,8 +97,8 @@ class RawFeedParser:
         self._validate = validate
 
     def _get_feed_home_url(self, feed: feedparser.FeedParserDict) -> str:
-        link = feed.feed.get("link")
-        if not link.startswith('http'):
+        link = feed.feed.get("link") or ''
+        if not link.startswith('http') and not link.startswith('/'):
             # 有些link属性不是URL，用author_detail的href代替
             # 例如：'http://www.cnblogs.com/grenet/'
             author_detail = feed.feed.get('author_detail')

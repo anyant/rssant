@@ -127,9 +127,10 @@ class FeedResponse:
     def __repr__(self):
         name = type(self).__name__
         length = len(self._content) if self._content else 0
+        status_name = FeedResponseStatus.name_of(self.status)
         feed_type = self._feed_type.value if self._feed_type else None
         return (
-            f'<{name} {self.status} url={self.url!r} length={length} '
+            f'<{name} {self.status} {status_name} url={self.url!r} length={length} '
             f'encoding={self.encoding!r} feed_type={feed_type!r}>'
         )
 

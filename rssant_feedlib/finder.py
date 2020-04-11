@@ -176,7 +176,7 @@ class FeedFinder:
         message_handler=None,
         max_trys=10,
         reader=None,
-        validate=True,
+        allow_private_address=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
     ):
@@ -186,12 +186,14 @@ class FeedFinder:
         self.max_trys = max_trys
         if reader is None:
             reader = FeedReader(
-                rss_proxy_url=rss_proxy_url, rss_proxy_token=rss_proxy_token)
+                allow_private_address=allow_private_address,
+                rss_proxy_url=rss_proxy_url,
+                rss_proxy_token=rss_proxy_token,
+            )
             self._close_reader = True
         else:
             self._close_reader = False
         self.reader = reader
-        self.validate = validate
         self._links = {start_url: ScoredLink(start_url, 1.0)}
         self._visited = set()
 

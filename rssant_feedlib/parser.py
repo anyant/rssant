@@ -125,7 +125,7 @@ class FeedParser:
     def _parse_story(self, story: dict, feed_url: str):
         ident = story['ident'][:200]
         title = story_html_to_text(story['title'])[:200]
-        url = normlize_url(story['url'], base_url=feed_url)
+        url = normlize_url(story['url'] or story['ident'], base_url=feed_url)
         try:
             valid_url = validate_url(url)
         except Invalid:

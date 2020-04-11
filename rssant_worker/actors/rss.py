@@ -124,6 +124,7 @@ def do_find_feed(
         messages.append(msg)
 
     options = dict(message_handler=message_handler, **_get_proxy_options())
+    options.update(allow_private_address=CONFIG.allow_private_address)
     with FeedFinder(url, **options) as finder:
         found = finder.find()
     try:

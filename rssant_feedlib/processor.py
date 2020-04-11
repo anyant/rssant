@@ -170,13 +170,12 @@ def normlize_url(url: str, base_url: str = None):
         # ignore urn: or magnet:
         if re.match(r'^[a-zA-Z0-9]+:', url):
             return url
-        # ignore simple texts
-        if not re.match(r'^[a-zA-Z0-9]+(\.|\:|\/)', url):
-            return url
-        if url.startswith('/'):
-            if base_url:
-                url = urljoin(base_url, url)
+        if base_url:
+            url = urljoin(base_url, url)
         else:
+            # ignore simple texts
+            if not re.match(r'^(\.|\:|\/)?[a-zA-Z0-9\/]+(\.|\:|\/)', url):
+                return url
             url = 'http://' + url
     # fix: http://www.example.comhttp://www.example.com/hello
     if url.count('://') >= 2:

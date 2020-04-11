@@ -54,7 +54,7 @@ class RSSProxyError(FeedReaderError):
 
 
 RE_WEBPAGE_CONTENT_TYPE = re.compile(
-    r'(text/html|application/xml|text/xml|application/json|'
+    r'(text/html|application/xml|text/xml|text/plain|application/json|'
     r'application/.*xml|application/.*json|text/.*xml)', re.I)
 
 
