@@ -14,6 +14,7 @@ from .raw_parser import RawFeedParser
 from .parser import FeedParser
 from .reader import FeedReader
 from .response import FeedResponse, FeedContentType
+from .feed_checksum import FeedChecksum
 
 
 LOG = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ def _do_find(url, max_trys, allow_private_address, printer):
             printer(pretty_format_json(story))
 
 
-def _do_parse(url: str, printer, allow_private_address):
+def _do_parse(url: str, printer, allow_private_address, checksum, save_checksum):
     if not url.startswith('http://') and not url.startswith('https://'):
         response = _read_local_response(url)
         print('-> {}'.format(response))
@@ -93,10 +94,17 @@ def _do_parse(url: str, printer, allow_private_address):
             print('-> {}'.format(response))
             if not response.ok:
                 return
+    if checksum:
+        with open(checksum, 'rb') as f:
+            data = f.read()
+        checksum = FeedChecksum.load(data)
+        print('-> {}'.format(checksum))
+    else:
+        checksum = None
     raw_result = RawFeedParser().parse(response)
     if raw_result.warnings:
         print('Warning: ' + '; '.join(raw_result.warnings))
-    result = FeedParser().parse(raw_result)
+    result = FeedParser(checksum=checksum).parse(raw_result)
     print("-> {}".format(result))
     printer('-' * 79)
     printer(pretty_format_json(result.feed))
@@ -105,6 +113,11 @@ def _do_parse(url: str, printer, allow_private_address):
         story['content'] = shorten(story['content'], 60)
         story['summary'] = shorten(story['summary'], 60)
         printer(pretty_format_json(story))
+    if save_checksum:
+        print('-> save {}'.format(save_checksum))
+        data = result.checksum.dump()
+        with open(save_checksum, 'wb') as f:
+            f.write(data)
 
 
 def _do_save(url, output_dir, allow_private_address):
@@ -197,10 +210,18 @@ def save(url, profile=False, output_dir=None, allow_private_address=False):
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
 @click.option('--allow-private-address', is_flag=True, help='Allow private address')
-def parse(url, no_content=False, profile=False, allow_private_address=False):
+@click.option('--save-checksum', help='save checksum')
+@click.option('--checksum', help='feed checksum')
+def parse(
+    url, no_content=False, profile=False, allow_private_address=False,
+    save_checksum=None, checksum=None,
+):
     printer = Printer(profile or no_content)
     with ProfilerContext(profile):
-        _do_parse(url, printer=printer, allow_private_address=allow_private_address)
+        _do_parse(
+            url, printer=printer, allow_private_address=allow_private_address,
+            save_checksum=save_checksum, checksum=checksum,
+        )
 
 
 if __name__ == "__main__":
