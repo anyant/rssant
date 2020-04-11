@@ -1,0 +1,973 @@
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>你好，耳先生</title><link>https://www.kilerd.me/</link><description>先生贵姓？耳东陈。好的，这边请，耳先生。</description><generator>Staple</generator><item><title>2019 个人总结</title><link>https://www.kilerd.me/summaries-my-2019</link><description><![CDATA[<p>无意中翻博客草稿的时候，发现了 2018 的总结还在停留在草稿阶段，现在就已经要写 2019 年度总结了，不禁感叹时间流逝之快。</p>
+]]></description><pubDate>2019-12-31 21:34:22 +08:00</pubDate><content:encoded><![CDATA[<p>无意中翻博客草稿的时候，发现了 2018 的总结还在停留在草稿阶段，现在就已经要写 2019 年度总结了，不禁感叹时间流逝之快。</p>
+<!--more-->
+<h2>R.I.P Python 2</h2>
+<p>Python 2 停止维护，这绝对是一件所有 Pythonista 值得写入 2020 第一篇文章内的描述。我大概从2014年开始接触Python，但是就已经开始用 Python 3来写项目了。从 14 年到现在，除了写项目逻辑之外更多的时间是花费在 2 与 3 的兼容上面。虽然说 <code>six</code> 这种专门用来做兼容性库的存在极大的简化了兼容的实现，我还是十分希望能免去这些工作量。</p>
+<p>一开始确实没有太大的理由和动力去做迁移工作，但是 Python 3 的一点点进步足以让迁移有足够的优势：Hash 算法的优化提升了部分性能；async 语法和 asyncio 生态的建立；type hint 的出现。这些让 Python 使用起来更加像一门现代化的语言。</p>
+<p>时至今日，Python 2 的死去，是一件好事，摆脱了这么一个巨大的历史包袱，希望 Python 3 可以有更好的发展，搞搞 JIT，研究一下GIL。希望Python 3 越走越好。</p>
+<p>另外 Guido 的退位也为 Python 带来了新的治理模式，不再是独裁者的所有物。<a href="https://github.com/pyhandle/hpy">hpy</a> 的出现也让 Python 有望存在一个标准的 spec，这样下来越来越多的更好的解析器有望可以涌现。</p>
+<h2>OverWatch 赛事</h2>
+<p>工作后对游戏的热爱就只能投放在赛事上。LOL 上 FPX 夺冠，Dota 里 大巴黎老干爹没能杀入决赛复仇 OG，这些都不是很关心。守望先锋在 2019 年的表现才是让人，让我无比兴奋的。</p>
+<p>先是在世界杯上拿下亚军，再是在国内组出了 4 支俱乐部角逐 OWL 第二赛季的战场。同时 成都 Hunter 队的全华姿态也让国内对其抱有了极大的盼头。一是世界杯上中国队的超常发挥，二是对全华班的执着。听闻 Hunter 背后的老板跟 RNG 的老板还是同一个。从 OWL 第一赛季的「我们根本u知道怎么才能赢」到这个赛季的龙队获得第三赛段冠军，4支还是3支战队杀入季后赛这一切都在宣告着守望先锋在国内的蓬勃发展。正如林迟青说的那样「 We are ready to let the world know CHINA again」。</p>
+<p>2020 年的第三赛季的主客场机制让不少 OWL 比赛在国内举行，相信氛围一定很好。可惜的事情是 Hunter 那位被誉为「神医」的主教练 RUI 因伤离队了，不知道成都队能不能在第三赛季保持水平的同时越战越勇。 </p>
+<h2>坚定了 Rust 的路线</h2>
+<p>在工作上写了一年 Java，虽说还是一如既往的讨厌它，但是毕竟是用来吃饭的本领，还是专研了一下，起码保证了自己的饭碗不会丢失。但是在业务的时间里面，更加坚定了3年前做的一个决定「学习 Rust」。</p>
+<p>怎么说呢，前段时间看到一段文字可以很好的描述我对 Rust 的态度：</p>
+<blockquote>
+<p>大概五六月的时候我领着团队系统地学习了一下 Rust 语言，后来就有一搭没一搭的写点随手就扔的一次性代码。看到 Signal 的这篇文章后，我按捺不住心头的激情一一终于可以 用 Rust 做一个似乎有点什么用的工具了！写下来总体感觉，Rust 有可以媲美 ruby 的表现力，又有可以媲美 C++ 的性能（如果使用正确了），加上略逊于 haskell，但可以秒杀大部分主流语言的类型系统，使得用 rust 写代码是一种享受（除了编译速度慢）。这样一个 小工具200来行代码（包括单元测试，生成式测试以及一个简单的benchmark）就可以完 成，估计用 python, elixir 和 nodejs 都不那么容易达到。 </p>
+</blockquote>
+<p>大概就是这样，得益于过程宏等的一些生态，可以让代码写起来如同脚本语言那样的表现力和编写体验，既有极优秀的性能，还有完备的类型系统。这样 Rust 在各个领域都可以表现得很棒。</p>
+<p>Rust 也让我真正的走上了 PL 的道路，之前的我可能是站在巨人肩膀上的，完全不知道脚下的巨人是谁，能干什么。但是 Rust 让我成功的走出了这一步。慢慢地了解到了类型系统及其图灵完备性，数理系统，逆变协变等等这些可能你日常都在使用，但是不知道其缘由和机理的事情。</p>
+<p>我很庆幸在业务我不再是一个简单的CRUD boy，虽然我还有很长的一条路要走，但是起码我在2019迈出了那一步。很感谢 Rust 为我带来的这一个改变。</p>
+<h2>Side Projects</h2>
+<p>如同我在「技术断舍离」里面描述的那样，我开始不喜欢写同类型的项目，逐渐接触不同领域的东西。我开始认真地想做一个社区，希望能把 Resource.rs 给做好。我认真反思自己做过的东西，那些没能让我学习到的项目都是一次拖慢你节奏的过程。我注册了3min.work，寓意是「三分热度工作室」，我希望我的一些零时性的，阶段性的，实验性的作品或者尝试可以放在这里，让我有一个更加直观的感受，同时也不会阻止我的前进。</p>
+<h2>最后</h2>
+<p>一年来，虽说工作不如意，学习上没啥进步，也开始慢慢接受自己的平庸。但是我始终坚信着「勤能补拙」这个朴实的道理。</p>
+]]></content:encoded></item><item><title>我的技术断离舍</title><link>https://www.kilerd.me/learnning-zen-of-tech</link><description><![CDATA[<p>在工作了一年多后，脑子里面满是想离职的事情。在此之前，我还在持续构思这一年多学习到内容的总结，然后品了品，这一年内，为了柴米油盐持续奔波，并没有留下过多的时间来学习新的技术，反而相比于刚刚毕业的那个时候，这时的我忘记的知识远远多于我学习到的。</p>
+<p>然而又尽力过一段时间的沉思，我才意识到这可能并不是一件坏事，反而让我可以更好地学习下去。</p>
+]]></description><pubDate>2019-11-08 16:52:13 +08:00</pubDate><content:encoded><![CDATA[<p>在工作了一年多后，脑子里面满是想离职的事情。在此之前，我还在持续构思这一年多学习到内容的总结，然后品了品，这一年内，为了柴米油盐持续奔波，并没有留下过多的时间来学习新的技术，反而相比于刚刚毕业的那个时候，这时的我忘记的知识远远多于我学习到的。</p>
+<p>然而又尽力过一段时间的沉思，我才意识到这可能并不是一件坏事，反而让我可以更好地学习下去。</p>
+<!--more-->
+<h2>别让你练手的项目成为前进的阻碍</h2>
+<p>大学阶段和刚工作时，我对造轮子有种极致的疯狂，面对各种奇奇怪怪的需求，我都希望通过自己的努力把它实现出来。我十分同意这确实很锻炼人。</p>
+<p>为了研究 web 框架的原理，花了很大的精力看完了 flask tornado sanic 的 源码，自己造了一个 nougat 出来。看了 fastAPI 和 OpenAPI，写了一个能自动生成 swagger 信息的 flask 路由插件。为了不想用别人的 inline translator，自己写了一个极简的 Chrome 插件。为了管理 GitHub star，写了一个 Chrome 插件。等等这样的点子实在是太多太多了。</p>
+<p>为了造轮子，同时找不到一样跟我有空又对这些项目感兴趣的前端劳动力，我于是决定学习前端。为此，我学了 React、Redux、Mbox 等这些现代的前端框架，又去折腾了 PWA，甚至还学了 React-Native 只是为了想把这些想法迁移到 IOS 或者安卓上。</p>
+<p>这些经历看着属实很奇妙也很有意思，然而在此之后随之而来的便是各种维护噩梦。</p>
+<p>WEB 框架 nougat 有人尝试使用了，也给了很多诸如「为什么你这个框架没有 CLI 控制能力」、「为什么别的框架写某某功能很舒服，然而你这个就那么难受」。于是我踏上了一条「重构-修BUG」的恶性循环之路，为了实现这些功能或者修复某个缺陷，导致了我需要花大量的时间投入在上面，甚者为了修复某些BUG需要把整个框架重构大部分。这显然不是我希望看到的，这个框架不是为了让别人使用而出现的，而是我的一个熟悉底层的过程。</p>
+<p>这样占用大量时间的维护工作占用了我大量的业余学习时间。于是我做了一个很大的改变「我做的项目只为了解决我自己的需求」，在这样的前提下，我拒掉了大量的维护工作，让我可以更加轻松地投入到那些我不懂而又十分感兴趣的领域。</p>
+<h2>技术的世界里没有「银弹」</h2>
+<p>要时刻在脑子里面保留着一个概念就是「银弹不可能有。如果有，那你肯定被骗了」。</p>
+<p>在大学后半段开始，我做了一个赌我以后职业之旅的决定「我要以 Rust 为我的主导编程语言」。现在看来，Rust 确实在慢慢火起来。但是当时的我，或者说是从开始工作没多久，我对 Rust 有种莫名的崇拜和狂热，希望什么都用 Rust 来实现，无论是能用 shell 实现的脚本，还是用根本还没成熟的 WASM 来写网页前端。</p>
+<p>Rust 确实很强大，这点毋庸置疑。能做与擅长，是两件截然不同的事情。我就是把这两件事情混在了一起。为了用 WASM 写前端，我看了很多所谓的框架，实际上都是一个很简单的雏型。花了几十倍的消耗终于写出了一个性能提升无关的前端。</p>
+<p>看似很有成就感的事情，仔细思考下来实则不然。写了那么多都还只是停留在调用他人框架的阶段，并没有真正地去了解框架的构造和执行原理，甚至没有去了解 WASM 的原理。相比于写逻辑，后者的知识才是更加值得研究的。</p>
+<p>在意识到了这点之后，我慢慢的形成了语言只是一种工具，在合适的场景使用合适的语言才是一个成熟的表现。相比于用 Rust 来写机器学习，这种看着就不可能的事情其实很容易分辨，难就难在那些两者都表现出「我可以」的场景下。</p>
+<p>快速成型、脚本工作就使用 Python；CLI 解析、网络代理处理等就用 Rust；网页前端使用 React。 </p>
+<p>银弹可能不存在，但是一把装满了不同「银弹」的手枪是可能存在的。</p>
+<h2>多刷文档，别重复工作</h2>
+<p>当擅长一门技术之后，就很容易成迷其中，希望写出很多所谓的作品出来表现自己，殊不知其实这些作品都只是表现出你单独一门技术的能力。</p>
+<p>这段时间我就是陷入了这样的困境中，因为自己是擅长 WEB 方向的，同时在熟练使用 actix 之后，脑子里面都是做些什么作品出来。左想右想确实想出了很多，不少也事件出来了，但是都是基于 actix 这个 web 框架的，而且大部分工作都是在「写数据库模型 - CURD」的循环中。</p>
+<p>看似做出了很多有意思的项目，实际上是「业务」，那些东西并没有脱离出那一个特定的技术。</p>
+<p>同时长时间在业务层工作，会形成一种「知其然，不知其所以然」的困境。比如现在我都没搞太懂 actix 到底是怎么跑的，为什么他能做到碾压性的性能压制。</p>
+<p>在这时，我才意识到了自己在底层认知的缺陷。长时间活跃在业务层，缺少了对实现层的了解。为此，如上述所说，我放弃维护了大部分的项目，把这些时间投入到了 RFC 等文档的阅读中。特别是在 Rust 领域里面，单纯的写 Rust 代码 和阅读 Rust RFC 的发展、参与对某个实现的讨论的感觉是完全不一样的。这也让我了解到了更多 PL 领域的内容。</p>
+<p>同时在深入了解底层知识后，才深刻体会到语言只是一种工具的感觉。在工作之前，我都以 Python 和 Rust 为主，然而工作确实以 Java 为主，在没有过多的 Java 基础下，通过对底层抽象的了解，可以在工作中不至于出现什么问题。</p>
+<p>在抛弃掉大量相似的项目后，反而有了更多的时间去了解其他领域的知识，这无论是在深度和广度都十分有用。</p>
+]]></content:encoded></item><item><title>简单几步打造个人集群和自动化流水线</title><link>https://www.kilerd.me/personal-docker-cluster-and-ci-package-pipeline</link><description><![CDATA[<p>在认识的小伙伴发了他做的项目部署文档出来之后，我便决定开始写这篇文章，原因是他使用的部署方式太麻烦，而且太不自动化，同时有时候也会因为开发任务繁忙导致没能部署好等等。</p>
+<p>这篇文章是介绍了一个极度适合用于个人或者几个人的小团队使用的集群搭建方式，在保证了安全性的同时，提供了几乎全自动的部署方式，在手动配置一次之后，每次服务更新都是自动触发的，极大地减少了部署的时间。</p>
+<p>本篇文章适用于 GIT-FLOW 类似的「master 即 生产代码」的一切工作模式（或者某一个分支为生产代码）。如果您的开发模式不符合这个特征，那么可以关闭网页了。</p>
+]]></description><pubDate>2019-06-13 13:16:33 +08:00</pubDate><content:encoded><![CDATA[<p>在认识的小伙伴发了他做的项目部署文档出来之后，我便决定开始写这篇文章，原因是他使用的部署方式太麻烦，而且太不自动化，同时有时候也会因为开发任务繁忙导致没能部署好等等。</p>
+<p>这篇文章是介绍了一个极度适合用于个人或者几个人的小团队使用的集群搭建方式，在保证了安全性的同时，提供了几乎全自动的部署方式，在手动配置一次之后，每次服务更新都是自动触发的，极大地减少了部署的时间。</p>
+<p>本篇文章适用于 GIT-FLOW 类似的「master 即 生产代码」的一切工作模式（或者某一个分支为生产代码）。如果您的开发模式不符合这个特征，那么可以关闭网页了。</p>
+<!--more-->
+<h2>服务器架构</h2>
+<p>服务器方面，为了方便使用，我们选择了 docker swarm 而不是 k8s，我们先看一个全览图：</p>
+<p><img src="https://i.loli.net/2019/06/13/5d0220558718054830.jpg" alt="server-structure.jpg" /></p>
+<p>整个架构的思路就是用 NGINX 来代理所有的 web 应用，内部每个应用都以 stack 的方式部署，同时配合 Portainer 进行自动化更新。一个超级简单的部署模式，却基本满足了我个人的所有开发场景。</p>
+<h2>环境部署</h2>
+<p>首先你要有一台独立的服务器，什么发行版都不所谓了，我们不会在宿主机里面干任何事情，一切都是在Docker 内实现。</p>
+<p>服务器只需要对外暴露 80 和 443 端口即可，ssh 使用密钥的方式登陆保证安全。</p>
+<h3>安装Docker 并启动 Docker Swarm 模式</h3>
+<p>因为这里采用了单机的方式，所以一步就启动了 swarm 模式：</p>
+<pre><code class="language-shell">docker swarm init
+</code></pre>
+<h3>安装 Nginx</h3>
+<p>在这里 Nginx 作为 Load Balancer 和自动 HTTPS 的工具，需要实现服务发现的功能，你可以用 <code>docker-gen</code> 自己撸一个，也可以采用现成的软件来完成。这里我才用了这个 <a href="https://github.com/buchdag/letsencrypt-nginx-proxy-companion-compose/blob/master/2-containers/compose-v3/environment/docker-compose.yaml">buchdag/letsencrypt-nginx-proxy-companion-compose</a> 。</p>
+<p>先创建一个 nginx network：</p>
+<pre><code class="language-shell">docker network create nginx-net --attachable
+</code></pre>
+<p>因为我喜欢吧 volume 不与任何服务直接挂钩，所以我的 volume 都是独立创建的：</p>
+<pre><code class="language-shell">docker volume create nginx-conf
+docker volume create nginx-vhost
+docker volume create nginx-html
+docker volume create nginx-dhparam
+docker volume create nginx-certs
+</code></pre>
+<p>最后以 stack 的模式启动 nginx: </p>
+<pre><code class="language-yaml">version: '3'
+
+services:
+
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - &quot;80:80&quot;
+      - &quot;443:443&quot;
+    volumes:
+      - nginx-conf:/etc/nginx/conf.d
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
+      - nginx-dhparam:/etc/nginx/dhparam
+      - nginx-certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      - &quot;com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy&quot;
+    networks:
+      - nginx-net
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    depends_on:
+      - nginx-proxy
+    volumes:
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-html:/usr/share/nginx/html
+      - nginx-dhparam:/etc/nginx/dhparam:ro
+      - nginx-certs:/etc/nginx/certs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - nginx-net
+
+volumes:
+  nginx-conf:
+    external:
+      name: nginx-conf
+  nginx-vhost:
+    external:
+      name: nginx-vhost
+  nginx-html:
+    external:
+      name: nginx-html
+  nginx-dhparam:
+    external:
+      name: nginx-dhparam
+  nginx-certs:
+    external:
+      name: nginx-certs
+
+networks:
+  nginx-net:
+    external: true
+</code></pre>
+<pre><code class="language-shell">docker stack deploy --compose-file nginx.yml nginx
+</code></pre>
+<p>OK，这个时候 nginx 就已经创建好了。</p>
+<h3>安装 Portainer</h3>
+<p>Portainer 是一个为数不多的简洁，消耗资源又少的 docker 管理面板，有他可以更加直观地管理集群的内容，同时新版的 Portainer 还提供了一个比较方便的更新服务的方法，所以他对于我来说是必须的</p>
+<pre><code class="language-yaml">version: &quot;3&quot;
+services:
+  agent:
+    image: portainer/agent
+    environment:
+      # REQUIRED: Should be equal to the service name prefixed by &quot;tasks.&quot; when
+      # deployed inside an overlay network
+      AGENT_CLUSTER_ADDR: tasks.agent
+      # AGENT_PORT: 9001
+      # LOG_LEVEL: debug
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - agent_network
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
+
+  portainer:
+    image: portainer/portainer
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    environment:
+      VIRTUAL_HOST: portainer.kilerd.me
+      VIRTUAL_PORT: 9000
+      LETSENCRYPT_HOST: portainer.kilerd.me
+      LETSENCRYPT_EMAIL: blove694@gmail.com
+    volumes:
+      - portainer_data:/data
+    networks:
+      - agent_network
+      - nginx-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  agent_network:
+    driver: overlay
+  nginx-net:
+    external: true
+
+volumes:
+  portainer_data:
+</code></pre>
+<p><strong>注意：这里不能直接照抄配置文件了</strong>：在 <code>portainer</code> 这个服务里面，对外暴露出了一个GUI管理页面，他是需要通过 nginx 进行代理才能访问的，所以需要修改 <code>VIRTUAL_HOST</code> <code>LETSENCRYPT_HOST</code> 为你的域名， <code>LETSENCRYPT_EMAIL</code> 为你的邮箱。</p>
+<pre><code class="language-shell">docker stack deploy --compose-file portainer.yml portainer
+</code></pre>
+<p>好，不出意外的话，你就可以通过 <code>https://你的域名</code> 来访问到 Portainer 的页面了，进去改密码，就完事了。</p>
+<h3>部署自己的 Docker Registry</h3>
+<p>首先先创建 volumes：</p>
+<pre><code class="language-shell">docker volume create registry_data
+docker volume create registry_auth
+</code></pre>
+<p>然后在 <code>registry_auth</code> 生成一个用于提供密码保护的配置文件 <code>.passwd</code> ，因为 registry 没有密码很不安全</p>
+<pre><code class="language-shell">cd /var/lib/docker/volumes/registry_auth/_data
+docker run --entrypoint htpasswd registry:2 -Bbn 用户名 密码 &gt; .passwd
+</code></pre>
+<p><strong>上述不要直接复制，请修改用户名密码</strong></p>
+<p>然后，部署 stack：</p>
+<pre><code>version: &quot;3&quot;
+services:
+  registry:
+    image: registry:2
+    environment:
+      VIRTUAL_HOST: registry.kilerd.me
+      VIRTUAL_PORT: 5000
+      LETSENCRYPT_HOST: registry.kilerd.me
+      LETSENCRYPT_EMAIL: blove694@gmail.com
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/.passwd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+    volumes:
+      - registry_data:/var/lib/registry
+      - registry_auth:/auth
+    networks:
+      - nginx-net
+volumes:
+  registry_auth:
+    external:
+      name: registry_auth
+  registry_data:
+    external:
+      name: registry_data
+
+networks:
+  nginx-net:
+    external: true
+
+</code></pre>
+<p><strong>上述不要直接复制，请修改访问地址，邮箱</strong></p>
+<p>因为 nginx 有默认最大传输大小，所以可能会导致<code>docker push image</code> 失败，在 image 太大时，所以需要一下命令取消限制：</p>
+<pre><code class="language-shell">cd /var/lib/docker/volumes/nginx-vhost/_data
+echo &quot;client_max_body_size 0;&quot; &gt; registry.kilerd.me
+</code></pre>
+<p><strong>上述不要直接复制，请修改域名</strong></p>
+<p>这样必要的东西就完成了，环境就完全搭建完毕。</p>
+<h2>自动化流水线</h2>
+<p>接下来就是怎么通过流水线自动发布新版本的应用了，这里会以我的一个小项目为例子，一一说明你需要怎么做。</p>
+<p>假设我们的项目就是一个简单的文本：</p>
+<pre><code class="language-shell">echo &quot;hello world&quot; &gt; index.html
+</code></pre>
+<p>然后我们编写一个超级简单的 Dockerfile：</p>
+<pre><code class="language-dockerfile">FROM python:3.7
+
+COPY index.html index.html
+
+EXPOSE 8000
+CMD [&quot;python -m http.server 8000&quot;]
+</code></pre>
+<p>这个docker 会暴露出 8000 端口作为 http 访问。</p>
+<h3>Travis CI or Circle CI</h3>
+<p>相比自己搭建一套CI，我现在了 Circle CI 来做持续集成和持续部署。我们的策略是这样的：</p>
+<ul>
+<li>如果不是 master 分支，不执行</li>
+<li>打包docker 镜像</li>
+<li>推送到我们刚刚部署的 Registry</li>
+<li>更新我们的服务</li>
+</ul>
+<p>先看看 circle ci 的配置文件：</p>
+<pre><code class="language-yaml">version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - v1-{{ .Branch }}
+          paths:
+            - /caches/app.tar
+      - run:
+          name: Load Docker image layer cache
+          command: |
+            set +o pipefail
+            docker load -i /caches/app.tar | true
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build --cache-from=app -t app .
+      - run:
+          name: Save Docker image layer cache
+          command: |
+            mkdir -p /caches
+            docker save -o /caches/app.tar app
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /caches/app.tar
+      - run:
+          name: Push to registry
+          command: |
+            docker login registry.kilerd.me -u 用户名 -p 密码
+            docker tag app registry.kilerd.me/app
+            docker push registry.kilerd.me/app
+  deploy:
+    machine:
+      enabled: true
+    steps:
+      - run:
+          name: update service
+          command: |
+            curl -X POST PORTAINER_WEBHOOK_URL
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - /feature-.*/
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+</code></pre>
+<p>上面这个配置信息很多都是与缓存有关的，用来加快<code>docker build </code> 的过程，主要的只有几行：</p>
+<ul>
+<li><code>docker login registry.kilerd.me -u 用户名 -p 密码</code> 登陆部署的 Registry</li>
+<li><code>docker tag app registry.kilerd.me/app</code> 打 TAG</li>
+<li><code>docker push registry.kilerd.me/app</code> 推送</li>
+<li><code>curl -X POST PORTAINER_WEBHOOK_URL</code> 更新服务，这里因为还没有在集群里面创建 stack，所以还没有这个 <code>PORTAINER_WEBHOOK_URL</code> ，下文会补上。</li>
+</ul>
+<p><strong>注意：上述用户名、密码、PORTAINER_WEBHOOK_URL 请用 circle 的 environment variable 来储存，不要直接写在配置文件内</strong> （作者就吃了这样的亏，导致项目无法开源）</p>
+<p>OK，推到项目仓库，circle ci 就开始执行了，配置没问题的话， registry 里面就已经有这个application 的 docker 镜像了，但是更新会失败，因为我们还没有创建application的stack。</p>
+<h3>Application Stack</h3>
+<p>对于一个应用我们都要创建一个独立的stack，并接入 <code>nginx-net</code> 让 nginx 为应用代理http，同时申请 https 证书。</p>
+<p>那么这个应用的 stack 文件要这么写：</p>
+<pre><code class="language-yaml">version: &quot;3&quot;
+services:
+  backend:
+    image: registry.kilerd.me/app:latest
+    environment:
+      VIRTUAL_HOST: test.kilerd.me
+      VIRTUAL_PORT: 8000
+      LETSENCRYPT_HOST: test.kilerd.me
+      LETSENCRYPT_EMAIL: blove694@gmail.com
+    networks:
+      - nginx-net
+
+networks:
+  nginx-net:
+    external: true
+  backend:
+</code></pre>
+<p><strong>上述配置文件不要直接复制，请修改 镜像地址，域名，邮箱</strong></p>
+<p>创建 stack，之后我们就去要去找到刚刚缺失的那个 <code>PORTAINER_WEBHOOK_URL</code> </p>
+<p><img src="https://i.loli.net/2019/06/13/5d024996dc34d88705.png" alt="Screen Shot 2019-06-13 at 9.01.43 PM.png" /></p>
+<p>进入你想更新的那个 Service Detail 页面，开启 <code>Service webhook</code> 功能，链接就出来了，把它复制到circle的配置中。</p>
+<p>一切就完成了。</p>
+<h3>开发流程</h3>
+<p>如果你的开发流程是基于 GIT-FLOW 的话，那么可以 follow 一下步骤进行开发 ：</p>
+<ul>
+<li>在 <code>feature/xxx</code> 分支开发对于 Feature</li>
+<li>开发完成进入 <code>develop</code> 分支进行验证</li>
+<li>release version 阶段把 <code>develop</code> 合并进 <code>master</code> 分支</li>
+<li>Circle CI 收到 <code>master</code> 分支的推送 webhook， 触发docker image 构建</li>
+<li>构建完成，推送 image 到 registry</li>
+<li>推送完成，通过 <code>PORTAINER_WEBHOOK_URL</code> 触发 Portainer 更新指定的 Service</li>
+</ul>
+<blockquote>
+<p>docker service update xxx 一直都有个问题，不会主动拉取latest的镜像，portainer 自带的这个可以满足，所以说在我的开发环境里面他是必须的。比如就只能 ssh 到服务器，手动执行命令更新。</p>
+</blockquote>
+<p>所以在开发阶段，只要开发然后推送，其他都由 CI 帮你完成所有的部署功能。</p>
+<h2>缺点和优化的地方</h2>
+<ul>
+<li>这个部署方式只适用于单机 docker swarm 集群，多机需要用 NAS 来创建 volume</li>
+<li>如果打包出来的docker image 无法执行，没有一个有效的回退旧版本机制</li>
+<li>目前没有找到比较好的日志收集方式</li>
+</ul>
+]]></content:encoded></item><item><title>Actix通过什么方法来实现路由注册的.RUST</title><link>https://www.kilerd.me/rust-how-actix-register-route-in-rust</link><description><![CDATA[<p>如果你写过 <code>actix-web</code> 1.0 的代码，会发现在路由注册的函数中，你可以传入各种不同签名的函数题。</p>
+<pre><code class="language-rust">App::new()
+        .service(
+            web::scope(&quot;/admin/&quot;)
+                .service(
+                    web::resource(&quot;/article&quot;).route(
+                        web::post().to(post_method),
+                        web::delete().to(delete_method)
+                    ),
+                )
+</code></pre>
+<p>不难发现，根据业务的不同，传入 <code>to</code> 方法中的函数签名必然会不同，那么 Actix 是怎么处理的呢？或者说是怎么实现这个功能的。接下来我们将一步一步实现这一个类似的需求。</p>
+]]></description><pubDate>2019-05-13 08:40:47 +08:00</pubDate><content:encoded><![CDATA[<p>如果你写过 <code>actix-web</code> 1.0 的代码，会发现在路由注册的函数中，你可以传入各种不同签名的函数题。</p>
+<pre><code class="language-rust">App::new()
+        .service(
+            web::scope(&quot;/admin/&quot;)
+                .service(
+                    web::resource(&quot;/article&quot;).route(
+                        web::post().to(post_method),
+                        web::delete().to(delete_method)
+                    ),
+                )
+</code></pre>
+<p>不难发现，根据业务的不同，传入 <code>to</code> 方法中的函数签名必然会不同，那么 Actix 是怎么处理的呢？或者说是怎么实现这个功能的。接下来我们将一步一步实现这一个类似的需求。</p>
+<!--more-->
+<h2>最小的执行框架</h2>
+<p>为了实现这个功能，我们先模拟出一个最小的框架：有一个路由 <code>Router</code> 他里面有一个方法 <code>to</code> 来注册 handler，为了方便同时关注我们所想的，handler 这里就设计成只能返回 <code>String</code>。</p>
+<pre><code class="language-rust">#[derive(Debug)]
+enum Method {
+    Head,
+    Option,
+    Get,
+    Post,
+    Patch,
+    Put,
+    Delete,
+}
+
+struct Router;
+
+impl Router {
+    pub fn to&lt;H&gt;(&amp;self, method: Method, handler: H) -&gt; &amp;Self
+    where
+        H: Fn() -&gt; String,
+    {
+        println!(&quot;handle route {:?}&quot;, method);
+        self
+    }
+}
+
+fn public_route() -&gt; String {
+    &quot;hello world&quot;.into()
+}
+
+fn main() {
+    let router = Router {};
+    router.to(Method::Get, public_route);
+}
+
+</code></pre>
+<p>代码：https://gist.github.com/8c8c8ad0dbe21d0ebacc8d9f6f5f5c78</p>
+<p>在这个演示代码中 17L，限定了传入的 handler 只能是 <code>Fn()-&gt;String</code>，意思是没有参数，同时返回值为 <code>String</code></p>
+<h2>允许传入不同参数</h2>
+<p>Rocket 和 Actix 都不约而同的采用了 Request Guard 的方式来对路由进行限制或者扩展，有一个例子是说，如果我们希望一个路由只有授权之后才能访问，那么这个 Handler 是这样签名的：</p>
+<pre><code class="language-rust">fn private_route(token: Token) -&gt; String {
+    &quot;hello private world&quot;.into()
+}
+</code></pre>
+<p>当我们注册到 <code>Router</code> 时，必然需要调用 <code>to</code> 方法，<code>router.to(method::Post, private_route)</code> ，那会出现一下的错误</p>
+<pre><code>error[E0593]: function is expected to take 0 arguments, but it takes 1 argument
+  --&gt; src/main.rs:37:6
+   |
+29 | fn private_route(token: Token) -&gt; String {
+   | ---------------------------------------- takes 1 argument
+...
+37 |     .to(Method::Post, private_route);
+   |      ^^ expected function that takes 0 arguments
+
+error: aborting due to previous error
+</code></pre>
+<p>错误原因是说 <code>to</code> 里面的 handler 范型约束了不能带参数，而 Rust 又不能写出类似 <code>where H: Fn() -&gt; String | Fn(Token) -&gt; String</code> 的或关系的骚操作，所以只能把这些关系再抽象一层，于是就抽象出了 Trait <code>HandlerFactory</code>。 这个 Trait 只是把不同的handler 包装成相似的签名。</p>
+<pre><code class="language-rust">trait HandlerFactory&lt;P&gt; {
+    fn call(&amp;self, _: P) -&gt; String;
+}
+</code></pre>
+<p>这下我们就可以通过 <code>handler.call()</code> 来执行这些 handler。</p>
+<p>同时，我们对刚刚这两个Handler 实现一下这个 Trait <code>HandlerFactory</code></p>
+<pre><code class="language-rust">impl&lt;F&gt; HandlerFactory&lt;()&gt; for F where F: Fn() -&gt; String {
+    fn call(&amp;self, _: ()) -&gt; String {
+        (self)()
+    }
+}
+
+impl&lt;F&gt; HandlerFactory&lt;(Token, )&gt; for F
+    where F: Fn(Token) -&gt; String,
+{
+    fn call(&amp;self, params: (Token, )) -&gt; String {
+        (self)(params.0)
+    }
+}
+</code></pre>
+<p>顺便再改一下 <code>to</code> 的签名，让 <code>to</code> 接受 <code>HandlerFactory</code> 的类型就可以把刚刚的两个handler 都通过 <code>to</code>方法来注册了。</p>
+<p>详情代码看这里：https://gist.github.com/3b166bc90bd6ee6dcb20d3b1f751e119</p>
+<h2>FromRequest 的抽象</h2>
+<p>在第二个handler 里面，我们传入了<code>Token</code> 类型的参数，同时用了 <code>impl&lt;F&gt; HandlerFactory&lt;(Token, )&gt; for Fwhere F: Fn(Token) -&gt; String</code> 来注册签名，那么如果我们有大量不同类型的参数的话，是不是都要一个一个明确的写出声明呢？其实不然，我们可以给这些类型共同实现一个叫 <code>FromRequest</code> 的Trait，来统一处理。</p>
+<pre><code class="language-rust">trait FromRequest {
+    fn from_request() -&gt; Self where Self: Sized;
+}
+</code></pre>
+<p>在 <code>impl FromRequest for Token</code>, <code>impl FormRequest for String</code> ... 的方法实现之后，Router 知道这是一个「实现了 <code>FromRequest</code> Trait 」的类型就可以了。意味着在 <code>to</code> 的签名里面可以换成 Trait 的名字，而不是某种具体的类型。又因为我们需要告诉 <code>HandlerFactory</code> 这些参数的具体类型，所以需要在其加多一个范型参数。</p>
+<pre><code class="language-rust">trait HandlerFactory&lt;P&gt; {
+    fn call(&amp;self, _: P) -&gt; String;
+}
+</code></pre>
+<p>再看看对单个参数的实现</p>
+<pre><code>impl&lt;F, P&gt; HandlerFactory&lt;(P, )&gt; for F
+    where F: Fn(P) -&gt; String,
+          P: FromRequest
+{
+    fn call(&amp;self, params: (P, )) -&gt; String {
+        (self)(params.0)
+    }
+}
+</code></pre>
+<p>在 3L 我们明确地指出 P 需要是实现了 <code>FromRequest</code> 的 类型。 好，需求就实现了，具体实现在<a href="https://gist.github.com/4ee6eb1e3dda0f6e7c8858a1c58026ed">这里</a></p>
+<h2>多个参数怎么办</h2>
+<p>handler 里面不可能永远都只有一个参数吧。再看看上面的那个代码，我们在 <code>HandlerFactory&lt;(P, )&gt; </code> 其实是传入了一个 Tuple，里面只有一个值，类型是 P，同时 P 还是 FromRequest 的类型。 </p>
+<p>那是不是意味着只要我们有一个 <code>HandlerFactory&lt;(P, P2)&gt; </code> 的实现就可以完成两个参数的传入了呢？没错就是这样，所以我们可以写下以下的代码：</p>
+<pre><code class="language-rust">impl&lt;F, P, P2&gt; HandlerFactory&lt;(P, P2)&gt; for F
+    where F: Fn(P, P2) -&gt; String,
+          P: FromRequest,
+          P2: FromRequest
+{
+    fn call(&amp;self, params: (P, P2)) -&gt; String {
+        (self)(params.0, params.1)
+    }
+}
+</code></pre>
+<p>那三个参数呢？四个参数呢？五个呢？以此往下，是需要重复写大量的 <code>impl </code>代码的。但是有一个问题是，对于不同的参数，它的函数签名又不一样，不能用「为某种类型实现某种 Trait」的方式一次性写完。但是又不想写那么多重复的代码怎么办？</p>
+<p>在详细看看一个参数的签名和两个参数的签名，其实只有几个地方不一样，而且大致都能复用，那么这时候宏的作用就出来了。这里我从 actix 模仿了一个出来。</p>
+<pre><code class="language-rust">macro_rules! factory_tuple ({ $(($n:tt, $T:ident)),+} =&gt; {
+    impl&lt;F, $($T,)+&gt; HandlerFactory&lt;($($T,)+)&gt; for F
+    where F: Fn($($T,)+) -&gt; String,
+    {
+        fn call(&amp;self, param: ($($T,)+)) -&gt; String {
+            (self)($(param.$n,)+)
+        }
+    }
+});
+</code></pre>
+<p>这里 Actix 的源码在<a href="https://github.com/actix/actix-web/blob/df08baf67f166d2d75118b859f1049b01944daf4/src/handler.rs#L376">src/handler.rs#L376</a></p>
+<p>关于 Rust 宏的签名可以通过<a href="https://lukaslueg.github.io/macro_railroad_wasm_demo/">这个网站</a>来查看它的签名。</p>
+<p>那么我们在实现不同参数的时候就可以通过以下简单的代码来简单实现：</p>
+<pre><code class="language-rust">factory_tuple!((0, A));
+factory_tuple!((0, A), (1, B));
+factory_tuple!((0, A), (1, B), (2, C));
+</code></pre>
+<p>对于三个参数的宏实现，展开之后是这个样子的：</p>
+<pre><code class="language-rust">impl&lt;F, A, B, C, &gt; HandlerFactory&lt;(A, B, C, )&gt; for F
+    where F: Fn(A, B, C ) -&gt; String,
+{
+    fn call(&amp;self, param: (A, B, C, )) -&gt; String {
+        (self)(param.0, param.1, param.2 )
+    }
+}
+</code></pre>
+<p>具体代码可以<a href="https://gist.github.com/7610290a37934703a4450888afb54f2f">看看这里</a></p>
+<h2>最后</h2>
+<p>这个场景确实是很常见的，这里用了以下几个特性来实现了这个功能：</p>
+<ul>
+<li>为某种类型实现Trait</li>
+<li>为「实现了某种Trait」的类型实现Trait</li>
+<li>利用宏消除重复代码</li>
+</ul>
+<h3>彩蛋</h3>
+<p>看回 <a href="https://github.com/actix/actix-web/blob/df08baf67f166d2d75118b859f1049b01944daf4/src/handler.rs#L411">acitx-web handler</a> 的实现，它只实现到了10个参数，那是不是说只要写出 11 个参数的 handler 就会报错呢？我们感觉来试一下。</p>
+<pre><code class="language-rust">
+use actix_web::{web, App, HttpServer, Responder};
+
+fn a_lot_parameters(
+    a: web::Path&lt;String&gt;,
+    b: web::Path&lt;String&gt;,
+    c: web::Path&lt;String&gt;,
+    d: web::Path&lt;String&gt;,
+    e: web::Path&lt;String&gt;,
+    f: web::Path&lt;String&gt;,
+    g: web::Path&lt;String&gt;,
+    h: web::Path&lt;String&gt;,
+    i: web::Path&lt;String&gt;,
+    j: web::Path&lt;String&gt;,
+    //    k: web::Path&lt;String&gt;,
+    //    l: web::Path&lt;String&gt;,
+    //    m: web::Path&lt;String&gt;,
+) -&gt; impl Responder {
+    &quot;hello world&quot;
+}
+
+fn main() {
+    HttpServer::new(move || {
+        App::new().route(
+            &quot;/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}/{j}/{k}/{l}/{m}&quot;,
+            web::get().to(a_lot_parameters),
+        )
+    })
+    .bind((&quot;0.0.0.0&quot;, 8000))
+    .unwrap()
+    .run();
+}
+</code></pre>
+<p>10个的情况正常启动了项目。好我们吧注释去掉一个，再启动看看会不会报错</p>
+<pre><code>error[E0277]: the trait bound `fn(actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;) -&gt; impl actix_web::responder::Responder {a_lot_parameters}: actix_web::handler::Factory&lt;_, _&gt;` is not satisfied
+   --&gt; src/main.rs:121:24
+    |
+121 |             web::get().to(a_lot_parameters),
+    |                        ^^ the trait `actix_web::handler::Factory&lt;_, _&gt;` is not implemented for `fn(actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;, actix_web::types::path::Path&lt;std::string::String&gt;) -&gt; impl actix_web::responder::Responder {a_lot_parameters}`
+
+error: aborting due to previous error
+</code></pre>
+<p>YEAH，预期地报错了✌️</p>
+]]></content:encoded></item><item><title>优化 Rust 的项目 Docker 打包流程.Rust</title><link>https://www.kilerd.me/rust-auto-optimize-dockerize-procedure</link><description><![CDATA[<p>在把 Project Rubble 从 Rocket 框架迁移到 Actix-web 的过程中，我顺便把困惑已久的 Docker 打包流程优化了不少。</p>
+<p>这篇文章适用于那些在项目中带有 <code>Denpendencies.lock</code> 类似的固定依赖版本的 LOCK 文件。</p>
+]]></description><pubDate>2019-04-28 15:52:05 +08:00</pubDate><content:encoded><![CDATA[<p>在把 Project Rubble 从 Rocket 框架迁移到 Actix-web 的过程中，我顺便把困惑已久的 Docker 打包流程优化了不少。</p>
+<p>这篇文章适用于那些在项目中带有 <code>Denpendencies.lock</code> 类似的固定依赖版本的 LOCK 文件。</p>
+<!--more-->
+<p>一般的构建流程可以分为以下几个步骤：<strong>拉取最新代码</strong> -&gt; <strong>构建</strong> -&gt; <strong>打包</strong> 。拉取代码一般都交由 CI 来完成。下文会着重讲我是怎么优化构建流程的，同时我会依照 Project Rubble 来做真实场景说明，技术栈如下： <code>Rust + Travis CI</code></p>
+<h2>什么都自己编译</h2>
+<pre><code class="language-dockerfile">FROM rust:1.29
+RUN cargo install diesel_cli --no-default-features --features postgres
+EXPOSE 8000
+COPY . /app
+WORKDIR /app
+RUN cargo build --release
+ENTRYPOINT [&quot;sh&quot;, &quot;./entrypoint.sh&quot;] 
+</code></pre>
+<p>这个阶段我们只考虑「如何把项目打包出 docker 的镜像」，所以在这个 Dockerfile 中 有两个超级耗时的命令：</p>
+<ul>
+<li><code>cargo install diesel_cli --no-default-features --features postgres</code></li>
+<li><code>cargo build --release</code></li>
+</ul>
+<p>第一步实际上是安装 <code>diesel_cli</code> ，这是为了项目的 数据库 Migration 服务的，因为在 <code>entrypoint.sh</code> 需要调用 <code>diesel migration run</code> 命令来更新数据库。</p>
+<p>第二步则是构建我们自己的项目。</p>
+<p>那么在这个场景下，第一步看似是多余的，<code>diesel_cli</code> 的作者肯定对自己的项目用 CI 跑过，测试过。那么我们是否能通过构建好的镜像来缩减这一步的耗时呢。</p>
+<h2>使用打包好的基础镜像</h2>
+<p>结论是可以的，虽然该库的作者并没有提供这么一个 Docker 镜像，但是社区上面有人封装过了 <code>clux/diesel_cli</code>， 所以我们可以用以下的方法来缩减我们构建的时间。</p>
+<pre><code class="language-dockerfile">FROM clux/muslrust:nightly as builder
+COPY . /app
+WORKDIR /app
+RUN cargo build --release
+
+FROM clux/diesel-cli
+COPY --from=builder /app/target /application/target
+COPY --from=builder /app/migrations /application/migrations
+COPY --from=builder /app/Rocket.toml /application/Rocket.toml
+COPY --from=builder /app/entrypoint.sh /application/entrypoint.sh
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/rubble /application/rubble
+
+EXPOSE 8000
+WORKDIR /application
+CMD [&quot;sh&quot;, &quot;./entrypoint.sh&quot;]
+</code></pre>
+<p>那么在看回这个构建过程，只剩下一步耗时操作 <code>cargo build --release</code> ，我们自己项目的构建过程，这里看似不能再做时间的缩减了，实则不然。</p>
+<p>我们来分析一下构建步骤内部是如何操作的：</p>
+<ul>
+<li>分析 <code>Cargo.toml</code> 和 <code>Cargo.lock</code> 来确定该应用所依赖的库和库的版本</li>
+<li>从 <code>Crates</code> 下载这些制定版本的库</li>
+<li>编译这些依赖库</li>
+<li>编译自己的应用</li>
+</ul>
+<blockquote>
+<p>在做深入的分析之前，我们先要了解一下 <code>docker build</code> 的缓存机制，简单来说，docker 会对 dockerfile 中的每一步操作进行记录，尤其是 <code>COPY</code> 和 <code>ADD</code> 操作，如果 COPY 之后的 文件HASH值（这里值的是整个 docker 镜像的哈嘻之）不变，那么在COPY 之后的 RUN 都会沿用之前的运行结果，直接命中缓存。</p>
+<p>来一个例子是说，假设我们写一个这样的Dockerfile</p>
+<pre><code class="language-dockerfile">copy test.txt
+RUN cp test.txt copy.txt
+</code></pre>
+<ul>
+<li>第一次执行，我们传入了内容为 <code>hello world</code> 的 <code>test.txt</code> 文件，docker得到执行后的hash <code>A</code>，然后只想步骤二，得到 hash <code>B</code>。</li>
+<li>第二次执行该脚本时，如果执行完第一步得到的hash值还是 <code>A</code> 的话，那么 docker 会跳过执行步骤二，直接去缓存下来的结果。</li>
+</ul>
+</blockquote>
+<p>因为每次构建都是对自己项目的全新构建，那么我们可以考虑把下载和编译依赖库的步骤缓存下来。</p>
+<h2>缓存项目的 Rust 依赖</h2>
+<p>为了缓存项目的依赖部分，我们把 Project Rubble 的 Dockerfile 构建改成了一下的样子：</p>
+<pre><code class="language-dockerfile">FROM clux/muslrust:stable as builder
+
+WORKDIR /app
+
+RUN USER=root cargo new rubble
+WORKDIR /app/rubble
+
+COPY Cargo.toml Cargo.lock ./
+
+RUN echo 'fn main() { println!(&quot;Dummy&quot;) }' &gt; ./src/main.rs
+
+RUN cargo build --release
+
+RUN rm -r target/x86_64-unknown-linux-musl/release/.fingerprint/rubble-*
+
+COPY src src/
+COPY migrations migrations/
+COPY templates templates/
+
+RUN cargo build --release --frozen --bin rubble
+
+
+FROM alpine:latest
+
+COPY --from=builder /app/rubble/migrations /application/migrations
+COPY --from=builder /app/rubble/templates /application/templates
+COPY --from=builder /app/rubble/target/x86_64-unknown-linux-musl/release/rubble /application/rubble
+
+EXPOSE 8000
+
+ENV DATABASE_URL postgres://root@postgres/rubble
+
+WORKDIR /application
+CMD [&quot;./rubble&quot;]
+</code></pre>
+<p>这个构建过程相比于上一个版本，可以拆成两个小的步骤</p>
+<h3>构建假的项目，下载并编译依赖</h3>
+<pre><code class="language-dockerfile">RUN USER=root cargo new rubble
+WORKDIR /app/rubble
+COPY Cargo.toml Cargo.lock ./
+RUN echo 'fn main() { println!(&quot;Dummy&quot;) }' &gt; ./src/main.rs
+RUN cargo build --release
+</code></pre>
+<p>相比之前的把所有源文件一起复制到 docker 镜像，这次首先把 <code>Cargo.toml</code> <code>Cargo.lock</code> 拷贝过去，然后新建一个虚拟的、假的 <code>main.rs</code> 来伪造项目入口，为的是保证项目能够正常构建。</p>
+<p>那么根据刚刚描述的 Docker 构建缓存策略，如果我们传入的两个 Cargo 文件不变（指的是项目所依赖的内容不变）的情况下，那么我们就不会在每次构建的时候都会下载和编译这些依赖，完全可以复用原来编译好的依赖。</p>
+<h3>删除自己项目的构建信息</h3>
+<pre><code class="language-dockerfile">RUN rm -r target/x86_64-unknown-linux-musl/release/.fingerprint/rubble-*
+</code></pre>
+<p>这条命令是把自己项目的构建信息删除，因为我这里用的是项目 <code>rubble</code> 的信息，所以如果要使用到自己的项目中，请就保证这里删除的目录是正确的。</p>
+<p>这里删除的应该是构建二进制文件的指纹 <code>fingerprint</code>，其实我也不太清楚为什么在 docker 构建的时候需要删除，在日常编译中却不需要，不太了解 cargo 的运行机制。但是著者试过，如果不删除这个文件，那么在下一步的真正编译项目中便会不成功。</p>
+<h3>真正的构建过程</h3>
+<pre><code class="language-dockerfile">COPY src src/
+COPY migrations migrations/
+COPY templates templates/
+
+RUN cargo build --release --frozen --bin rubble
+</code></pre>
+<p>这里就是真正地把项目源文件拷贝进 docker 镜像进行编译</p>
+<h3>最小化运行镜像</h3>
+<pre><code class="language-dockerfile">FROM alpine:latest
+
+COPY --from=builder /app/rubble/migrations /application/migrations
+COPY --from=builder /app/rubble/templates /application/templates
+COPY --from=builder /app/rubble/target/x86_64-unknown-linux-musl/release/rubble /application/rubble
+
+EXPOSE 8000
+
+ENV DATABASE_URL postgres://root@postgres/rubble
+
+WORKDIR /application
+CMD [&quot;./rubble&quot;]
+</code></pre>
+<p>这一步是可选的，因为 Rust 项目编译之后便不依赖于 Cargo 环境了，编译后的二进制文件可以直接在其对应的平台上运行，所以选择了一个最小的可运行平台来跑，以缩减系统其他套件带来的资源消耗。</p>
+<p>至此，我们把整个构建过程能缓存的部分都用缓存实现了，从之前的构建1个小时，到现在在不更新依赖的情况下10分钟完成构建，这个提升还是挺显著的。</p>
+<p>此外，项目还重新选择了 <code>embbed_migration</code> 来做数据库迁移工作，有意可以参考下 <a href="https://docs.rs/diesel_migrations/1.4.0/diesel_migrations/">diesel_migrations</a></p>
+]]></content:encoded></item><item><title>自动解引用.RUST</title><link>https://www.kilerd.me/rust-auto-deref</link><description><![CDATA[<p>解引用应该说是 Rust 为了解决不采用 Class 来实现对象化编程的一个解决方案。假想一下如果 Python 或者 Java 之流，需要对一个结构体（准确来说应该是类）进行自定义扩展：增加字段，增加方法，重写方法等等，我们可以直接用继承的方式来实现</p>
+<pre><code class="language-python">class Base:
+	a: int = 2
+
+class Extend(Base):
+	my_self_field: int = 3
+</code></pre>
+<p>当一个函数希望传入实现了 <code>Base</code> 类的所有实例时，可以直接以 <code>Base</code> 为约束，限定其参数范围。在 Java 中就可以使用基类或者 Interface 来约束。</p>
+<pre><code class="language-python">def base_bound(param: Base):
+    pass
+</code></pre>
+<p>这一套在 Rust 并不适用，在 Rust 中时采用 Struct + Trait 来抽象对象化。所以若想对结构体进行扩展，那么就只能再用一层结构体去包（wrap）住原来的结构体。</p>
+<pre><code class="language-rust">struct MyOwnDerefStruct(String);
+</code></pre>
+]]></description><pubDate>2019-04-18 06:11:25 +08:00</pubDate><content:encoded><![CDATA[<p>解引用应该说是 Rust 为了解决不采用 Class 来实现对象化编程的一个解决方案。假想一下如果 Python 或者 Java 之流，需要对一个结构体（准确来说应该是类）进行自定义扩展：增加字段，增加方法，重写方法等等，我们可以直接用继承的方式来实现</p>
+<pre><code class="language-python">class Base:
+	a: int = 2
+
+class Extend(Base):
+	my_self_field: int = 3
+</code></pre>
+<p>当一个函数希望传入实现了 <code>Base</code> 类的所有实例时，可以直接以 <code>Base</code> 为约束，限定其参数范围。在 Java 中就可以使用基类或者 Interface 来约束。</p>
+<pre><code class="language-python">def base_bound(param: Base):
+    pass
+</code></pre>
+<p>这一套在 Rust 并不适用，在 Rust 中时采用 Struct + Trait 来抽象对象化。所以若想对结构体进行扩展，那么就只能再用一层结构体去包（wrap）住原来的结构体。</p>
+<pre><code class="language-rust">struct MyOwnDerefStruct(String);
+</code></pre>
+<!--more-->
+<p>这里我们就对 <code>String</code> 进行了自己的封装，这里并没有对字段进行扩展，但是这确实在 Rust 中比较常见的场景：一旦我们希望对某个特定的 Struct 实现某个特定的 Trait，同时 Struct 和 Trait 都来自第三方库（不在当前库中定义），那么为了实现<code>impl Trait for Struct</code> ，我们就需要解决孤儿定律（Orphan Rule），此时我们就可以用这种简单的包装方式来满足他。</p>
+<blockquote>
+<h5>什么是孤儿定律 Orphan Rule？</h5>
+<p>在 Rust 中， 若想对 Struct 实现一个 Trait， 那么 Struct 和 Trait 一定要有一方是在当前库中定义的。</p>
+<p>这个约束很好理解，也很适用。</p>
+<p>假设一个场景：C 库中对 A 的 Struct 实现了 B 中的 Trait。此时我们在当前库中使用了 C 库和 A 库，那么我们可能会对 A 中的 Struct 误解，其可能已经被继承了很多奇怪的 Trait，会严重影响我们对 Struct 的使用</p>
+</blockquote>
+<p>同时，Rust 为了移除运行时和 GC 的消耗，实现了诸多智能指针：<code>Box</code> <code>Rc</code> <code>Arc</code> 等等。所以可能会出现诸如以下的包装 <code>let param: Arc&lt;Mutex&lt;Box&lt;Vec&lt;i32&gt;&gt;&gt;&gt;;</code> 这种在 Python 中只是简单的 <code>a: List&lt;int&gt;</code> 的包装。</p>
+<p>为了方便这种因为语言特性导致的额外包装，Rust 提供了自动解引用 <code>Deref</code> 来简化编程。</p>
+<pre><code class="language-rust">#[lang = &quot;deref&quot;]
+#[doc(alias = &quot;*&quot;)]
+#[doc(alias = &quot;&amp;*&quot;)]
+#[stable(feature = &quot;rust1&quot;, since = &quot;1.0.0&quot;)]
+pub trait Deref {
+    /// The resulting type after dereferencing.
+    #[stable(feature = &quot;rust1&quot;, since = &quot;1.0.0&quot;)]
+    type Target: ?Sized;
+
+    /// Dereferences the value.
+    #[must_use]
+    #[stable(feature = &quot;rust1&quot;, since = &quot;1.0.0&quot;)]
+    fn deref(&amp;self) -&gt; &amp;Self::Target;
+}
+</code></pre>
+<p>若要使用 Deref Trait，我们先看看 Deref 里面有什么东西：</p>
+<ul>
+<li><code>type Target</code> 指的是我们希望被解引用到那个数据结构。</li>
+<li><code>deref()</code> 提供了一个手动调用解引用到 <code>&amp;Target</code> 的方法。</li>
+</ul>
+<p>回到我们写的 <code>MyOwnDerefStruct</code> 例子，我们包装了 <code>String</code> 类型，如果现在有一个接收 <code>&amp;String</code> 参数的函数，在没有 Deref 的场景我们需要怎么调用他呢？</p>
+<pre><code class="language-rust">struct MyOwnDerefStruct(String);
+
+fn print(s: &amp;String) {
+    println!(&quot;{}&quot;, s);
+}
+
+fn main() {
+    let deref_struct = MyOwnDerefStruct(String::from(&quot;hello world&quot;));
+    print(&amp;deref_struct.0);
+}
+
+</code></pre>
+<p>在 L9 中，我们需要先通过 <code>deref_struct.0</code> 获取到 <code>MyOwnDerefStruct</code> 中的第一个属性 <code>String</code> ，然后再通过 <code>&amp;</code> 来转换成 <code>&amp;String</code> 。</p>
+<p>如果我们直接用会 C 中的逻辑 <code>print(&amp;deref_struct)</code> ，我们会得到以下的错误信息：</p>
+<pre><code>error[E0308]: mismatched types
+  --&gt; src/main.rs:23:11
+   |
+23 |     print(&amp;deref_struct);
+   |           ^^^^^^^^^^^^^ expected struct `std::string::String`, found struct `MyOwnDerefStruct`
+   |
+   = note: expected type `&amp;std::string::String`
+              found type `&amp;MyOwnDerefStruct`
+
+</code></pre>
+<p>此时如果我们为我们的结构体 <code>MyOwnDerefStruct</code> 实现自动解引用的话，以上代码就可以正常编译：</p>
+<pre><code class="language-rust">impl Deref for MyOwnDerefStruct {
+    type Target = String;
+
+    fn deref(&amp;self) -&gt; &amp;Self::Target {
+        return &amp;self.0;
+    }
+}
+</code></pre>
+<p>在上述代码中，我们告诉 Rust 编译器：「我们期望 <code>MyOwnDerefStruct</code> 被解到 <code>String</code>」，那么在编译过程中碰到需要 <code>&amp;String</code> 时，编译器会自动帮我们转换。而且我们还能写出以下相当 tricky 的代码 <code>print(&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;deref_struct);</code>（这代码能跑的原因，可以自行去看看 Rust 内部对 &amp; 的处理）</p>
+<p>自动解引用还有一个好处就是，他可以直接寻址到 <code>Target</code> 的方法。在我们的场景里面，<code>String</code> 中有判断两个字符串是否相等的方法 <code>eq</code> 。因为自动解引用的存在，我们并不需要 <code>deref_struct.0.eq(String::from(&quot;hello world))</code> 的写法。  <code>MyOwnDerefStruct</code> 可以直接调用 <code>eq</code> 方法。</p>
+<pre><code class="language-rust">assert_eq!(true, deref_struct.eq(&quot;hello world&quot;));
+</code></pre>
+<p>这样就避免了在使用智能指针的时候在代码中出现大量的 <code>variable_box.0.method()</code> 。避免了 <code>.0</code> 的出现，大大地简化了代码，同时也增加了代码的可读性。</p>
+<h2><code>variable.deref()</code> 和 <code>*variable</code> 的区别</h2>
+<p>使用解引用的时候需要注意的是函数 <code>deref()</code> 和 <code>*</code> 的行为是不一样的。</p>
+<ul>
+<li><code>deref()</code> 的函数原型是 <code>fn deref(&amp;self) -&gt; &amp;Self::Target;</code> 所以我们拿到的是 Target 的引用 <code>&amp;Target</code></li>
+<li><code>*</code> 是直接拿到 <code>Target</code></li>
+</ul>
+<p>所以，简单来说 <code>variable.deref()</code> 就等价于 <code>&amp;*variable</code></p>
+]]></content:encoded></item><item><title>科技的未来到底在哪里？</title><link>https://www.kilerd.me/thought-after-reading-the-electric-state</link><description><![CDATA[<p>最近把电幻国度看完了，同样主题的书籍和电影有黑镜和玩家一号。但是这几个作品表达的未来都不太一样，各自导演和作者表达了对这种技术前景的担忧和喜悦。</p>
+]]></description><pubDate>2019-02-11 08:58:38 +08:00</pubDate><content:encoded><![CDATA[<p>最近把电幻国度看完了，同样主题的书籍和电影有黑镜和玩家一号。但是这几个作品表达的未来都不太一样，各自导演和作者表达了对这种技术前景的担忧和喜悦。</p>
+<!--more-->
+<p>玩家一号是一个彻底的乐观派。在电影里面主角和绿洲世界的创造者共同表现出了人们玩家对这个新鲜事物的接受，但是电影里面也表现出了不少预料之中的负面情绪，比如像那家专门为了寻找彩蛋而生的公司。这个专门用于寻找彩蛋的公司彻彻底底地把这个虚构出来的美好世界变成了一个追求财富的过程。</p>
+<p>而对于主角来说，这个世界代表了一切，甚至对于其他人们普通老百姓而言，这个世界带来的也是利大于弊，他们把精神世界完全寄托于其中，而对于现实，他们只满足了其最基本的物质需求。在电影里面，人们甚至只居住在类似贫民窟的地方，这显然跟当前的社会发展是不一样的。</p>
+<p>然而我想这也是玩家一号、黑镜和电幻国度表达的主题都是一样的。</p>
+<p>黑镜就是一个彻彻底底的反对派，其更像是对整个科技发展的反对，因为黑镜的每一部作品都表现出了当一种科技发展到极致的时候，那种对人类摧毁性的破坏。这也是不少悲观主义者对科技发展的态度，估计黑镜的作者也是想表达这样的思想。如果一种科技没有得到克制，那么带来的破坏是远超于其便利。这个话题十分经典，无数的影视作品和文学作品都会采用这种极致的剧本来捏造戏剧性。这里就不多赘述。</p>
+<p>相反，在电幻国度中，这种态度被得以平衡。熟悉整个小说的基调都是沉闷的，却不会想黑镜那般直截了当得表现主题。电幻国度的故事发生在一个以科技为主导的战后世界。这里的战后明确地指出了是高度科技军事化的战后。军方在用无人机进行大范围的战争后，整个社会变得民不聊生。而我们的主角，是一位身边带着一个机械玩偶的小女生。</p>
+<p>在小说交代背景时，提及无人机驾驶员都无法生育后代，不是说无法怀孕，二十分娩时都是死婴。这更加间接地表现出了科技给人类带来的那种来自基因延续层面的极致破坏。它倒像是在表达一种如果人类高度依赖科技将无法得以延续的调调。</p>
+<p>接着小说就以主角小女生的视角，一步一步往海岸线出发，慢慢地向我们揭露了战后世界的荒凉荒诞。整个世纪其实并不是十分出色，节奏也控制在正常套路之中。但是电幻国度是一本画册，更多的细节和震撼来自于其插画，当阅读并且沉浸在这个情景时，再仔细去看那景色的画面，那种震撼感便油然而生。整个故事只是少年女生沿途所见所闻的小故事，作者并没有直接表达出他对科技高度发展的或褒或贬态度，而是通过现象来描绘及其可能发生的后果，以警示世人。当然，这只是我阅读时的想法，他并不想黑镜和玩家一号那样直接地表达出负面或者正面的感受。电幻国度的阅读感受更加取决于读者，这无疑是一种开发性的结局，其实还有很多作品同样表达出了对于科技高速发展的担忧，但是只是在其主线发展的间隙中穿插。而这几个作品不一样，直接地把这种担忧为主线和背景进行展开。</p>
+<p>这些年来，无论是人工智能还是其他科技的发展，都逐渐被普通百姓所关注，这显然是一件好事，更多的人关注会或多或少带来克制。从很多年前的克隆技术到现在的人工智能和大数据分析，有时候我在想科技的发展速度是不是已经超出了我们所期望，即将达到一种无法抑制的程度，当然，我不是一个彻彻底底的悲观主义者，我更加希望科技的发展方向，不是在军事，而是在更加基础的维度或者关注民生生存问题。一旦依旧是以军事为主导，那么发展的结果极其可能会跟电幻国度表现的一致。</p>
+<p>电幻国度虽然故事并没有十分出色，但是配合其插画和配乐带来的震撼感是不亚于玩家一号和黑镜的，同时还能给你带来更多、更自由的思考空间。</p>
+<p>带上一副耳机，找个安静的地方，一杯茶，一本书，仅此而已。</p>
+]]></content:encoded></item><item><title>入门就写一个博客程序吧.RUST</title><link>https://www.kilerd.me/rust-how-to-learn-it</link><description><![CDATA[<blockquote>
+<p>当你不知道要干什么的时候，那就写个博客程序吧。 —— 鲁迅</p>
+</blockquote>
+<p>是的，鲁迅曾经这么说过。当你的编程能力出现停滞的时候就写一个博客吧，尤其是入门阶段。更具体而言是写一个 CMS 系统，这也是我平时学习的习惯，我会一步一步解释清楚为什么我会选择这样的学习路线。</p>
+]]></description><pubDate>2018-12-28 15:03:59 +08:00</pubDate><content:encoded><![CDATA[<blockquote>
+<p>当你不知道要干什么的时候，那就写个博客程序吧。 —— 鲁迅</p>
+</blockquote>
+<p>是的，鲁迅曾经这么说过。当你的编程能力出现停滞的时候就写一个博客吧，尤其是入门阶段。更具体而言是写一个 CMS 系统，这也是我平时学习的习惯，我会一步一步解释清楚为什么我会选择这样的学习路线。</p>
+<!--more-->
+<h2>易上手的角度</h2>
+<p>相对于 CS 的其他方面来说， WEB 方向一直都是一个门槛相对较低的一个方向，而且在互联网的知识储备也是最丰富的，同时也是最容易做出成品的。WEB 方向可以及时的给学习者带来足够的反馈和满足，这样会更加鼓励初学者。</p>
+<p>相比于其他方向，WEB 方向的知识也是最浅的，初学者不需学习过多的前提条件即可开始开发作品。这样可以很容易地让初学者关注在新学语言的语法知识上面，而不会出现本末倒置的情况。毕竟这是一次学习新语言的过程，而不是学习 WEB 知识的过程。</p>
+<p>于这样的学习目标下，一个最小型的 WEB 系统可以让我集中注意在语言层面上。一般的语言都会有一个比较成熟的 WEB 生态，那么我们可以比较轻松地学习到如何制作用户权限，如何与数据库打交道，做 CRUD。这可以是我们学习到这个语言大部分的语法，那就足够了，我们并不需要过多关注页面样式和用户交互方面，因为那不是我们的重点。</p>
+<p>在这样的学习背景下，我写出了<a href="https://github.com/Kilerd/rubble">Project Rubble</a>，一个用 Rust 写的博客系统，现在也正式地把博客迁移到了上面去。只有那个程序真正地被使用了，你才会发现程序上会有多少的 BUG。一次一次的BUG 修复足以给你足够多的机会去熟悉该门语言。</p>
+<p>Rubble，乱石，这个名字十分贴合我创造这个轮子的原因。我本来就是希望这个项目可以让我真正地了解 Rust 的特点和语法，而且同时他会是我对 Rust 的一些试验的实验场。我需要确保有一个可运行的项目或者 DEMO 来验证我这些想法和技术，那么 Rubble 足以给我提供这样的环境。</p>
+<p>在这样的基础下，Rubble 这个项目注定是不稳定的，我可能会拼命地加很多看起来很奇怪的特性进去，因为我需要他去做实验。</p>
+<h2>可行的试验场</h2>
+<p>正如上文说，一个可运行的试验场是很重要的，因为他是你学习新知识的地方，可以验证可行性的地方。</p>
+<p>GraphQL 可以说是一个不算很新的 DSL 了，它在我的学习列表里面也停留了很久，但是就是因为没有一个可以跑的项目，导致我对 GraphQL 的认识和了解只停留在官方文档的阶段，可是这次我真正地把它加到了 Rubble 里面，同时也做了很多思考，关于用户权限的控制，关于缓存，关于递归层数等等，这些问题都是需要在真实项目中测试出来的，而不是靠文档可以提供的。</p>
+<p>RSS 的集成却是在意外之中，不过却让我很细地了解了一次 RSS 的内部实现和组成。这虽然并不是学习的主要目的，却是 Rubble 作为一个博客程序必须的部分。</p>
+<p>在此之后，一个简单能跑的的程序和网站就出现了，那么对于我而言就存在了一个完整地可以测试的地方了，那么接下来碰到新的知识点就可以在此基础上做修改。</p>
+<p>我测试包括一下的内容，分布式的储存和TOKEN实验，主要是在 REDIS 中储存TOKEN，并且还研究了一番 REDIS 集群的搭建和使用，如果没有这个网站，估计我并不知道这些知识我该如何验证。</p>
+<h2>总结</h2>
+<p>Rubble 并不是一个十分优秀的项目，甚至它的项目结构都是很差的，但是却是我学习 Rust 的一个入门项目，同时也是我的技术试验场。</p>
+<blockquote>
+<p>虽然我不能保证这个方法能适合于所有初学者，但是这个方法却是可以优秀的学习方法，毕竟对于大部分初学者而言，是没有能力参与或者制作开源项目的，那么「自娱自乐」是最好的方式。</p>
+</blockquote>
+]]></content:encoded></item><item><title>人家甩你很正常啊，你丑</title><link>https://www.kilerd.me/fine-to-break-up-with-you</link><description><![CDATA[<p>如果你能重遇一个很久之前遇见过的人，你会想对她说什么。如果命运决定你只能走那么远，你会不会奋力再拼搏一下，再努力往前走两步？</p>
+<blockquote>
+<p>那么热的夏天，少年的后背被女孩的悲伤烫出一个洞，一直贯穿到心脏，无数个季节的风穿越这条通道，有一只萤火虫在风里飞舞，忽明忽暗。</p>
+<p>——《云边有个小卖部》</p>
+</blockquote>
+]]></description><pubDate>2018-12-24 15:31:19 +08:00</pubDate><content:encoded><![CDATA[<p>如果你能重遇一个很久之前遇见过的人，你会想对她说什么。如果命运决定你只能走那么远，你会不会奋力再拼搏一下，再努力往前走两步？</p>
+<blockquote>
+<p>那么热的夏天，少年的后背被女孩的悲伤烫出一个洞，一直贯穿到心脏，无数个季节的风穿越这条通道，有一只萤火虫在风里飞舞，忽明忽暗。</p>
+<p>——《云边有个小卖部》</p>
+</blockquote>
+<!--more-->
+<h2>家乡是什么</h2>
+<p>父母经常要跟我说要经常回家，我也时刻在想家乡到底是什么，家乡难道不就是一家人在的地方吗？ </p>
+<p>在一个陌生的城市拼搏，一个人流浪。每逢家人打电话过来，无论是鲍参翅肚，还是白粥馒头，交给对面的永远都是「我过得很好，不用担心」。王莺莺在小说中说，什么是故乡，祖祖辈辈埋葬在这里，所以就叫故乡。仔细想了想，也对。长大了除了过年清明，其余时间都是在外打拼，即便是难得的假日，也怕望着望外走，而不是回家乡望一望。</p>
+<p>家乡有时候就像是一座围城，心中所系，无法忘怀，却又踌躇不定，望而却步。挥不去的童年成长记忆，却又不甘被困在那一座小城默默终日。</p>
+<p>「我花了一辈子交到的朋友扔掉，去城里认识陌生人？自己有的不要，为什么老想那些没有的。」王莺莺估计是最能看的开的一个人，很明确的知道了自己到底想要什么，到底为了什么而活。嘴上最是嫌弃那刘十三，但是在十三离乡去读大学的时候，还硬是把自己省下来的钱偷偷地塞给了十三，估计那个时候王莺莺是最难受的，仅有的一个家人要离乡背井的，不知道什么时候才能回来。</p>
+<h2>那个爱哭的孩子</h2>
+<blockquote>
+<p>文刀刘，动不动就哭的十三吗？</p>
+</blockquote>
+<p>这是程霜再次见到刘十三的第一句话。是的，刘十三始终是那个爱哭的小气鬼。永远像一个长不大的孩子，只要受那么一点委屈都可以大哭一场。但是刘十三却又是让人最有感触的一个人，他的人生似乎填满了人的一生注定要走的所有坎坷。他注定是一个平凡人，就像我们每个人。</p>
+<p>似乎每个人都会有一次彻底失败的人生那样，刘十三也是一个彻彻底底的失败者。为数不多的母亲留下来的话「努力一下考上清华」，他始终还是没能考上。倘若十三真的考上的清华，那么这个故事的走向估计还会是同样的基调，毕竟那是一个懦弱怕事，爱哭的刘十三啊。</p>
+<p>十三最令人印象深刻的两件事估计是说走就走的寻找牡丹之旅和那个说到做到的小本本。</p>
+<p>估计只有在那一刻，在被两只脚踩着的刘十三才会想到，怪不得人们说青春是轰轰烈烈的。那是程霜怂恿刘十三去找牡丹，却被牡丹男朋友暴打踩着脚下的场景。没人会想到那个懦弱爱哭的十三居然真的去找牡丹，而且还敢出手去打他的男朋友。估计那个时候主导着刘十三的只有愤怒了吧。但是撑着伞的程霜估计在暗暗流泪，心想「傻瓜，你不是还有我吗」 。</p>
+<p>或许经历过那场被暴打之后，刘十三会明白为什么牡丹离开的那趟车，明明停靠时间有两分钟，而她的告白只花了一分钟。</p>
+<p>「我会过的更好，比以前都好」在补考的教室里，在瑟瑟发抖，莫不知情的老师同学的注视下，满身泥泞的刘十三撕心裂肺地吼出了这句话。</p>
+<h2>爱上一个爱不起的人</h2>
+<blockquote>
+<p>「人家抛弃你很正常啊，你丑。你忘不掉人家很正常啊，她美。」王莺莺抱着刘十三如是说。</p>
+</blockquote>
+<p>对啊，讲道理刘十三哪里配得上程霜了，他明知道自己喜欢上了她，也知道自己根本配不上她。程霜的出现估计拯救了刘十三的整个人生。</p>
+<p>程霜，成双，这个名字暗示了成双是她一生中最渴望的事情，从小被医生诊断出活不过三年的她，坚持活到了二十岁，这本来就是一件很伟大的事情了。在第三次碰到十三后，她也知道自己这次是真的走不远了，就真正地想跟刘十三过日子，但是跟刘十三想的一样，她知道自己活不久也不应该耽误十三的一生，最后还是偷偷地离开了刘十三。</p>
+<p>对于程霜而言，最后陪伴刘十三的那段日子估计幸运地体验体验完了本来她能度过的一整个人生。陪伴刘十三，做了一个尽责的妻子。跟刘十三在面馆捡的小女孩让她做了一次幸福的妈妈。那一句「走吧，回家，孩子他爸」，抱着孩子，手挽着十三的手，程霜这时候是极其幸福的。到家后，家有一老王莺莺，左一声「乖孩子」，右一声「孙媳妇」，那应该是程霜这辈子听得最好听的几句话之一。</p>
+<h3>看穿不说穿</h3>
+<p>从头到底，十三是看穿了程霜对他的爱意， 孩子他爸的称呼，到船上划拳的多次询问，再到后面奶奶离开人世时的那声「孙媳妇在哪」 。无一不透露着程霜对刘十三的爱意，同时刘十三也无时无刻都用男性的独特的方式来表达了对程霜的爱。可惜两个人都没敢迈出最后一步，两人都在担心着自己称不上对方，怕耽误了对方的后半辈子。</p>
+<h2>有些告别，就是最后一面</h2>
+<blockquote>
+<p>树叶被风吹得轻晃，阳光破碎，蝉声隐匿，像远方的潮水。有朵盛开的云，缓缓划过山顶，随风飘向天边。</p>
+</blockquote>
+<p>刘十三最终还是那么懦弱，在程霜离开人世之后才去找她。十三欠程霜的不止一句「我爱你」，程霜也不止欠十三的一句「再见」。</p>
+<p>最终，王莺莺如愿以偿地在家乡，那个破小镇，离开了人世；程霜也如愿体验完了她想体验的一生；刘十三也可以抛下那一切挂念，远走他乡，独自拼搏。</p>
+]]></content:encoded></item><item><title>更好的 IDE 配置.RUST</title><link>https://www.kilerd.me/rust-better-ide</link><description><![CDATA[<p>这段时间一直忙于折腾 Rust，自从 Rust 2018 Edition 出来之后，一个很明显的感受就是写起来更加符合一个现代化编程语言的样子，当然也有可能是我的水平太低了，还不足以体验到 Rust 那种非人类的写法和特性。</p>
+<p>这一系列文章会是我记录 Rust 学习路程的文章，那么自然而然地就是从环境配置开始了。</p>
+<blockquote>
+<p>PS: 这一系列的文章都是以 MacOS 为基础，不会过多涉及 自编译 Rust、环境折腾等等内容，更加注重在如何高效地进行 Rust 开发和 Rust学习技巧。</p>
+</blockquote>
+]]></description><pubDate>2018-12-11 02:51:19 +08:00</pubDate><content:encoded><![CDATA[<p>这段时间一直忙于折腾 Rust，自从 Rust 2018 Edition 出来之后，一个很明显的感受就是写起来更加符合一个现代化编程语言的样子，当然也有可能是我的水平太低了，还不足以体验到 Rust 那种非人类的写法和特性。</p>
+<p>这一系列文章会是我记录 Rust 学习路程的文章，那么自然而然地就是从环境配置开始了。</p>
+<blockquote>
+<p>PS: 这一系列的文章都是以 MacOS 为基础，不会过多涉及 自编译 Rust、环境折腾等等内容，更加注重在如何高效地进行 Rust 开发和 Rust学习技巧。</p>
+</blockquote>
+<!--more-->
+<h2>Rustup</h2>
+<p>Rust 官方推荐使用 Rustup 来安装，这是一个相对好的软件，他可以帮你管理一系列的 Rust 生态。它在某种程度上像 Python 的 <code>pipenv</code> ，Node 的 <code>nvm</code> 和 <code>n</code> 。Rust 的环境需要装很多东西：</p>
+<ul>
+<li><code>cargo</code> 项目管理和依赖管理</li>
+<li><code>rust-std</code> Rust 的 std 库，用于代码提示和分析</li>
+<li><code>rustfmt</code> 用于格式化代码</li>
+<li><code>cargo-watch</code> 监控文件修改以便重启服务的插件</li>
+</ul>
+<p>等等，很多很多的配套软件生态。同时 Rust 自己也有三个大版本<code>stable</code> <code>beta</code> <code>nightly</code> 。三个版本之间的组件也各不相同。因此在版本切换的时候就需要同时更新相对于的生态组件。Rustup 就很好的帮助我们管理。</p>
+<p>安装就不过多描述，<a href="https://rustup.rs/">详情可以查看这里</a></p>
+<h2>IDE 的选择</h2>
+<p>目前来说，Rust 最好用的有三个编译器支持 <code>vim</code> <code>vs code</code> <code>JetBrains IntelliJ</code></p>
+<p>当然如果你愿意折腾其他的IDE，可以查阅这里 <a href="https://areweideyet.com/">Are we IDE yet</a></p>
+<p>我个人大部分时间用的是 <code>JetBrains Clion</code> ，实际上是跟 <code>IntelliJ</code> 是一样的。小部分时间在使用 <code>vs code</code> 。</p>
+<p>这里我会讲一些我日常用的 IDEA 插件</p>
+<h3>Rainbow Brackets</h3>
+<p><img src="https://i.loli.net/2018/12/11/5c0f2171407a1.jpg" alt="rainbow-brackets.jpg" /></p>
+<p>这个东西可以让你更加直观地匹配到括号的范围</p>
+<h3>Highlight Bracket Pair</h3>
+<p><img src="https://i.loli.net/2018/12/11/5c0f221588cbb.jpg" alt="highlight bracket pair.jpg" /></p>
+<p>在一些复杂的函数里面，可以可以比较清晰地看到当前 block 的范围</p>
+<h3>Git Conflict</h3>
+<p>这个插件是用来高亮 conflict 的范围，不需要人肉查看冲突的范围在哪个部分</p>
+<h3>Active Intellij Tab Highlighter</h3>
+<p><img src="https://i.loli.net/2018/12/11/5c0f221598f1a.jpg" alt="tab-highlighter.jpg" /></p>
+<p>IntelliJ 的高亮 TAB 一直都是一个很麻烦的问题，所以这个插件可以自定义颜色用来高亮当前的 TAB</p>
+<h2>常用的几个 Cargo 组件</h2>
+<h3><a href="https://github.com/passcod/cargo-watch">cargo-watch</a></h3>
+<p>cargo-watch 用来自动监听项目文件以重新执行编译工作。目前来说我最经常的使用场景就是</p>
+<ul>
+<li><code>cargo watch -x run</code> 一般用于 web 的开发</li>
+<li><code>cargo watch -x test</code> 用于写库时自动重新跑 Testcase</li>
+</ul>
+<h3>Cargo doc</h3>
+<p>这个就是自带的命令，用于生成项目的文档</p>
+]]></content:encoded></item></channel></rss>

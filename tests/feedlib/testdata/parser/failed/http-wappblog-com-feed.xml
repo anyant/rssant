@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Этот домен припаркован компанией Timeweb</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400&display=swap" rel="stylesheet">
+    <link href="/css/styles.css" rel="stylesheet">
+
+    <link rel="shortcut icon" href="/img/favicons/favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1">
+
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M3G54ZS');</script>
+    <!-- End Google Tag Manager -->
+</head>
+<body>
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M3G54ZS"
+                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+<header class="header">
+    <div class="container container_flex">
+        <a href="https://timeweb.com/ru/" class="header__logo">
+            <div class="header__name"></div>
+            <div class="header__arrow"></div>
+        </a>
+        <p class="header__text">Больше,<br> чем хостинг.</p>
+    </div>
+</header>
+<main>
+    <div class="container mtb30">
+        <div class="parking-block">
+            <div class="container-preloader">
+                <div class="item-1"></div>
+                <div class="item-2"></div>
+                <div class="item-3"></div>
+                <div class="item-4"></div>
+                <div class="item-5"></div>
+            </div>
+            <div class="parking-block__text" style="display: none">Разместите свой сайт в Timeweb</div>
+        </div>
+    </div>
+    <div class="container mtb30">
+        <div class="yandex-box">
+            <!-- Yandex.RTB R-A-516496-1 -->
+            <div id="yandex_rtb_R-A-516496-1"></div>
+        </div>
+    </div>
+    <div class="container mtb30">
+        <div class="host-site">
+            <div class="host-site__title">Разместите свой сайт в Timeweb</div>
+            <div class="host-site__text">
+                Timeweb - компания, которая размещает сайты клиентов в Интернете, регистрирует адреса сайтов и
+                предоставляет аренду виртуальных и физических серверов. Разместите свой сайт в Сети - расскажите миру о себе!
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="container-flex">
+            <div class="product-option">
+                <div class="product-option__best">Наш самый популяный продукт</div>
+                <div class="product-option__box">
+                    <div class="product-option__picture-bg product-option__picture-bg_vh"></div>
+                    <h2 class="product-option__name">Виртуальный хостинг</h2>
+                    <div class="product-option__text">
+                        Быстрая загрузка вашего сайта, бесплатное доменное имя, SSL-сертификат и почта. Первоклассная круглосуточная поддержка
+                    </div>
+                    <div class="product-option__price-block">
+                        <div class="price ml5">
+                            <span>от&nbsp;&nbsp;</span>
+                            <b>119</b>
+                            <span>&nbsp;&nbsp;руб./мес.</span>
+                        </div>
+                        <a href="https://timeweb.com/ru/services/hosting/" class="btn-main btn-main_mt30">Узнать больше</a>
+                    </div>
+                </div>
+            </div>
+            <div class="product-option">
+                <div class="product-option__box">
+                    <div class="product-option__picture-bg product-option__picture-bg_vds"></div>
+                    <h2 class="product-option__name">VDS</h2>
+                    <div class="product-option__text">
+                        Производительность и масштабируемые ресурсы для вашего проекта. Персональный сервер по цене виртуального хостинга.
+                    </div>
+                    <div class="product-option__price-block">
+                        <div class="price ml5">
+                            <span>от&nbsp;&nbsp;</span>
+                            <b>171</b>
+                            <span>&nbsp;&nbsp;руб./мес.</span>
+                        </div>
+                        <a href="https://timeweb.com/ru/services/vds/" class="btn-main btn-main_mt30">Узнать больше</a>
+                    </div>
+                </div>
+            </div>
+            <div class="product-option">
+                <div class="product-option__box">
+                    <div class="product-option__picture-bg product-option__picture-bg_dedic"></div>
+                    <h2 class="product-option__name">Выделенные серверы</h2>
+                    <div class="product-option__text">
+                        Мощный и гибкий в настройке индивидуальный сервер. Идеально для крупных и нагруженных проектов.
+                    </div>
+                    <div class="product-option__price-block">
+                        <div class="price ml5">
+                            <span>от&nbsp;&nbsp;</span>
+                            <b>3 000</b>
+                            <span>&nbsp;&nbsp;руб./мес.</span>
+                            <div class="clearfix"></div>
+                        </div>
+                        <a href="https://timeweb.com/ru/services/dedicated-server/" class="btn-main btn-main_mt30">Узнать больше</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="search-domen">
+            <div class="search-domen-bg"></div>
+            <div class="search-domen__search-box">
+                <div class="search-domen__title">Регистрация доменов</div>
+                <div class="search-domen__text">Огромный выбор и лучшие цены на регистрацию и продление</div>
+                <form method="get" action="https://timeweb.com/ru/services/domains/" class="search-domen__form">
+                    <input class="search-domen__input" type="text" id="domain-search-input" name="d" value="" autocomplete="off" placeholder="">
+                    <button class="btn-main">Проверить домен</button>
+                </form>
+            </div>
+            <div class="search-domen__list">
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.RU - </span>
+                    <span class="search-domen__list-price">159 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.РФ - </span>
+                    <span class="search-domen__list-price">159 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.COM - </span>
+                    <span class="search-domen__list-price">699 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.ONLINE - </span>
+                    <span class="search-domen__list-price">499 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.INFO - </span>
+                    <span class="search-domen__list-price">299 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.CLUB - </span>
+                    <span class="search-domen__list-price">1 299 руб.</span>
+                </div>
+                <div class="search-domen__list-item">
+                    <span class="search-domen__list-zone">.CATZ - </span>
+                    <span class="search-domen__list-price">3 299 руб.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <a href="https://timeweb.com/ru/" class="header__logo">
+            <div class="header__name"></div>
+            <div class="header__arrow"></div>
+        </a>
+        <address class="footer__address">
+            © 2006-2019 ООО «ТаймВэб».<br>
+            Адрес: 196006, Россия, Санкт-Петербург,<br>
+            ул. Заставская, д. 22, корп.2, лит. А, 8 этаж
+        </address>
+    </div>
+    <script src="/js/jquery-2.1.3.js"></script>
+    <script type="text/javascript">
+        (function(w, d, n, s, t) {
+            w[n] = w[n] || [];
+            w[n].push(function() {
+                Ya.Context.AdvManager.render({
+                    blockId: "R-A-516496-1",
+                    renderTo: "yandex_rtb_R-A-516496-1",
+                    async: true
+                });
+            });
+            t = d.getElementsByTagName("script")[0];
+            s = d.createElement("script");
+            s.type = "text/javascript";
+            s.src = "//an.yandex.ru/system/context.js";
+            s.async = true;
+            t.parentNode.insertBefore(s, t);
+        })(this, this.document, "yandexContextAsyncCallbacks");
+        $(document).ready(function () {
+            setTimeout(function(){
+                $('.container-preloader').hide();
+                $('.parking-block__text').show();
+            },3000);
+        });
+    </script>
+</footer>
+</body>
+</html>

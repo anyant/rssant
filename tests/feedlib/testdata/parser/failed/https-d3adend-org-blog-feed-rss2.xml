@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <title>dead &amp;&amp; end</title>
+    <meta charset="utf-8" />
+    <meta name="generator" content="Hugo 0.55.6" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Neil Bergman" />
+    <meta name="description" content="" />
+    <link rel="stylesheet" href="https://d3adend.org/blog/css/main.min.59023e5fd38d6ecb0e1dfbb295077c3c67e00e3b9eb3feaf34b5a5e6b332897a.css" />
+
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="dead &amp;&amp; end"/>
+<meta name="twitter:description" content=""/>
+
+    <meta property="og:title" content="dead &amp;&amp; end" />
+<meta property="og:description" content="" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://d3adend.org/blog/" />
+
+<meta property="og:updated_time" content="2019-06-05T19:47:11&#43;01:00"/>
+
+
+  </head>
+  <body>
+    <header class="app-header">
+      <a href="https://d3adend.org/blog"><img class="app-header-avatar" src="/blog/avatar.jpg" alt="Neil Bergman" /></a>
+      <h1>dead &amp;&amp; end</h1>
+      <p>Neil Bergman&#39;s Software Security Blog</p>
+      <div class="app-header-social">
+        
+          <a target="_blank" href="https://twitter.com/neilbergman"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter">
+  <title>twitter</title>
+  <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+</svg></a>
+        
+      </div>
+    </header>
+    <main class="app-container">
+      
+  <article>
+    <h1>dead &amp;&amp; end</h1>
+    <ul class="posts-list">
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/cloudiot-write-ups/">Cloudiot Write-ups (Internal NCC Group CTF)</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 68 min read -
+            Jun 5, 2019
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/argument-injection-hammer/">Argument Injection Hammer Burp Suite Extension</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 5 min read -
+            May 17, 2019
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/microcorruption-write-ups-1-10/">Microcorruption Write-ups (1 - 10)</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 18 min read -
+            Oct 2, 2018
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/dialogic-powermedia-xms-multiple-vulnerabilities/">Dialogic PowerMedia XMS Multiple Vulnerabilities</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 13 min read -
+            Jun 24, 2018
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/maxthon-browser-arbitrary-file-write-login-page-uxss-and-sql-injection/">Maxthon Browser Arbitrary File Write, Login Page UXSS, and SQL Injection</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 28 min read -
+            Nov 10, 2016
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/react-native-development-server-remote-os-command-injection-and-remote-file-disclosure/">React Native Development Server Remote OS Command Injection and Remote File Disclosure</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 7 min read -
+            May 12, 2016
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/android-anti-hooking-techniques-in-java/">Android Anti-Hooking Techniques in Java</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 8 min read -
+            Dec 23, 2015
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/puffin-browser-rce-and-remote-file-disclosure/">Puffin Browser RCE and Remote File Disclosure</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 8 min read -
+            Dec 8, 2015
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/abusing-uiwebview-baseurl-settings-in-the-cordova-childbrowser-plug-in/">Abusing UIWebView baseURL settings in the Cordova ChildBrowser Plug-in</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 5 min read -
+            Apr 3, 2015
+          </span>
+        </li>
+      
+        <li class="posts-list-item">
+          <a class="posts-list-item-title" href="https://d3adend.org/blog/posts/javelin-browser-rce-and-password-manager-information-disclosure/">Javelin Browser RCE and Password Manager Information Disclosure</a>
+          <span class="posts-list-item-description">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock">
+  <title>clock</title>
+  <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+</svg> 5 min read -
+            Apr 2, 2015
+          </span>
+        </li>
+      
+    </ul>
+    
+
+<ul class="pagination">
+  
+  
+  <li class="page-item active">
+    <a class="page-link" href="/blog/">
+      1
+    </a>
+  </li>
+  
+  <li class="page-item">
+    <a class="page-link" href="/blog/page/2/">
+      2
+    </a>
+  </li>
+  
+  
+  <li class="page-item">
+    <a class="page-link" href="/blog/page/2/">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-arrow-right">
+  <title>arrow-right</title>
+  <line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>
+</svg>
+    </a>
+  </li>
+  
+</ul>
+
+
+
+  </article>
+
+    </main>
+  </body>
+</html>

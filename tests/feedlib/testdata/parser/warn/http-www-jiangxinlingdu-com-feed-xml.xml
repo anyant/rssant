@@ -1,0 +1,2186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>匠心零度</title>
+    <description>http://www.jiangxinlingdu.com?github</description>
+    <link>http://www.jiangxinlingdu.com/</link>
+    <atom:link href="http://www.jiangxinlingdu.com/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Mon, 06 Apr 2020 11:52:38 +0800</pubDate>
+    <lastBuildDate>Mon, 06 Apr 2020 11:52:38 +0800</lastBuildDate>
+    <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>IntelliJ IDEA 进行远程调试技巧</title>
+        <description>&lt;h2 id=&quot;1-前言&quot;&gt;1. 前言&lt;/h2&gt;
+
+&lt;p&gt;今天线上出现了个 Bug ，而且比较坑的是涉及到微信相关的东西不能线下调试。传统方式是在代码中各种的日志 log 埋点然后重新部署进行调试，再根据 log 中的信息进行分析。如果你的 log 埋点不合理，就要不停的修改代码、不停的打包部署。有没有什么骚操作避免上面的问题呢？&lt;/p&gt;
+
+&lt;h2 id=&quot;2-远程调试&quot;&gt;2. 远程调试&lt;/h2&gt;
+
+&lt;p&gt;当然有解决方案，这就是远程调试（Remote debugging）。远程调试使开发人员能够直接诊断服务器或其它线上进程上的问题，它提供了跟踪线上运行时错误并确定性能瓶颈和问题根源的方法，让你能够像在本地调试一样 Debug 远程服务器。接下来我们将使用流行的 Java IDE，由 JetBrains 出品的 &lt;strong&gt;IntelliJ IDEA&lt;/strong&gt; 来进行远程调试。要让远程服务器运行的代码支持远程调试，则启动的时候必须加上特定的 JVM 参数，这些参数是：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-Xdebug -Xrunjdwp:transport=dt_socket,suspend=n,server=y,address=${debug_port}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中 &lt;code class=&quot;highlighter-rouge&quot;&gt;debug_port&lt;/code&gt; 是服务端开放的调试端口，后续本地配置会用到。&lt;/p&gt;
+
+&lt;h2 id=&quot;3-使用-idea-进行远程调试&quot;&gt;3. 使用 IDEA 进行远程调试&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;IntelliJ IDEA&lt;/strong&gt; 进行远程调试并不复杂经过下面几个步骤就可以很方便的配置。&lt;/p&gt;
+
+&lt;h3 id=&quot;31-本地参数配置&quot;&gt;3.1 本地参数配置&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/0.1455922366518167.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;按照上面图的位置打开配置面板新建一个 &lt;strong&gt;Remote&lt;/strong&gt; 调试面板如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/0.616777377993128.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;按照上图所示的顺序结合你自己服务器和本地环境依次进行配置,然后点击确定就行了。其中步骤 2 和 4 端口就是我们远端指定的 &lt;code class=&quot;highlighter-rouge&quot;&gt;debug_port&lt;/code&gt; 端口号。&lt;/p&gt;
+
+&lt;h3 id=&quot;32-jdwp-协议&quot;&gt;3.2 JDWP 协议&lt;/h3&gt;
+
+&lt;p&gt;这里有一个小小的知识点就是 参数中的 &lt;code class=&quot;highlighter-rouge&quot;&gt;jdwp&lt;/code&gt; 。那么什么是 &lt;code class=&quot;highlighter-rouge&quot;&gt;jdwp&lt;/code&gt;?&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;JDWP 是 Java Debug Wire Protocol 的缩写，它定义了调试器（debugger）和目标虚拟机（target vm）之间的通信协议。Target vm 中运行着我们要调试的 Java 程序，它与一般运行的 JVM 没有什么区别，只是在启动时加载了 JDWP Agent 从而具备了调试功能。而 debugger 就是我们本地的调试器，它向运行中的 target vm 发送指令来获取 target vm 运行时的状态和控制远程 Java 程序的执行。Debugger 和 target vm 分别在各自的进程中运行，他们之间通过 JDWP 通信协议进行通信。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;33-开启远程调试&quot;&gt;3.3 开启远程调试&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/0.9504527146327909.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;点击箭头所示的 &lt;strong&gt;绿色甲虫按钮 （快捷键 Shift + F9）&lt;/strong&gt; 就启动调试了，然后设置好本地代码的断点，让远程的逻辑触发断点逻辑就可以进行打断点调试了。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;请务必保证本地 debug 的代码与远程部署的代码完全一致，不能发生任何的修改！否则断点将无法命中！&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;4-一些要点&quot;&gt;4. 一些要点&lt;/h2&gt;
+
+&lt;p&gt;除了需要保证代码一致外，这里还有一些需要我们注意的地方。调试完毕远程的 JDWP Agent 应该被禁用，也就是将远端的相关参数去掉。另外在调试中远端的日志并不会映射到本地，当然你可以借助一些工具将远程的日志映射到本地以提供更强大的调试功能。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;还要记住，虽然远程调试是一个非常强大的工具，但是它并非银弹！生产环境不是调试的合适目标，请勿滥用！&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;5-总结&quot;&gt;5. 总结&lt;/h2&gt;
+
+&lt;p&gt;正如我在本文中介绍的那样，使用 &lt;strong&gt;IntelliJ IDEA&lt;/strong&gt; 进行远程调试非常简单，只需几个步骤即可使用。有些情况下它很方便地解决了我们的问题。但是它不应该被滥用，应该被合理地使用。&lt;/p&gt;
+
+&lt;p&gt;本文作者：码农小胖哥&lt;br /&gt;
+链接：https://zhuanlan.zhihu.com/p/95098721&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 06 Apr 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/idea/2020/04/06/idearemote.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/idea/2020/04/06/idearemote.html</guid>
+        
+        <category>idea</category>
+        
+        
+        <category>idea</category>
+        
+      </item>
+    
+      <item>
+        <title>工作中99%能用到的git命令</title>
+        <description>&lt;h2 id=&quot;分支操作&quot;&gt;分支操作&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git branch 创建分支&lt;/li&gt;
+  &lt;li&gt;git checkout -b 创建并切换到新建的分支上&lt;/li&gt;
+  &lt;li&gt;git checkout 切换分支&lt;/li&gt;
+  &lt;li&gt;git branch 查看分支列表&lt;/li&gt;
+  &lt;li&gt;git branch -v 查看所有分支的最后一次操作&lt;/li&gt;
+  &lt;li&gt;git branch -vv 查看当前分支&lt;/li&gt;
+  &lt;li&gt;git brabch -b 分支名 origin/分支名 创建远程分支到本地&lt;/li&gt;
+  &lt;li&gt;git branch –merged 查看别的分支和当前分支合并过的分支&lt;/li&gt;
+  &lt;li&gt;git branch –no-merged 查看未与当前分支合并的分支&lt;/li&gt;
+  &lt;li&gt;git branch -d 分支名 删除本地分支&lt;/li&gt;
+  &lt;li&gt;git branch -D 分支名 强行删除分支&lt;/li&gt;
+  &lt;li&gt;git push origin –delete 分支名 删除远处仓库分支&lt;/li&gt;
+  &lt;li&gt;git merge 分支名 合并分支到当前分支上&lt;/li&gt;
+  &lt;li&gt;git push –set-upstream origin 分支名 / git push origin 分支名 将本地分支推送到远程仓库&lt;/li&gt;
+  &lt;li&gt;git checkout -b 本地分支名 origin/远程分支名 下载远程仓库分支到本地&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;暂存操作&quot;&gt;暂存操作&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git stash 暂存当前修改&lt;/li&gt;
+  &lt;li&gt;git stash apply 恢复最近的一次暂存&lt;/li&gt;
+  &lt;li&gt;git stash pop 恢复暂存并删除暂存记录&lt;/li&gt;
+  &lt;li&gt;git stash list 查看暂存列表&lt;/li&gt;
+  &lt;li&gt;git stash drop 暂存名(例：stash@{0}) 移除某次暂存&lt;/li&gt;
+  &lt;li&gt;git stash clear 清除暂存&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;回退操作&quot;&gt;回退操作&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git reset –hard HEAD^ 回退到上一个版本&lt;/li&gt;
+  &lt;li&gt;git reset –hard ahdhs1(commit_id) 回退到某个版本&lt;/li&gt;
+  &lt;li&gt;git checkout – file撤销修改的文件(如果文件加入到了暂存区，则回退到暂存区的，如果文件加入到了版本库，则还原至加入版本库之后的状态)&lt;/li&gt;
+  &lt;li&gt;git reset HEAD file 撤回暂存区的文件修改到工作区&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;标签操作&quot;&gt;标签操作&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git tag 标签名 添加标签(默认对当前版本)&lt;/li&gt;
+  &lt;li&gt;git tag 标签名 commit_id 对某一提交记录打标签&lt;/li&gt;
+  &lt;li&gt;git tag -a 标签名 -m ‘描述’ 创建新标签并增加备注&lt;/li&gt;
+  &lt;li&gt;git tag 列出所有标签列表&lt;/li&gt;
+  &lt;li&gt;git show 标签名 查看标签信息&lt;/li&gt;
+  &lt;li&gt;git tag -d 标签名 删除本地标签&lt;/li&gt;
+  &lt;li&gt;git push origin 标签名 推送标签到远程仓库&lt;/li&gt;
+  &lt;li&gt;git push origin –tags 推送所有标签到远程仓库&lt;/li&gt;
+  &lt;li&gt;git push origin :refs/tags/标签名 从远程仓库中删除标签&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;其它操作&quot;&gt;其它操作&lt;/h2&gt;
+
+&lt;h3 id=&quot;常规操作&quot;&gt;常规操作&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git push origin test 推送本地分支到远程仓库&lt;/li&gt;
+  &lt;li&gt;git rm -r –cached 文件/文件夹名字 取消文件被版本控制&lt;/li&gt;
+  &lt;li&gt;git reflog 获取执行过的命令&lt;/li&gt;
+  &lt;li&gt;git log –graph 查看分支合并图&lt;/li&gt;
+  &lt;li&gt;git merge –no-ff -m ‘合并描述’ 分支名 不使用Fast forward方式合并，采用这种方式合并可以看到合并记录&lt;/li&gt;
+  &lt;li&gt;git check-ignore -v 文件名 查看忽略规则&lt;/li&gt;
+  &lt;li&gt;git add -f 文件名 强制将文件提交&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;git创建项目仓库&quot;&gt;git创建项目仓库&lt;/h3&gt;
+
+&lt;p&gt;1、git init 初始化
+2、git remote add origin url 关联远程仓库
+3、git pull
+4、git fetch 获取远程仓库中所有的分支到本地&lt;/p&gt;
+
+&lt;h3 id=&quot;忽略已加入到版本库中的文件&quot;&gt;忽略已加入到版本库中的文件&lt;/h3&gt;
+
+&lt;p&gt;1、git update-index –assume-unchanged file 忽略单个文件
+2、git rm -r –cached 文件/文件夹名字 (. 忽略全部文件)&lt;/p&gt;
+
+&lt;h3 id=&quot;取消忽略文件&quot;&gt;取消忽略文件&lt;/h3&gt;
+
+&lt;p&gt;git update-index –no-assume-unchanged file&lt;/p&gt;
+
+&lt;h3 id=&quot;拉取上传免密码&quot;&gt;拉取、上传免密码&lt;/h3&gt;
+
+&lt;p&gt;git config –global credential.helper store&lt;/p&gt;
+
+&lt;p&gt;本文作者：命中水&lt;br /&gt;
+链接：https://www.cxiansheng.cn/daily/490&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 02 Apr 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/git/2020/04/02/git.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/git/2020/04/02/git.html</guid>
+        
+        <category>git</category>
+        
+        
+        <category>git</category>
+        
+      </item>
+    
+      <item>
+        <title>提高Linux效率的30个命令行常用快捷键</title>
+        <description>&lt;h2 id=&quot;说明&quot;&gt;说明&lt;/h2&gt;
+&lt;p&gt;我们经常有时候需要敲命令，但是效率比较低，今天看到一篇非常不错的 提高Linux效率的30个命令行常用快捷键，供读者享用&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;快捷键&lt;/th&gt;
+      &lt;th&gt;功能说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;最有用快捷键&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;tab&lt;/td&gt;
+      &lt;td&gt;命令或路径等的补全键，Linux最有用快捷键*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;移动光标快捷键&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+a&lt;/td&gt;
+      &lt;td&gt;光标回到命令行首*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+e&lt;/td&gt;
+      &lt;td&gt;光标回到命令行尾*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+f&lt;/td&gt;
+      &lt;td&gt;光标向右移动一个字符（相当于方向键右键）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+b&lt;/td&gt;
+      &lt;td&gt;光标向左移动一个字符（相当于方向键左键）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;剪切、粘贴、清除快捷键&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+Insert&lt;/td&gt;
+      &lt;td&gt;复制命令行内容*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Shift+Insert&lt;/td&gt;
+      &lt;td&gt;粘贴命令行内容*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+k&lt;/td&gt;
+      &lt;td&gt;剪切（删除）光标处到行尾的字符*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+u&lt;/td&gt;
+      &lt;td&gt;剪切（删除）光标处到行首的字符*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+w&lt;/td&gt;
+      &lt;td&gt;剪切（删除）光标前的一个单词&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+y&lt;/td&gt;
+      &lt;td&gt;粘贴Ctrl+u，Ctrl+k，Ctrl+w删除的文本&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+c&lt;/td&gt;
+      &lt;td&gt;中断终端正在执行的任务或者删除整行*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+h&lt;/td&gt;
+      &lt;td&gt;删除光标所在处的前一个字符（相当于退格键）&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;重复执行命令快捷键&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+d&lt;/td&gt;
+      &lt;td&gt;退出当前Shell命令行*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+r&lt;/td&gt;
+      &lt;td&gt;搜索命令行使用过的历史命令记录*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+g&lt;/td&gt;
+      &lt;td&gt;从执行Ctrl+r的搜索历史命令模式退出&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Esc+.(点)&lt;/td&gt;
+      &lt;td&gt;获取上一条命令的最后的部分（空格分隔）*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;控制快捷键&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+l&lt;/td&gt;
+      &lt;td&gt;清除屏幕所有内容，并在屏幕最上面开始一个新行，等同clear命令*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+s&lt;/td&gt;
+      &lt;td&gt;锁定终端，使之无法输入内容&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+q&lt;/td&gt;
+      &lt;td&gt;解锁执行Ctrl+s的锁定状态&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Ctrl+z&lt;/td&gt;
+      &lt;td&gt;暂停执行在终端运行的任务*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!号开头的快捷命令&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!!&lt;/td&gt;
+      &lt;td&gt;执行上一条命令&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!pw&lt;/td&gt;
+      &lt;td&gt;执行最近以pw开头的命令*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!pw:p&lt;/td&gt;
+      &lt;td&gt;仅打印最近pw开头的命令，但不执行&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!num&lt;/td&gt;
+      &lt;td&gt;执行历史命令列表的第num(数字)条命令*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;!$&lt;/td&gt;
+      &lt;td&gt;上一条命令的最后一个参数，相当于Esc+.(点)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ESC相关&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Esc+.(点)&lt;/td&gt;
+      &lt;td&gt;获取上一条命令的最后的部分（空格分隔）*&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Esc+b&lt;/td&gt;
+      &lt;td&gt;移动到当前单词的开头&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Esc+f&lt;/td&gt;
+      &lt;td&gt;移动到当前单词的结尾&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Esc+t&lt;/td&gt;
+      &lt;td&gt;颠倒光标所在处及其相邻单词的位置&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;注：上述快捷键适合SecureCRT和Xshell客户端。其中带有符号“*”的为常用快捷键。&lt;/p&gt;
+
+&lt;p&gt;本文作者：老男孩oldboy&lt;br /&gt;
+链接：https://blog.51cto.com/oldboy/2112948&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 29 Mar 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/linux/2020/03/29/linux.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/linux/2020/03/29/linux.html</guid>
+        
+        <category>linux</category>
+        
+        
+        <category>linux</category>
+        
+      </item>
+    
+      <item>
+        <title>ElasticSearch实用化订单搜索方案</title>
+        <description>&lt;h2 id=&quot;前言&quot;&gt;前言：&lt;/h2&gt;
+
+&lt;p&gt;站外推广系统订单报表一直是一个痛点，研究后选择ES搜索引擎进行改造。上线来遇到很多问题，经历了很多的修改，现在系统终于正常运行，满足订单报表大数据量、实时更新、响应快、多维度查询的需求。&lt;/p&gt;
+
+&lt;p&gt;文章原本是用ppt来编写的，这里只能修改为图片来展示。&lt;/p&gt;
+
+&lt;h2 id=&quot;一为什么选择es&quot;&gt;一、为什么选择ES&lt;/h2&gt;
+
+&lt;p&gt;搜索引擎中，主要考虑到ES支持结构化数据查询以及支持实时频繁更新特性：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/173413_2whd_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;二总体系统架构&quot;&gt;二、总体系统架构&lt;/h2&gt;
+
+&lt;p&gt;整个业务线使用服务化方式，ES集群和数据库分库，作为数据源被订单服务系统封装为对外统一接口；各前后台应用和报表中心，使用服务化的方式获取订单数据。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/173735_nixs_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;三数据更新设计&quot;&gt;三、数据更新设计&lt;/h2&gt;
+
+&lt;p&gt;ES数据更新有批量更新和实时更新两种：&lt;/p&gt;
+
+&lt;p&gt;1、手动更新为初始化数据，或者修复数据时使用&lt;/p&gt;
+
+&lt;p&gt;2、实时更新通过监控数据库订单表的binlog，进行实时同步&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174025_4ZaD_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;四机器索引参数配置&quot;&gt;四、机器、索引、参数配置&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174358_6OK3_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;五索引结构图&quot;&gt;五、索引结构图&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174530_1JrJ_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;六机器性能选择&quot;&gt;六、机器性能选择&lt;/h2&gt;
+
+&lt;p&gt;对于频繁更新一定要考虑到使用SSD&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174651_VUIf_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;七文档id选择&quot;&gt;七、文档id选择&lt;/h2&gt;
+
+&lt;p&gt;因为是订单数据，并且有频繁数据更新，所以我们选择自己指定的唯一id，具体对比如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174754_uQJh_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;八实时更新数据方案&quot;&gt;八、实时更新数据方案&lt;/h2&gt;
+
+&lt;p&gt;实时数据更新采用监听数据库binlog的方式实现：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174918_67Mm_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/174931_yhfX_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;九数据一致性解决方案&quot;&gt;九、数据一致性解决方案&lt;/h2&gt;
+
+&lt;p&gt;不一致原因：&lt;/p&gt;
+
+&lt;p&gt;1、各域代码发布&lt;/p&gt;
+
+&lt;p&gt;2、网络延时&lt;/p&gt;
+
+&lt;p&gt;3、集群故障&lt;/p&gt;
+
+&lt;p&gt;4、vdp、vms丢数据&lt;/p&gt;
+
+&lt;p&gt;解决方案：&lt;/p&gt;
+
+&lt;p&gt;1、使用调度任务，每天对比三个月内每天的数据&lt;/p&gt;
+
+&lt;p&gt;2、如果存在数据不一致，自动批量同步当天数据&lt;/p&gt;
+
+&lt;p&gt;3、数据不一致，自动发送告警邮件&lt;/p&gt;
+
+&lt;p&gt;4、调度任务可随时手动终止&lt;/p&gt;
+
+&lt;p&gt;5、至今尚未出现不一致的情况&lt;/p&gt;
+
+&lt;h2 id=&quot;十数据更新查询接口&quot;&gt;十、数据更新、查询接口&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/175159_gxq3_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/175216_J0ts_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/175235_a1qk_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/175252_fsRb_2485991.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;作者：罗一鸣&lt;br /&gt;
+链接：https://www.jianshu.com/p/c81edc59546c&lt;/p&gt;
+
+</description>
+        <pubDate>Fri, 27 Mar 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/practice/2020/03/27/es.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/practice/2020/03/27/es.html</guid>
+        
+        <category>practice</category>
+        
+        
+        <category>practice</category>
+        
+      </item>
+    
+      <item>
+        <title>Java中的BigDecimal类你了解多少？</title>
+        <description>&lt;h2 id=&quot;java中的bigdecimal类你了解多少&quot;&gt;Java中的BigDecimal类你了解多少？&lt;/h2&gt;
+
+&lt;h2 id=&quot;前言&quot;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;我们都知道浮点型变量在进行计算的时候会出现丢失精度的问题。如下一段代码：&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.05&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.0&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.42&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;4.015&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;123.3&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;100&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;输出：&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;0.060000000000000005&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;0.5800000000000001&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;401.49999999999994&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;1.2329999999999999&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以看到在Java中进行浮点数运算的时候，会出现丢失精度的问题。那么我们如果在进行商品价格计算的时候，就会出现问题。很有可能造成我们手中有0.06元，却无法购买一个0.05元和一个0.01元的商品。因为如上所示，他们两个的总和为0.060000000000000005。这无疑是一个很严重的问题，尤其是当电商网站的并发量上去的时候，出现的问题将是巨大的。可能会导致无法下单，或者对账出现问题。所以接下来我们就可以使用Java中的BigDecimal类来解决这类问题。&lt;/p&gt;
+
+&lt;p&gt;普及一下：&lt;/p&gt;
+
+&lt;p&gt;Java中float的精度为6-7位有效数字。double的精度为15-16位。&lt;/p&gt;
+
+&lt;h2 id=&quot;api&quot;&gt;API&lt;/h2&gt;
+
+&lt;p&gt;构造器：&lt;/p&gt;
+
+&lt;div class=&quot;language-cpp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;err&quot;&gt;构造器&lt;/span&gt;                   &lt;span class=&quot;err&quot;&gt;描述&lt;/span&gt;                      
+  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;       &lt;span class=&quot;err&quot;&gt;创建一个具有参数所指定整数值的对象。&lt;/span&gt;      
+  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;创建一个具有参数所指定双精度值的对象。&lt;/span&gt;     
+  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;long&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;      &lt;span class=&quot;err&quot;&gt;创建一个具有参数所指定长整数值的对象。&lt;/span&gt;     
+  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;创建一个具有参数所指定以字符串表示的数值的对象。&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;函数：&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;err&quot;&gt;方法&lt;/span&gt;                    &lt;span class=&quot;err&quot;&gt;描述&lt;/span&gt;                         
+  &lt;span class=&quot;k&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;       &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值相加，然后返回这个对象。&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;subtract&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值相减，然后返回这个对象。&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;multiply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值相乘，然后返回这个对象。&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;divide&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值相除，然后返回这个对象。&lt;/span&gt;
+  &lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;            &lt;span class=&quot;err&quot;&gt;将&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象的数值转换成字符串。&lt;/span&gt;    
+  &lt;span class=&quot;nf&quot;&gt;doubleValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;         &lt;span class=&quot;err&quot;&gt;将&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值以双精度数返回。&lt;/span&gt;   
+  &lt;span class=&quot;nf&quot;&gt;floatValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;          &lt;span class=&quot;err&quot;&gt;将&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值以单精度数返回。&lt;/span&gt;   
+  &lt;span class=&quot;nf&quot;&gt;longValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;           &lt;span class=&quot;err&quot;&gt;将&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值以长整数返回。&lt;/span&gt;    
+  &lt;span class=&quot;nf&quot;&gt;intValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;            &lt;span class=&quot;err&quot;&gt;将&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;对象中的值以整数返回。&lt;/span&gt;     
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;由于一般的数值类型，例如double不能准确的表示16位以上的数字。&lt;/p&gt;
+
+&lt;h2 id=&quot;bigdecimal精度也丢失&quot;&gt;BigDecimal精度也丢失&lt;/h2&gt;
+
+&lt;p&gt;我们在使用BigDecimal时，使用它的BigDecimal(String)构造器创建对象才有意义。其他的如BigDecimal b = new BigDecimal(1)这种，还是会发生精度丢失的问题。如下代码：&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.01&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.02&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1.01&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;1.02&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+&lt;span class=&quot;err&quot;&gt;输出：&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;2.0300000000000000266453525910037569701671600341796875&lt;/span&gt;
+&lt;span class=&quot;m&quot;&gt;2.03&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可见论丢失精度BigDecimal显的更为过分。但是使用Bigdecimal的BigDecimal(String)构造器的变量在进行运算的时候却没有出现这种问题。 究其原因计算机组成原理里面都有，它们的编码决定了这样的结果。long可以准确存储19位数字，而double只能准备存储16位数字。double由于有exp位，可以存16位以上的数字，但是需要以低位的不精确作为代价。如果需要高于19位数字的精确存储，则必须用BigInteger来保存，当然会牺牲一些性能。所以我们一般使用BigDecimal来解决商业运算上丢失精度的问题的时候，声明BigDecimal对象的时候一定要使用它构造参数为String的类型的构造器。&lt;/p&gt;
+
+&lt;p&gt;同时这个原则Effective Java和MySQL 必知必会中也都有提及。float和double只能用来做科学计算和工程计算。商业运算中我们要使用BigDecimal。&lt;/p&gt;
+
+&lt;p&gt;而且我们从源码的注释中官方也给出了说明，如下是BigDecimal类的double类型参数的构造器上的一部分注释说明：&lt;/p&gt;
+
+&lt;div class=&quot;language-dart highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;The&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;results&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;of&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;constructor&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;can&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;somewhat&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;unpredictable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;One&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;might&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;assume&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;that&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;writing&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Java&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;creates&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;which&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exactly&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;equal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;an&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;unscaled&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;of&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;with&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scale&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;of&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;but&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;is&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;actually&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;equal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.1000000000000000055511151231257827021181583404541015625&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;This&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;because&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.1&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cannot&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;represented&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exactly&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;or&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;that&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;matter&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;binary&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fraction&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;of&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;any&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;finite&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;Thus&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;value&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;that&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;being&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;passed&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;in&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;constructor&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exactly&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;equal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;0.1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appearances&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;notwithstanding&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+       &lt;span class=&quot;err&quot;&gt;……&lt;/span&gt;
+        &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;When&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;must&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;be&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;used&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;kn&quot;&gt;source&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;note&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;that&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;constructor&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;provides&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;an&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exact&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conversion&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;does&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;give&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;same&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;result&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;converting&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@link&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;#toString&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;method&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;then&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@link&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;#BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;constructor&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;To&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;get&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;that&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;result&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;use&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@code&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;static&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nd&quot;&gt;@link&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;#valueOf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;
+     &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ol&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;val&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;val&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MathContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;UNLIMITED&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第一段也说的很清楚它只能计算的无限接近这个数，但是无法精确到这个数。第二段则说，如果要想准确计算这个值，那么需要把double类型的参数转化为String类型的。并且使用BigDecimal(String)这个构造方法进行构造。 去获取结果。&lt;/p&gt;
+
+&lt;h2 id=&quot;正确运用bigdecimal&quot;&gt;正确运用BigDecimal&lt;/h2&gt;
+
+&lt;p&gt;另外，BigDecimal所创建的是对象，我们不能使用传统的+、-、*、/等算术运算符直接对其对象进行数学运算，而必须调用其相对应的方法。方法中的参数也必须是BigDecimal的对象，由刚才我们所罗列的API也可看出。&lt;/p&gt;
+
+&lt;p&gt;在一般开发过程中，我们数据库中存储的数据都是float和double类型的。在进行拿来拿去运算的时候还需要不断的转化，这样十分的不方便。这里我写了一个工具类：&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cm&quot;&gt;/**
+ * @author: Ji YongGuang.
+ * @date: 19:50 2017/12/14.
+ */&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BigDecimalUtil&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimalUtil&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;// v1 + v2&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;sub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;subtract&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;mul&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;multiply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;div&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;toString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// 2 = 保留小数点后两位   ROUND_HALF_UP = 四舍五入&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;divide&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ROUND_HALF_UP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;// 应对除不尽的情况&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;该工具类提供了double类型的基本的加减乘除运算。直接调用即可。&lt;/p&gt;
+
+&lt;p&gt;作者：HikariCP&lt;br /&gt;
+链接：https://www.jianshu.com/p/c81edc59546c&lt;/p&gt;
+
+</description>
+        <pubDate>Sun, 22 Mar 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/practice/2020/03/22/bigdecimal.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/practice/2020/03/22/bigdecimal.html</guid>
+        
+        <category>practice</category>
+        
+        
+        <category>practice</category>
+        
+      </item>
+    
+      <item>
+        <title>Java中的锁原理、锁优化、CAS、AQS</title>
+        <description>&lt;h2 id=&quot;1为什么要用锁&quot;&gt;1、为什么要用锁？&lt;/h2&gt;
+
+&lt;p&gt;锁-是为了解决并发操作引起的脏读、数据不一致的问题。&lt;/p&gt;
+
+&lt;h2 id=&quot;2锁实现的基本原理&quot;&gt;2、锁实现的基本原理&lt;/h2&gt;
+
+&lt;h3 id=&quot;21volatile&quot;&gt;2.1、volatile&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Java编程语言允许线程访问共享变量， 为了确保共享变量能被准确和一致地更新，线程应该确保通过排他锁单独获得这个变量。Java语言提供了volatile，在某些情况下比锁要更加方便。&lt;/p&gt;
+
+  &lt;p&gt;volatile在多处理器开发中保证了共享变量的“ 可见性”。可见性的意思是当一个线程修改一个共享变量时，另外一个线程能读到这个修改的值。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-9f7389128a85f7c1.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;p&gt;结论：如果volatile变量修饰符使用恰当的话，它比synchronized的使用和执行成本更低，因为它不会引起线程上下文的切换和调度。&lt;/p&gt;
+
+&lt;h3 id=&quot;22synchronized&quot;&gt;2.2、synchronized&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;synchronized通过锁机制实现同步。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;先来看下利用synchronized实现同步的基础：Java中的每一个对象都可以作为锁。&lt;/p&gt;
+
+&lt;p&gt;具体表现为以下3种形式。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;对于普通同步方法，锁是当前实例对象。&lt;/li&gt;
+  &lt;li&gt;对于静态同步方法，锁是当前类的Class对象。&lt;/li&gt;
+  &lt;li&gt;对于同步方法块，锁是Synchonized括号里配置的对象。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;当一个线程试图访问同步代码块时，它首先必须得到锁，退出或抛出异常时必须释放锁。&lt;/p&gt;
+
+&lt;h4 id=&quot;221-synchronized实现原理&quot;&gt;2.2.1 synchronized实现原理&lt;/h4&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;synchronized是基于Monitor来实现同步的。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Monitor从两个方面来支持线程之间的同步：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;互斥执行&lt;/li&gt;
+  &lt;li&gt;协作&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;1、Java 使用对象锁 ( 使用 synchronized 获得对象锁 ) 保证工作在共享的数据集上的线程互斥执行。&lt;/p&gt;
+
+&lt;p&gt;2、使用 notify/notifyAll/wait 方法来协同不同线程之间的工作。&lt;/p&gt;
+
+&lt;p&gt;3、Class和Object都关联了一个Monitor。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-de9a8db9928ca68a.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Monitor 的工作机理&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;线程进入同步方法中。&lt;/li&gt;
+  &lt;li&gt;为了继续执行临界区代码，线程必须获取 Monitor 锁。如果获取锁成功，将成为该监视者对象的拥有者。任一时刻内，监视者对象只属于一个活动线程（The Owner）&lt;/li&gt;
+  &lt;li&gt;拥有监视者对象的线程可以调用 wait() 进入等待集合（Wait Set），同时释放监视锁，进入等待状态。&lt;/li&gt;
+  &lt;li&gt;其他线程调用 notify() / notifyAll() 接口唤醒等待集合中的线程，这些等待的线程需要&lt;strong&gt;重新获取监视锁后&lt;/strong&gt;才能执行 wait() 之后的代码。&lt;/li&gt;
+  &lt;li&gt;同步方法执行完毕了，线程退出临界区，并释放监视锁。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;参考文档：&lt;a href=&quot;https://link.jianshu.com?t=https%3A%2F%2Fwww.ibm.com%2Fdeveloperworks%2Fcn%2Fjava%2Fj-lo-synchronized%2F&quot;&gt;https://www.ibm.com/developerworks/cn/java/j-lo-synchronized&lt;/a&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;222-synchronized具体实现&quot;&gt;2.2.2 synchronized具体实现&lt;/h4&gt;
+
+&lt;p&gt;1、同步代码块采用monitorenter、monitorexit指令显式的实现。&lt;/p&gt;
+
+&lt;p&gt;2、同步方法则使用ACC_SYNCHRONIZED标记符隐式的实现。&lt;/p&gt;
+
+&lt;p&gt;通过实例来看看具体实现：&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SynchronizedTest&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+ 
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;synchronized&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;method1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello World!&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+ 
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt;  &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;method2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(){&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;synchronized&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;){&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;out&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Hello World!&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;javap编译后的字节码如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-0d29b096e9c77f09.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;monitorenter&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;每一个对象都有一个monitor，一个monitor只能被一个线程拥有。当一个线程执行到monitorenter指令时会尝试获取相应对象的monitor，获取规则如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;如果monitor的进入数为0，则该线程可以进入monitor，并将monitor进入数设置为1，该线程即为monitor的拥有者。&lt;/li&gt;
+  &lt;li&gt;如果当前线程已经拥有该monitor，只是重新进入，则进入monitor的进入数加1，所以synchronized关键字实现的锁是可重入的锁。&lt;/li&gt;
+  &lt;li&gt;如果monitor已被其他线程拥有，则当前线程进入阻塞状态，直到monitor的进入数为0，再重新尝试获取monitor。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;monitorexit&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;只有拥有相应对象的monitor的线程才能执行monitorexit指令。每执行一次该指令monitor进入数减1，当进入数为0时当前线程释放monitor，此时其他阻塞的线程将可以尝试获取该monitor。&lt;/p&gt;
+
+&lt;h4 id=&quot;223-锁存放的位置&quot;&gt;2.2.3 锁存放的位置&lt;/h4&gt;
+
+&lt;p&gt;锁标记存放在Java对象头的Mark Word中。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-f794a9da707c8884.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Java对象头长度&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-423237ba213114c9.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;32位JVM Mark Word 结构&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-d88cbe17d78b4ef4.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;32位JVM Mark Word 状态变化&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-dd289041866d7cb6.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;64位JVM Mark Word 结构&lt;/p&gt;
+
+&lt;h4 id=&quot;223-synchronized的锁优化&quot;&gt;2.2.3 synchronized的锁优化&lt;/h4&gt;
+
+&lt;p&gt;JavaSE1.6为了减少获得锁和释放锁带来的性能消耗，引入了“偏向锁”和“轻量级锁”。&lt;/p&gt;
+
+&lt;p&gt;在JavaSE1.6中，锁一共有4种状态，级别从低到高依次是：无锁状态、偏向锁状态、轻量级锁状态和重量级锁状态，这几个状态会随着竞争情况逐渐升级。&lt;/p&gt;
+
+&lt;p&gt;锁可以升级但不能降级，意味着偏向锁升级成轻量级锁后不能降级成偏向锁。这种锁升级却不能降级的策略，目的是为了提高获得锁和释放锁的效率。&lt;/p&gt;
+
+&lt;h5 id=&quot;偏向锁&quot;&gt;偏向锁：&lt;/h5&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;无锁竞争的情况下为了减少锁竞争的资源开销，引入偏向锁。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-c1f25c4a5f0001af.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;h5 id=&quot;轻量级锁&quot;&gt;轻量级锁：&lt;/h5&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;轻量级锁所适应的场景是线程交替执行同步块的情况。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-4f4487faff288712.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;锁粗化（Lock Coarsening）：&lt;/strong&gt;也就是减少不必要的紧连在一起的unlock，lock操作，将多个连续的锁扩展成一个范围更大的锁。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;锁消除（Lock Elimination）：&lt;/strong&gt;锁削除是指虚拟机即时编译器在运行时，对一些代码上要求同步，但是被检测到不可能存在共享数据竞争的锁进行削除。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;适应性自旋（Adaptive Spinning）：&lt;/strong&gt;自适应意味着自旋的时间不再固定了，而是由前一次在同一个锁上的自旋时间及锁的拥有者的状态来决定。如果在同一个锁对象上，自旋等待刚刚成功获得过锁，并且持有锁的线程正在运行中，那么虚拟机就会认为这次自旋也很有可能再次成功，进而它将允许自旋等待持续相对更长的时间，比如100个循环。另一方面，如果对于某个锁，自旋很少成功获得过，那在以后要获取这个锁时将可能省略掉自旋过程，以避免浪费处理器资源。&lt;/p&gt;
+
+&lt;h4 id=&quot;224-锁的优缺点对比&quot;&gt;2.2.4 锁的优缺点对比&lt;/h4&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-dc1cb474286e917c.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;h3 id=&quot;23cas&quot;&gt;2.3、CAS&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;CAS，在Java并发应用中通常指CompareAndSwap或CompareAndSet，即比较并交换。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;1、CAS是一个原子操作，它比较一个内存位置的值并且只有相等时修改这个内存位置的值为新的值，保证了新的值总是基于最新的信息计算的，如果有其他线程在这期间修改了这个值则CAS失败。CAS返回是否成功或者内存位置原来的值用于判断是否CAS成功。&lt;/p&gt;
+
+&lt;p&gt;2、JVM中的CAS操作是利用了处理器提供的CMPXCHG指令实现的。&lt;/p&gt;
+
+&lt;p&gt;优点：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;竞争不大的时候系统开销小。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;缺点：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;循环时间长开销大。&lt;/li&gt;
+  &lt;li&gt;ABA问题。&lt;/li&gt;
+  &lt;li&gt;只能保证一个共享变量的原子操作。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;3java中的锁实现&quot;&gt;3、Java中的锁实现&lt;/h2&gt;
+
+&lt;h3 id=&quot;31队列同步器aqs&quot;&gt;3.1、队列同步器（AQS）&lt;/h3&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;队列同步器AbstractQueuedSynchronizer（以下简称同步器），是用来构建锁或者其他同步组件的基础框架。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h4 id=&quot;311它使用了一个int成员变量表示同步状态&quot;&gt;3.1.1、它使用了一个int成员变量表示同步状态。&lt;/h4&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-58ec8eff9511a3e4.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;h4 id=&quot;312通过内置的fifo双向队列来完成获取锁线程的排队工作&quot;&gt;3.1.2、通过内置的FIFO双向队列来完成获取锁线程的排队工作。&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;同步器包含两个节点类型的应用，一个指向头节点，一个指向尾节点，未获取到锁的线程会创建节点线程安全（compareAndSetTail）的加入队列尾部。同步队列遵循FIFO，首节点是获取同步状态成功的节点。&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-30e2658e38e1966c.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;image.png&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;未获取到锁的线程将创建一个节点，设置到尾节点。如下图所示：&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-addd5edd9723c8db.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;首节点的线程在释放锁时，将会唤醒后继节点。而后继节点将会在获取锁成功时将自己设置为首节点。如下图所示：&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-d118af99f2bacad5.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;image.png&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;313独占式共享式锁获取&quot;&gt;3.1.3、独占式/共享式锁获取&lt;/h4&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;独占式：有且只有一个线程能获取到锁，如：ReentrantLock。&amp;lt;/pre&amp;gt;&lt;/p&gt;
+
+  &lt;p&gt;共享式：可以多个线程同时获取到锁，如：CountDownLatch&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h5 id=&quot;独占式&quot;&gt;独占式&lt;/h5&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;每个节点自旋观察自己的前一节点是不是Header节点，如果是，就去尝试获取锁。&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-943a473d1d87cc7d.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;image.png&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;独占式锁获取流程：&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-50bc00c23df33d60.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;h5 id=&quot;共享式&quot;&gt;共享式：&lt;/h5&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;共享式与独占式的区别：&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-d0031b43b65487d7.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;image.png&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;共享锁获取流程：&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-8f66fdebba19eff8.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;image.png&lt;/p&gt;
+
+&lt;h2 id=&quot;4锁的使用用例&quot;&gt;4、锁的使用用例&lt;/h2&gt;
+
+&lt;h3 id=&quot;41concurrenthashmap的实现原理及使用&quot;&gt;4.1、ConcurrentHashMap的实现原理及使用&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-460898019c2b5b0a.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;ConcurrentHashMap类图&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2020/5401760-f2f0bb8727e6d4b2.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;ConcurrentHashMap数据结构&lt;/p&gt;
+
+&lt;p&gt;结论：ConcurrentHashMap使用的锁分段技术。首先将数据分成一段一段地存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据的时候，其他段的数据也能被其他线程访问。&lt;/p&gt;
+
+&lt;p&gt;本文作者：景小财&lt;br /&gt;
+作者简介：美团外卖活动业务负责人
+链接：https://www.jianshu.com/p/e674ee68fd3f&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 19 Mar 2020 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/concurrent/2020/03/19/concurrent.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/concurrent/2020/03/19/concurrent.html</guid>
+        
+        <category>concurrent</category>
+        
+        
+        <category>concurrent</category>
+        
+      </item>
+    
+      <item>
+        <title>学习高效编程之 Vim 方法</title>
+        <description>&lt;h2 id=&quot;为什么学习-vim&quot;&gt;为什么学习 Vim&lt;/h2&gt;
+
+&lt;p&gt;通过模式，Vim 赋予了同一个按键多种功能，大大提高了按键的功效，可以让我们释放鼠标和主键盘到方向键的切换，从而让我们双手集中在键盘中央区域，提高效率。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;学习 Vim 就是为了显著提升编码效率，对自己要求严格点，坚持做正确的事情，而不是容易的事情！！！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;我学习-vim-的思路&quot;&gt;我学习 Vim 的思路&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;系统的看书学习 Vim&lt;/li&gt;
+  &lt;li&gt;多处不断练习 Vim（包括 idea、浏览器、iTerm2等）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;读书系统学习-vim&quot;&gt;读书系统学习 Vim&lt;/h2&gt;
+
+&lt;p&gt;我拍了几张图，内容如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/WechatIMG4.jpeg&quot; alt=&quot;WechatIMG4&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/WechatIMG1.jpeg&quot; alt=&quot;WechatIMG1&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/WechatIMG2.jpeg&quot; alt=&quot;WechatIMG2&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/WechatIMG3.jpeg&quot; alt=&quot;WechatIMG3&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/WechatIMG5.jpeg&quot; alt=&quot;WechatIMG5&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;多处不断练习-vim&quot;&gt;多处不断练习 Vim&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Idea 集成 Vim 插件使用&lt;/li&gt;
+  &lt;li&gt;谷歌浏览器集成 Vim 插件使用&lt;/li&gt;
+  &lt;li&gt;放弃一些文本编辑器 使用 iTerm2 编辑普通文本&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;idea-集成-vim-插件使用&quot;&gt;Idea 集成 Vim 插件使用&lt;/h2&gt;
+
+&lt;h5 id=&quot;idea-里面-集成-vim-插件&quot;&gt;Idea 里面 集成 Vim 插件&lt;/h5&gt;
+
+&lt;p&gt;对 java 来说，IntelliJ IDEA 可能就是王者了，怎么在 idea 里面集成 Vim 插件呢？&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/image-20191017084936948.png&quot; alt=&quot;image-20191017084936948&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;idea-里面开启-vim-模式&quot;&gt;Idea 里面开启 Vim 模式&lt;/h5&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/image-20191017085029804.png&quot; alt=&quot;image-20191017085029804&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;**备注： ** 每个人的快捷键可能有所不同！&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;####&lt;/p&gt;
+
+&lt;h5 id=&quot;idea-集成-vim-插件演示&quot;&gt;Idea 集成 Vim 插件演示&lt;/h5&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/2019-10-17 08.57.19.gif&quot; alt=&quot;2019-10-17 08.57.19&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;在 Idea 里面使用 Vim 可以让我们释放鼠标和主键盘到方向键的切换，从而让我们双手集中在键盘中央区域，提高效率。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;谷歌浏览器集成-vim-插件使用&quot;&gt;谷歌浏览器集成 Vim 插件使用&lt;/h2&gt;
+
+&lt;h5 id=&quot;谷歌浏览器集成-vim-插件&quot;&gt;谷歌浏览器集成 Vim 插件&lt;/h5&gt;
+
+&lt;p&gt;Vimium 这个名字其实是 Vim 和 Chromium 的合体。可能很多童鞋已经猜到她是干嘛的了，她继承了Vim的常用操作，完全脱离鼠标来控制浏览器，是一款黑客级别的Chrome插件，简直是神器。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/image-20191017090328976.png&quot; alt=&quot;image-20191017090328976&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;#####谷歌浏览器集成 Vim 插件演示&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/2019-10-17 08.58.16.gif&quot; alt=&quot;2019-10-17 08.58.16&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;在谷歌浏览器里面使用 Vim 插件可以让我们释放鼠标和主键盘到方向键的切换，从而让我们双手集中在键盘中央区域，提高效率。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;放弃一些文本编辑器-使用-iterm2-编辑普通文本&quot;&gt;放弃一些文本编辑器 使用 iTerm2 编辑普通文本&lt;/h2&gt;
+
+&lt;p&gt;为了使用 Vim，我把很多文本编辑器也强制自己不适用了，比如 sublime text ，而强制自己使用 ITerm2。&lt;/p&gt;
+
+&lt;h5 id=&quot;使用-iterm2-演示&quot;&gt;使用 iTerm2 演示&lt;/h5&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/2019-10-17 09.12.27.gif&quot; alt=&quot;2019-10-17 09.12.27&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;总结&quot;&gt;总结&lt;/h2&gt;
+
+&lt;p&gt;&lt;strong&gt;学习 Vim 就是为了显著提升编码效率，对自己要求严格点，坚持做正确的事情，而不是容易的事情！！！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;学习 Vim 没有什么技巧，需要不断练习，形成肌肉记忆即可，一起加油，一起练习！！！&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;后面准备深入学习下 dubbo，到时候用 Vim 和 idea 结合阅读源码估计会别有一番滋味！&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;也期待大家留言区积极留言，交流关于高效编程的一些技能或者软件，多谢！！！！&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 17 Oct 2019 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/linux/2019/10/17/study-vim.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/linux/2019/10/17/study-vim.html</guid>
+        
+        <category>linux</category>
+        
+        
+        <category>linux</category>
+        
+      </item>
+    
+      <item>
+        <title>vim编程 -- 学习vim笔记</title>
+        <description>&lt;p&gt;学习vim最主要的目的还是提高代码效率，学习编程中最重要的还是编程的思考，所以手下功夫一定不能耽误思维的流畅。
+本人主要从事游戏开发，以VSCode做为主，虽然之前已经对编辑器自身的快捷键很熟悉了，但是在编辑代码上的效率还是不满意，索性就开始学习“神之编辑器”。&lt;/p&gt;
+
+&lt;h2 id=&quot;从两个方向去学习vim命令&quot;&gt;从两个方向去学习vim命令&lt;/h2&gt;
+
+&lt;h3 id=&quot;1-从vim命令本身的结构去学习&quot;&gt;1. 从vim命令本身的结构去学习&lt;/h3&gt;
+
+&lt;h3 id=&quot;2-从编程中常用的操作流程去实践&quot;&gt;2. 从编程中常用的操作流程去实践&lt;/h3&gt;
+
+&lt;hr /&gt;
+
+&lt;h2 id=&quot;vim基本结构&quot;&gt;vim基本结构&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;vim基本分为4个基本模式，普通模式，插入模式，可视模式，命令模式。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;普通模式&lt;/strong&gt;通过按键操作，进行移动、复制、粘贴、删除、替换、屏幕滚动等操作。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;插入模式&lt;/strong&gt;如同最普通的文本编辑器一样的，写作模式。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;可视模式&lt;/strong&gt;用来选择文本的模式，如同鼠标选择文本一样方便。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;命令模式&lt;/strong&gt;输入vim提供的指令来完成相关操作。主要为设置环境、文件操作等。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;4个模式之间相关跳转完成编辑。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;模式下跳转&quot;&gt;模式下跳转&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt; 普通模式下按`&amp;lt;ESC&amp;gt;`会取消当前命令，其他模式下按`&amp;lt;ESC&amp;gt;`会跳转到普通模式。
+&amp;gt; 普通模式按`:`进入命令模式。
+&amp;gt; 普通模式按`v`进入**普通**可视模式。
+&amp;gt; 普通模式按`V`进入**行**可视模式。
+&amp;gt; 普通模式按`&amp;lt;CTRL&amp;gt; + v`进入**块**可视模式。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;1-普通模式下&quot;&gt;1. 普通模式下&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`i/I` 前/最前 **插入**;
+`a/A` 后/最后 **插入**;
+`o/O` 下/上行 **插入**;
+`c + 命令` 删除**插入**;
+
+`s/S` 删除插入（要与sround模式和sneak模式区分）;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;&lt;strong&gt;替换模式&lt;/strong&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`R/gR` 进入替换模式（替换后面的字符）,推荐gR。
+`r/gr` 处理一个字符的替换，返回普通模式。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;2-可视模式下&quot;&gt;2. 可视模式下&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`I` 进入 **插入**;
+`o` 切换移动点
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;3-插入模式下&quot;&gt;3. 插入模式下&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;C w&amp;gt; 删除前一个单词
+&amp;lt;C u&amp;gt; 删除至行首
+&amp;lt;C r&amp;gt;{register}将寄存器的内容粘贴到光标所在的位置，如：&amp;lt;C - r&amp;gt;=6*3&amp;lt;Enter&amp;gt;插入18。
+&amp;lt;C v&amp;gt;{123} 以十进制字符插入字符。
+&amp;lt;C v&amp;gt;u{123}以十六进制字符编码插入字符。
+&amp;lt;C k&amp;gt;{char1}{char2} 插入以二合字母{char1}{char2}表示的字符。
+
+这个模式允许执行一次普通模式命令，执行完后回到插入模式。
+&amp;lt;C o&amp;gt;进入“插入-普通模式”。
+&amp;lt;C o&amp;gt;zz 把当前行置于窗口正中，这个经常用。
+&amp;lt;C [&amp;gt;退出到普通模式==&amp;lt;Esc&amp;gt;
+
+`f+字符` find 向下找一个字符，`t+字符`找之前
+
+`#`,`*`(shift+3/8)查找上/下一个光标所在相同的单词
+% 匹配括号跳转
+
+D 删除当前到末尾
+`[{`、`]}`跳转函数体最上最下括号
+在块模式下按I(大写i),可进入多光标情况
+ctrl+o( older )/i返回到前/后一个光标位置
+gd 查询所属单词定义
+
+`vib/vi(`（选中`()`内的内容）
+`viB/vi{`（选中`{}`内的内容）
+`vi&quot;`（选中`&quot;`内的内容）
+`vi'`（选中`'`内的内容）
+`vi&amp;lt;`（选中`&amp;lt;&amp;gt;`内的内容）
+
+vis 选中一个句子
+vib 选中一个block
+viw 选中一个单词
+vip 选中一个段落
+
+`~` 大小写互相转换
+`U/u` 可视模式下所选改为大/小写
+`gU/u` + iw/aw/w/e....
+`gUU/guu` 当前行大/小写
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;视觉模式下
+ii选中函数体&lt;/p&gt;
+
+&lt;p&gt;删除
+d/word 删除到word前 Exp: d/;&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;重复类型&lt;/th&gt;
+      &lt;th&gt;重复操作符&lt;/th&gt;
+      &lt;th&gt;回退操作符&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;文本改变重复&lt;/td&gt;
+      &lt;td&gt;.&lt;/td&gt;
+      &lt;td&gt;u&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;行内查找重复&lt;/td&gt;
+      &lt;td&gt;;&lt;/td&gt;
+      &lt;td&gt;,&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;全文查找重复&lt;/td&gt;
+      &lt;td&gt;n&lt;/td&gt;
+      &lt;td&gt;N&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;复制完单词
+&lt;code class=&quot;highlighter-rouge&quot;&gt;/&amp;lt;Ctrl+R&amp;gt;0&lt;/code&gt; 查找寄存器上的单词&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;查看寄存器中的内容：&lt;/strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;:reg&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;exp:&lt;code class=&quot;highlighter-rouge&quot;&gt;10a!&amp;lt;esc&amp;gt;&lt;/code&gt;
+数字+a/i+字符串+esc 连续输入10个相同人字符串&lt;/p&gt;
+
+&lt;h2 id=&quot;命令模式下命令流&quot;&gt;命令模式下命令流&lt;/h2&gt;
+
+&lt;p&gt;hello world&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Old text&lt;/th&gt;
+      &lt;th&gt;Command&lt;/th&gt;
+      &lt;th&gt;New text&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;Hell3 *world!&quot;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ds&quot;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Hello world!&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;[123+4*56]/2&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cs])&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;(123+456)/2&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;Look ma, I'm *HTML!&quot;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cs&quot;&amp;lt;q&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;q&amp;gt;Look ma, I'm HTML!&amp;lt;/q&amp;gt;&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;if *x&amp;gt;3 {&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ysW(&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;if ( x&amp;gt;3 ) {&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;my $str = *whee!;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;vlllls'&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;my $str = 'whee!';&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;div&amp;gt;Yo!*&amp;lt;/div&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;dst&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Yo!&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;div&amp;gt;Yo!*&amp;lt;/div&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cst&amp;lt;p&amp;gt;&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;p&amp;gt;Yo!&amp;lt;/p&amp;gt;&lt;/code&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ci: 例如，ci(，或者ci)，将会修改()之间的文本；
+di: 剪切配对符号之间文本；
+yi: 复制；
+ca: 同ci，但修改内容包括配对符号本身；
+da: 同di，但剪切内容包括配对符号本身；
+ya: 同yi，但复制内容包括配对符号本身。
+PS. dib等同于di(。diB等同于di{。
+
+`ci[ ci( ci&amp;lt; ci{` 删除一对 [], (), &amp;lt;&amp;gt;, 或{} 中的所有字符并进入插入模式
+ci” ci’ ci`删除一对引号字符 ” ‘ 或` 中所有字符并进入插入模式
+cit 删除一对 HTML/XML 的标签内部的所有字符并进入插入模式
+
+1. 删除 复制 粘贴
+   - `x` delete
+   - `X` 退格
+   - dd 删除当前行
+   - d+0/$ 删到 行首/尾
+   - yy 复制行
+   - p 下行粘贴 P 上行粘贴
+   - J 本行下行合并
+2. 移动
+   - hjkl 移动一下
+   - xxx+hjkl 重复移动xxx次
+   - 0 行首
+   - $ 行尾
+   - gg 页首
+   - G 页尾
+   - xxx+G 定位到行号
+   - xxx `&amp;lt;Enter&amp;gt;` 向下移动xxx行
+3. 搜索替换
+   /world 找world
+   ?world 向上找world
+   n N 向下向上找
+   :n1/n2s/word1/word2/g 替换
+   :1,$s/... 全页替换
+   :%s/... 同上
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;底线命令模式&quot;&gt;底线命令模式&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;1. `:q` quit退出
+2. `:w` 保存
+3. `:open xx.xx` 打开xx.xx
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;标记与到达标记&quot;&gt;标记与到达标记&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ma 设置此处为标记a
+`'a` 到达标记a行行首
+``a` 到达当时标记位置的地方
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;切换窗口&quot;&gt;切换窗口&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`ctrl + ww` 切换窗口
+`ctrl + w &amp;lt;h|j|k|l&amp;gt;`切换到这个方向的窗口
+
+`R` 可以临时进入替换一直更改
+
+`w` 下个单词头
+`b` 上个单词头
+`e` 这个单词尾
+
+`v + w/b/e/h/j/k/l/$/0` 选择
+`y/p` 复制/粘贴
+`x/d` 删除/剪切
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;vscodevim对比&quot;&gt;vscode&amp;amp;vim对比&lt;/h2&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;快捷命令&lt;/th&gt;
+      &lt;th&gt;vscode&lt;/th&gt;
+      &lt;th&gt;vim&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;上下复制&lt;/td&gt;
+      &lt;td&gt;Alt+shift+上/下&lt;/td&gt;
+      &lt;td&gt;yyp/P&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;上下新建行&lt;/td&gt;
+      &lt;td&gt;ctrl+(shift)+enter&lt;/td&gt;
+      &lt;td&gt;o/O&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;选中一个单词&lt;/td&gt;
+      &lt;td&gt;ctrl + d&lt;/td&gt;
+      &lt;td&gt;viw&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;系统剪切板&lt;/td&gt;
+      &lt;td&gt;ctrl+c/v&lt;/td&gt;
+      &lt;td&gt;”+&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;删除当前行&lt;/td&gt;
+      &lt;td&gt;ctrl+shift+k&lt;/td&gt;
+      &lt;td&gt;dd&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;跨越单词&lt;/td&gt;
+      &lt;td&gt;ctrl + 左右&lt;/td&gt;
+      &lt;td&gt;web&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;gd - Go to definition, 跳转到定义。
+gb - 找出与光标下相同的下一个单词, 并添加一个光标 ，接下来就可以同时修改。
+af - VISUAL 模式命令, 依据语法分析, 将选择区域向外扩展。
+gh - 等同于将鼠标移至光标所在单词, 方便查看定义以及报错。&lt;/p&gt;
+
+&lt;h2 id=&quot;insert插入模式下删除前一个&quot;&gt;insert插入模式下：删除前一个&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`ctrl+h` 字符
+`ctrl+w` 单词
+`ctrl+u` 一行
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;surround-模式&quot;&gt;Surround 模式&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/tpope/vim-surround&quot;&gt;https://github.com/tpope/vim-surround&lt;/a&gt;
+Normal mode&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ds - delete a surrounding
+cs - change a surrounding
+ys - add a surrounding
+yS - add a surrounding and place the surrounded text on a new line + indent it
+yss - add a surrounding to the whole line
+ySs - add a surrounding to the whole line, place it on a new line + indent it
+ySS - same as ySs
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;visual-mode&quot;&gt;Visual mode&lt;/h2&gt;
+
+&lt;p&gt;s - in visual mode, add a surrounding&lt;/p&gt;
+
+&lt;p&gt;S - in visual mode, add a surrounding but place text on new line + indent it&lt;/p&gt;
+
+&lt;h2 id=&quot;insert-mode&quot;&gt;Insert mode&lt;/h2&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;CTRL-s&amp;gt;` - in insert mode, add a surrounding
+`&amp;lt;CTRL-s&amp;gt;&amp;lt;CTRL-s&amp;gt;` - in insert mode, add a new line + surrounding + indent
+`&amp;lt;CTRL-g&amp;gt;`s - same as`&amp;lt;CTRL-s&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;ci&quot;&gt;ci&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;`cis` 改变句子
+重要命令
+`y` yank 提起
+`p` paster 粘贴
+`a` append 追加
+`i` insert 插入
+`s` substitute 替换
+
+Append，Insert，Replace，Subsitute
+AIRS
+小写表示characterwise(字符)
+linewise(行)
+
+`5yl` 复制光标后的5个字符(包括光标所在的那个字符)
+`5yh` 复制光标前的五个字符(不包括光标所在的那个字符)
+`5dl` 删除光标后的5个字符(包括光标所在的那个字符)
+`5dh` 删除光标前的5个字符(不包括光标所在的那个字符)
+
+例如执行命令（:键），搜索（/和?键）或者过滤命令（!键）。在命令
+
+输入插入命令i、附加命令a、打开命令o、修改命令c、取代命令r或替换命令s都可以进入文本输入模式。
+&amp;lt;http://c.biancheng.net/view/519.html&amp;gt;
+
+S:删除光标所在行并开始插入
+s:删除光标所在的字符并开始插入
+==排版
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;替换&quot;&gt;替换&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;:s/old/new #替换当前行的第一个old为new
+:s/old/new/g #替换当前行的所有的old为new
+:.,![s/old/new #替换当前行到最后行的第一个old为new :.,](https://math.jianshu.com/math?formula=s%2Fold%2Fnew%20%23%E6%9B%BF%E6%8D%A2%E5%BD%93%E5%89%8D%E8%A1%8C%E5%88%B0%E6%9C%80%E5%90%8E%E8%A1%8C%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AAold%E4%B8%BAnew%20%3A.%2C)s/old/new/g #替换当前行到最后行的所有old为new
+:N,Ms/old/new #替换第N行到第M行的第一个old为new
+:N,Ms/old/new/g #替换第N行到第M行的所有old为new
+:N,Ms/old/new/gc #替换第N行到第M行的所有old为new，且逐一询问是否删除
+:%s/old/new #替换所有行的第一个old为new
+:%s/old/new/g #替换所有行的所有old为new
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;光标移动&quot;&gt;光标移动&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;gt; 形式：Ctrl + cmd
+
+b 向上移动一屏
+f 向下移动一屏
+e 向上滚动一行
+y 向下滚动一行
+
+&amp;gt; 形式：cmd
+
+H 当前屏幕顶 high
+M 中 middl
+L 低 low
+
+&amp;gt; 形式：Num%
+&amp;gt; 移动到文档在百分之Num
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;屏幕移动&quot;&gt;屏幕移动&lt;/h2&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;zz 光标所在行移动到屏幕 中
+zt 顶
+zb 低
+
+&amp;gt; 形式：Ctrl + cmd
+
+u 向上移动半屏
+d 向下移动半屏
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;fftt-find-to&quot;&gt;f/F/t/T: (find) (to)&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;形式：Num f Char&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;f移动到该字符
+t移动到该字符前
+;重复执行命令&lt;/p&gt;
+
+&lt;p&gt;在插入模式下ctrl + o 临时进入命令模式
+url:
+&lt;a href=&quot;http://www.cnblogs.com/moiyer/archive/2010/04/01/1952681.html&quot;&gt;http://www.cnblogs.com/moiyer/archive/2010/04/01/1952681.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;vim normal模式下&lt;/p&gt;
+
+&lt;p&gt;1、c+i+分隔符，删除分隔符里面的内容（不删除分隔符，c+a+分隔符则包括分隔符一起删掉）&lt;/p&gt;
+
+&lt;p&gt;如将光标位于’%s : %d years old ‘ 中，此时按c+i+’ ?则可以将’%s : %d years old ‘ 变为’ ‘&lt;/p&gt;
+
+&lt;p&gt;vickey-wu = ‘vickey-wu’
+例句：print ‘%s : %d years old ‘ % (vickey-wu,23)
+结果：print ‘’&lt;/p&gt;
+
+&lt;p&gt;我个人记的方法c:change，i:ignore，a:all
+2、y+i+分隔符，y在vim是复制，与上面的同理，表示复制分隔符里面的内容（不复制分隔符，y+a+分隔符则包括分隔符一起复制）&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.jianshu.com/p/41c759d543b7&quot;&gt;https://www.jianshu.com/p/41c759d543b7&lt;/a&gt;
+进阶
+&lt;a href=&quot;https://www.jianshu.com/p/cbfa86c8d8a5&quot;&gt;https://www.jianshu.com/p/cbfa86c8d8a5&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;gp，和p的功能基本一致，只是粘贴完，它会把光标移动至粘贴内容之后；gP同理&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.cnblogs.com/yangjig/p/6014198.html&quot;&gt;https://www.cnblogs.com/yangjig/p/6014198.html&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;
+&lt;br /&gt;
+作者：大短人&lt;br /&gt;
+链接：https://www.jianshu.com/p/9caf97de4905&lt;br /&gt;
+&lt;strong&gt;版权归作者所有，转载请注明出处&lt;/strong&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+</description>
+        <pubDate>Wed, 09 Oct 2019 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/linux/2019/10/09/vim.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/linux/2019/10/09/vim.html</guid>
+        
+        <category>linux</category>
+        
+        
+        <category>linux</category>
+        
+      </item>
+    
+      <item>
+        <title>API 网关从入门到放弃</title>
+        <description>&lt;h2 id=&quot;前言&quot;&gt;&lt;strong&gt;前言&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;假设你正在开发一个电商网站，那么这里会涉及到很多后端的微服务，比如会员、商品、推荐服务等等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190912640.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;那么这里就会遇到一个问题，APP/Browser怎么去访问这些后端的服务? 如果业务比较简单的话，可以给每个业务都分配一个独立的域名(https://service.api.company.com)，但这种方式会有几个问题:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;每个业务都会需要鉴权、限流、权限校验等逻辑，如果每个业务都各自为战，自己造轮子实现一遍，会很蛋疼，完全可以抽出来，放到一个统一的地方去做。&lt;/li&gt;
+  &lt;li&gt;如果业务量比较简单的话，这种方式前期不会有什么问题，但随着业务越来越复杂，比如淘宝、亚马逊打开一个页面可能会涉及到数百个微服务协同工作，如果每一个微服务都分配一个域名的话，一方面客户端代码会很难维护，涉及到数百个域名，另一方面是连接数的瓶颈，想象一下你打开一个APP，通过抓包发现涉及到了数百个远程调用，这在移动端下会显得非常低效。&lt;/li&gt;
+  &lt;li&gt;每上线一个新的服务，都需要运维参与，申请域名、配置Nginx等，当上线、下线服务器时，同样也需要运维参与，另外采用域名这种方式，对于环境的隔离也不太友好，调用者需要自己根据域名自己进行判断。&lt;/li&gt;
+  &lt;li&gt;另外还有一个问题，后端每个微服务可能是由不同语言编写的、采用了不同的协议，比如HTTP、Dubbo、GRPC等，但是你不可能要求客户端去适配这么多种协议，这是一项非常有挑战的工作，项目会变的非常复杂且很难维护。&lt;/li&gt;
+  &lt;li&gt;后期如果需要对微服务进行重构的话，也会变的非常麻烦，需要客户端配合你一起进行改造，比如商品服务，随着业务变的越来越复杂，后期需要进行拆分成多个微服务，这个时候对外提供的服务也需要拆分成多个，同时需要客户端配合你进行改造，非常蛋疼。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;api-gateway&quot;&gt;&lt;strong&gt;API Gateway&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190912808.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;更好的方式是采用API网关，实现一个API网关接管所有的入口流量，类似Nginx的作用，将所有用户的请求转发给后端的服务器，但网关做的不仅仅只是简单的转发，也会针对流量做一些扩展，比如鉴权、限流、权限、熔断、协议转换、错误码统一、缓存、日志、监控、告警等，这样将通用的逻辑抽出来，由网关统一去做，业务方也能够更专注于业务逻辑，提升迭代的效率。&lt;/p&gt;
+
+&lt;p&gt;通过引入API网关，客户端只需要与API网关交互，而不用与各个业务方的接口分别通讯，但多引入一个组件就多引入了一个潜在的故障点，因此要实现一个高性能、稳定的网关，也会涉及到很多点。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190912938.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;api注册&quot;&gt;&lt;strong&gt;API注册&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;业务方如何接入网关?一般来说有几种方式。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;第一种采用插件扫描业务方的API，比如Spring MVC的注解，并结合Swagger的注解，从而实现参数校验、文档&amp;amp;&amp;amp;SDK生成等功能，扫描完成之后，需要上报到网关的存储服务。&lt;/li&gt;
+  &lt;li&gt;手动录入。比如接口的路径、请求参数、响应参数、调用方式等信息，但这种方式相对来说会麻烦一些，如果参数过多的话，前期录入会很费时费力。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190912592.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;配置文件导入。比如通过Swagger\OpenAPI等，比如阿里云的网关:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190912174.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;协议转换&quot;&gt;&lt;strong&gt;协议转换&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;内部的API可能是由很多种不同的协议实现的，比如HTTP、Dubbo、GRPC等，但对于用户来说其中很多都不是很友好，或者根本没法对外暴露，比如Dubbo服务，因此需要在网关层做一次协议转换，将用户的HTTP协议请求，在网关层转换成底层对应的协议，比如HTTP -&amp;gt; Dubbo, 但这里需要注意很多问题，比如参数类型，如果类型搞错了，导致转换出问题，而日志又不够详细的话，问题会很难定位。&lt;/p&gt;
+
+&lt;h2 id=&quot;服务发现&quot;&gt;&lt;strong&gt;服务发现&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;网关作为流量的入口，负责请求的转发，但首先需要知道转发给谁，如何寻址，这里有几种方式:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;写死在代码/配置文件里，这种方式虽然比较挫，但也能使用，比如线上仍然使用的是物理机，IP变动不会很频繁，但扩缩容、包括应用上下线都会很麻烦，网关自身甚至需要实现一套健康监测机制。&lt;/li&gt;
+  &lt;li&gt;域名。采用域名也是一种不错的方案，对于所有的语言都适用，但对于内部的服务，走域名会很低效，另外环境隔离也不太友好，比如预发、线上通常是同一个数据库，因此网关读取到的可能是同一个域名，这时候预发的网关调用的就是线上的服务。&lt;/li&gt;
+  &lt;li&gt;注册中心。采用注册中心就不会有上述的这些问题，即使是在容器环境下，节点的IP变更比较频繁，但节点列表的实时维护会由注册中心搞定，对网关是透明的，另外应用的正常上下线、包括异常宕机等情况，也会由注册中心的健康检查机制检测到，并实时反馈给网关。并且采用注册中心性能也没有额外的性能损耗，采用域名的方式，额外需要走一次DNS解析、Nginx转发等，中间多了很多跳，性能会有很大的下降，但采用注册中心，网关是和业务方直接点对点的通讯，不会有额外的损耗。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;服务调用&quot;&gt;&lt;strong&gt;服务调用&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;网关由于对接很多种不同的协议，因此可能需要实现很多种调用方式，比如HTTP、Dubbo等，基于性能原因，最好都采用异步的方式，而Http、Dubbo都是支持异步的，比如apache就提供了基于NIO实现的异步HTTP客户端。&lt;/p&gt;
+
+&lt;p&gt;因为网关会涉及到很多异步调用，比如拦截器、HTTP客户端、dubbo、redis等，因此需要考虑下异步调用的方式，如果基于回调或者future的话，代码嵌套会很深，可读性很差，可以参考zuul和spring cloud gateway的方案，基于响应式进行改造。&lt;/p&gt;
+
+&lt;h2 id=&quot;优雅下线&quot;&gt;&lt;strong&gt;优雅下线&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;优雅下线也是网关需要关注的一个问题，网关底层会涉及到很多种协议，比如HTTP、Dubbo，而HTTP又可以继续细分，比如域名、注册中心等，有些自身就支持优雅下线，比如Nginx自身是支持健康监测机制的，如果检测到某一个节点已经挂掉了，就会把这个节点摘掉，对于应用正常下线，需要结合发布系统，首先进行逻辑下线，然后对后续Nginx的健康监测请求直接返回失败(比如直接返回500),然后等待一段时间(根据Nginx配置决定)，然后再将应用实际下线掉。另外对于注册中心的其实也类似，一般注册中心是只支持手动下线的，可以在逻辑下线阶段调用注册中心的接口将节点下线掉，而有些不支持主动下线的，需要结合缓存的配置，让应用延迟下线。另外对于其他比如Dubbo等原理也是类似。&lt;/p&gt;
+
+&lt;h2 id=&quot;性能&quot;&gt;&lt;strong&gt;性能&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;网关作为所有流量的入口，性能是重中之重，早期大部分网关都是基于同步阻塞模型构建的，比如Zuul 1.x。但这种同步的模型我们都知道，每个请求/连接都会占用一个线程，而线程在JVM中是一个很重的资源，比如Tomcat默认就是200个线程，如果网关隔离没有做好的话，当发生网络延迟、FullGC、第三方服务慢等情况造成上游服务延迟时，线程池很容易会被打满，造成新的请求被拒绝，但这个时候其实线程都阻塞在IO上，系统的资源被没有得到充分的利用。另外一点，容易受网络、磁盘IO等延迟影响。需要谨慎设置超时时间，如果设置不当，且服务隔离做的不是很完善的话，网关很容易被一个慢接口拖垮。&lt;/p&gt;
+
+&lt;p&gt;而异步化的方式则完全不同，通常情况下一个CPU核启动一个线程即可处理所有的请求、响应。一个请求的生命周期不再固定于一个线程，而是会分成不同的阶段交由不同的线程池处理，系统的资源能够得到更充分的利用。而且因为线程不再被某一个连接独占，一个连接所占用的系统资源也会低得多，只是一个文件描述符加上几个监听器等，而在阻塞模型中，每条连接都会独占一个线程，而线程是一个非常重的资源。对于上游服务的延迟情况，也能够得到很大的缓解，因为在阻塞模型中，慢请求会独占一个线程资源，而异步化之后，因为单条连接所占用的资源变的非常低，系统可以同时处理大量的请求。&lt;/p&gt;
+
+&lt;p&gt;如果是JVM平台，Zuul 2、Spring Cloud gateway等都是不错的异步网关选型，另外也可以基于Netty、Spring Boot2.x的webflux、vert.x或者servlet3.1的异步支持进行自研。&lt;/p&gt;
+
+&lt;h2 id=&quot;缓存&quot;&gt;&lt;strong&gt;缓存&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;对于一些幂等的get请求，可以在网关层面根据业务方指定的缓存头做一层缓存，存储到Redis等二级缓存中，这样一些重复的请求，可以在网关层直接处理，而不用打到业务线，降低业务方的压力，另外如果业务方节点挂掉，网关也能够返回自身的缓存。&lt;/p&gt;
+
+&lt;h2 id=&quot;限流&quot;&gt;&lt;strong&gt;限流&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;限流对于每个业务组件来说，可以说都是一个必须的组件，如果限流做不好的话，当请求量突增时，很容易导致业务方的服务挂掉，比如双11、双12等大促时，接口的请求量是平时的数倍，如果没有评估好容量，又没有做限流的话，很容易服务整个不可用，因此需要根据业务方接口的处理能力，做好限流策略，相信大家都见过淘宝、百度抢红包时的降级页面。&lt;/p&gt;
+
+&lt;p&gt;因此一定要在接入层做好限流策略，对于非核心接口可以直接将降级掉，保障核心服务的可用性，对于核心接口，需要根据压测时得到的接口容量，制定对应的限流策略。限流又分为几种:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;单机。单机性能比较高，不涉及远程调用，只是本地计数，对接口RT影响最小。但需要考虑下限流数的设置，比如是针对单台网关、还是整个网关集群，如果是整个集群的话，需要考虑到网关缩容、扩容时修改对应的限流数。&lt;/li&gt;
+  &lt;li&gt;分布式。分布式的就需要一个存储节点维护当前接口的调用数，比如redis、sentinel等，这种方式由于涉及到远程调用，会有些性能损耗，另外也需要考虑到存储挂掉的问题，比如redis如果挂掉，网关需要考虑降级方案，是降级到本地限流，还是直接将限流功能本身降级掉。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;另外还有不同的策略:简单计数、令牌桶等，大部分场景下其实简单计数已经够用了，但如果需要支持突发流量等场景时，可以采用令牌桶等方案。还需要考虑根据什么限流，比如是IP、接口、用户维度、还是请求参数中的某些值，这里可以采用表达式，相对比较灵活。&lt;/p&gt;
+
+&lt;h2 id=&quot;稳定性&quot;&gt;&lt;strong&gt;稳定性&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;稳定性是网关非常重要的一环，监控、告警需要做的很完善才可以，比如接口调用量、响应时间、异常、错误码、成功率等相关的监控告警，还有线程池相关的一些，比如活跃线程数、队列积压等，还有些系统层面的，比如CPU、内存、FullGC这些基本的。&lt;/p&gt;
+
+&lt;p&gt;网关是所有服务的入口，对于网关的稳定性的要求相对于其他服务会更高，最好能够一直稳定的运行，尽量少重启，但当新增功能、或者加日志排查问题时，不可避免的需要重新发布，因此可以参考zuul的方式，将所有的核心功能都基于不同的拦截器实现，拦截器的代码采用Groovy编写，存储到数据库中，支持动态加载、编译、运行，这样在出了问题的时候能够第一时间定位并解决，并且如果网关需要开发新功能，只需要增加新的拦截器，并动态添加到网关即可，不需要重新发布。&lt;/p&gt;
+
+&lt;h2 id=&quot;熔断降级&quot;&gt;&lt;strong&gt;熔断降级&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;熔断机制也是非常重要的一项。若某一个服务挂掉、接口响应严重超时等发生，则可能整个网关都被一个接口拖垮，因此需要增加熔断降级，当发生特定异常的时候，对接口降级由网关直接返回，可以基于Hystrix或者Resilience4j实现。&lt;/p&gt;
+
+&lt;h2 id=&quot;日志&quot;&gt;&lt;strong&gt;日志&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;由于所有的请求都是由网关处理的，因此日志也需要相对比较完善，比如接口的耗时、请求方式、请求IP、请求参数、响应参数(注意脱敏)等，另外由于可能涉及到很多微服务，因此需要提供一个统一的traceId方便关联所有的日志，可以将这个traceId置于响应头中，方便排查问题。&lt;/p&gt;
+
+&lt;h2 id=&quot;隔离&quot;&gt;&lt;strong&gt;隔离&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;比如线程池、http连接池、redis等应用层面的隔离，另外也可以根据业务场景，将核心业务部署带单独的网关集群，与其他非核心业务隔离开。&lt;/p&gt;
+
+&lt;h2 id=&quot;网关管控平台&quot;&gt;&lt;strong&gt;网关管控平台&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;这块也是非常重要的一环，需要考虑好整个流程的用户体验，比如接入到网关的这个流程，能不能尽量简化、智能，比如如果是dubbo接口，我们可以通过到git仓库中获取源码、解析对应的类、方法，从而实现自动填充，尽量帮用户减少操作；另外接口一般是从测试-&amp;gt;预发-&amp;gt;线上，如果每次都要填写一遍表单会非常麻烦，我们能不能自动把这个事情做掉，另外如果网关部署到了多个可用区、甚至不同的国家，那这个时候，我们还需要接口数据同步功能，不然用户需要到每个后台都操作一遍，非常麻烦。&lt;/p&gt;
+
+&lt;p&gt;这块个人的建议是直接参考阿里云、aws等提供的网关服务即可，功能非常全面。&lt;/p&gt;
+
+&lt;h2 id=&quot;其他&quot;&gt;&lt;strong&gt;其他&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;其他还有些需要考虑到的点，比如接口mock，文档生成、sdk代码生成、错误码统一、服务治理相关的等，这里就不累述了。&lt;/p&gt;
+
+&lt;h2 id=&quot;总结&quot;&gt;&lt;strong&gt;总结&lt;/strong&gt;&lt;/h2&gt;
+
+&lt;p&gt;目前的网关还是中心化的架构，所有的请求都需要走一次网关，因此当大促或者流量突增时，网关可能会成为性能的瓶颈，而且当网关接入的大量接口的时候，做好流量评估也不是一项容易的工作，每次大促前都需要跟业务方一起针对接口做压测，评估出大致的容量，并对网关进行扩容，而且网关是所有流量的入口，所有的请求都是由网关处理，要想准确的评估出容量很复杂。可以参考目前比较流行的ServiceMesh，采用去中心化的方案，将网关的逻辑下沉到sidecar中，sidecar和应用部署到同一个节点，并接管应用流入、流出的流量，这样大促时，只需要对相关的业务压测，并针对性扩容即可，另外升级也会更平滑，中心化的网关，即使灰度发布，但是理论上所有业务方的流量都会流入到新版本的网关，如果出了问题，会影响到所有的业务，但这种去中心化的方式，可以先针对非核心业务升级，观察一段时间没问题后，再全量推上线。另外ServiceMesh的方案，对于多语言支持也更友好。&lt;/p&gt;
+
+&lt;p&gt;&lt;br /&gt;
+&lt;br /&gt;
+作者：aCoder2013&lt;br /&gt;
+链接：github.com/aCoder2013/blog/issues/35&lt;br /&gt;
+&lt;strong&gt;版权归作者所有，转载请注明出处&lt;/strong&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+</description>
+        <pubDate>Thu, 12 Sep 2019 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/thought/2019/09/12/gateway.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/thought/2019/09/12/gateway.html</guid>
+        
+        <category>thought</category>
+        
+        
+        <category>thought</category>
+        
+      </item>
+    
+      <item>
+        <title>jdk13快来了，jdk8的这几点应该看看！</title>
+        <description>&lt;h2 id=&quot;说明&quot;&gt;说明&lt;/h2&gt;
+
+&lt;p&gt;jdk8虽然出现很久了，但是可能我们还是有很多人并不太熟悉，本文主要就是介绍说明一些jdk8相关的内容。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;主要会讲解：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;lambda表达式&lt;/li&gt;
+  &lt;li&gt;方法引用&lt;/li&gt;
+  &lt;li&gt;默认方法&lt;/li&gt;
+  &lt;li&gt;Stream&lt;/li&gt;
+  &lt;li&gt;用Optional取代null&lt;/li&gt;
+  &lt;li&gt;新的日志和时间&lt;/li&gt;
+  &lt;li&gt;CompletableFuture&lt;/li&gt;
+  &lt;li&gt;去除了永久代（PermGen） 被元空间（Metaspace）代替&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;我们来看看阿里规范里面涉及到jdk8相关内容：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830506059.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830565392.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830589386.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830622842.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830643706.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830674564.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;jdk8开篇&quot;&gt;jdk8开篇&lt;/h2&gt;
+
+&lt;p&gt;https://www.oracle.com/technetwork/java/javase/8-whats-new-2157071.html&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830807208.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;主要有：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1：lambda表达式：一种新的语言特性，能够把函数作为方法的参数或将代码作为数据。lambda表达式使你在表示函数接口（具有单个方法的接口）的实例更加紧凑。&lt;/p&gt;
+
+&lt;p&gt;2：方法引用 是lambda表达式的一个简化写法，所引用的方法其实是lambda表达式的方法体实现，这样使代码更容易阅读&lt;/p&gt;
+
+&lt;p&gt;3：默认方法：Java 8引入default method，或者叫virtual extension method，目的是为了让接口可以事后添加新方法而无需强迫所有实现该接口的类都提供新方法的实现。也就是说它的主要使用场景可能会涉及代码演进。&lt;/p&gt;
+
+&lt;p&gt;4： Stream 不是 集合元素，也不是数据结构，它相当于一个 高级版本的 Iterator，不可以重复遍历里面的数据，像水一样，流过了就一去不复返。它和普通的 Iterator 不同的是，它可以并行遍历，普通的 Iterator 只能是串行，在一个线程中执行。操作包括：中间操作 和 最终操作(只能操作一遍) 串行流操作在一个线程中依次完成。并行流在多个线程中完成，主要利用了 JDK7 的 Fork/Join 框架来拆分任务和加速处理。相比串行流，并行流可以很大程度提高程序的效率&lt;/p&gt;
+
+&lt;p&gt;5：用Optional取代null&lt;/p&gt;
+
+&lt;p&gt;6：新的日志和时间，可以使用Instant代替Date LocalDateTime代替Calendar DateTimeFormatter代替SimpleDateFormat&lt;/p&gt;
+
+&lt;p&gt;7：CompletableFuture：CompletableFuture提供了非常强大的Future的扩展功能，可以帮助我们简化异步编程的复杂性，并且提供了函数式编程的能力，可以通过回调的方式处理计算结果，也提供了转换和组合 CompletableFuture 的方法。&lt;/p&gt;
+
+&lt;p&gt;8：去除了永久代（PermGen） 被元空间（Metaspace）代替  配置：-XX:MetaspaceSize=8m -XX:MaxMetaspaceSize=80m   代替  -XX:PermSize=10m -XX:MaxPermSize=10m&lt;/p&gt;
+
+&lt;h2 id=&quot;lambda&quot;&gt;lambda&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;JDK8最大的特性应该非lambda莫属！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830574844.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;IDEA工具自动提示：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830869831.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830628675.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;lambda语法结构 ：&lt;/strong&gt;
+完整的Lambda表达式由三部分组成：参数列表、箭头、声明语句；&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(Type1 param1, Type2 param2, ..., TypeN paramN) -&amp;gt; {  statment1;  statment2;  //.............  return statmentM;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;绝大多数情况，编译器都可以从上下文环境中推断出lambda表达式的参数类型，所以参数可以省略：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(param1,param2, ..., paramN) -&amp;gt; {  statment1;  statment2;  //.............  return statmentM;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;当lambda表达式的参数个数只有一个，可以省略小括号：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;param1 -&amp;gt; {  statment1;  statment2;  //.............  return statmentM;}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;当lambda表达式只包含一条语句时，可以省略大括号、return和语句结尾的分号：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;param1 -&amp;gt; statment
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;在那里以及如何使用Lambda？？？？&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;你可以在函数式接口上面使用Lambda表达式。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830961723.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;备注：&lt;/strong&gt; JDK定义了很多现在的函数接口，实际自己也可以定义接口去做为表达式的返回，只是大多数情况下JDK定义的直接拿来就可以用了。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Java SE 7中已经存在的函数式接口：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://download.oracle.com/javase/7/docs/api/java/lang/Runnable.html&quot;&gt;java.lang.Runnable&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://download.oracle.com/javase/7/docs/api/java/util/concurrent/Callable.html&quot;&gt;java.util.concurrent.Callable&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://download.oracle.com/javase/7/docs/api/java/security/PrivilegedAction.html&quot;&gt;java.security.PrivilegedAction&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://download.oracle.com/javase/7/docs/api/java/util/Comparator.html&quot;&gt;java.util.Comparator&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Callable.html&quot;&gt;java.util.concurrent.Callable&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://download.oracle.com/javase/7/docs/api/java/io/FileFilter.html&quot;&gt;java.io.FileFilter&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.fxfrog.com/docs_www/api/java/beans/PropertyChangeListener.html&quot;&gt;java.beans.PropertyChangeListener&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;除此之外，Java SE 8中增加了一个新的包：&lt;code class=&quot;highlighter-rouge&quot;&gt;java.util.function&lt;/code&gt;，它里面包含了常用的函数式接口，例如：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Predicate&amp;lt;T&amp;gt;&lt;/code&gt;——接收&lt;code class=&quot;highlighter-rouge&quot;&gt;T&lt;/code&gt;对象并返回&lt;code class=&quot;highlighter-rouge&quot;&gt;boolean&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Consumer&amp;lt;T&amp;gt;&lt;/code&gt;——接收&lt;code class=&quot;highlighter-rouge&quot;&gt;T&lt;/code&gt;对象，不返回值&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Function&amp;lt;T, R&amp;gt;&lt;/code&gt;——接收&lt;code class=&quot;highlighter-rouge&quot;&gt;T&lt;/code&gt;对象，返回&lt;code class=&quot;highlighter-rouge&quot;&gt;R&lt;/code&gt;对象&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Supplier&amp;lt;T&amp;gt;&lt;/code&gt;——提供&lt;code class=&quot;highlighter-rouge&quot;&gt;T&lt;/code&gt;对象（例如工厂），不接收值&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;随便看几个：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830049556.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830090348.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;默认方法&quot;&gt;默认方法&lt;/h3&gt;
+
+&lt;p&gt;Java 8 引入了新的语言特性——默认方法（Default Methods）。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;a href=&quot;http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html&quot;&gt;Default methods&lt;/a&gt; enable new functionality to be added to the interfaces of libraries and ensure binary compatibility with code written for older versions of those interfaces.&lt;/p&gt;
+
+  &lt;p&gt;默认方法允许您添加新的功能到现有库的接口中，并能确保与采用旧版本接口编写的代码的二进制兼容性。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;默认方法是在接口中的方法签名前加上了 &lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;default&lt;/code&gt;&lt;/strong&gt; 关键字的实现方法。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;为什么要有默认方法&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;在 java 8 之前，接口与其实现类之间的 耦合度 太高了（tightly coupled），当需要为一个接口添加方法时，所有的实现类都必须随之修改。默认方法解决了这个问题，它可以为接口添加新的方法，而不会破坏已有的接口的实现。这在 lambda 表达式作为 java 8 语言的重要特性而出现之际，为升级旧接口且保持向后兼容（backward compatibility）提供了途径。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830495204.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这个 &lt;code class=&quot;highlighter-rouge&quot;&gt;forEach&lt;/code&gt; 方法是 jdk 1.8 新增的接口默认方法，正是因为有了默认方法的引入，才不会因为 &lt;code class=&quot;highlighter-rouge&quot;&gt;Iterable&lt;/code&gt; 接口中添加了 &lt;code class=&quot;highlighter-rouge&quot;&gt;forEach&lt;/code&gt; 方法就需要修改所有 &lt;code class=&quot;highlighter-rouge&quot;&gt;Iterable&lt;/code&gt; 接口的实现类。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830575036.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830868103.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;方法引用method-references&quot;&gt;方法引用（Method references）&lt;/h3&gt;
+
+&lt;p&gt;如果一个Lambda表达式仅仅是调用方法的情况，那么就可以用方法引用来完成，这种情况下使用方法引用代码更易读。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;方法引用语法：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;目标引用放在分隔符::前，方法的名称放在后面。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830148916.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;names2.forEach(System.out::println);//1
+names2.forEach(s-&amp;gt;System.out.println(s));//2
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第二行代码的lambda表达式仅仅就是调用方法，调用的System.out的println方法，所以可以用方法引用写成System.out::println即可。&lt;/p&gt;
+
+&lt;h4 id=&quot;方法引用的种类kinds-of-method-references&quot;&gt;方法引用的种类（Kinds of method references）&lt;/h4&gt;
+
+&lt;p&gt;方法引用有很多种，它们的语法如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;静态方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;ClassName::methodName&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;实例上的实例方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;instanceReference::methodName&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;父类的实例方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;super::methodName&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;类型上的实例方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;ClassName::methodName&lt;/code&gt;
+    &lt;blockquote&gt;
+      &lt;p&gt;&lt;strong&gt;备注：&lt;/strong&gt;String::toString 等价于lambda表达式 (s) -&amp;gt; s.toString()
+这里不太容易理解，实例方法要通过对象来调用，方法引用对应Lambda，Lambda的第一个参数会成为调用实例方法的对象。&lt;/p&gt;
+    &lt;/blockquote&gt;
+  &lt;/li&gt;
+  &lt;li&gt;构造方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;Class::new&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;数组构造方法引用：&lt;code class=&quot;highlighter-rouge&quot;&gt;TypeName[]::new&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;个人理解：方法引用，说白了，用更好，不用也可以，如果可以尽量用！！！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;stream&quot;&gt;Stream&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830827664.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Java 8 中的 Stream 是对集合（Collection）对象功能的增强，它专注于对集合对象进行各种非常便利、高效的聚合操作（aggregate operation），或者大批量数据操作 (bulk data operation)。Stream API 借助于同样新出现的 &lt;strong&gt;Lambda 表达式&lt;/strong&gt;，极大的提高编程效率和程序可读性。同时它提供串行和并行两种模式进行汇聚操作，并发模式能够充分利用多核处理器的优势，使用 fork/join 并行方式来拆分任务和加速处理过程。通常编写并行代码很难而且容易出错, 但使用 Stream API 无需编写一行多线程的代码，就可以很方便地写出高性能的并发程序。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Stream 不是集合元素，它不是数据结构并不保存数据，它是有关算法和计算的，它更像一个高级版本的 Iterator。&lt;/li&gt;
+  &lt;li&gt;Stream 就如同一个迭代器（Iterator），单向，不可往复，数据只能遍历一次，遍历过一次后即用尽了，就好比流水从面前流过，一去不复返。&lt;/li&gt;
+  &lt;li&gt;和迭代器又不同的是，Stream 可以并行化操作，迭代器只能命令式地、串行化操作。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;对stream的操作分为三类。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;创建stream&lt;/li&gt;
+  &lt;li&gt;中间操作(intermediate operations)【没有终止操作是不会执行的】&lt;/li&gt;
+  &lt;li&gt;终止操作(terminal operations):&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830629100.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;中间操作&lt;/strong&gt;会返回另一个流。可以用链式编程.的形式继续调用。在没有终止操作的时候，中间操作是不会执行的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;终止操作&lt;/strong&gt;不会返回流了，而是返回结果（比如返回void-仅仅System.out输出，比如返回总数 int，返回一个集合list等等）&lt;/p&gt;
+
+&lt;p&gt;例如：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830864030.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;流的创建&quot;&gt;流的创建&lt;/h3&gt;
+
+&lt;p&gt;3种方式创建流，普通流调用&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;通过Stream接口的静态工厂方法&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;通过Arrays方法&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;通过Collection接口的默认方法&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;//通过Stream接口的静态工厂方法
+Stream stream = Stream.of(&quot;hello&quot;, &quot;world&quot;, &quot;hello world&quot;);
+
+String[] strArray = new String[]{&quot;hello&quot;, &quot;world&quot;, &quot;hello world&quot;};
+//通过Stream接口的静态工厂方法
+Stream stream1 = Stream.of(strArray);
+
+//通过Arrays方法
+Stream stream2 = Arrays.stream(strArray);
+
+List&amp;lt;String&amp;gt; list = Arrays.asList(strArray);
+//通过Collection接口的默认方法
+Stream stream3 = list.stream();
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830109800.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830070991.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830139256.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;本质都是StreamSupport.stream。&lt;/p&gt;
+
+&lt;p&gt;通过Collection接口的默认方法获取并行流。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830364859.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;或者通过stream流调用&lt;code class=&quot;highlighter-rouge&quot;&gt;parallel&lt;/code&gt;获取并行流&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830011763.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;只需要对并行流调用&lt;code class=&quot;highlighter-rouge&quot;&gt;sequential&lt;/code&gt;方法就可以把它变成顺序流&lt;/p&gt;
+
+&lt;h3 id=&quot;中间操作&quot;&gt;中间操作&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830614050.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830637931.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;终止操作&quot;&gt;终止操作&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830706335.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;并行流&quot;&gt;并行流&lt;/h3&gt;
+
+&lt;p&gt;可以通过对收集源调用parallelStream方法来把集合转换为并行流。并行流就是一个把内容分成多个数据
+块，并用不同的线程分别处理每个数据块的流。这样一来，你就可以自动把给定操作的工作负荷分配给多核处理器的所有内核，让它们都忙起来。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830364859.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830949850.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;并行流用的线程是从哪儿来的？有多少个？怎么自定义这个过程呢？&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;并行流内部使用了默认的ForkJoinPool，它默认的线程数量就是你的处理器数量，这个值是由 Runtime.getRuntime().availableProcessors()得到的。但是你可以通过系统属性 java.util.concurrent.ForkJoinPool.common. parallelism来改变线程池大小，如下所示：
+System.setProperty(“java.util.concurrent.ForkJoinPool.common.parallelism”,”12”); 
+这是一个全局设置，因此它将影响代码中所有的并行流。反过来说，目前还无法专为某个
+并行流指定这个值。一般而言，让ForkJoinPool的大小等于处理器数量是个不错的默认值，
+除非你有很好的理由，否则我们强烈建议你不要修改它&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;测试并行流和顺序流速度&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;//Sequential Sort, 采用顺序流进行排序
+    @Test
+    public void sequentialSort(){
+        long t0 = System.nanoTime();
+
+        long count = values.stream().sorted().count();
+        System.err.println(&quot;count = &quot; + count);
+
+        long t1 = System.nanoTime();
+
+        long millis  = TimeUnit.NANOSECONDS.toMillis(t1 - t0);
+        System.out.println(String.format(&quot;sequential sort took: %d ms&quot;, millis));
+        //sequential sort took: 1932 ms
+
+    }
+
+    //parallel Sort, 采用并行流进行排序
+    @Test
+    public void parallelSort(){
+        long t0 = System.nanoTime();
+
+        long count = values.parallelStream().sorted().count();
+        System.err.println(&quot;count = &quot; + count);
+
+        long t1 = System.nanoTime();
+
+        long millis  = TimeUnit.NANOSECONDS.toMillis(t1 - t0);
+        System.out.println(String.format(&quot;parallel sort took: %d ms&quot;, millis));
+        //parallel sort took: 1373 ms 并行排序所花费的时间大约是顺序排序的一半。
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830902970.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;错误使用流&quot;&gt;错误使用流&lt;/h3&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Accumlator{
+    public long total = 0;
+
+    public void add(long value) {
+        total += value;
+    }
+}
+
+
+public class ParallelTest {
+    public static void main(String[] args) {
+        //错误使用并行流示例
+        System.out.println(&quot;SideEffect parallel sum done in :&quot; + measureSumPerf(ParallelTest::sideEffectParallelSum, 1_000_000_0) + &quot;mesecs&quot;);
+        System.out.println(&quot;=================&quot;);
+        //正确应该这样的
+        System.out.println(&quot;SideEffect  sum done in :&quot; + measureSumPerf(ParallelTest::sideEffectSum, 1_000_000_0) + &quot;mesecs&quot;);
+    }
+
+    //错误使用并行流
+    public static long sideEffectParallelSum(long n) {
+        Accumlator accumlator = new Accumlator();
+        LongStream.rangeClosed(1, n).parallel().forEach(accumlator::add);
+        return accumlator.total;
+    }
+
+    //正确使用流
+    public static long sideEffectSum(long n) {
+        Accumlator accumlator = new Accumlator();
+        LongStream.rangeClosed(1, n).forEach(accumlator::add);
+        return accumlator.total;
+    }
+
+    //定义测试函数
+    public static long measureSumPerf(Function&amp;lt;Long, Long&amp;gt; adder, long n) {
+        long fastest = Long.MAX_VALUE;
+        //迭代10次
+        for (int i = 0; i &amp;lt; 2; i++) {
+            long start=System.nanoTime();
+            long sum = adder.apply(n);
+            long duration=(System.nanoTime()-start)/1_000_000;
+            System.out.println(&quot;Result: &quot; + sum);
+            //取最小值
+            if (duration &amp;lt; fastest) {
+                fastest = duration;
+            }
+        }
+        return fastest;
+    }
+
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830962938.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;本质问题在于total += value;它不是原子操作，并行调用的时候它会改变多个线程共享的对象的可变状态,从而导致错误，&lt;strong&gt;在使用并行流需要避免这类问题发生！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830115583.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;思考：&lt;/strong&gt; 什么情况结果正常，但是并行流比顺序流慢的情况呢？？？&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;并行流中更新共享变量，如果你加入了同步，很可能会发现线程竞争抵消了并行带来的性能提升！&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;特别是limit和findFirst等依赖于元素顺序的操作，它们在并行流上执行的代价非常大&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830346231.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;对于较小的数据量，选择并行流几乎从来都不是一个好的决定。并行处理少数几个元素的好处还抵不上并行化造成的额外开销。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830200923.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;备注：&lt;/strong&gt;sort或distinct等操作接受一个流，再生成一个流（中间操作），从流中排序和删除重复项时都需要知道所有集合数据，如果集合数据很大可能会有问题（如果数据大，都放内存，内存不够就会OOM了）。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;strong&gt;使用并行流还是顺序流都应该应该测试，以及压测，如果在并行流正常的情况下，效率有提升就选择并行流，如果顺序流快就选择顺序流。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;completablefuture异步函数式编程&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CompletableFuture&lt;/code&gt;异步函数式编程&lt;/h2&gt;
+
+&lt;h3 id=&quot;引入completablefuture原因&quot;&gt;引入CompletableFuture原因&lt;/h3&gt;
+
+&lt;h4 id=&quot;future模式的缺点&quot;&gt;Future模式的缺点&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Future虽然可以实现获取异步执行结果的需求，&lt;strong&gt;但是它没有提供通知的机制，我们无法得知Future什么时候完成&lt;/strong&gt;。&lt;/li&gt;
+  &lt;li&gt;要么使用阻塞，&lt;strong&gt;在future.get()的地方等待future返回的结果，这时又变成同步操作&lt;/strong&gt;。要么使用isDone()轮询地判断Future是否完成，这样会耗费CPU的资源。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;future-接口的局限性&quot;&gt;Future 接口的局限性&lt;/h4&gt;
+
+&lt;p&gt;future接口可以构建异步应用，但依然有其局限性。&lt;strong&gt;它很难直接表述多个Future 结果之间的依赖性。&lt;/strong&gt;实际开发中，我们经常需要达成以下目的：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;将两个异步计算合并为一个——这两个异步计算之间相互独立，同时第二个又依赖于第
+ 一个的结果。&lt;/li&gt;
+  &lt;li&gt;等待 Future 集合中的所有任务都完成。&lt;/li&gt;
+  &lt;li&gt;仅等待 Future 集合中最快结束的任务完成（有可能因为它们试图通过不同的方式计算同
+ 一个值），并返回它的结果。&lt;/li&gt;
+  &lt;li&gt;通过编程方式完成一个 Future 任务的执行（即以手工设定异步操作结果的方式）。&lt;/li&gt;
+  &lt;li&gt;应对 Future 的完成事件（即当 Future 的完成事件发生时会收到通知，并能使用 Future
+ 计算的结果进行下一步的操作，不只是简单地阻塞等待操作的结果）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;新的CompletableFuture将使得这些成为可能。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830894975.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830399572.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CompletableFuture&lt;/code&gt;提供了四个静态方法用来创建CompletableFuture对象：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830903103.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;方法入参和返回值有所区别。&lt;/p&gt;
+
+&lt;p&gt;里面有非常多的方法，返回为CompletableFuture之后可以用链式编程.的形式继续调用，最后调用一个不是返回CompletableFuture的介绍，和流式操作里面的中间操作-终止操作。&lt;/p&gt;
+
+&lt;h2 id=&quot;日期&quot;&gt;日期&lt;/h2&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/**
+     * 可以使用Instant代替Date
+     * LocalDateTime代替Calendar
+     * DateTimeFormatter代替SimpleDateFormat
+     */
+
+    public static void main(String args[]) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;);
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println(now.format(formatter));
+
+        //10分钟前
+        String d1 = now.minusMinutes(10).format(formatter);
+        //10分钟后
+        String d2 = now.plusMinutes(10).format(formatter);
+
+        System.out.println(d1);
+        System.out.println(d2);
+
+
+        LocalDateTime t5 = LocalDateTime.parse(&quot;2019-01-01 00:00:00&quot;, formatter);
+
+        System.out.println(t5.format(formatter));
+
+
+    }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;jvm方面改变&quot;&gt;JVM方面改变&lt;/h2&gt;
+
+&lt;p&gt;去除了永久代（PermGen） 被元空间（Metaspace）代替  配置：-XX:MetaspaceSize=8m -XX:MaxMetaspaceSize=80m   代替  -XX:PermSize=10m -XX:MaxPermSize=10m&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830280186.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;用optional取代null&quot;&gt;用Optional取代null&lt;/h2&gt;
+
+&lt;h3 id=&quot;optional对象创建&quot;&gt;Optional对象创建&lt;/h3&gt;
+
+&lt;p&gt;1、 &lt;strong&gt;创建空对象&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Optional&amp;lt;String&amp;gt; optStr = Optional.empty();
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上面的示例代码调用empty()方法创建了一个空的Optional&lt;String&gt;对象型。&lt;/String&gt;&lt;/p&gt;
+
+&lt;p&gt;2、**创建对象：不允许为空 **
+Optional提供了方法of()用于创建非空对象，该方法要求传入的参数不能为空，否则抛NullPointException，示例如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Optional&amp;lt;String&amp;gt; optStr = Optional.of(str);  // 当str为null的时候，将抛出NullPointException
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;3、**创建对象：允许为空 **
+如果不能确定传入的参数是否存在null值的可能性，则可以用Optional的ofNullable()方法创建对象，如果入参为null，则创建一个空对象。示例如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Optional&amp;lt;String&amp;gt; optStr = Optional.ofNullable(str);  // 如果str是null，则创建一个空对象
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;常用方法&quot;&gt;常用方法&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://www.jiangxinlingdu.com/assets/images/2019/20190830193716.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;String str = null;
+
+len = Optional.ofNullable(str).map(String::length).orElse(0); //不会报NullPointerException
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+</description>
+        <pubDate>Fri, 06 Sep 2019 00:00:00 +0800</pubDate>
+        <link>http://www.jiangxinlingdu.com/thought/2019/09/06/jdk8s.html</link>
+        <guid isPermaLink="true">http://www.jiangxinlingdu.com/thought/2019/09/06/jdk8s.html</guid>
+        
+        <category>thought</category>
+        
+        
+        <category>thought</category>
+        
+      </item>
+    
+  </channel>
+</rss>

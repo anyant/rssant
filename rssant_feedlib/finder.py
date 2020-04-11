@@ -244,8 +244,8 @@ class FeedFinder:
         except FeedParserError as ex:
             self._log(str(ex))
             return None
-        if result.warning:
-            self._log(f"warning: {result.warning}")
+        if result.warnings:
+            self._log(f"warnings: {';'.join(result.warnings)}")
         parser = FeedParser()
         result = parser.parse(result)
         return result

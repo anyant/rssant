@@ -1,0 +1,2025 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+        <title>Verne in GitHub</title>
+        <description>Verne in GitHub - Ein Verne</description>
+        <link>https://einverne.github.io</link>
+        <atom:link href="https://einverne.github.io/rss.xml" rel="self" type="application/rss+xml" />
+        <lastBuildDate>Mon, 06 Apr 2020 02:49:50 +0000</lastBuildDate>
+        <pubDate>Mon, 06 Apr 2020 02:49:50 +0000</pubDate>
+        <ttl>60</ttl>
+
+
+        <item>
+                <title>OpenWrt 学习笔记</title>
+                <description>&lt;h2 id=&quot;硬件&quot;&gt;硬件&lt;/h2&gt;
+
+&lt;h3 id=&quot;cpu&quot;&gt;CPU&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Atheros/QualCom 高通 (QCA)&lt;/li&gt;
+  &lt;li&gt;BroadCom 博通 (BCM)&lt;/li&gt;
+  &lt;li&gt;MediaTek 联科发 (MTK)&lt;/li&gt;
+  &lt;li&gt;RealTek 瑞昱&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;ram&quot;&gt;RAM&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SDRAM&lt;/li&gt;
+  &lt;li&gt;DDR, DDR2, DDR3&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;romflash&quot;&gt;ROM(Flash)&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SPI Flash&lt;/li&gt;
+  &lt;li&gt;NOR Flash&lt;/li&gt;
+  &lt;li&gt;NAND Flash&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;wifi-芯片&quot;&gt;WiFi 芯片&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;USB（速度相对较慢）&lt;/li&gt;
+  &lt;li&gt;PCI-e&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;软件&quot;&gt;软件&lt;/h2&gt;
+
+&lt;h3 id=&quot;bootloader&quot;&gt;BootLoader&lt;/h3&gt;
+
+&lt;h2 id=&quot;wiki&quot;&gt;Wiki&lt;/h2&gt;
+&lt;p&gt;CPU, 网卡数据库 Wiki:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://deviwiki.com/&quot;&gt;https://deviwiki.com/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《跟着佐大学 OpenWrt 开发入门》&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/04/router-learning.html</link>
+                <guid>https://einverne.github.io/post/2020/04/router-learning</guid>
+                <pubDate>Sun, 05 Apr 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>小米路由器 3G 刷机及固件</title>
+                <description>&lt;p&gt;记录一下小米路由器 3G 的刷机历程，过程步骤是比较简单，但就是配置过程有点心酸，理论上是应该直接就能工作的，但是我的情况比较特殊，想用 OpenWrt 的无线中继来着，但是用别人的固件，和我自己编译的固件都无法在小米路由器 3G 上实现无线中继。&lt;/p&gt;
+
+&lt;h2 id=&quot;openwrt-固件&quot;&gt;OpenWrt 固件&lt;/h2&gt;
+&lt;p&gt;我的另一台 WNDR 3800 直接配置就可以无线中继，但是小米的配置后就各种问题。&lt;/p&gt;
+
+&lt;h3 id=&quot;无线未开启或未关联&quot;&gt;无线未开启或未关联&lt;/h3&gt;
+
+&lt;p&gt;最一开始就是，开启无线中继后 5G 信号显示，“无线未开启或未关联”。&lt;/p&gt;
+
+&lt;p&gt;网上查到解决方法是需要将国家修改为美国，2.4G 信道设置为 11， 5G 信道设置为 149（如果是无线中继，那么和主路由保持一致即可），然后重启路由器。&lt;/p&gt;
+
+&lt;p&gt;重启路由器后确实看到一块网卡已经可以，但总是有一块还是报错。&lt;/p&gt;
+
+&lt;p&gt;查看内核日志&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[  246.611715] wlan1: deauthenticated from fc:7c:01:dd:5b:7a (Reason: 15=4WAY_HANDSHAKE_TIMEOUT)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;去查看这个日志也找不到原因。故放弃转下载了 Padavan 的固件。&lt;/p&gt;
+
+&lt;h3 id=&quot;padavan&quot;&gt;Padavan&lt;/h3&gt;
+&lt;p&gt;Padavan 是俄罗斯开发者在华硕的路由器系统中延伸而来。Padavan 针对 mtk 芯片，梅林固件是针对博通芯片。功能相似。&lt;/p&gt;
+
+&lt;p&gt;在 Padavan 的固件中，直接 5G，设置无线桥接&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;无线 AP 工作模式： AP-Client + AP&lt;/li&gt;
+  &lt;li&gt;无线 AP-Client 角色：这里我选 LAN Bridge（因为我想要我这台接入的设备 IP 和主路由 IP 在同一个网段），而如果你想要 Padavan 连接的设备有一个新的 IP 段，这里可以选择 WAN(Wireless ISP)&lt;/li&gt;
+  &lt;li&gt;然后选择上级 SSID，自动获取信道，授权方式，密码，应用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;到这里就完成了 Padavan 中设置无线中继。另外我还去 LAN 设置中把 LAN 的 DHCP 关了。&lt;/p&gt;
+
+&lt;p&gt;然后再在 LAN 设置中将 LAN IP 地址，也就是 Padavan 的管理后台设置一个在主路由中的静态 IP，我的主路由网关是 192.168.2.1 所以我给 Padavan 设定了一个 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.2.2&lt;/code&gt;。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;源代码地址：&lt;a href=&quot;https://bitbucket.org/padavan/rt-n56u/src/master/&quot;&gt;https://bitbucket.org/padavan/rt-n56u/src/master/&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;固件下载地址：&lt;a href=&quot;https://opt.cn2qq.com/padavan/&quot;&gt;https://opt.cn2qq.com/padavan/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;另外要注意的是 Padavan 固件中有一个路由器运行模式，如果像我一样作为无线中继使用，也别尝试接入点模式 (AP) 模式，除非你一定要把路由器当成交换机使用。&lt;/p&gt;
+
+&lt;p&gt;接入点模式的介绍：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;MI-R3G 连接到外部有线 / 无线路由器并且提供无线网络共享。 该模式下 NAT、防火墙、UPnP、DHCP 服务不可用，并且 WAN 端口直接连接到 LAN 端口。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;在该模式下 WAN 口的作用也和 LAN 口一样。那么假如安装我上面的配置，Padavan 就无法进入管理后台了，因为 Padavan 只作为一个无线交换机在发挥功能。所以如果要使用该模式，一定把 LAN 口地址改成和无线中继的网段不一样的网段，这样了解网线，然后使用静态 IP 地址连接电脑还能上管理后台，否则就只能恢复出厂设置了。&lt;/p&gt;
+
+&lt;h2 id=&quot;如何进入-breed&quot;&gt;如何进入 Breed&lt;/h2&gt;
+
+&lt;p&gt;Breed 下载地址：&lt;a href=&quot;https://breed.hackpascal.net/&quot;&gt;https://breed.hackpascal.net/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;刷入 Breed 的方法就不说了，网上太多了。这里记录一下怎么进入 Breed，因为我总是忘记。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;断电&lt;/li&gt;
+  &lt;li&gt;按住 reset&lt;/li&gt;
+  &lt;li&gt;通电&lt;/li&gt;
+  &lt;li&gt;指示灯先黄色闪烁，然后蓝色闪烁&lt;/li&gt;
+  &lt;li&gt;用网线连接 LAN，和电脑&lt;/li&gt;
+  &lt;li&gt;进入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;几大路由器固件的历史&quot;&gt;几大路由器固件的历史&lt;/h2&gt;
+&lt;p&gt;思科发布 wrt54 路由后未遵循开源协议被告，之后迫于压力发遵循 GPL 发布了 wrt，再之后 wrt 延伸出社区版的 openwrt、HyperWRT 等，华硕也发布了 asuswrt(GPL 开源协议）。在华硕开源 asuswrt 后，开发者们基于此开发了梅林和 Padavan （老毛子）。&lt;/p&gt;
+
+&lt;p&gt;而开源社区这边，openwrt 又衍生出 dd-wrt、石像鬼、lede 等。其实现在用 arm 架构的路由器基本上全是 wrt 系统，包括 newifi, 极路由等等。&lt;/p&gt;
+
+</description>
+                <link>https://einverne.github.io/post/2020/04/mi-wifi-3g.html</link>
+                <guid>https://einverne.github.io/post/2020/04/mi-wifi-3g</guid>
+                <pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>个人的局域网网络设置整理</title>
+                <description>&lt;p&gt;最近因为想要调查我屋里网络带宽的瓶颈，把整个家里的网络环境整理了一番，也把本来乱七八糟的各种 IP 也梳理了一下。纯粹整理，如果不关心的可以跳过。&lt;/p&gt;
+
+&lt;p&gt;现在我有两台路由器，准确来说是三台，一台主路由基本不动，负责接入互联网，稳定为主，千兆。一台房间的副路由，无线中继主路由，IP 由主路由分配，还有一台本来做了无线桥接，有一个新的网段，现在想逐渐弃用，转移到同一个网段，便于管理。&lt;/p&gt;
+
+&lt;h2 id=&quot;路由器设置-dhcp&quot;&gt;路由器设置 DHCP&lt;/h2&gt;
+&lt;p&gt;主路由和副路由的网络设置，就不赘述，主路由没有什么设置，主要是副路由需要设置无线中继 +AP，我这里没有用主路由的 SSID，新产出了一个新的 SSID，如果在个人家中其实用同一个 SSID 即可，可以无缝切换。&lt;/p&gt;
+
+&lt;h2 id=&quot;qnap-static-ip&quot;&gt;QNAP static ip&lt;/h2&gt;
+&lt;p&gt;QNAP 设置静态地址&lt;/p&gt;
+
+&lt;p&gt;网络与虚拟环境中，找到之前设定的对应的接口，QNAP 中叫做虚拟交换机，直接通过 UI 界面修改即可。&lt;/p&gt;
+
+&lt;h2 id=&quot;proxmox-static-ip&quot;&gt;Proxmox static ip&lt;/h2&gt;
+&lt;p&gt;Proxmox 的网络接口配置在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/network/interfaces&lt;/code&gt; 文件中。&lt;/p&gt;
+
+&lt;p&gt;类似这样：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;auto lo
+iface lo inet loopback
+
+iface enp3s0 inet manual
+
+auto vmbr0
+iface vmbr0 inet static
+        address 192.168.2.100
+        netmask 255.255.255.0
+        gateway 192.168.2.1
+        bridge_ports enp3s0
+        bridge_stp off
+        bridge_fd 0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;修改其中的 address, netmask, gateway 即可。修改保存后重启，或者 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;systemctl restart networking.service&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&quot;raspberry-pi-static-ip&quot;&gt;Raspberry Pi static ip&lt;/h2&gt;
+&lt;p&gt;树莓派是网线接入，所以需要设置 eth0 的静态地址。&lt;/p&gt;
+
+&lt;p&gt;如果是用网线，eth0 端口，编辑 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/dhcpcd.conf&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;interface eth0
+static ip_address=192.168.2.4/24
+static routers=192.168.2.1
+static domain_name_servers=192.168.2.1 8.8.8.8
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;重启：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo reboot
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果使用的是无线网卡，那么需要设置 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;wlan0&lt;/code&gt; 网卡：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 查看当前配置
+ifconfig -a
+# 查看 wifi 配置
+less /etc/wpa_supplicant/wpa_supplicant.conf
+# 修改配置
+sudo vi /etc/dhcpcd.conf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;修改内容，和上面类似，注意把 IP 替换成对应内网的地址，别直接复制使用：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;interface wlan0
+static ip_address=192.168.2.4/24
+static routers=192.168.2.1
+static domain_name_servers=192.168.2.1 8.8.8.8
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;注意配置 Raspberry Pi 网卡地址的时候千万要小心，否则一旦配置错误，如果又是作为服务器使用的话，可能造成无法获取局域网地址从而无法连接，那么就可能需要键盘和显示器来登录重新配置，所以谨慎。&lt;/p&gt;
+
+&lt;h2 id=&quot;other-devices&quot;&gt;Other devices&lt;/h2&gt;
+&lt;p&gt;其他的 Linux PC 可以选择 DHCP，也可以配一个静态的 IP，因为不需要连接所以不知道自动获取的 IP 也关系不大。&lt;/p&gt;
+
+&lt;h2 id=&quot;为什么路由器的设置地址都是-192168-开头&quot;&gt;为什么路由器的设置地址都是 192.168 开头&lt;/h2&gt;
+&lt;p&gt;IPv4 地址协议中预留了 3 个 IP 段，作为保留地址给专有网络使用。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A 类地址：10.0.0.0–10.255.255.255&lt;/li&gt;
+  &lt;li&gt;B 类地址：172.16.0.0–172.31.255.255&lt;/li&gt;
+  &lt;li&gt;C 类地址：192.168.0.0–192.168.255.255&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;那么回到这个问题上，为什么家用的路由器默认分配的地址都是 192.168.1.x 或者 192.168.2.x 等等，举一个简单的例子，假如路由器使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1/24&lt;/code&gt; 网段，那么在这个网络中可以容纳的机器数是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.2-255&lt;/code&gt; 共 254 多个可用的 IP，一般家庭的设备连接足够。当然能够带动这么多设备的路由器性能也需要足够好了。&lt;/p&gt;
+
+&lt;p&gt;而假如你的局域网中可预期将会有几千几万太设备那么必然 192.168.1.x 的网段是不能用的，必须用到&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;172.16.0.0/12&lt;/code&gt; 可容纳 1048576 个地址&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;10.0.0.0/8&lt;/code&gt; 可容纳 16777216 个地址&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;下面两个地址自然个人是用不这么多的。&lt;/p&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E4%BF%9D%E7%95%99IP%E5%9C%B0%E5%9D%80&quot;&gt;保留 IP 段&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing&quot;&gt;https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.ipaddressguide.com/cidr&quot;&gt;CIDR 工具&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/04/isolate-network.html</link>
+                <guid>https://einverne.github.io/post/2020/04/isolate-network</guid>
+                <pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>没有反思的哀悼聊胜于无</title>
+                <description>&lt;p&gt;每次禁止娱乐都会让我想起《无限挑战》，最近在系统性了解韩国近代史后，再回来看《无限挑战》，2014 年发生震惊全韩国的世越号沉船事件后，整个韩国陷入巨大的悲痛，当然《无挑》也停播两周，但是两周后播出了长达一个月的《选择特辑》，我经常把他称之为选举特辑，因为 PD 就是用选举人制度让每一个 MC 都体验了一把总统候选人的角色。金 PD 对于这件事情没有直接的回击，反而用一种独特的视角去切入，悲剧既然发生了，我们有办法做到下一次不再犯错吗，有办法弥补当前的过失吗。金 PD 用自己的节目向世人宣告：”有“，那就是“选择”。
+每一个人都有选择的权利，只有每一个人都参与到整个社会的运行中，才能阻止这样的事情再此发生。于是后面的事情似乎大多数中国人都比较清楚 —- 朴槿惠被弹劾，新的总统被选上任。当然每个国家都有其自身的问题，但要看整个国家的历史向着哪一边前进。
+今天所有的娱乐节目停止，所有线上线下都在哀悼，可是我们哀悼什么呢？不幸染病的普通人？还是连名字都不能提的吹哨人？还是因为病毒而奋战在一线的医护工作者？对我们当然要哀悼，还要铭记。不仅要哀悼当下，还要哀悼这样的事情这已经发生了多少次。为什么每一次都去哀悼，然后再忘记，然后有发生悲剧，然后再哀悼吗？还有多少人还记得 SARS 的吹哨人？还有多少人还记得 SARS 感染的后遗症患者？还有多少人还记得 SARS 第一线的工作人员？说好的不要忘记他们呢？说好的会照顾他们呢？然而当历史车轮碾过的时候，这些曾经的哀悼就像是从来没有存在过。
+如今我们要哀悼，我们当然要哀悼，我们不仅要哀悼不幸逝去的人，还有哀悼消失的文字，消失的声音。太多的文字还没有被世人所阅便从虚拟的二进制世界消失了，太多的声音还没被听见就被掐断了声带。于是我反而羡慕起世越号后韩国所保留下的史料，从文字，图像，声音，到画面，每一年都被拿到聚光灯下被审阅，即使已经过去 6 年的今天，依然还有人在为这件事情发声，2020 的奥斯卡大部分的媒体的目光都被《寄生虫》所吸引，但实际还有一部短片《In the Absence》获得了提名。6 年过去了，他们还记得。并且提醒我们这需要被记住。可我们谁还记得长江之上的”东方之星号客轮”的事故，这也是有 442 人死亡的大型事故啊，并且这件事情正好发生在世越号之后一年啊。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/movie-in-the-absence-poster.jpg&quot; alt=&quot;movie in the absence poster&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;我们有反思吗？哀悼真的有用吗？禁止娱乐就真的能让人记住这个事情吗？满屏的黑白真的能给留下的人一点心里安慰吗？有的时候反而通过娱乐 —- 综艺，歌曲，影视 —- 一遍一遍的告诫后来的人，我们不能犯下同样的错误才真的有用。&lt;/p&gt;
+
+&lt;p&gt;如果真的就这样哀悼过去了，我真的害怕很多年以后，如果被记住的只有“果断的封城”，“英明的决策”，那如果病毒再来一次，我怕我就可能是那个被历史车轮碾过的人了。&lt;/p&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/04/covid-19-thinking.html</link>
+                <guid>https://einverne.github.io/post/2020/04/covid-19-thinking</guid>
+                <pubDate>Sat, 04 Apr 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>每天学习一个命令：使用 rz sz 向服务器发送文件</title>
+                <description>&lt;p&gt;搜索 rz sz 命令使用方式进来的，可以不用往下看了，直接学习 &lt;a href=&quot;/post/2017/03/scp-copy-file-between-machines.html&quot;&gt;scp&lt;/a&gt; 或者 &lt;a href=&quot;/post/2017/07/rsync-introduction.html&quot;&gt;rsync&lt;/a&gt; 吧， rz sz 看了一下还是有很多限制的。&lt;/p&gt;
+
+&lt;p&gt;虽然它可以实现向服务器发送文件，或者接受服务器的文件，但是限制条件必须在 screen 中执行，另外如果要在 Tmux 中使用还需要特殊的 hack &lt;sup id=&quot;fnref:t&quot;&gt;&lt;a href=&quot;#fn:t&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;使用&quot;&gt;使用&lt;/h2&gt;
+&lt;p&gt;所以最基本的使用就是：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;rz -be
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:t&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://v2ex.com/t/379440&quot;&gt;https://v2ex.com/t/379440&lt;/a&gt; &lt;a href=&quot;#fnref:t&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/04/send-file-to-server-rz-sz.html</link>
+                <guid>https://einverne.github.io/post/2020/04/send-file-to-server-rz-sz</guid>
+                <pubDate>Wed, 01 Apr 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>分析家里局域网 WiFI 瓶颈</title>
+                <description>&lt;p&gt;目前我的情况是，家中有一个千兆主路由放在客厅接外面的宽带，而我自己的房间有一台比较老的 Netgear 3800 路由来无线桥接连接外面的主路由，因为我不想我的 3800 路由中的设备暴露到主路由的设置中，所以用了 OpenWrt 的桥接模式。但是随着我在 3800 这台路下接的设备增多，导致目前 3800 这台路由不堪重负，已经影响到了我日常 streaming 局域网 NAS 中的电影。所以最近想更换一下这台已经 8 年历史的 WNDR 3800 路由器。&lt;/p&gt;
+
+&lt;p&gt;首先我了解了一下，WNDR3800 标称的是 300Mbps 双频千兆路由器，WiFi 下 5GHz，理论传输速率应该有 37.5MB/s，但实际应该是达不到的，但即使只有一半的速率 10MB/s ，理论上串流局域网的视频应该是问题不大的，而现在的问题就出现在局域网中用 WiFi 连接的设备，理论上只能达到 4MB/s 的峰值速度。&lt;/p&gt;
+
+&lt;h2 id=&quot;网线比较老&quot;&gt;网线比较老&lt;/h2&gt;
+
+&lt;p&gt;首先细想了想理论上我的 WNDR3800 路由下面四个 LAN 口都是千兆网口，有线速度不应该那么差的，所以我先用我现有的几根网线连接了设备，但发现速度依然不够理想。&lt;/p&gt;
+
+&lt;p&gt;用 iperf 测试两台使用网线连接的设备，测试的速度大致只有在 30~45 Mbits/s 左右，换算成传输的速度除以 8，那就比较可怜了。&lt;/p&gt;
+
+&lt;p&gt;我就有点怀疑我的网线，可能是比较老的网线（这几根网线已经跟随我差不多快 6 年了，所以应该就是一个最高百兆的网线），所以立即下单了两根六类网线。&lt;/p&gt;
+
+&lt;h3 id=&quot;网线区别&quot;&gt;网线区别&lt;/h3&gt;
+&lt;p&gt;如何识别五类网线，超五类网线？&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;五类网线，会标注 「CAT5」字样，传输带宽为 100MHz，用于语音传输和最高传输速率为 100Mbps 的数据传输&lt;/li&gt;
+  &lt;li&gt;超五类网线：标注 「CAT5e」 字样，传输带宽可高达 1000Mb/s，但一般只应用在 100Mb/s 的网络中，只实现桌面交换机到计算机的连接，因为超五类非屏蔽网线要借助价格高昂的特殊设备的支持&lt;/li&gt;
+  &lt;li&gt;六类网线：标注 「CAT6」字样，一般指的都是非屏蔽网线，主要应用在千兆网络中，在传输性能上远远高于超五类网线标准&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;设备网卡&quot;&gt;设备网卡&lt;/h2&gt;
+&lt;p&gt;在怀疑完网线之后，就想是不是设备接口的限制，于是就从路由器开始排查。&lt;/p&gt;
+
+&lt;h3 id=&quot;路由器&quot;&gt;路由器&lt;/h3&gt;
+&lt;p&gt;确定是千兆网口&lt;/p&gt;
+
+&lt;h3 id=&quot;盒子&quot;&gt;盒子&lt;/h3&gt;
+&lt;p&gt;查了一下 T1 盒子的无线网卡：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;双频 WiFi，支持 ac，单天线，2.4G 连接速率 65Mbps，5G 连接速率 433 Mbps&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;而一查有线网卡，竟然是一个百兆网卡，怪不得比无线还慢。既然有线不能用，那就只能上无线了。&lt;/p&gt;
+
+&lt;h2 id=&quot;wifi-带宽不够&quot;&gt;WIFI 带宽不够&lt;/h2&gt;
+&lt;p&gt;首先盒子的无线网卡是支持 802.11 ac 协议的，理论上是没有跑满带宽的，那么就是无线路由器到了上限。300Mbps 是 WNDR3800 标称的传输速度，但是实际即使靠的最近也不大可能达到理论速度的。再者我的 WNDR3800 有线连着一台 NAS，一台 Proxmox 服务器，本来传输压力就有些大，所以我期望无线能达到理论的一半就已经很好了，但实际上我测试，用一台 WNDR3800 有线连接的设备开启 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iperf -s&lt;/code&gt;，再用一台无线连接，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iperf -c IP&lt;/code&gt;，测试的结果是 60 Mbits/s 左右。&lt;/p&gt;
+
+&lt;p&gt;然后我想起来我还有一台小米路由器 (Mi Wifi 3G)，之前因为总是断线所以就收起来了，然后去&lt;a href=&quot;https://www.mi.com/miwifi3g/specs&quot;&gt;官网&lt;/a&gt; 查了一下配置，发现配置要比我的 WNDR3800 好不少，并且用 Android 连接后可以达到 800Mpbs。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;处理器 MT7621A MIPS 双核 880MHz&lt;/li&gt;
+  &lt;li&gt;ROM 128MB SLC Nand Flash&lt;/li&gt;
+  &lt;li&gt;内存 256MB DDR3-1200&lt;/li&gt;
+  &lt;li&gt;2.4G 2X2（支持 IEEE 802.11N 协议，最高速率可达 300Mbps）&lt;/li&gt;
+  &lt;li&gt;5G 2X2（支持 IEEE 802.11AC 协议，最高速率可达 867Mbps）&lt;/li&gt;
+  &lt;li&gt;外置全向高增益天线 4 根（2.4G 最大增益 5dBi 2 根 5G 最大增益 6dBi 2 根）&lt;/li&gt;
+  &lt;li&gt;1 个 USB 3.0 接口（DC output：5V/1A）&lt;/li&gt;
+  &lt;li&gt;1 个千兆 WAN 口，两个千兆 LAN 口，LAN 稍微少了点&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/mi-wifi-3g-specs.jpg&quot; alt=&quot;miwifi 3g specs&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;所以现在就是要找一个比较稳定的固件了，官方的固件，无疑就是 OpenWrt 了。&lt;/p&gt;
+
+&lt;h2 id=&quot;ieee-80211-abgnac&quot;&gt;IEEE 802.11 a/b/g/n/ac&lt;/h2&gt;
+
+&lt;p&gt;Protocol&lt;/p&gt;
+
+&lt;h2 id=&quot;20mhz-vs-40mhz-信道宽度&quot;&gt;20MHz vs 40MHz 信道宽度&lt;/h2&gt;
+&lt;p&gt;在 OpenWrt&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;对于 2.4 G 和 20 MHz，最好的 channel band 是 1,6,11&lt;/li&gt;
+  &lt;li&gt;对于 2.4 G 和 40 MHz，最好的 channel band 是 3,11&lt;/li&gt;
+  &lt;li&gt;对于 5G 和 20 MHz, 如果设备都支持最好使用 40 MHz，或者如果路由设备支持可以使用混合模式&lt;/li&gt;
+  &lt;li&gt;对于 5G 和 40 MHz，任何少量信道的 channel 都可以。或者考虑让路由器自动选择最好的 Channel。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;further-more&quot;&gt;Further More&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Android 上可以使用 WiFiAnalyzer 查看&lt;/li&gt;
+  &lt;li&gt;对于 Windows 可以使用 NetStumbler 来查看附近的网络。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://routerguide.net/setting-up-20-mhz-or-40-mhz-bandwidth-how-to-improve-wifi-network-performance/&quot;&gt;https://routerguide.net/setting-up-20-mhz-or-40-mhz-bandwidth-how-to-improve-wifi-network-performance/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>https://einverne.github.io/post/2020/03/router-bottleneck.html</link>
+                <guid>https://einverne.github.io/post/2020/03/router-bottleneck</guid>
+                <pubDate>Tue, 31 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>GitLab CI 使用笔记</title>
+                <description>&lt;p&gt;CI/CD 不必多说。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/gitlab-ci.png&quot; alt=&quot;gitlab ci&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;CI/CD 解决的问题：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;重复劳动&lt;/li&gt;
+  &lt;li&gt;等待时间&lt;/li&gt;
+  &lt;li&gt;手工出错&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;基本概念&quot;&gt;基本概念&lt;/h2&gt;
+&lt;p&gt;gitlab CI 依赖于项目根目录中定义的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 文件，这个文件定义了 GitLab CI 应该做的事情。每次提交代码 GitLab 会检查该文件，然后将该文件定义的内容提交给 GitLab Runner 执行。&lt;/p&gt;
+
+&lt;h3 id=&quot;cicd&quot;&gt;CI/CD&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;CI : Continuous integration，持续集成，代码有改动时触发编译、测试、打包等一系列构建操作，最后生成一个可部署的构件。指开发⼈人员在特定分⽀支（频繁）提交代码，⽴立即执⾏行行构建和单元测试，代码通过测试标准后集成到主⼲干的过程。强调的是分⽀支代码的提交、构建与单元测试。&lt;/li&gt;
+  &lt;li&gt;Continuous Delivery，持续交付，在持续集成的基础上，将构建的代码部署到「类⽣生产环境」&lt;/li&gt;
+  &lt;li&gt;Continuous Deployment, 持续部署，CI 之后自动化地部署或交付给客户使用。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;pipeline&quot;&gt;pipeline&lt;/h3&gt;
+
+&lt;p&gt;gitlab-ci 中配置的所有可执行的 job 称为 pipeline，Pipeline 可以认为是一次构建过程。Pipeline 中可以包含多个 stage.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/gitlab-ci-pipeline.png&quot; alt=&quot;gitlab-ci-pipeline&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在 GitLab 后台可以看到如图，整个过程称为一个 pipeline，这个 pipeline 包括两个 stage（阶段）。每个阶段就只有一个任务，gitlab-ci 在运行时只有当一个 stage 中所有的任务都执行完成才会进入下一个 stage.&lt;/p&gt;
+
+&lt;p&gt;首先来对 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 文件有一个整体的了解。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# 定义 stages
+stages:
+  - test
+  - build
+
+# 定义 job
+job1:
+  stage: test
+  script:
+    - echo &quot;test stage&quot;
+
+job1_1:
+  stage: test
+  script:
+    - echo &quot;test stage: job1_1&quot;
+
+# 定义 job
+job2:
+  stage: build
+  script:
+    - echo &quot;build stage&quot;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;stage&quot;&gt;stage&lt;/h3&gt;
+&lt;p&gt;stage 可以理解为阶段，是 gitlab-ci 的概念，流程中的阶段，可以包括测试，编译，发布，部署等，在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 文件中会用到。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;GitLab CI 文件中必须包含至少一个 stage&lt;/li&gt;
+  &lt;li&gt;多个 stage 按照顺序执行&lt;/li&gt;
+  &lt;li&gt;如果其中任何一个 stage 发生错误，之后的所有 stage 都不会被执行。&lt;/li&gt;
+  &lt;li&gt;同样只有所有的 stage 都成功，Pipeline 才会成功&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;定义：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- stages:
+  - build
+  - deploy
+  - release
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;job-或者-app&quot;&gt;job 或者 app&lt;/h3&gt;
+&lt;p&gt;job 或者又被称为 app，由 job 组成 gitlab-ci 的 stage 阶段，多个 job 可以并发执行。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;同一个 stage 下的 job 会并行执行&lt;/li&gt;
+  &lt;li&gt;同一个 stage 下的 job 都执行成功，该 stage 才会成功&lt;/li&gt;
+  &lt;li&gt;如果 job 执行失败， 那么该 stage 失败，pipeline 失败，该次构建过程失败&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;举例：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;build_front:
+  stage: build
+build_backend:
+  stage: build
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;上面两个 app (build_front, build_backend) 将会在 build 阶段并发执行。&lt;/p&gt;
+
+&lt;h3 id=&quot;variables&quot;&gt;variables&lt;/h3&gt;
+&lt;p&gt;gitlab-ci 中集成了很多&lt;a href=&quot;https://docs.gitlab.com/ee/ci/variables/predefined_variables.html&quot;&gt;默认的变量&lt;/a&gt;，可以通过 &lt;a href=&quot;https://docs.gitlab.com/ee/ci/variables/README.html&quot;&gt;variables&lt;/a&gt; 关键字来定义自己的变量，也可以在 gitlab 提供的界面上配置。gitlab 提供的 UI 可以配置全组或者 project 级别的环境变量。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;group 级别&lt;/li&gt;
+  &lt;li&gt;project 级别&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;比如一些敏感的信息，比如 Nexus 密码，Docker Registry 密码或者密钥之类等等&lt;/p&gt;
+
+&lt;h2 id=&quot;gitlab-runner&quot;&gt;GitLab Runner&lt;/h2&gt;
+&lt;p&gt;GitLab CI 中是 Runner 真正在执行 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 中定义的任务，Runner 可以是虚拟机，物理机，Docker 容器或者容器集群。GitLab 和 GitLab Runner 直接通过 API 通信，所以需要保证 GitLab 和 Runner 直接可以通过 HTTP 进行通信。&lt;/p&gt;
+
+&lt;p&gt;GitLab Runner 可以分为两种类型： Shared Runner （共享型） 和 Specific Runner（指定）&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Shared Runner: 所有工程都可以使用，只有系统管理员可以创建&lt;/li&gt;
+  &lt;li&gt;Specific Runner: 只有特定的项目可以使用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;install-runner&quot;&gt;Install Runner&lt;/h3&gt;
+&lt;p&gt;GitLab Runner 的安装参考&lt;a href=&quot;https://docs.gitlab.com/runner/install/&quot;&gt;官方网站&lt;/a&gt; 即可，代码也是&lt;a href=&quot;https://gitlab.com/gitlab-org/gitlab-runner&quot;&gt;开源的&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;常用关键词&quot;&gt;常用关键词&lt;/h2&gt;
+&lt;p&gt;全部的关键词可以在&lt;a href=&quot;https://docs.gitlab.com/ee/ci/yaml/&quot;&gt;官网&lt;/a&gt; 查看。&lt;/p&gt;
+
+&lt;h3 id=&quot;script&quot;&gt;script&lt;/h3&gt;
+&lt;p&gt;最常用的一个关键词了，script 定义具体需要执行的任务。&lt;/p&gt;
+
+&lt;h3 id=&quot;before_script&quot;&gt;before_script&lt;/h3&gt;
+&lt;p&gt;before_script 定义在每一个 job 之前的任务，必须是 Array 类型。&lt;/p&gt;
+
+&lt;h3 id=&quot;after_script&quot;&gt;after_script&lt;/h3&gt;
+&lt;p&gt;after_script 每一个 job 之后执行，即使 job 失败了也会执行，Array 类型。&lt;/p&gt;
+
+&lt;h3 id=&quot;cache&quot;&gt;cache&lt;/h3&gt;
+&lt;p&gt;定义需要缓存的文件或者路径。&lt;/p&gt;
+
+&lt;h2 id=&quot;use-case&quot;&gt;Use case&lt;/h2&gt;
+
+&lt;h3 id=&quot;对部分文件修改判断是否触发该阶段&quot;&gt;对部分文件修改判断是否触发该阶段&lt;/h3&gt;
+&lt;p&gt;有时候没有修改一些可能需要重新跑 build 的代码，不想 GitLab Runner 空跑，可以使用 &lt;a href=&quot;https://docs.gitlab.com/ee/ci/yaml/README.html#onlyexcept-basic&quot;&gt;only&lt;/a&gt; 关键字，以及 &lt;a href=&quot;https://docs.gitlab.com/ee/ci/yaml/README.html#onlychangesexceptchanges&quot;&gt;change&lt;/a&gt; 关键字实现只有部分文件改动后再触发 build.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;only: # 下面的条件都成立
+  refs: # 下面的分支中任一分支改变
+    - release
+  changes: # 下面的文件中任一文件发生改变
+    - .gitlab-ci.yml
+    - Dockerfile
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;当 release 分支改变，同时 .gitlab-ci.yml 文件或者 Dockerfile 文件发生改变时，触发这个阶段的执行。&lt;/p&gt;
+
+&lt;h3 id=&quot;多个模块编译方式不同&quot;&gt;多个模块编译方式不同&lt;/h3&gt;
+&lt;p&gt;假如一个项目中集成了很多个模块，而每一个模块中的内容编译方式都不同。那么可以使用 gitlab-ci 提供的 &lt;a href=&quot;https://docs.gitlab.com/ee/ci/yaml/README.html#include&quot;&gt;include&lt;/a&gt; 关键字，对各个模块进行分拆。在每一个模块下放置 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 文件，然后再到根目录中创建 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.gitlab-ci.yml&lt;/code&gt; 文件使用 include 关键字引入进来，对各个模块进行解耦。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;include:
+  - local: module1/.gitlab-ci.yml
+  - local: module2/.gitlab-ci.yml
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;模板&quot;&gt;模板&lt;/h2&gt;
+
+&lt;h3 id=&quot;集成-sonar&quot;&gt;集成 sonar&lt;/h3&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Build:
+ stage: build
+ script:
+ - echo 'build projects'
+ - &quot;mvn $MAVEN_CLI_OPTS clean compile -Dmaven.test.skip=true&quot;
+ - 'mvn $MAVEN_CLI_OPTS -U clean package -Dmaven.test.skip=true'
+ - 'mvn $MAVEN_CLI_OPTS sonar:sonar -Dsonar.projectKey=projectname -Dsonar.host.url=http://url -Dsonar.login=xxxxx'
+
+Test:
+ stage: test
+ script:
+ - echo 'test projects'
+ - 'mvn $MAVEN_CLI_OPTS clean test'
+ only:
+  - master
+  - staging
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.gitlab.com/ee/ci/&quot;&gt;https://docs.gitlab.com/ee/ci/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/gitlab-ci.html</link>
+                <guid>https://einverne.github.io/post/2020/03/gitlab-ci</guid>
+                <pubDate>Tue, 31 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>使用命令行远程网络唤起主机</title>
+                <description>&lt;p&gt;在 Linux 下可以通过 etherwake 命令来网络唤醒设备。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt install etherwake
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;检查主机是否支持网络远程唤醒&quot;&gt;检查主机是否支持网络远程唤醒&lt;/h2&gt;
+&lt;p&gt;首先检查 BIOS 中设置，Wake on LAN 是否开启。一般在 BIOS &amp;gt; Power Management &amp;gt; “Wake On LAN” 这个选项下。然后重启进入系统，用如下命令查看网卡 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;eth0&lt;/code&gt; 是否开启了 Wake on LAN:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ethtool eth0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;输出：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Settings for eth0:
+		Supported ports: [ TP ]
+		Supported link modes:   10baseT/Half 10baseT/Full
+								100baseT/Half 100baseT/Full
+								1000baseT/Full
+		Supported pause frame use: Symmetric
+		Supports auto-negotiation: Yes
+		Supported FEC modes: Not reported
+		Advertised link modes:  1000baseT/Full
+		Advertised pause frame use: Symmetric
+		Advertised auto-negotiation: Yes
+		Advertised FEC modes: Not reported
+		Speed: 1000Mb/s
+		Duplex: Full
+		Port: Twisted Pair
+		PHYAD: 1
+		Transceiver: internal
+		Auto-negotiation: on
+		MDI-X: off (auto)
+		Supports Wake-on: pumbg
+		Wake-on: g
+		Current message level: 0x00000007 (7)
+							   drv probe link
+		Link detected: yes
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;结果中可以一眼就看到：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Supports Wake-on: pumbg
+Wake-on: g
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果没有看到这个字样，或者是 off 状态，需要手动启动一下：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ethtool -s eth0 wol g
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;说明：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-s NIC&lt;/code&gt;, 我这里的 eth0 是网络接口的设备名，根据不同的设备填写不同，可以通过 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ifconfig&lt;/code&gt;  来查看&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;wol g&lt;/code&gt; 表示设置 Wake-on-LAN 选项使用 MagicPacket.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;使用命令远程唤醒&quot;&gt;使用命令远程唤醒&lt;/h2&gt;
+
+&lt;p&gt;在 Linux 下执行如下命令唤醒设备：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt install wakeonlan
+wakeonlan MAC_ADDRESS
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;或者&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;etherwake MAC_ADDRESS
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以通过 ping 命令和 arp 命令来获取局域网中的设备 MAC 地址：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ping -c 4 SERVER_IP &amp;amp;&amp;amp; arp -n
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.cyberciti.biz/tips/linux-send-wake-on-lan-wol-magic-packets.html&quot;&gt;https://www.cyberciti.biz/tips/linux-send-wake-on-lan-wol-magic-packets.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/use-cli-wake-on-lan.html</link>
+                <guid>https://einverne.github.io/post/2020/03/use-cli-wake-on-lan</guid>
+                <pubDate>Sun, 29 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>Cloud-init 初始化虚拟机配置</title>
+                <description>&lt;p&gt;在安装 &lt;a href=&quot;/post/2020/03/proxmox-install-and-setup.html&quot;&gt;Proxmox&lt;/a&gt; 后在它的文档中了解到了 cloud-init。所以就来梳理一下。&lt;/p&gt;
+
+&lt;h2 id=&quot;cloud-init-是什么&quot;&gt;cloud-init 是什么&lt;/h2&gt;
+&lt;p&gt;cloud-init 运行在 Guest machine 中，并在初始化时将一些自定义的配置应用到 Guest machine 中的应用程序。 cloud-init 最早由 Ubuntu 的开发商 Canonical 开发，现在已经支持绝大多数 Linux 发行版和 FreeBSD 系统。而目前大部分的公有云都在用 cloud-init 初始化系统配置，cloud-init 也支持部分私有云 (KVM, OpenStack, LXD 等等） &lt;sup id=&quot;fnref:cloud&quot;&gt;&lt;a href=&quot;#fn:cloud&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;，已经成为了事实上的标准。&lt;/p&gt;
+
+&lt;p&gt;当我们在 AWS，或者 Google Cloud 这些公有云中申请计算资源的时候，云服务的提供商总是会叫我们选择一个系统镜像，然后做一些基础设置 (Hostname, SSH key 等等），然后在此基础上进行系统创建。cloud-init 正是在这个背景下诞生，自动化将用户数据初始化到系统实例中。&lt;/p&gt;
+
+&lt;p&gt;cloud-init 的主旨是定义一些独立于操作系统的配置，比如 hostname, networking configuration 等等。&lt;/p&gt;
+
+&lt;p&gt;特性：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;设置默认的 locale&lt;/li&gt;
+  &lt;li&gt;设置 hostname&lt;/li&gt;
+  &lt;li&gt;生成并设置 SSH 私钥&lt;/li&gt;
+  &lt;li&gt;设置临时的挂载点&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;boot-stages&quot;&gt;Boot Stages&lt;/h2&gt;
+&lt;p&gt;cloud-init 对系统的初始化分为这几个阶段&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Generator&lt;/li&gt;
+  &lt;li&gt;Local&lt;/li&gt;
+  &lt;li&gt;Network&lt;/li&gt;
+  &lt;li&gt;Config&lt;/li&gt;
+  &lt;li&gt;Final&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;generator&quot;&gt;Generator&lt;/h3&gt;
+&lt;p&gt;当系统启动的时候，&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/systemd.generator.html&quot;&gt;generator&lt;/a&gt; 会检查 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cloud-init.target&lt;/code&gt; 是否需要启动。默认情况下，generator 会启动 cloud-init. 但是如下情况 cloud-init 不会在开机运行：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/cloud/cloud-init.disabled&lt;/code&gt; 文件存在时&lt;/li&gt;
+  &lt;li&gt;当内核命令发现文件 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/proc/cmdline&lt;/code&gt; 包含 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cloud-init=disabled&lt;/code&gt; 时，当在容器中运行时，内核命令可能会被忽略，但是 cloud-init 会读取 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KERNEL_CMDLINE&lt;/code&gt; 这个环境变量&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;local&quot;&gt;Local&lt;/h3&gt;
+&lt;p&gt;Local 阶段会在挂载根分区 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/&lt;/code&gt; 时，立即执行&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cloud-init-local.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Local 阶段的目的是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;查找 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;local&lt;/code&gt; data source&lt;/li&gt;
+  &lt;li&gt;将网络配置应用到本地&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;大多数情况下，这个阶段就只会做这些事情。它会在 datasource 中查找，并应用网络配置。网络配置可能从这些地方来：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;datasource&lt;/strong&gt;: 云端通过 metadata 提供&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;fallback&lt;/strong&gt;: 通过 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dhcp on eth0&lt;/code&gt;，在虚拟机内自行通过 DHCP 获取 IP&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;none&lt;/strong&gt;: 网络配置可以通过 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/cloud/cloud.cfg&lt;/code&gt; 中配置 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;network: {config: disabled}&lt;/code&gt; 来禁用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;如果是该实例的第一次启动，那么被选中的网络配置会被应用，所有老旧的配置都会会清除。&lt;/p&gt;
+
+&lt;p&gt;该阶段需要阻止网络服务启动以及老的配置被应用，这可能带来一些负面的影响，比如 DHCP 服务挂起，或者已经广播了老的 hostname，这可能导致系统进入一个奇怪的状态需要重启网络设备。&lt;/p&gt;
+
+&lt;p&gt;cloud-init 然后再继续启动系统，将网络配置应用后启动。&lt;/p&gt;
+
+&lt;h3 id=&quot;network&quot;&gt;Network&lt;/h3&gt;
+&lt;p&gt;在 local 阶段后，网络服务启动后，启动&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cloud-init.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;该阶段需要所有的网络配置已经被应用，并且网络在线，然后才会应用所有的 user-data&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;递归检索任何 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include&lt;/code&gt; 或者 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#include-once&lt;/code&gt; 包括 http&lt;/li&gt;
+  &lt;li&gt;解压缩任何压缩的内容&lt;/li&gt;
+  &lt;li&gt;运行任何找到的 part-handler&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;该阶段运行 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;disk_set&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mounts&lt;/code&gt; 模块，可能会分区并格式化任何配置挂载点（比如 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/fstab&lt;/code&gt;中）的磁盘。这个模块不能再早运行，因为有可能有些信息来源于网络，只有等网络信息获取到后才能执行。比如用户可能在网络资源中提供了挂载点配置信息。&lt;/p&gt;
+
+&lt;p&gt;在一些云服务中，比如 Azure，这个阶段会创建可以被挂载的文件系统。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;part-handler&lt;/code&gt; 也会在这个阶段运行，包括 cloud-config &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bootcmd&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h3 id=&quot;config&quot;&gt;Config&lt;/h3&gt;
+&lt;p&gt;在网络启动后运行：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cloud-config.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这个阶段只会运行 config 模块，不会对其他阶段产生影响的模块在这里运行。&lt;/p&gt;
+
+&lt;h3 id=&quot;final&quot;&gt;Final&lt;/h3&gt;
+&lt;p&gt;启动的最后阶段运行：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cloud-final.service
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;用户登录系统后习惯于运行的脚本在这个阶段运行，包括：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;包安装&lt;/li&gt;
+  &lt;li&gt;配置管理的插件 (puppet, chef, salt-minion)&lt;/li&gt;
+  &lt;li&gt;用户脚本（包括 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;runcmd&lt;/code&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;配置文件地址&quot;&gt;配置文件地址&lt;/h2&gt;
+&lt;p&gt;cloud-init 配置文件在：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/etc/cloud/cloud.cfg
+/etc/cloud/cloud.cfg.d/*.cfg
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;cloud-init 在配置文件 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/cloud/cloud.cfg&lt;/code&gt; 中定义了各个阶段需要执行的任务，任务以 module 形式组织。
+cloud.cfg 中指定了 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;set_hostname&lt;/code&gt; 这个 module, 则表示 cloud-init 会执行设置 hostname 的任务，但是具体设置的内容由 metadata 指定。&lt;/p&gt;
+
+&lt;p&gt;cloud-init 的日志在：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/var/log/cloud-init-output.log: 每一个阶段的输出
+/var/log/cloud-init.log: 每一个操作更详细的调试日志
+/run/cloud-init: contains logs about how cloud-init decided to enable or disable itself, as well as what platforms/datasources were detected. These logs are most useful when trying to determine what cloud-init ran or did not run.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;数据存放在：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/var/lib/cloud
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://cloud-init.io/&quot;&gt;https://cloud-init.io/&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://pve.proxmox.com/wiki/Cloud-Init_FAQ&quot;&gt;https://pve.proxmox.com/wiki/Cloud-Init_FAQ&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://cloudinit.readthedocs.io/en/latest/&quot;&gt;https://cloudinit.readthedocs.io/en/latest/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:cloud&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://cloudinit.readthedocs.io/en/latest/topics/availability.html&quot;&gt;https://cloudinit.readthedocs.io/en/latest/topics/availability.html&lt;/a&gt; &lt;a href=&quot;#fnref:cloud&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/cloud-init.html</link>
+                <guid>https://einverne.github.io/post/2020/03/cloud-init</guid>
+                <pubDate>Sat, 28 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>BitTorrent 协议中的 BenCode 编码</title>
+                <description>&lt;p&gt;在了解 &lt;a href=&quot;/post/2020/02/everything-related-about-bittorrent-and-pt.html&quot;&gt;BitTorrent&lt;/a&gt; 协议的时候，想着 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.torrent&lt;/code&gt; 文件是如何生成的，所以就找了几个 CLI，比如 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;transmission-cli&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mktorrent&lt;/code&gt;这两个开源的制作 torrent 文件的开源项目，发现他们就是按照一种约定的格式来生成文件。而这个约定的结构中就少不了现在要谈的 BenCode 编码。&lt;/p&gt;
+
+&lt;h2 id=&quot;what-is-bencode&quot;&gt;What is BenCode&lt;/h2&gt;
+&lt;p&gt;BenCode 是用于编码 torrent 文件的一种编码格式。BenCode 支持四种数据类型：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;字符串&lt;/li&gt;
+  &lt;li&gt;整数&lt;/li&gt;
+  &lt;li&gt;数组&lt;/li&gt;
+  &lt;li&gt;字典&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要注意的是 BenCode 只用 ASCII 字符进行编码，如果是非 ASCII 码，BenCode 会用一种编码方式将其转换成 ASCII 码。&lt;/p&gt;
+
+&lt;h3 id=&quot;string&quot;&gt;字符串&lt;/h3&gt;
+&lt;p&gt;在编码字符串时 BenCode 选择将字符长度编码在其中：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&amp;lt;Length&amp;gt;:&amp;lt;Content&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;比如 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;6:string&lt;/code&gt; 就表示 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;string&lt;/code&gt; 本身。&lt;/p&gt;
+
+&lt;h3 id=&quot;integar&quot;&gt;整数&lt;/h3&gt;
+&lt;p&gt;整数编码时在前后加 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;i&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;e&lt;/code&gt;，比如：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;i123e
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;表示整数 123 . 这种方式也可以表示负数：&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;i-1e&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;array&quot;&gt;数组&lt;/h3&gt;
+&lt;p&gt;列表前后用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;l&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;e&lt;/code&gt; 标识。列表中的元素可以是 BenCode 支持的任何一种类型。比如要编码字符串 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;content&lt;/code&gt; 和数字 42:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;l7:contenti42ee
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;注意这里每个类型的边界都有定义清楚。字符串可以用长度来限定边界，但是整数一定需要 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;i&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;e&lt;/code&gt; 来限定边界。&lt;/p&gt;
+
+&lt;h3 id=&quot;map&quot;&gt;字典&lt;/h3&gt;
+&lt;p&gt;字典类型可以保存一对一的关系，在 BenCode 中 KEY 必须为字符串类型，而 VALUE 可以是 BenCode 支持的任意一种类型。字典编码时用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;e&lt;/code&gt; 限定范围。&lt;/p&gt;
+
+&lt;p&gt;另外需要注意，字典中 KEY 和 VALUE 必须相邻，字典依照 KEY 的字母序排序。&lt;/p&gt;
+
+&lt;p&gt;比如要定义 “name” -&amp;gt; “Ein Verne”, “age” -&amp;gt; 18, “interests” -&amp;gt; [“book”, “movie”]&lt;/p&gt;
+
+&lt;p&gt;首先要到 KEY 进行排序 “age”, “interests”, “name”&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3:age9:Ein Verne
+9:interestsi18e
+4:namel4:book5:moviee
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后把上面的 KEY VALUE 连接起来，并在前后加上字典的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;e&lt;/code&gt; 限定。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;d3:age9:Ein Verne9:interestsi18e4:namel4:book5:movieee
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;torrent-文件&quot;&gt;torrent 文件&lt;/h2&gt;
+&lt;p&gt;在了解了 BenCode 的编码后，用纯文本文件打开 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.torrent&lt;/code&gt; 文件就能知道一二了。本质上 torrent 文件就是一个用 BenCode 编码的纯文本文件，torrent 在 BitTorrent 协议中又被称为 metainfo。&lt;/p&gt;
+
+&lt;p&gt;metainfo 是一个 BenCode 编码的字典：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;announce
+	tracker 的地址
+info
+	字典，单文件和多文件略有不同
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;torrent 文件中的所有字符串必须是 UTF-8 编码的。&lt;/p&gt;
+
+&lt;h3 id=&quot;single-file&quot;&gt;单文件&lt;/h3&gt;
+&lt;p&gt;我在本地新建了一个 README.md 文件，然后用如下命令创建一个 torrent 文件 “test.torrent”.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mktorrent -a http://announce.url -c &quot;This is comments&quot; -l 18 -o &quot;test.torrent&quot; -p -v README.md
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后查看 test.torrent 内容：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;d8:announce19:http://announce.url7:comment16:This is comments10:created by13:mktorrent 1.013:creation datei1585360743e4:infod6:lengthi5e4:name9:README.md12:piece lengthi262144e6:pieces20:h7@xxxxxlxx]7:privatei1eee
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;拆解这个编码，先分段开。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;d
+ 8:announce -&amp;gt; 19:http://announce.url
+ 7:comment -&amp;gt; 16:This is comments
+ 10:created by -&amp;gt; 13:mktorrent 1.0
+ 13:creation date -&amp;gt; i1585360743e
+ 4:info
+  d
+   6:length -&amp;gt; i5e
+   4:name -&amp;gt; 9:README.md
+   12:piece length -&amp;gt; i262144e
+   6:pieces -&amp;gt; 20:h7@xxxxxxxxx
+   7:private -&amp;gt; i1e
+  e
+e
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;拆解后可以看到 info 字典中有这么几项：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;length 指的是整个文件的大小&lt;/li&gt;
+  &lt;li&gt;name 下载的文件名&lt;/li&gt;
+  &lt;li&gt;piece length 整数，BitTorrent 文件块大小&lt;/li&gt;
+  &lt;li&gt;pieces 字符串，连续存放所有块的 SHA1 值，每一个块的 SHA1 值长度都是 20，这里因为文件本身比较小所以只有一块&lt;/li&gt;
+  &lt;li&gt;private 整数，标记 torrent 是否私有&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;注：pieces 中有些特殊字符，在文章中用其他字符替换了。&lt;/p&gt;
+
+&lt;h3 id=&quot;multiple-files&quot;&gt;多文件&lt;/h3&gt;
+&lt;p&gt;多文件时 info 字典中会有一个 files 列表，这个列表由字典组成，每一个字典中是文件的内容，包括文件名和文件长度。&lt;/p&gt;
+
+&lt;p&gt;比如对当前文件夹下 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;README.md&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;README1.md&lt;/code&gt; 两个文件制作 torrent.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mktorrent -a http://announce.url -c &quot;This is comments&quot; -l 18 -o &quot;test.torrent&quot; -p -v .
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;得到的 torrent 文件：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;d8:announce19:http://announce.url7:comment16:This is comments10:created by13:mktorrent 1.013:creation datei1585361538e4:infod5:filesld6:lengthi5e4:pathl9:README.mdeed6:lengthi0e4:pathl10:README1.mdeee4:name1:.12:piece lengthi262144e6:pieces20:rhr7r@rorrrlrrrrrrrr7:privatei1eee
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;拆解一下：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;d
+ 8:announce -&amp;gt; 19:http://announce.url
+ 7:comment -&amp;gt; 16:This is comments
+ 10:created by -&amp;gt; 13:mktorrent 1.0
+ 13:creation date -&amp;gt; i1585361538e
+ 4:info -&amp;gt;
+  d
+   5:files -&amp;gt; l
+               d
+			    6:length -&amp;gt; i5e
+			    4:path -&amp;gt; l 9:README.md e
+			   e
+			   d
+			    6:length -&amp;gt; i0e
+			    4:path -&amp;gt; l 10:README1.md e
+			   e
+			  e
+   4:name -&amp;gt; 1:.
+   12:piece length -&amp;gt; i262144e
+   6:pieces -&amp;gt; 20:rhrxxxxxxxxrrrrrr
+   7:private -&amp;gt; i1e
+  e
+e
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;多文件时 info 字典中的内容稍微多一些。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;files 是多个文件的信息，其中包括了文件长度和路径。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.bittorrent.org/beps/bep_0003.html&quot;&gt;http://www.bittorrent.org/beps/bep_0003.html&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/Bencode&quot;&gt;https://zh.wikipedia.org/wiki/Bencode&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/bencode-in-bittorrent.html</link>
+                <guid>https://einverne.github.io/post/2020/03/bencode-in-bittorrent</guid>
+                <pubDate>Sat, 28 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>如何查找链到某个链接的页面</title>
+                <description>&lt;p&gt;有的时候想要查看一个网页有多少其他的页面链接过来，这个搜索语法似乎在 Google 上没见过，平时用的比较多语法也就是用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;site:&lt;/code&gt; 来查看某个站点中的关键字。&lt;/p&gt;
+
+&lt;p&gt;那有什么方法可以查看某一个页面有谁链接过来了呢？&lt;/p&gt;
+
+&lt;h2 id=&quot;google-search-console&quot;&gt;Google Search Console&lt;/h2&gt;
+&lt;p&gt;在 &lt;a href=&quot;https://search.google.com/search-console/about&quot;&gt;Google Search Console&lt;/a&gt; 中可以查看到：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Search Console &amp;gt; choose your property &amp;gt; Links &amp;gt; External links &amp;gt; Top linking sites
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;ahrefs&quot;&gt;ahrefs&lt;/h2&gt;
+&lt;p&gt;ahrefs 是一个逆向链接的索引，可以简单的查看一些，但如果要查看完整的报告则需要订阅。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://ahrefs.com/backlink-checker&quot;&gt;https://ahrefs.com/backlink-checker&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>https://einverne.github.io/post/2020/03/find-backlinks-to-a-page.html</link>
+                <guid>https://einverne.github.io/post/2020/03/find-backlinks-to-a-page</guid>
+                <pubDate>Wed, 25 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>Proxmox 设定直通硬盘</title>
+                <description>&lt;p&gt;之前的文章讲了 Proxmox 的安装，以及在此基础上又安装了 OpenMediaVault，现在我的机器上一共三块硬盘，120 G SSD 安装了系统，并作为默认的 lvm，放一些 ISO，以及存放一些系统盘，另外的 1T 准备做 Proxmox 相关的数据盘，而剩下的一块 4T 盘想要直通给 OpenMediaVault 做数据盘。所以就产生了这样的一个需求。&lt;/p&gt;
+
+&lt;p&gt;首先在设定之前，需要知道 Linux 下的硬盘都会以文件方式存放在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/dev/disk/by-id/&lt;/code&gt; 目录下。&lt;/p&gt;
+
+&lt;h2 id=&quot;查看硬件设备&quot;&gt;查看硬件设备&lt;/h2&gt;
+&lt;p&gt;安装：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;apt install lshw
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;查看：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lshw -class disk -class storage
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在输出的一串中，找到想要直通的硬盘 Serial，这一步一般也可以通过 Proxmox 后台 Disk 来查看到。比如我的情况是第一块硬盘 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/dev/sda&lt;/code&gt; 然后假设 Serial 是 WFN1XXXX.&lt;/p&gt;
+
+&lt;p&gt;那么过滤出该硬盘：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ls -al /dev/disk/by-id |grep WFN1XXXX
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后添加到具体 ID 的 KVM 虚拟机。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;qm set 100 -scsi2 /dev/disk/by-id/ata-ST4000DM004-2CV104_WFN1XXXX
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里 100 是我的 OpenMediaVault 虚拟机的 ID，后面是硬盘的位置。这里的参数 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-scsi2&lt;/code&gt; 表示的是使用 SCSI 的第二块硬盘，如果你要加多块硬盘，数字 2 需要往后加 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-scsi3&lt;/code&gt; 这样。&lt;/p&gt;
+
+&lt;h2 id=&quot;检查是否配置成功&quot;&gt;检查是否配置成功&lt;/h2&gt;
+&lt;p&gt;在上面添加到虚拟机之后，可以在 Proxmox 界面中查看，或者用命令：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;grep &quot;WFN&quot; /etc/pve/qemu-server/100.conf
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;理论上应该输出 scsi2 然后后面是硬盘的位置及编号。&lt;/p&gt;
+
+&lt;p&gt;然后就能在 OpenMediaVault 中识别出该硬盘了。&lt;/p&gt;
+
+&lt;h2 id=&quot;scsi-vs-virtio&quot;&gt;SCSI vs VIRTIO&lt;/h2&gt;
+&lt;p&gt;上面 qm 命令中用了 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-scsi2&lt;/code&gt; 这里指的是磁盘总线类型 (scsi) 和编号 (2)，目前磁盘总线类型大致上有这么几种：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;IDE - Slow Write in the Guest System&lt;/li&gt;
+  &lt;li&gt;SCSI - Faster Write(as IDE) in Guest System&lt;/li&gt;
+  &lt;li&gt;VIRTIO - Fastest Write (more that SCSI and IDE) in the Guest System, but only with extra Drivers (In Guest)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://pve.proxmox.com/wiki/Physical_disk_to_kvm&quot;&gt;https://pve.proxmox.com/wiki/Physical_disk_to_kvm&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://pve.proxmox.com/wiki/Paravirtualized_Block_Drivers_for_Windows&quot;&gt;https://pve.proxmox.com/wiki/Paravirtualized_Block_Drivers_for_Windows&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/proxmox-passthrough-hard-disk.html</link>
+                <guid>https://einverne.github.io/post/2020/03/proxmox-passthrough-hard-disk</guid>
+                <pubDate>Sun, 22 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>OpenMediaVault 设置</title>
+                <description>&lt;p&gt;OpenMediaVault，是一个开源的基于 Debian Linux 的下一代网络附加存储 (NAS) 解决方案。&lt;/p&gt;
+
+&lt;h2 id=&quot;镜像源&quot;&gt;镜像源&lt;/h2&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-backports main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-backports main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian-security buster/updates main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security buster/updates main contrib non-free
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;omv-extras&quot;&gt;omv-extras&lt;/h2&gt;
+&lt;p&gt;安装：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget -O - https://github.com/OpenMediaVault-Plugin-Developers/packages/raw/master/install | bash
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://omv-extras.org/&quot;&gt;http://omv-extras.org/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;docker-mirror&quot;&gt;docker mirror&lt;/h2&gt;
+&lt;p&gt;编辑 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vi /etc/docker/daemon.json&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;{
+	&quot;registry-mirrors&quot;: [
+		&quot;https://registry.azk8s.cn&quot;
+		&quot;https://reg-mirror.qiniu.com&quot;,
+	],
+  &quot;data-root&quot;: &quot;/var/lib/docker&quot;
+} ~ 重启：
+
+/etc/init.d/docker restart
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;开启-sharedfolders&quot;&gt;开启 sharedfolders&lt;/h2&gt;
+&lt;p&gt;我全新安装的 OpenMediaVault 5.3.4 中，创建共享文件夹，系统不会自动在 sharedfolders 中创建文件夹，查了一下，发现是 OpenMediaVault 在 5.3.3-1 版本中将 sharedfolders 功能给禁用了，官方的&lt;a href=&quot;https://github.com/openmediavault/openmediavault/blob/master/deb/openmediavault/debian/changelog#L52&quot;&gt;说明&lt;/a&gt; 是可能造成不稳定。不过可以通过如下方法手工开启：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Disable the '/sharedfolder/&amp;lt;xyz&amp;gt;' feature by default on new
+installations because it makes too much problems.
+It can be enabled by setting the environment variable to
+'OMV_SHAREDFOLDERS_DIR_ENABLED=&quot;YES&quot;'. Finally run the command
+'omv-salt stage run prepare' to apply the modified default values
+and 'omv-salt deploy run systemd' to create the unit files.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;但是我尝试一下之后发现创建共享文件后，sharedfolder 中依然没有，那我就只能手动 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ln&lt;/code&gt; 了。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ln -s /srv/dev-disk-by-label-storage/appdata /sharedfolders/appdata
+ln -s /srv/dev-disk-by-label-storage/ruTorrent/ /sharedfolders/ruTorrent
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;rutorrent&quot;&gt;ruTorrent&lt;/h2&gt;
+&lt;p&gt;Pull 镜像：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker pull dockerhub.azk8s.cn/linuxserver/ruTorrent
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;创建：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run -d \
+  --name=rutorrent \
+  -e PUID=1000 \
+  -e PGID=1000 \
+  -p 8080:80 \
+  -p 5000:5000 \
+  -p 51415:51413 \
+  -p 6881:6881/udp \
+  -v /sharedfolders/appdata/ruTorrent:/config \
+  -v /sharedfolders/ruTorrent:/downloads \
+  --restart unless-stopped \
+  dockerhub.azk8s.cn/linuxserver/rutorrent
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后根据 &lt;a href=&quot;/post/2020/03/rtorrent-and-rutorrent.html&quot;&gt;这里&lt;/a&gt; 的说明改一下主题。&lt;/p&gt;
+
+</description>
+                <link>https://einverne.github.io/post/2020/03/openmediavault-setup.html</link>
+                <guid>https://einverne.github.io/post/2020/03/openmediavault-setup</guid>
+                <pubDate>Sun, 22 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>Proxmox 安装和设置</title>
+                <description>&lt;p&gt;接触虚拟化的过程中慢慢的了解到了 Proxmox，再此之前是看到很多人在用 ESXi，一款 VMware 的商业化产品，不过个人授权是免费的，不过 Proxmox 是一款开源软件，对于我这样的初学者，学习过程要比产品的稳定性来的重要，所以对我个人而言 Proxmox 是一个不错的选择。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Proxmox Virtual Environment is an open source server virtualization management solution based on QEMU/KVM and LXC. You can manage virtual machines, containers, highly available clusters, storage and networks with an integrated, easy-to-use web interface or via CLI. Proxmox VE code is licensed under the GNU Affero General Public License, version 3.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Proxmox VE，是一个开源的服务器虚拟化环境 Linux 发行版。Proxmox VE 基于 Debian，使用基于 Ubuntu 的定制内核，包含安装程序、网页控制台和命令行工具，并且向第三方工具提供了 REST API，在 Affero 通用公共许可证第三版下发行。&lt;/p&gt;
+
+&lt;p&gt;Proxmox VE 支持两类虚拟化技术：基于容器的 LXC（自 4.0 版开始，3.4 版及以前使用 OpenVZ 技术） 和硬件抽象层全虚拟化 KVM。&lt;/p&gt;
+
+&lt;p&gt;Proxmox 支持的虚拟化：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;基于内核的 KVM (Kernel-based Virtual Machine)&lt;/li&gt;
+  &lt;li&gt;基于容器的虚拟化技术 LXC（Linux Containers）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;prerequisite&quot;&gt;准备工作&lt;/h2&gt;
+&lt;p&gt;安装 Proxmox 之前有几件必需品：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Proxmox ISO，Etcher 安装程序&lt;/li&gt;
+  &lt;li&gt;一个空 U 盘，容量不用太大，也不能小到 Proxmox ISO 文件都放不下&lt;/li&gt;
+  &lt;li&gt;主机 (64 位 CPU，至少 1G 内存，支持 KVM 的主板&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;egrep '(vmx|svm)' /proc/cpuinfo&lt;/code&gt;），键盘和显示器（安装过程中需要，安装后就不用了）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;installation&quot;&gt;安装&lt;/h2&gt;
+&lt;p&gt;和安装其他 Linux 系统一样，先用 Etcher 将 Proxmox ISO 写入 U 盘。或者使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dd&lt;/code&gt; 命令：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# dd bs=1M conv=fdatasync if=./proxmox-ve_*.iso of=/dev/XYZ
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;一定要注意 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;of&lt;/code&gt; 后别写错设备。如果不知道 dd 命令如何使用千万别复制粘贴上面命令。&lt;/p&gt;
+
+&lt;p&gt;将 U 盘插入主机，启动，在 BIOS 中选择 U 盘启动，或者使用 F12 或者 F2，或者 DELETE 等等按键选择 U 盘启动。然后在 Proxmox 安装程序中下一步下一步既可，注意安装时输入的局域网 IP 地址，后面需要用该 IP 或者 (hostname) 来访问 Proxmox 的 Web 管理界面。&lt;/p&gt;
+
+&lt;h2 id=&quot;usage&quot;&gt;使用&lt;/h2&gt;
+
+&lt;p&gt;安装完成后，重启系统，进入 Proxmox，等待屏幕显示黑色登录等待命令，可以使用局域网中其他电脑登录：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;https://ip:8006
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里有两点需要注意，一定要用 https 访问，我用 http 访问是没有回应的，还重装了一遍，还以为有硬件故障检查了半天，甚至 root 登录进去重启了各种服务，最后发现必须要使用 https 登录；第二点就是输入安装时设置的 IP 地址，加上 8006 端口进行访问。&lt;/p&gt;
+
+&lt;h3 id=&quot;source&quot;&gt;设置更新源&lt;/h3&gt;
+&lt;p&gt;Proxmox 源自于 Debian，所以 Proxmox 也可以用 apt 的包管理。但是 Proxmox 维护了一套自己的软件源，如果没有订阅企业授权，在 apt update 的时候会报错。所以需要注释掉企业的 source list:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vi /etc/apt/sources.list.d/pve-enterprise.list
+然后用 # 注释掉其中的地址
+# deb https://enterprise.proxmox.com/debian/pve buster pve-enterprise
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后添加非订阅的源，修改 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vi /etc/apt/sources.list&lt;/code&gt;: &lt;sup id=&quot;fnref:non&quot;&gt;&lt;a href=&quot;#fn:non&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# PVE pve-no-subscription repository provided by proxmox.com,
+# NOT recommended for production use
+deb http://download.proxmox.com/debian/pve buster pve-no-subscription
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;或者直接创建一个新文件：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;echo 'deb http://download.proxmox.com/debian/pve buster pve-no-subscription' &amp;gt;&amp;gt; /etc/apt/sources.list.d/pve-no-subscription.list
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;国内的 Proxmox 镜像：&lt;sup id=&quot;fnref:pr&quot;&gt;&lt;a href=&quot;#fn:pr&quot; class=&quot;footnote&quot;&gt;2&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;deb https://mirrors.tuna.tsinghua.edu.cn/proxmox/debian buster pve-no-subscription
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;设置 Debian 国内镜像&lt;/p&gt;
+
+&lt;p&gt;Proxmox 基于 Debian 的软件源都可以替换成国内的镜像：&lt;sup id=&quot;fnref:tuna&quot;&gt;&lt;a href=&quot;#fn:tuna&quot; class=&quot;footnote&quot;&gt;3&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-updates main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-backports main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian/ buster-backports main contrib non-free
+deb https://mirrors.tuna.tsinghua.edu.cn/debian-security buster/updates main contrib non-free
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/debian-security buster/updates main contrib non-free
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后更新 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;apt update&lt;/code&gt;，然后升级 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;apt upgrade&lt;/code&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;使用-sudo&quot;&gt;使用 sudo&lt;/h3&gt;
+&lt;p&gt;生产环境中如果不想一直使用 root 账户来管理后台，可以参考&lt;a href=&quot;https://pve.proxmox.com/wiki/User_Management&quot;&gt;官网&lt;/a&gt; 用户管理一章节的内容来添加账户，并分配给不同的角色。这一步可以先跳过，等后面部署真正用起来后再配置就行。&lt;/p&gt;
+
+&lt;p&gt;安装 sudo&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;apt install sudo
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;然后编辑 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;visudo&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;einverne    ALL=(ALL:ALL) ALL
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;setup&quot;&gt;配置&lt;/h2&gt;
+&lt;p&gt;经过上面的配置 Proxmox 已经处于一个可用的状态。&lt;/p&gt;
+
+&lt;p&gt;通过 ISO 镜像安装 Proxmox 后 Proxmox 会自动创建一个 pve 的 Volume Group，并在其上面创建 root, data 和 swap 三个逻辑卷。&lt;/p&gt;
+
+&lt;p&gt;默认情况下 Proxmox 会自动创建 local(pve) 和 local-lvm(pve) 这两个 Storage，分别用来存放镜像和磁盘：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;local 是 Directory 类型，用来存放 VZDump backup file, ISO Images, Container template&lt;/li&gt;
+  &lt;li&gt;local-lvm 是 LVM-Thin 类型，用来存放 Disk image, Container&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;上面两个存储是在 Proxmox 安装后自动创建的，使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fdisk -l&lt;/code&gt; 来看，我的 Proxmox 是安装在了 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/dev/sdc&lt;/code&gt; 这款 120G 的 SSD 上。&lt;/p&gt;
+
+&lt;h3 id=&quot;storage&quot;&gt;Storage&lt;/h3&gt;
+&lt;p&gt;Proxmox 支持两类文件存储类型：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;本地 (ZFS, LVM, Linux 支持的任何文件系统）&lt;/li&gt;
+  &lt;li&gt;网络存储 (NFS, CIFS, iSCSI)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;本地的存储类型肯定是最稳定的，但问题也就是空间大小有限制。但假如在万兆局域网中，网络传输造成的瓶颈就不存在了，那么可以创建网络存储，挂载其他设备，比如 NAS 上的文件系统。&lt;/p&gt;
+
+&lt;h3 id=&quot;建立-directory&quot;&gt;建立 Directory&lt;/h3&gt;
+&lt;p&gt;在 GUI 界面中 Disks -&amp;gt; Directory 新建，要注意这里只有没有任何数据，没有任何分区的硬盘才能在菜单中显示，然后看到创建的执行日志：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# /sbin/sgdisk -n1 -t1:8300 /dev/sda
+The operation has completed successfully.
+# /sbin/mkfs -t ext4 /dev/sda1
+mke2fs 1.44.5 (15-Dec-2018)
+Creating filesystem with 976754385 4k blocks and 244195328 inodes
+Filesystem UUID: rrrrr317-3e7f-4352-bda6-xxxxccde13fb
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+	4096000, 7962624, 11239424, 20480000, 23887872, 71663616, 78675968,
+	102400000, 214990848, 512000000, 550731776, 644972544
+
+Allocating group tables:     0/29809           done
+Writing inode tables:     0/29809           done
+Creating journal (262144 blocks): done
+Writing superblocks and filesystem accounting information:     0/29809           done
+
+# /sbin/blkid /dev/sda1 -o export
+Created symlink /etc/systemd/system/multi-user.target.wants/mnt-pve-sda.mount -&amp;gt; /etc/systemd/system/mnt-pve-sda.mount.
+TASK OK
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以看到我创建的 Directory 在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/dev/sda&lt;/code&gt; 这款硬盘上，首先 Proxmox 用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sgdisk&lt;/code&gt; 创建了一个分区 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sda1&lt;/code&gt;，然后格式化了该分区为 ext4（这是我在 UI 界面中选择的），最后创建了一个挂载点，Proxmox 中是用 systemd 来管理的，具体可看到硬盘被挂载在了 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/mnt/pve/sda&lt;/code&gt; 这个地方。&lt;/p&gt;
+
+&lt;h3 id=&quot;设置-iso-directory&quot;&gt;设置 ISO Directory&lt;/h3&gt;
+&lt;p&gt;点击左侧边栏 DataCenter 下默认的 pve 节点，然后在右侧找到 Disks -&amp;gt; Directory ，新建 Directory。&lt;/p&gt;
+
+&lt;p&gt;这个时候需要注意，只有当硬盘没有任何数据的时候，才会在这里的菜单中显示。我在安装的时候是用的一块已经划分了分区的 1T 硬盘，所以需要 ssh 到后台，用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fdisk /dev/sda&lt;/code&gt; 来将分区删掉才能显示。&lt;/p&gt;
+
+&lt;h3 id=&quot;设置虚拟机的目录-volume-group&quot;&gt;设置虚拟机的目录 Volume Group&lt;/h3&gt;
+&lt;p&gt;和 ISO 目录一样，ISO 目录用来存放 ISO 镜像，虚拟机目录则是真正划分给虚拟机用的分区。在 Disks 中选中 LVM，创建 Volume Group。&lt;/p&gt;
+
+&lt;h2 id=&quot;benchmark&quot;&gt;Benchmark&lt;/h2&gt;
+&lt;p&gt;在安装成功的 Proxmox 系统中可以执行 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pveperf&lt;/code&gt; 来检查一下 CPU 和其他硬件的性能。&lt;/p&gt;
+
+&lt;h2 id=&quot;创建-vm&quot;&gt;创建 VM&lt;/h2&gt;
+&lt;p&gt;右上角创建 Virtual Machine，这里以安装 OpenMediaVault 来举例子。在 OpenMediaVault 下载好镜像 ISO，并上传到 Proxmox 中 local(pve) 中。&lt;/p&gt;
+
+&lt;h3 id=&quot;general&quot;&gt;General&lt;/h3&gt;
+&lt;p&gt;PVE 使用数字来标识虚拟机，Name 字段起一个标志性的名字。&lt;/p&gt;
+
+&lt;h3 id=&quot;os&quot;&gt;OS&lt;/h3&gt;
+&lt;p&gt;在操作系统页面中，在 Storage 中选择刚刚建立的 ISO storage 目录，然后选择刚刚上传的 OpenMediaVault ISO 文件。&lt;/p&gt;
+
+&lt;p&gt;默认 Guest OS 会自动识别出对应的版本，下一步即可。&lt;/p&gt;
+
+&lt;h3 id=&quot;system&quot;&gt;System&lt;/h3&gt;
+&lt;p&gt;默认即可。&lt;/p&gt;
+
+&lt;h3 id=&quot;hard-disk&quot;&gt;Hard Disk&lt;/h3&gt;
+
+&lt;p&gt;设置硬盘大小， OpenMediaVault 安装后占用体积也非常小，划分 16G 磁盘空间就已经足够。&lt;/p&gt;
+
+&lt;h3 id=&quot;cpu&quot;&gt;CPU&lt;/h3&gt;
+&lt;p&gt;设置虚拟机可以使用的 CPU 核心数。&lt;/p&gt;
+
+&lt;p&gt;Type 选择 Host，可以提供最好的性能。&lt;/p&gt;
+
+&lt;h3 id=&quot;memory&quot;&gt;Memory&lt;/h3&gt;
+
+&lt;p&gt;设置内存，OpenMediaVault 内存占用也非常少，动态的设定一个 1G 到 4G 的动态范围。&lt;/p&gt;
+
+&lt;p&gt;高级设置中可以设置动态的内存使用范围。&lt;/p&gt;
+
+&lt;h3 id=&quot;network&quot;&gt;Network&lt;/h3&gt;
+&lt;p&gt;默认&lt;/p&gt;
+
+&lt;p&gt;点击既可创建成功。&lt;/p&gt;
+
+&lt;h2 id=&quot;other&quot;&gt;其他&lt;/h2&gt;
+&lt;p&gt;安装及使用过程中的一些疑问和操作。&lt;/p&gt;
+
+&lt;h3 id=&quot;如何移除-storage&quot;&gt;如何移除 Storage&lt;/h3&gt;
+&lt;p&gt;在界面中通过如下来移除一个存储：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Datacenter -&amp;gt; Storage -&amp;gt; Remove 选中的内容。
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;不过需要注意的是如果 GUI 移除了 Storage 定义， mount 文件并不会被删除，如果想要删除 mount 文件，只能通过 SSH 登录后台进行。Proxmox 中每一个 mount 都是由 systemd 管理，可以看到类似如下这样的文件。&lt;/p&gt;
+
+&lt;p&gt;假如新建了一个 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;testxfs&lt;/code&gt; 的存储，想要删掉：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cat /etc/systemd/system/mnt-pve-testxfs.mount
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+Options=defaults
+Type=xfs
+What=/dev/disk/by-uuid/xxxx6149-ce8f-4e36-94c4-xxxxxxj33e72
+Where=/mnt/pve/testxfs
+
+[Unit]
+Description=Mount storage 'testxfs' under /mnt/pve
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果想要彻底删除的话，用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rm&lt;/code&gt; 把这个文件也删除。&lt;sup id=&quot;fnref:1&quot;&gt;&lt;a href=&quot;#fn:1&quot; class=&quot;footnote&quot;&gt;4&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;systemctl disable mnt-pve-testdir.mount
+umount /mnt/pve/testdir
+rm /etc/systemd/system/mnt-pve-testdir.mount
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;如何选择存储磁盘格式&quot;&gt;如何选择存储磁盘格式&lt;/h2&gt;
+&lt;p&gt;在创建磁盘的时候可以选择 Directory, ZFS, LVM, LVM-Thin 等等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/proxmox-storage-types.png&quot; alt=&quot;Proxmox Storage types&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;directory&quot;&gt;Directory&lt;/h3&gt;
+&lt;p&gt;Directory 是最常见的文件格式，Proxmox 包括了 ext4， xfs 。更多的文件格式可以参考我之前的&lt;a href=&quot;/post/2020/02/linux-nas-file-system.html&quot;&gt;文章&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Proxmox VE can use local directories or locally mounted shares for storage. A directory is a file level storage, so you can store any content type like virtual disk images, containers, templates, ISO images or backup files.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Directory 可以存储任何的类型。&lt;/p&gt;
+
+&lt;h3 id=&quot;lvm-和-lvm-thin&quot;&gt;LVM 和 LVM-Thin&lt;/h3&gt;
+&lt;p&gt;LVM 是 Logical Volume Manager（逻辑卷管理）的简写，是 Linux 环境下对磁盘分区进行管理的一种机制&lt;/p&gt;
+
+&lt;p&gt;在 Proxmox 中 LVM 可以有 Snapshot 快照功能，而 LVM-Thin 是没有的。相反如果建立了 LVM 分区，那么整个分区只能给虚拟机或者容器使用，其他文档是无法放进去的，LVM-Thin 则没有这个限制。&lt;sup id=&quot;fnref:lvm&quot;&gt;&lt;a href=&quot;#fn:lvm&quot; class=&quot;footnote&quot;&gt;5&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;error-挂载-nfs&quot;&gt;ERROR 挂载 NFS&lt;/h3&gt;
+&lt;p&gt;在我想挂载 NAS 上 NFS 时，Proxmox 给了这错误，至今无解，不清楚是 NFS 版本不兼容的原因还是其他。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;create storage failed: error with cfs lock ‘file-storage_cfg’: storage ‘Network-Proxmox’ is not online (500)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;虚拟化技术&quot;&gt;虚拟化技术&lt;/h2&gt;
+&lt;p&gt;简单总结。&lt;/p&gt;
+
+&lt;h3 id=&quot;openvz&quot;&gt;OpenVZ&lt;/h3&gt;
+&lt;p&gt;OpenVZ 基于 Linux 内核的操作系统级虚拟化技术。OpenVZ 允许物理服务器同时运行多个操作系统。目前正逐渐被 KVM 代替。&lt;/p&gt;
+
+&lt;h3 id=&quot;kvm&quot;&gt;KVM&lt;/h3&gt;
+&lt;p&gt;KVM 全称是 Kernel-based Virtual Machine，基于内核的虚拟机，&lt;/p&gt;
+
+&lt;h3 id=&quot;xen&quot;&gt;Xen&lt;/h3&gt;
+&lt;p&gt;Xen 是开放源代码虚拟机监视器，由 XenProject 开发，经过十几年时间的发展，目前正逐渐被 KVM 代替。&lt;/p&gt;
+
+&lt;h3 id=&quot;lxc&quot;&gt;LXC&lt;/h3&gt;
+&lt;p&gt;LXC 名字来自于 Linux Containers 缩写，是操作系统级的虚拟化，LXC 是 Linux 内核容器功能的一个用户空间接口。&lt;/p&gt;
+
+&lt;h2 id=&quot;其他虚拟化系统&quot;&gt;其他虚拟化系统&lt;/h2&gt;
+
+&lt;h3 id=&quot;vmware-esxi&quot;&gt;VMware ESXi&lt;/h3&gt;
+&lt;p&gt;VMware ESXi 可以直接存取控制底层资源，有效的利用硬件。ESXi 是 VMware 退出的虚拟化系统，对个人的授权是免费的。&lt;/p&gt;
+
+&lt;h3 id=&quot;hyper-v&quot;&gt;Hyper-V&lt;/h3&gt;
+&lt;p&gt;Hyper-V 是以 Hypervisor 为基础的虚拟化技术。适用于 x64 位的 Windows 系统。&lt;/p&gt;
+
+&lt;h2 id=&quot;further&quot;&gt;Further&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Proxmox 提供的官方&lt;a href=&quot;https://pve.proxmox.com/pve-docs/&quot;&gt;文档&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Proxmox 官方 &lt;a href=&quot;https://pve.proxmox.com/wiki/Main_Page&quot;&gt;Wiki&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Proxmox_Virtual_Environment&quot;&gt;https://en.wikipedia.org/wiki/Proxmox_Virtual_Environment&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:non&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://pve.proxmox.com/wiki/Package_Repositories&quot;&gt;https://pve.proxmox.com/wiki/Package_Repositories&lt;/a&gt; &lt;a href=&quot;#fnref:non&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:pr&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://mirror.tuna.tsinghua.edu.cn/help/proxmox/&quot;&gt;https://mirror.tuna.tsinghua.edu.cn/help/proxmox/&lt;/a&gt; &lt;a href=&quot;#fnref:pr&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:tuna&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://mirror.tuna.tsinghua.edu.cn/help/debian/&quot;&gt;https://mirror.tuna.tsinghua.edu.cn/help/debian/&lt;/a&gt; &lt;a href=&quot;#fnref:tuna&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:1&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://forum.proxmox.com/threads/remove-unused-directory-from-gui.63451/&quot;&gt;https://forum.proxmox.com/threads/remove-unused-directory-from-gui.63451/&lt;/a&gt; &lt;a href=&quot;#fnref:1&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+    &lt;li id=&quot;fn:lvm&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://pve.proxmox.com/wiki/Storage:_LVM&quot;&gt;https://pve.proxmox.com/wiki/Storage:_LVM&lt;/a&gt; &lt;a href=&quot;#fnref:lvm&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/proxmox-install-and-setup.html</link>
+                <guid>https://einverne.github.io/post/2020/03/proxmox-install-and-setup</guid>
+                <pubDate>Sat, 21 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>从命令行制作 torrent</title>
+                <description>&lt;p&gt;一个 torrent 文件，本质上就是按照 BitTorrent 协议制作的一个包含一系列 meta 信息的文本文件，torrent 文件主要包含两部分重要信息，Tracker 信息和文件 meta 元信息。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Tracker，就是 BitTorrent 协议中的中心 Trakcer 服务器&lt;/li&gt;
+  &lt;li&gt;文件元信息则是根据目标文件分块，然后索引，Hash 的信息&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在制作 torrent 文件时，会根据 BitTorrent 协议对目标文件进行分片，piece length 来表示一个分片，或者一块的大小，通常是 2 的 n 次方，根据目标文件的大小可以选择性的使用不同的 piece length。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;2^18, 256 KB，通常用在目标文件在 512 MiB 以下&lt;/li&gt;
+  &lt;li&gt;2^19, 512 KB，通常用在目标文件在 512 MiB - 1024 MiB&lt;/li&gt;
+  &lt;li&gt;2^20, 1024 KB，通常用在目标文件在 1 GB - 2GB&lt;/li&gt;
+  &lt;li&gt;2^21, 2048 KB，通常用在目标文件在 2 GB - 4GB&lt;/li&gt;
+  &lt;li&gt;2^22, 4096 KB，通常用在目标文件在 4 GB - 8GB&lt;/li&gt;
+  &lt;li&gt;2^23, 8192 KB，通常用在目标文件在 8 GB - 16GB&lt;/li&gt;
+  &lt;li&gt;2^24, 16384 KB，通常用在目标文件在 16 GB - 512GB，通常这是日常使用应该用的最大的块大小&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;通常情况下根据目标文件的大小选择合适的 piece length，如果分片太小就可能造成 torrent 文件过大。选择合适的分片大小，一方面可以减小 torrent 需要保存的元信息，另一方面也减少了对分片的校验耗时，下载时对分片的确认也可以加快。&lt;/p&gt;
+
+&lt;h2 id=&quot;transmission-cli&quot;&gt;transmission-cli&lt;/h2&gt;
+
+&lt;p&gt;如果使用 &lt;a href=&quot;/post/2018/06/qnap-transmission.html&quot;&gt;Transmission&lt;/a&gt; 那么 &lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3916/files&quot;&gt;transmission-create&lt;/a&gt; 已经充分够用。&lt;/p&gt;
+
+&lt;p&gt;如果要使用 transmission-create 需要安装：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt install transmission-cli
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;mktorrent&quot;&gt;mktorrent&lt;/h2&gt;
+
+&lt;p&gt;或者使用 mktorrent 命令也能够快速的制作 torrent 文件&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo apt install mktorrent
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;或者使用源码编译安装：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;git clone git@github.com:Rudde/mktorrent.git
+cd mktorrent
+sudo make
+sudo make install
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;默认会安装到 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/local/bin/mktorrent&lt;/code&gt; .&lt;/p&gt;
+
+&lt;h3 id=&quot;使用&quot;&gt;使用&lt;/h3&gt;
+
+&lt;p&gt;查看 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;man mktorrent&lt;/code&gt; 手册，非常容易理解。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mktorrent 1.0 (c) 2007, 2009 Emil Renner Berthing
+
+Usage: mktorrent [OPTIONS] &amp;lt;target directory or filename&amp;gt;
+
+Options:
+-a, --announce=&amp;lt;url&amp;gt;[,&amp;lt;url&amp;gt;]* : specify the full announce URLs
+								at least one is required
+								additional -a adds backup trackers
+-c, --comment=&amp;lt;comment&amp;gt;       : add a comment to the metainfo
+-d, --no-date                 : don't write the creation date
+-h, --help                    : show this help screen
+-l, --piece-length=&amp;lt;n&amp;gt;        : set the piece length to 2^n bytes,
+								default is 18, that is 2^18 = 256kb
+-n, --name=&amp;lt;name&amp;gt;             : set the name of the torrent
+								default is the basename of the target
+-o, --output=&amp;lt;filename&amp;gt;       : set the path and filename of the created file
+								default is &amp;lt;name&amp;gt;.torrent
+-p, --private                 : set the private flag
+-t, --threads=&amp;lt;n&amp;gt;             : use &amp;lt;n&amp;gt; threads for calculating hashes
+								default is 2
+-v, --verbose                 : be verbose
+-w, --web-seed=&amp;lt;url&amp;gt;[,&amp;lt;url&amp;gt;]* : add web seed URLs
+								additional -w adds more URLs
+
+Please send bug reports, patches, feature requests, praise and
+general gossip about the program to: esmil@users.sourceforge.net
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;举个例子：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mktorrent -v -p -d -c &quot;Demo comments&quot; -l 18 -a https://some.website/announce.php -o example.torrent path/to/dir_or_file
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;解释这个命令的含义一个一个选项看即可：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-p&lt;/code&gt; 标记 torrent 私有，不启用 DHT 和 Peer Exchange，如果不知道后面两个术语，可以参考我&lt;a href=&quot;/post/2020/02/everything-related-about-bittorrent-and-pt.html&quot;&gt;之前的文章&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-d&lt;/code&gt; 不写入创建时间&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-c&lt;/code&gt; 后接简短的描述信息&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-l 18&lt;/code&gt; 表示块大小，18 就是 2^18 bytes, 也就是 256kb 一块。如果不设置 -l 选项，默认也是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-l 18&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-a&lt;/code&gt; 后接 announce URLs&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-o&lt;/code&gt; 后接输出的 torrent 文件&lt;/li&gt;
+  &lt;li&gt;最后就是要制作的 torrent 的文件目录或者文件&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;web-seed&quot;&gt;web seed&lt;/h2&gt;
+&lt;p&gt;使用 mktorrent 还可以使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-w&lt;/code&gt; 选项来添加 web seed URLs。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Web seeding was implemented in 2006 as the ability of BitTorrent clients to download torrent pieces from an HTTP source in addition to the swarm. The advantage of this feature is that a website may distribute a torrent for a particular file or batch of files and make those files available for download from that same web server; this can simplify long-term seeding and load balancing through the use of existing, cheap, web hosting setups. In theory, this would make using BitTorrent almost as easy for a web publisher as creating a direct HTTP download. In addition, it would allow the “web seed” to be disabled if the swarm becomes too popular while still allowing the file to be readily available.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;简而言之就是 Web seed 可以让 torrent 从 HTTP 来源来发布文件。&lt;/p&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/Rudde/mktorrent&quot;&gt;https://github.com/Rudde/mktorrent&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://bytesized-hosting.com/pages/how-to-create-a-torrent-using-mktorrent&quot;&gt;https://bytesized-hosting.com/pages/how-to-create-a-torrent-using-mktorrent&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/make-torrent-from-command-line.html</link>
+                <guid>https://einverne.github.io/post/2020/03/make-torrent-from-command-line</guid>
+                <pubDate>Thu, 19 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>rTorrent 和 ruTorrent 使用</title>
+                <description>&lt;p&gt;就和之前文章写的&lt;a href=&quot;/post/2018/04/bittorrent-client.html&quot;&gt;那样&lt;/a&gt; ， rTorrent 是一个 C++ 编写的 BitTorrent 客户端，ruTorrent 是它的其中一个 Web 界面，其他的还有 Flood 等等。&lt;/p&gt;
+
+&lt;p&gt;这篇文章就主要总结一下 rTorrent 和 ruTorrent 的使用和一些我使用的主题和插件。&lt;/p&gt;
+
+&lt;h2 id=&quot;docker&quot;&gt;Docker&lt;/h2&gt;
+
+&lt;p&gt;linuxserver 提供的 &lt;a href=&quot;https://hub.docker.com/r/linuxserver/rutorrent/&quot;&gt;ruTorrent&lt;/a&gt; 很好用的。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker pull linuxserver/rutorrent
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果想在该镜像的基础上增加 MaterialDesign 主题可以：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;sudo docker exec -it rutorrent /bin/sh
+cd /app/rutorrent/plugins/theme/themes/
+git clone git://github.com/phlooo/ruTorrent-MaterialDesign.git MaterialDesign
+chown -R abc:users MaterialDesign
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;最近有时间的话给 &lt;a href=&quot;https://github.com/linuxserver/docker-rutorrent/issues/152&quot;&gt;linuxserver&lt;/a&gt; 提一个 PR，先把 issue &lt;a href=&quot;https://github.com/linuxserver/docker-rutorrent/issues/152&quot;&gt;提了&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;rutorrent-themes&quot;&gt;ruTorrent themes&lt;/h2&gt;
+
+&lt;p&gt;MaterialDesign 是当时用 QNAP 上 &lt;a href=&quot;https://forum.qnap.net.pl/download/rtorrent-pro-x86_64.17/&quot;&gt;rtorrent-Pro&lt;/a&gt; 的&lt;a href=&quot;https://forum.qnap.net.pl/gallery/photos/rtorrent-pro_ux_ui_rutorrent.4094/&quot;&gt;默认主题&lt;/a&gt;，配色非常舒服就一直用着了。&lt;/p&gt;
+
+&lt;p&gt;MaterialDesign&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/themightykitten/ruTorrent-MaterialDesign&quot;&gt;https://github.com/themightykitten/ruTorrent-MaterialDesign&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/rutorrent-material-design-web-ui.png&quot; alt=&quot;ruTorrent Web UI Material Design&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/rutorrent-material-design-web-ui-settings.png&quot; alt=&quot;ruTorrent Web UI Material Design Settings&quot; /&gt;
+如果还选择其他的主题可以看看这个&lt;a href=&quot;https://github.com/artyuum/3rd-party-ruTorrent-Themes&quot;&gt;合集&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;plugins&quot;&gt;Plugins&lt;/h2&gt;
+
+&lt;h3 id=&quot;file-manager&quot;&gt;File Manager&lt;/h3&gt;
+&lt;p&gt;ruTorrent 还有一些很好用的第三插件，比如 File Manager，可以直接在网页中对文件进行复制，移动，压缩，重命名等。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/nelu/rutorrent-thirdparty-plugins&quot;&gt;https://github.com/nelu/rutorrent-thirdparty-plugins&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;对-linuxserver-rutorrent-的修改&quot;&gt;对 linuxserver rutorrent 的修改&lt;/h2&gt;
+
+&lt;p&gt;LinuxServer 的 ruTorrent 镜像提供了最基本的 rtorrent 和 ruTorrent 功能，能用，但是不合心意。本来是提了 issue 和 PR 想把 MaterialDesign 主题提交进去的，后来发现 LinuxServer 本来的目的也并不是大二全，而成提供基础，任何人想要个性化或者扩展功能都可以以他们提供的镜像作为基础来扩展。&lt;sup id=&quot;fnref:ref&quot;&gt;&lt;a href=&quot;#fn:ref&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;/p&gt;
+
+&lt;p&gt;所以我想的是在 LinuxServer 提供的 &lt;a href=&quot;https://github.com/linuxserver/docker-rutorrent/&quot;&gt;rutorrent&lt;/a&gt; 镜像基础上把我常用的功能给集成进去。&lt;/p&gt;
+
+&lt;h3 id=&quot;materialdesign-主题&quot;&gt;MaterialDesign 主题&lt;/h3&gt;
+
+&lt;h3 id=&quot;autodl-irssi&quot;&gt;autodl-irssi&lt;/h3&gt;
+
+&lt;h3 id=&quot;filemanager&quot;&gt;filemanager&lt;/h3&gt;
+
+&lt;h3 id=&quot;fileshare&quot;&gt;fileshare&lt;/h3&gt;
+
+&lt;h3 id=&quot;rutorrentmobile&quot;&gt;rutorrentMobile&lt;/h3&gt;
+&lt;p&gt;适配移动界面：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/xombiemp/rutorrentMobile&quot;&gt;https://github.com/xombiemp/rutorrentMobile&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:ref&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://raw.githubusercontent.com/linuxserver/docker-rutorrent/master/.github/PULL_REQUEST_TEMPLATE.md&quot;&gt;https://raw.githubusercontent.com/linuxserver/docker-rutorrent/master/.github/PULL_REQUEST_TEMPLATE.md&lt;/a&gt; &lt;a href=&quot;#fnref:ref&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/rtorrent-and-rutorrent.html</link>
+                <guid>https://einverne.github.io/post/2020/03/rtorrent-and-rutorrent</guid>
+                <pubDate>Mon, 16 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>常见主板命名规则</title>
+                <description>&lt;p&gt;最近因为想要组装 NAS，所以简单的了解了一下主板的命名规则。这里将总结一下。&lt;/p&gt;
+
+&lt;p&gt;多数厂家遵循一般的规律：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;处理器类型&lt;/li&gt;
+  &lt;li&gt;芯片组&lt;/li&gt;
+  &lt;li&gt;芯片类型&lt;/li&gt;
+  &lt;li&gt;基本后缀&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;芯片组名字由芯片厂商决定，AMD 在发布锐龙后抢了英特尔的命名方式，从低到高端 A320, B350,X370。后来 Intel 推出八代 CPU，只能使用 H310, B360, Z370 方式命名。&lt;/p&gt;
+
+&lt;p&gt;芯片的命名也有一定的规律，H 主打低价，B 中档，Z 和 X 系列是高端芯片。Intel 的芯片中如果带 K 的表示能超频，比如 i5-8600K. Z 系列一般可以超频。&lt;/p&gt;
+
+&lt;p&gt;芯片组数字 2XX 的支持 7 代 CPU，数字 3XX 支持 8 代 CPU，比如 B360 支持 i3-8100, i5-8500 等等。&lt;/p&gt;
+
+&lt;h2 id=&quot;华擎&quot;&gt;华擎&lt;/h2&gt;
+
+&lt;p&gt;常见的型号比如：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A320M-HDV&lt;/li&gt;
+  &lt;li&gt;H310M-HDV&lt;/li&gt;
+  &lt;li&gt;H310CM&lt;/li&gt;
+  &lt;li&gt;B365M-HDV&lt;/li&gt;
+  &lt;li&gt;B365M-ITX&lt;/li&gt;
+  &lt;li&gt;B365M Phantom Gaming&lt;/li&gt;
+  &lt;li&gt;B365M Pro&lt;/li&gt;
+  &lt;li&gt;B450&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;其中 H310M, B356, B450 这些都是芯片组规格，这个名字是由 Intel 来约定的。所以能看到不同厂家会对 H310，或者 B450 都有类似的板子。&lt;/p&gt;
+
+&lt;p&gt;比如英特尔八代处理器对应的 B 系列主板是 B360，&lt;/p&gt;
+
+&lt;p&gt;后缀规则：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;后缀&lt;/th&gt;
+      &lt;th&gt;说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;HDV&lt;/td&gt;
+      &lt;td&gt;HDMI+DIV+VGA&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ITX&lt;/td&gt;
+      &lt;td&gt;小规格主板 17*17cm&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;ITX/ac&lt;/td&gt;
+      &lt;td&gt;附带 ac 规格无线网卡 ITX 主板&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;产品系列&quot;&gt;产品系列&lt;/h3&gt;
+&lt;p&gt;华擎 PRO 系列主打性价比，主流型号。&lt;/p&gt;
+
+&lt;p&gt;Steel Legend 系列，独立产品线，主打外观及个性化。比如 B450 Steel Legend.&lt;/p&gt;
+
+&lt;p&gt;Extreme 中高端电竞，一般后加数字，数字越大越强。&lt;/p&gt;
+
+&lt;p&gt;Taichi 定位高端的产品线。&lt;/p&gt;
+
+&lt;p&gt;Phantom Gaming 主打家用和电竞。&lt;/p&gt;
+
+&lt;h2 id=&quot;asus&quot;&gt;华硕&lt;/h2&gt;
+
+&lt;p&gt;列举一下京东上华硕主板的例子：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;H310M-A&lt;/li&gt;
+  &lt;li&gt;B365M-PLUS&lt;/li&gt;
+  &lt;li&gt;B360-PLUS&lt;/li&gt;
+  &lt;li&gt;B450M-PLUS&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;说明：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A、P、PLUS、AR、K、PRIME 系列是华硕的低端入门型号&lt;/li&gt;
+  &lt;li&gt;TUF 特种部队 STRIX 猛禽 中端型号&lt;/li&gt;
+  &lt;li&gt;ROG EXTREME WS 工作站 高端型号&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+                <link>https://einverne.github.io/post/2020/03/motherboard-name-rule.html</link>
+                <guid>https://einverne.github.io/post/2020/03/motherboard-name-rule</guid>
+                <pubDate>Sun, 08 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>命令行的艺术</title>
+                <description>&lt;p&gt;这些年陆陆续续学习，整理了一些&lt;a href=&quot;/categories.html#%E6%AF%8F%E5%A4%A9%E5%AD%A6%E4%B9%A0%E4%B8%80%E4%B8%AA%E5%91%BD%E4%BB%A4&quot;&gt;命令&lt;/a&gt;，其中也学到了不少，渐渐的才体会到用一行命令带来的效率。于是乎我几乎所有的设备都可以用 SSH 访问，少则有 BusyBox 这些精简的 Unix 工具集，多则就是完整的 Unix 工具集。不说桌面版的 Linux 系统，Android 上可以用 &lt;a href=&quot;/post/2019/06/termux-app.html&quot;&gt;Termux&lt;/a&gt;, 路由器上 &lt;a href=&quot;/post/2017/03/openwrt-settings-and-tips.html&quot;&gt;OpenWrt&lt;/a&gt; 自身就带了一些基本的命令，而 NAS 上也可以选择 OpenMediaVault 或者在&lt;a href=&quot;/post/2018/04/qnap-ts453bmini.html&quot;&gt;威联通&lt;/a&gt; 上开启 SSH 登录，进入命令行的世界。&lt;/p&gt;
+
+&lt;p&gt;以前需要借助 GUI 才能实现的功能后来发现原来命令行是如此简单，比如设备间互联一个 SSH 就能搞定，要传输文件再多一个 scp，或者需要增量备份可以用 rsync，或者如果要找重复的文件，jdupes, rdfind 一系列的命令可以选择，更不用说测网速，测磁盘读写等等了。&lt;/p&gt;
+
+&lt;h2 id=&quot;the-art-lf-command-line&quot;&gt;The Art lf Command Line&lt;/h2&gt;
+
+&lt;p&gt;整体性对常见的命令做一些了解，可以参考这个项目：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md&quot;&gt;https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;我之前的文章都是临时想要用到某个功能现查的，浪费了我很多时间，如果早一点看到这一份文档的话就可以省去好多检索的时间。&lt;/p&gt;
+
+&lt;h2 id=&quot;规划&quot;&gt;规划&lt;/h2&gt;
+
+&lt;p&gt;以后命令总结应该不会再更新了，简单的命令我会提交给 &lt;a href=&quot;https://github.com/tldr-pages/tldr&quot;&gt;tldr&lt;/a&gt;，除非是特别复杂的，有特别多选项的命令，否则就不展开了。&lt;/p&gt;
+
+&lt;p&gt;如果以后还会有命令行相关的内容，可能会有这样几类：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;像 tmux, sed, awk 这些命令几乎可以用一本书来学习，可能会有一些常用的笔记&lt;/li&gt;
+  &lt;li&gt;命令行合集，比如要实现某个功能有哪些实现方式，比如&lt;a href=&quot;/post/2019/12/find-and-delete-duplicate-files.html&quot;&gt;查找重复的文件&lt;/a&gt;，比如查看网速等等&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;tldr&quot;&gt;tldr&lt;/h2&gt;
+&lt;p&gt;就像上文所说，简单命令的文章就不再写了，下面就记录下提交到 tldr 的 Pull Request：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3529&quot;&gt;pidstat&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3694&quot;&gt;stress&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3743&quot;&gt;pwdx&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3857&quot;&gt;jdupes&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3890&quot;&gt;vmstat&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/tldr-pages/tldr/pull/3916&quot;&gt;transmission-create&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;更多可以在&lt;a href=&quot;https://github.com/tldr-pages/tldr/pulls?q=is%3Apr+author%3Aeinverne&quot;&gt;这里&lt;/a&gt; 看到。&lt;/p&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/the-art-of-command-line.html</link>
+                <guid>https://einverne.github.io/post/2020/03/the-art-of-command-line</guid>
+                <pubDate>Wed, 04 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>Zeal 离线文档阅读</title>
+                <description>&lt;p&gt;之前也总结过一篇&lt;a href=&quot;/post/2016/10/document-browser-comparison.html&quot;&gt;文章&lt;/a&gt;，对比了 Zeal 和 Mac 下的 Dash，不过这么长时间过来，已经熟悉了 Zeal，所以再总结一下 Zeal 的使用技巧。&lt;/p&gt;
+
+&lt;h2 id=&quot;指定文档搜索&quot;&gt;指定文档搜索&lt;/h2&gt;
+&lt;p&gt;Zeal 最常用的方式就是直接搜索方法名或者类名，但是有的时候本地的文档太多，就会出现很多结果，不同语言，不同内容混在一起。所以在 Zeal 搜索框中可以使用前缀来缩小搜索范围。比如想要搜索 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;java8&lt;/code&gt; 中的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ConcurrentMap&lt;/code&gt; 那么就可以输入：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;java8: ConcurrentMap
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;自定义-docset-路径&quot;&gt;自定义 Docset 路径&lt;/h2&gt;
+&lt;p&gt;默认情况下 Zeal 会使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~/.local/share/Zeal/Zeal/docsets&lt;/code&gt; 作为 Docset 默认路径，这个路径在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~/.config/Zeal/Zeal.conf&lt;/code&gt; 配置文件中。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;可以手动修改上述配置文件&lt;/li&gt;
+  &lt;li&gt;或者在界面中 General 中配置&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;user-generate&quot;&gt;User generate&lt;/h2&gt;
+&lt;p&gt;用户贡献的 documents.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://zealusercontributions.herokuapp.com/&quot;&gt;https://zealusercontributions.herokuapp.com/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://zealdocs.org/&quot;&gt;https://zealdocs.org/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/zeal-offline-document-browser.html</link>
+                <guid>https://einverne.github.io/post/2020/03/zeal-offline-document-browser</guid>
+                <pubDate>Tue, 03 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+        <item>
+                <title>typescript 初识</title>
+                <description>&lt;p&gt;最近浏览 GitHub 发现一个有趣的&lt;a href=&quot;https://github.com/ronggang/PT-Plugin-Plus/&quot;&gt;项目 PT Plugin Plus&lt;/a&gt; 代码拉下来发现是 ts 语言写的，就顺便了解一下。&lt;sup id=&quot;fnref:ts&quot;&gt;&lt;a href=&quot;#fn:ts&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; 目标很简单，不是为了写 ts 项目，只是为了能看懂项目。&lt;/p&gt;
+
+&lt;h2 id=&quot;ts-in-5-minutes&quot;&gt;ts in 5 minutes&lt;/h2&gt;
+
+&lt;h3 id=&quot;强类型&quot;&gt;强类型&lt;/h3&gt;
+&lt;p&gt;Js 中原来变量是没有类型的，只有运行时赋值了才决定变量的类型，但是 ts 在方法定义的时候可以给参数加上类型校验&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;function greeter(person: string) {
+	return &quot;Hello, &quot; + person;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;一旦类型不匹配则在编译时就会报错。&lt;/p&gt;
+
+&lt;h3 id=&quot;interfaces&quot;&gt;Interfaces&lt;/h3&gt;
+&lt;p&gt;可以使用 interface 来定义对象&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;interface Person {
+	firstName: string;
+	lastName: string;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;classes&quot;&gt;Classes&lt;/h3&gt;
+&lt;p&gt;ts 支持基于类的面向对象编程，classes 和 interfaces 可以协同工作，&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class Student {
+    fullName: string;
+    constructor(public firstName: string, public middleInitial: string, public lastName: string) {
+        this.fullName = firstName + &quot; &quot; + middleInitial + &quot; &quot; + lastName;
+    }
+}
+
+interface Person {
+    firstName: string;
+    lastName: string;
+}
+
+function greeter(person: Person) {
+    return &quot;Hello, &quot; + person.firstName + &quot; &quot; + person.lastName;
+}
+
+let user = new Student(&quot;Jane&quot;, &quot;M.&quot;, &quot;User&quot;);
+
+document.body.textContent = greeter(user);
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;handbook&quot;&gt;handbook&lt;/h2&gt;
+
+&lt;h3 id=&quot;类型&quot;&gt;类型&lt;/h3&gt;
+&lt;p&gt;ts 支持 js 的类型，number, string, structure, boolean 等等，不过 ts 增加了枚举类型。&lt;/p&gt;
+
+&lt;h4 id=&quot;boolean&quot;&gt;Boolean&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let isDone: boolean = false;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;number&quot;&gt;Number&lt;/h4&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let decimal: number = 6;
+let hex: number = 0xf00d;
+let binary: number = 0b1010;
+let octal: number = 0o744;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;string&quot;&gt;String&lt;/h4&gt;
+&lt;p&gt;文本是任何一门语言都避免不了的，和 js 一样可以使用双引号和单引号。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let color: string = &quot;blue&quot;;
+color = 'red';
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;也可以使用 template strings, 使用反引号 (`) 来框住长文本。&lt;/p&gt;
+
+&lt;h4 id=&quot;array&quot;&gt;Array&lt;/h4&gt;
+&lt;p&gt;直接声明：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let list: number[] = [1, 2, 3];
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;或者使用 Array:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let list: Array&amp;lt;number&amp;gt; = [1, 2, 3];
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;tuple&quot;&gt;Tuple&lt;/h4&gt;
+&lt;p&gt;元组，用来表达固定长度数组，其他元素不一定类型相同。&lt;/p&gt;
+
+&lt;p&gt;定义：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let x: [string, number];
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;初始化：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;x = [&quot;abc&quot;, 123];
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;enum&quot;&gt;Enum&lt;/h4&gt;
+&lt;p&gt;枚举类型是 ts 新增加的，用来扩展 number 表达的含义。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;enum Color {RED, GREEN, BLUE}
+let c: Color = Color.RED;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;枚举类型默认从 0 开始，可以手动指定。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;enum Color { RED=1, GREEN, BLUE}
+enum Color { RED=1, GREEN=2, BLUE=4}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;any&quot;&gt;Any&lt;/h4&gt;
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;any&lt;/code&gt; 类型可以使得开发者可以自行选择使用类型检查，或者不使用。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let notSure: any = 4;
+notSure = &quot;maybe a string instead&quot;;
+notSure = false; // okay, definitely a boolean
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h4 id=&quot;void&quot;&gt;Void&lt;/h4&gt;
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;void&lt;/code&gt; 像是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;any&lt;/code&gt; 类型的反面，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;void&lt;/code&gt; 经常被用来作为方法的 void 返回。&lt;/p&gt;
+
+&lt;h4 id=&quot;null-and-undefined&quot;&gt;Null and Undefined&lt;/h4&gt;
+&lt;p&gt;在 ts 中，undefined 和 null 都有各自的类型，和 void 一样，null 和 undefined 一般都不自己使用。默认 null 和 undefined 是其他类型的子类型，这意味着可以将 null 和 undefined 赋值给 number.&lt;/p&gt;
+
+&lt;h4 id=&quot;never&quot;&gt;Never&lt;/h4&gt;
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;never&lt;/code&gt; 类型表示类型的值永远不会发生。&lt;/p&gt;
+
+&lt;h4 id=&quot;object&quot;&gt;Object&lt;/h4&gt;
+&lt;p&gt;非原始类型，不是 number, string, boolean, bigint, symbol, null 或者 undefined.&lt;/p&gt;
+
+&lt;h4 id=&quot;type-assertions&quot;&gt;Type assertions&lt;/h4&gt;
+&lt;p&gt;尖括号语法：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let someValue: any = &quot;this is a string&quot;;
+let strLength: number = (&amp;lt;string&amp;gt;someValue).length;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;as 语法：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;let someValue: any = &quot;this is a string&quot;;
+let strLength: number = (someValue as string).length;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;reference&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.typescriptlang.org/docs/handbook/basic-types.html&quot;&gt;https://www.typescriptlang.org/docs/handbook/basic-types.html&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;footnotes&quot;&gt;
+  &lt;ol&gt;
+    &lt;li id=&quot;fn:ts&quot;&gt;
+      &lt;p&gt;&lt;a href=&quot;https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html&quot;&gt;https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html&lt;/a&gt; &lt;a href=&quot;#fnref:ts&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
+    &lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/div&gt;
+</description>
+                <link>https://einverne.github.io/post/2020/03/typescript-lang.html</link>
+                <guid>https://einverne.github.io/post/2020/03/typescript-lang</guid>
+                <pubDate>Tue, 03 Mar 2020 00:00:00 +0000</pubDate>
+        </item>
+
+
+</channel>
+</rss>

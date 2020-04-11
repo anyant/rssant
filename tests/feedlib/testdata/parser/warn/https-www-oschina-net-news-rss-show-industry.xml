@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+    <title>OSCHINA 社区最新新闻</title>
+    <link>https://www.oschina.net/news/rss</link>
+    <description>OSCHINA - 中文开源技术交流社区</description>
+    <language>zh-CN</language>
+    <pubDate>Mon, 06 Apr 2020 08:28:46 +0800</pubDate>
+	<image>
+		<link>https://www.oschina.net</link>
+		<url>https://www.oschina.net/img/logo.gif</url>
+		<title>OsChina.NET</title>
+	</image>
+	<item>
+        <title>Chrome OS 的 Linux 终端迎来一系列新功能，运行更轻松</title>
+        <link>https://www.oschina.net/news/114665/new-linux-terminal-in-chrome-os-83</link>
+        <category>综合新闻</category>
+        <description><![CDATA[据外媒 AndroidPolice 报道，目前还在开发者频道的 Chrome OS 83 获得了更新的 Linux 终端，带来了一系列新功能，包括新的主题和自定义选项等。 Chrome OS 终端应用程序可供选择使用 Linux 功能的 Chromebook 用户使用。该功能提供了完整的 Linux 开发环境，他们可以在其中轻松安装流行的开源软件，例如 GIMP、LibreOffi...]]></description>
+        <pubDate>Mon, 06 Apr 2020 08:28:46 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114665/new-linux-terminal-in-chrome-os-83</guid>
+    </item>
+	<item>
+        <title>每日一博 | 探秘 ThreadLocal 的实现机制与小地雷</title>
+        <link>https://my.oschina.net/wangzhenchao/blog/3212438</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Java 多线程类库对于共享数据的读写访问主要采用同步机制来保证线程安全，而本文所要探究的 ThreadLocal 则采用了一种完全不同的策略]]></description>
+        <pubDate>Mon, 06 Apr 2020 07:50:03 +0800</pubDate>
+        <guid>https://my.oschina.net/wangzhenchao/blog/3212438</guid>
+    </item>
+	<item>
+        <title>MySQL 8.0 来了，逆之者亡... </title>
+        <link>https://my.oschina.net/yejr/blog/3219186</link>
+        <category>综合新闻</category>
+        <description><![CDATA[MySQL 8.0 来了，大势浩浩荡荡，谁也挡不住……]]></description>
+        <pubDate>Mon, 06 Apr 2020 07:47:37 +0800</pubDate>
+        <guid>https://my.oschina.net/yejr/blog/3219186</guid>
+    </item>
+	<item>
+        <title>微软如何改进 Microsoft Edge 的滚动效果？</title>
+        <link>https://www.oschina.net/news/114661/ms-edge-scrolling-personality-improvements</link>
+        <category>综合新闻</category>
+        <description><![CDATA[微软 Microsoft Edge 团队在博客分享了他们如何改进新版 Edge 的滚动效果，包括改进滚动动画和优化滚动体验（交互和外观）。 在旧版 Edge 中，团队通过与操作系统 Compositor (DirectComposition) 和输入 API (Direct Manipulation) 的紧密集成，实现了与 Windows 系统一致的平滑滚动效果（Smooth Scrolling）。由于两者...]]></description>
+        <pubDate>Mon, 06 Apr 2020 07:41:16 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114661/ms-edge-scrolling-personality-improvements</guid>
+    </item>
+	<item>
+        <title>华为加入 OIN 社区</title>
+        <link>https://www.oschina.net/news/114659/huawei-joins-open-invention-network</link>
+        <category>综合新闻</category>
+        <description><![CDATA[4月2日，华为宣布加入专利保护社区 OIN（Open Invention Network），成为 OIN 社区的被许可方和成员，同意与其它 OIN 成员以免专利使用费和互不侵犯（不进行专利主张或行使其专利权）的形式交叉授权其专利。 华为是 Linux 基金会和其他开源组织的长期成员，包括 OpenStack 基金会和云原生计算基金会。去年10月，华为成为...]]></description>
+        <pubDate>Mon, 06 Apr 2020 07:40:12 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114659/huawei-joins-open-invention-network</guid>
+    </item>
+	<item>
+        <title>工作一年，Java 程序员该如何规划自己的技术体系？</title>
+        <link>https://www.oschina.net/question/3774191_2315460</link>
+        <category>综合新闻</category>
+        <description><![CDATA[工作一年了，一直在打杂，现在想规划自己的一个技术体系，但是不知道具体学些什么，从哪里开始学]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:52:01 +0800</pubDate>
+        <guid>https://www.oschina.net/question/3774191_2315460</guid>
+    </item>
+	<item>
+        <title>每日一博 | 那些年被面试官怼的 MySQL 索引</title>
+        <link>https://my.oschina.net/u/4062805/blog/3216265</link>
+        <category>综合新闻</category>
+        <description><![CDATA[之前有过一次面试，关于 MySQL 索引的原理及使用被面试官怼的体无完肤，立志要总结一番，然后……]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:34:03 +0800</pubDate>
+        <guid>https://my.oschina.net/u/4062805/blog/3216265</guid>
+    </item>
+	<item>
+        <title>TIOBE 4 月榜单：少儿编程语言 Scratch 进入 TOP 20</title>
+        <link>https://www.oschina.net/news/114644/tiobe-index-202004</link>
+        <category>综合新闻</category>
+        <description><![CDATA[TIOBE 已公布 2020 年 4 月的编程语言排行榜。 这期的标题主角是 Scratch，它是 MIT Media 实验室 Lifelong 幼儿园团队的一个项目，其通过点击并拖拽的方式可视化完成编程，帮助儿童培养编程思维，学会创造性地思考、系统地推理和协同工作。 编程作为现代社会需要的一项技能受到了越来越多的关注，其中就包括儿童这一群体...]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:28:17 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114644/tiobe-index-202004</guid>
+    </item>
+	<item>
+        <title>【一周】VSCode开源替代框架Eclipse Theia 1.0 | 能否挑战TensorFlow？国内开源了几大AI框架</title>
+        <link>https://www.oschina.net/question/3820517_2315741</link>
+        <category>综合新闻</category>
+        <description><![CDATA[“有些人把安卓和 Chrome OS 的成功归结于 Linux 开源，但我认为两者根本不相关。安卓和 Chrome OS 的成功并非得益于 Linux/GNU/FOSS，而是因为他们有一个‘聪明的、高利润的、闭源且专属的商业模式’（smart, highly profitable, closed source, proprietary business model）”...]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:21:28 +0800</pubDate>
+        <guid>https://www.oschina.net/question/3820517_2315741</guid>
+    </item>
+	<item>
+        <title>GNU Guix 将终止对 Linux 内核的支持</title>
+        <link>https://www.oschina.net/news/114642/guix-deprecating-support-for-the-linux-kernel</link>
+        <category>综合新闻</category>
+        <description><![CDATA[GNU Guix 项目官方近日宣布将逐步终止对 Linux 内核的支持，取而代之的是 Hurd 内核。 Guix 是一个事务性包管理器，也是一个尊重用户自由的 GNU 系统高级发行版。除了标准的软件包管理功能外，Guix 支持透明升级和回滚、无特权包管理、针对每个用户的配置文件，以及垃圾回收。 去年五月，经过多年开发后，GNU Guix 终于发...]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:17:39 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114642/guix-deprecating-support-for-the-linux-kernel</guid>
+    </item>
+	<item>
+        <title>Chrome 浏览器计划追踪你的多媒体播放记录</title>
+        <link>https://www.oschina.net/news/114641/chrome-prepares-to-track-your-media-playback-history</link>
+        <category>综合新闻</category>
+        <description><![CDATA[过去几个月中，谷歌不断丰富 Chrome 浏览器的功能，为用户提供了更优秀的多媒体播放体验。去年 12 月，Chrome 浏览器启用了全新多媒体控制工具，引入了对 Chromecast 的支持；上月初，Chrome 又在多媒体控制中心测试了全新的画中画按钮。现在谷歌又准备添加一项新功能，帮助你追踪浏览器中的多媒体播放历史记录。 最近在...]]></description>
+        <pubDate>Sun, 05 Apr 2020 08:17:21 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114641/chrome-prepares-to-track-your-media-playback-history</guid>
+    </item>
+	<item>
+        <title>Rust 文档团队解散</title>
+        <link>https://www.oschina.net/news/114631/goodbye-rust-docs-team</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Rust 核心开发团队成员 Steve Klabnik 在博客宣布 Rust 文档团队已解散。 Steve 介绍到，早在2016年8月，他们成立了一个团队来负责 Rust 的文档工作。当时主要负责以下工作内容： 标准库文档 相关书籍和其他长篇文献 Cargo 文档 错误索引 此外，Rust 文档团队还会以不同的方式为 Rust 生态相关的文档编写提供帮助。首先是...]]></description>
+        <pubDate>Sat, 04 Apr 2020 09:19:41 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114631/goodbye-rust-docs-team</guid>
+    </item>
+	<item>
+        <title>Firefox 修复两项 0 day 漏洞，建议用户尽快升级</title>
+        <link>https://www.oschina.net/news/114630/firefox-gets-fixes-for-two-zero-days</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Mozilla 紧急发布了 Firefox 74.0.1 和 Firefox ESR 68.6.1 版本，针对其内存空间管理方式中存在的两个错误进行了修复。 两项漏洞分别为 CVE-2020-6819 和 CVE-2020-6820，均被评级为”严重“。这类 ”user-after-free“ 漏洞使黑客可以将代码放入 Firefox 的内存中，并在浏览器的上下文中执行代码。 安全研究员 Franci...]]></description>
+        <pubDate>Sat, 04 Apr 2020 09:07:45 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114630/firefox-gets-fixes-for-two-zero-days</guid>
+    </item>
+	<item>
+        <title>OpenWRT 使用 HTTP 连接传输更新，易遭受中间人攻击</title>
+        <link>https://www.oschina.net/news/114629/openwrt-is-vulnerable-to-attacks</link>
+        <category>综合新闻</category>
+        <description><![CDATA[一份安全研究报告显示，流行的路由器发行版 OpenWRT 容易受到远程代码执行攻击，因为它的更新是通过未加密渠道传输的，其数字签名验证很容易绕过。 OpenWRT 被广泛用于路由器和其它嵌入式系统。安全研究员 Guido Vranken 发现它的更新和安装文件通过 HTTP 连接传输，容易受到中间人攻击，攻击者可以用恶意更新文件去替换...]]></description>
+        <pubDate>Sat, 04 Apr 2020 08:43:00 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114629/openwrt-is-vulnerable-to-attacks</guid>
+    </item>
+	<item>
+        <title>谷歌宣布暂时回滚 Chrome 隐私功能，以确保疫情期间网站稳定性</title>
+        <link>https://www.oschina.net/news/114626/temporarily-rolling-back-samesite</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Chrome 工程总监 Justin Schuh 在 Chromium Blog 发文宣布暂时回滚 SameSite Cookie 功能，以确保新冠病毒疫情期间网站的稳定性。 SameSite 是全新的 cookie 分类模型，在二月初发布的 Chrome 80 稳定版中被引入。Chrome 会将没有声明 SameSite 值的 cookie 默认设置为SameSite=Lax。只有采用SameSite=None; Secure设置的...]]></description>
+        <pubDate>Sat, 04 Apr 2020 08:31:36 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114626/temporarily-rolling-back-samesite</guid>
+    </item>
+	<item>
+        <title>每日一博 | 神经网络究竟能否模拟人脑？</title>
+        <link>https://my.oschina.net/u/4486736/blog/3217428</link>
+        <category>综合新闻</category>
+        <description><![CDATA[回想一下，当你终于决定要开始学机器学习之前，究竟是什么触动了你的心？触动我的心的，就是上面这个问题。我的故事就充满了中二的气息，《超能特战队》是一部人工智能题材的科幻动画，我喜欢里面超暖的大白(●—●)，而且用的是技术宅风格的喜欢：我想实现它。]]></description>
+        <pubDate>Sat, 04 Apr 2020 08:30:11 +0800</pubDate>
+        <guid>https://my.oschina.net/u/4486736/blog/3217428</guid>
+    </item>
+	<item>
+        <title>世界卫生组织与腾讯加深合作，新冠肺炎 AI 自查助手全球开源</title>
+        <link>https://www.oschina.net/news/114617/tencent-covid-19-self-triage-assistant</link>
+        <category>综合新闻</category>
+        <description><![CDATA[4月3日，腾讯宣布将与世界卫生组织加深合作，向世卫的COVID-19团结应急基金捐款1000万美元，并达成共同推动以数字医疗解决方案助力全球抗疫的协议。 “我衷心感谢腾讯的慷慨捐助和对COVID19团结应急基金的贡献。我期待与腾讯合作，在抗击疫情的过程中推动使用数字医疗工具，为了一个更健康、更安全、更公平的世界共同努力...]]></description>
+        <pubDate>Fri, 03 Apr 2020 22:55:12 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114617/tencent-covid-19-self-triage-assistant</guid>
+    </item>
+	<item>
+        <title>FydeOS 正式登陆 AMD Ryzen 平台</title>
+        <link>https://www.oschina.net/news/114614/fydeos-news</link>
+        <category>综合新闻</category>
+        <description><![CDATA[燧炻创新一直致力于让 Chromium OS 和 FydeOS 能在更多的硬件平台和设备上运行，将优质的体验带给更多用户。今天，FydeOS for HONOR MagicBook 2019 Preview1 正式发布。 作为第一个适配 AMD Ryzen 平台的 FydeOS for You 版本，FydeOS for HONOR MagicBook 2019 Preview1 是目前市面上第一款也是唯一一款能在 AMD Ryze...]]></description>
+        <pubDate>Fri, 03 Apr 2020 19:56:28 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114614/fydeos-news</guid>
+    </item>
+	<item>
+        <title>中国开源项目 Milvus 加入 LF AI 孵化，立志成为最流行的 AI 数据平台</title>
+        <link>https://www.oschina.net/news/114603/milvus-joining-lf-ai</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Milvus ( https://gitee.com/milvus-io/milvus) 特征向量相似度搜索引擎通过技术委员会投票，正式加入 Linux AI （LF AI）基金会成为其最新的孵化项目。 LF AI 基金会的使命是建立和支持开放的人工智能社区，通过促进协作和创新为社区所有成员创造新机会，推动人工智能（AI）、机器学习（ML）和深度学习（DL）领域的开源...]]></description>
+        <pubDate>Fri, 03 Apr 2020 10:26:56 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114603/milvus-joining-lf-ai</guid>
+    </item>
+	<item>
+        <title>挑战 TensorFlow 与 PyTorch，3 月深度学习框架集中爆发</title>
+        <link>https://my.oschina.net/editorial-story/blog/3217606</link>
+        <category>综合新闻</category>
+        <description><![CDATA[今年 3 月份，突然的爆发打破了宁静——华为、旷视与清华大学在今年 3 月相继开源各自研发的深度学习框架，吸引了众多国内外开发者的关注——深度学习开源框架这把火在开源大浪潮的今天要在国内燎原了。]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:32:39 +0800</pubDate>
+        <guid>https://my.oschina.net/editorial-story/blog/3217606</guid>
+    </item>
+	<item>
+        <title>物尽其用，没有大显存也能跑深度学习项目</title>
+        <link>https://mp.weixin.qq.com/s?__biz=MjM5NzM0MjcyMQ==&mid=2650091036&idx=2&sn=ca3503a6fa9914574901d4da11b9cde4&chksm=bedaf57289ad7c6485d5c8330e244f9a7891141733ce7d13b3f3be235a5281c3ecfc2e53c311&token=1682840778&lang=zh_CN#rd</link>
+        <category>综合新闻</category>
+        <description><![CDATA[虽然GPU对深度学习计算有普遍明显的加速作用，但其显存也是有限的（如V100的最大显存值也仅有32G），而深度学习模型的训练和推理往往需要大量的显存，用来支持更大的模型和更大的batch size。]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:32:29 +0800</pubDate>
+        <guid>https://mp.weixin.qq.com/s?__biz=MjM5NzM0MjcyMQ==&mid=2650091036&idx=2&sn=ca3503a6fa9914574901d4da11b9cde4&chksm=bedaf57289ad7c6485d5c8330e244f9a7891141733ce7d13b3f3be235a5281c3ecfc2e53c311&token=1682840778&lang=zh_CN#rd</guid>
+    </item>
+	<item>
+        <title>Microsoft Edge 浏览器市场份额超过 Firefox</title>
+        <link>https://www.oschina.net/news/114597/netmarketshare-mar</link>
+        <category>综合新闻</category>
+        <description><![CDATA[调研机构 NetMarketShare 发布了 2020 年三月的最新数据，包括各类浏览器和操作系统的市场份额。 三月的最大亮点是 Microsoft Edge 浏览器的市场份额（7.59%）首度赶超 Firefox（7.19%），目前以 0.4% 的优势位居第二。 在上个月，Edge 和 Firefox 的市场份额就已相当接近。从连月的数据来看，实际上从今年一月 Microsof...]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:27:11 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114597/netmarketshare-mar</guid>
+    </item>
+	<item>
+        <title>Cloudflare 推家庭 1.1.1.1 公共 DNS，阻止恶意软件和成人内容</title>
+        <link>https://www.oschina.net/news/114596/cloudflare-1-1-1-1-for-families</link>
+        <category>综合新闻</category>
+        <description><![CDATA[2018 年的 4 月 1 日愚人节，Cloudflare 宣布推出 1.1.1.1 公共 DNS 服务。如今两年过去了，其已经成为了仅次于 Google 的全球第二大公共 DNS 解析器。 在今年的愚人节当天，Cloudflare 则表示，他们收到了一些来自家庭用户的请求，这些用户希望确保他们有一定程度的安全威胁防护措施，并可以防止孩子访问成人内容。为此...]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:26:53 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114596/cloudflare-1-1-1-1-for-families</guid>
+    </item>
+	<item>
+        <title>Mozilla 开源支持计划发起 COVID-19 解决方案基金</title>
+        <link>https://www.oschina.net/news/114594/moss-launches-covid-19-solutions-fund</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Mozilla 于近日宣布设立 COVID-19 解决方案基金，并以此作为 Mozilla 开源支持计划（MOSS）的一部分。通过该基金，Mozilla 将为应对 COVID-19 的开源技术项目提供最高 5 万美元的奖励。 作为 COVID-19 解决方案基金的一部分，Mozilla 接受硬件（如开源呼吸机）、软件（如连接医院和能提供 3D 打印机打印开源呼吸机零部件...]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:20:50 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114594/moss-launches-covid-19-solutions-fund</guid>
+    </item>
+	<item>
+        <title>每日一博 | Java 中的屠龙之术——如何修改语法树</title>
+        <link>https://my.oschina.net/u/4030990/blog/3211858</link>
+        <category>综合新闻</category>
+        <description><![CDATA[在网上关于如何修改Java的抽象语法树的相关API文档并不多，本篇记录一下相关的知识点]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:20:21 +0800</pubDate>
+        <guid>https://my.oschina.net/u/4030990/blog/3211858</guid>
+    </item>
+	<item>
+        <title>vue-form-making —— 可视化表单设计器</title>
+        <link>https://www.oschina.net/p/vue-form-making</link>
+        <category>综合新闻</category>
+        <description><![CDATA[基于 vue 和 element-ui 实现的表单设计器，使用了最新的前端技术栈，内置了 i18n 国际化解决方案，可以让表单开发简单而高效。]]></description>
+        <pubDate>Fri, 03 Apr 2020 08:18:17 +0800</pubDate>
+        <guid>https://www.oschina.net/p/vue-form-making</guid>
+    </item>
+	<item>
+        <title>码云推荐 | 精美的跨平台数据可视化图表框架 AAInfographics</title>
+        <link>https://gitee.com/ShiMeGuiA/AAChartKit-Swift</link>
+        <category>综合新闻</category>
+        <description><![CDATA[极其精美而又强大的跨平台数据可视化图表框架，支持柱状图、条形图、折线图、曲线图、折线填充图、曲线填充图、气泡图、扇形图、环形图、散点图、雷达图、混合图等各种类型的多达几十种的信息图图表，完全满足工作所需。]]></description>
+        <pubDate>Fri, 03 Apr 2020 07:38:24 +0800</pubDate>
+        <guid>https://gitee.com/ShiMeGuiA/AAChartKit-Swift</guid>
+    </item>
+	<item>
+        <title>Fedora 33 计划使用 OpenJDK 11 作为默认 Java 版本</title>
+        <link>https://www.oschina.net/news/114567/fedora-33-openjdk-11-default</link>
+        <category>综合新闻</category>
+        <description><![CDATA[到目前为止，Fedora 仍在默认使用 Java 1.8 / OpenJDK 8 作为系统默认的 JDK 版本。不过对于即将到来的 Fedora 33（计划今年晚些时候发布），Fedora 团队计划将其迁移到 OpenJDK 11。 据了解，该提案目前已在“变更提案”中提出，Fedora 工程与指导委员会仍在对此进行辩论以及权衡。该提案一旦被通过，Fedora 33 将会为 ...]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:18:44 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114567/fedora-33-openjdk-11-default</guid>
+    </item>
+	<item>
+        <title>Linux Mint 20 新消息：代号 “Ulyana”，仅支持 64 位系统</title>
+        <link>https://www.oschina.net/news/114566/linux-mint-20-release-features</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Linux Mint 20 预计于今年六月发布，在此之前，让我们先来看看该版本有哪些新消息。 根据 Linux Mint 采用女性名称，并按字母排列顺序的命名传统，Linux Mint 20 的代号以 “U” 开头，名为 “Ulyana”。 Linux Mint 20 基于最新的 Ubuntu 版本 Ubuntu 20.04 LTS，并将一如既往地以三种不同的桌面版本分发：Cinnamon、M...]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:17:10 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114566/linux-mint-20-release-features</guid>
+    </item>
+	<item>
+        <title>微软推迟淘汰 TLS 1.0 和 1.1 的时间</title>
+        <link>https://www.oschina.net/news/114565/ms-postpones-tls-1-0-n-1-1-retirement</link>
+        <category>综合新闻</category>
+        <description><![CDATA[微软表示，由于新冠肺炎在全球的爆发，将推迟其浏览器中 TLS 1.0 和 1.1 版本协议的淘汰时间。由于大量开发者为了避免感染该病毒而留在家里，而这种重大更改通常需要进行的工作会花费更多的精力和明显更多的时间，因此微软已决定推迟 TLS 1.0 和 1.1 的淘汰日期，直到下半年疫情得到有效控制。 TLS 1.0 和 1.1 最初定于 ...]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:16:19 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114565/ms-postpones-tls-1-0-n-1-1-retirement</guid>
+    </item>
+	<item>
+        <title>麻省理工开发用于新冠病毒患者的低成本开源呼吸机</title>
+        <link>https://www.oschina.net/news/114564/mit-e-vent-open-source-ventilators</link>
+        <category>综合新闻</category>
+        <description><![CDATA[新冠病毒（COVID-19 ）正在全球范围内大流行，在此背景下，世界上许多国家却都面临着严重的关键个人防护装备和其他医疗设备的短缺，其中就包括了新冠病人的“救命机”—呼吸机。 为了解决这一燃眉之急，中国工业和信息化部官员 3 月 30 日在新闻发布会上通报称，据不完全统计，3 月 19 日以来，在保障国内需求的同时，我...]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:15:14 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114564/mit-e-vent-open-source-ventilators</guid>
+    </item>
+	<item>
+        <title>每日一博 | Spring 和 Spring Boot 之间到底有啥区别？</title>
+        <link>https://my.oschina.net/lixingsikao/blog/3213618</link>
+        <category>综合新闻</category>
+        <description><![CDATA[常用 Spring 和 Spring Boot，但就是没有研究二者之间到底有什么区别，你是否也有这样的困扰？]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:12:54 +0800</pubDate>
+        <guid>https://my.oschina.net/lixingsikao/blog/3213618</guid>
+    </item>
+	<item>
+        <title>x-easypdf —— 简单易用的 pdf 构建工具</title>
+        <link>https://www.oschina.net/p/x-easypdf</link>
+        <category>综合新闻</category>
+        <description><![CDATA[x-easypdf 基于 pdfbox 构建而来，极大降低使用门槛，以组件化的形式进行 pdf 的构建。简单、易用，3 分钟即可上手，人人都是 pdf 的构建高手。]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:10:33 +0800</pubDate>
+        <guid>https://www.oschina.net/p/x-easypdf</guid>
+    </item>
+	<item>
+        <title>码云推荐 | 可快速进行内网穿透的跨平台代理工具 FastTunnel</title>
+        <link>https://gitee.com/Hgui/FastTunnel</link>
+        <category>综合新闻</category>
+        <description><![CDATA[FastTunnel是一款跨平台网络代理工具，能够快速进行内网穿透]]></description>
+        <pubDate>Thu, 02 Apr 2020 08:09:02 +0800</pubDate>
+        <guid>https://gitee.com/Hgui/FastTunnel</guid>
+    </item>
+	<item>
+        <title>UKUI 登陆 openEuler 社区，国内首个桌面环境 SIG 上线！</title>
+        <link>https://www.oschina.net/news/114542/ukui-in-openeuler</link>
+        <category>综合新闻</category>
+        <description><![CDATA[2020年3月26日，经过openEuler社区技术委员会审议通过，UKUI桌面环境特别兴趣小组（UKUI SIG）正式成立，这是openEuler社区首次接受的由中国团队主导开发的桌面环境。继Gnome和Mate之后，UKUI成为openEuler的第3个可选桌面环境。openEuler也是继Debian、Ubuntu、Arch Linux等国际Linux发行版之后，又一款将UKUI作为可选桌...]]></description>
+        <pubDate>Wed, 01 Apr 2020 11:13:32 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114542/ukui-in-openeuler</guid>
+    </item>
+	<item>
+        <title>高手问答第 242 期 —— 该怎样踏入机器学习的世界？</title>
+        <link>https://www.oschina.net/question/4105562_2315636</link>
+        <category>综合新闻</category>
+        <description><![CDATA[机器学习已经无处不在，持续在各类新闻中霸榜，随着人工智能成为新基建的七大领域之一，人工智能+的概念呼之欲出，作为人工智能重要支柱的机器学习技术，未来必将会在更多的传统领域，包括医学、金融、安全等等攻城略地。]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:51:57 +0800</pubDate>
+        <guid>https://www.oschina.net/question/4105562_2315636</guid>
+    </item>
+	<item>
+        <title>微软恢复 Edge 浏览器更新，Edge 81 稳定版即将推出</title>
+        <link>https://www.oschina.net/news/114534/microsoft-resumes-edge-updates</link>
+        <category>综合新闻</category>
+        <description><![CDATA[此前，微软曾宣布跟随上游节奏，暂停 Edge 浏览器的更新。昨日，微软再发公告，表示继续跟随再次变动的 Chromium 的开发时间表，根据新的时间计划恢复更新。 新的时间表显示，Microsoft Edge 81 将在 4 月初发布稳定版本。接下来，同 Chrome 一样，跳过版本 82。并预计在 5 月中旬推出 Microsoft Edge 83，比原先的计划更...]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:36:29 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114534/microsoft-resumes-edge-updates</guid>
+    </item>
+	<item>
+        <title>Android 端 Firefox Beta 已开始迁移至 Fenix，并将逐步被取代</title>
+        <link>https://www.oschina.net/news/114533/mozilla-begins-bringing-fenix-to-firefox-beta</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Mozilla 已开始着手将 Android 上的 Firefox Beta 迁移到 Fenix（即 Firefox Preview）。根据 Are We Fenix Yet? 这一页面展示的状态，迁移进度目前为 2.1％。进入 Beta 阶段意味着它很快就会进入正式发布渠道，供所有用户使用。也意味着 Android 版 Firefox 将逐渐被 Firefox Preview 完全取代。 Fenix 是 Mozilla 打造...]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:23:24 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114533/mozilla-begins-bringing-fenix-to-firefox-beta</guid>
+    </item>
+	<item>
+        <title>Swift 将增加对 Windows 和其他 Linux 发行版的支持</title>
+        <link>https://www.oschina.net/news/114532/official-swift-programming-for-windows</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Swift 开发团队表示，其即将推出的 5.3 版本的目标包括“增加对 Windows 和其他 Linux 发行版的支持”。 他们提到 Swift 5.3 将包括重大的质量和性能增强。更重要的是，此版本还将扩展 Swift 可用和受支持的平台的数量，特别是增加对 Windows 和其他 Linux 发行版的支持。 苹果开源了 Swift 编程语言，但除了自家的平台，...]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:20:07 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114532/official-swift-programming-for-windows</guid>
+    </item>
+	<item>
+        <title>OBS Studio —— 实时流媒体和屏幕录制软件</title>
+        <link>https://www.oschina.net/p/obs-studio</link>
+        <category>综合新闻</category>
+        <description><![CDATA[OBS Studio 是一款用于实时流媒体和屏幕录制的软件，为高效捕获，合成，编码，记录和流传输视频内容而设计，支持所有流媒体平台。]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:17:27 +0800</pubDate>
+        <guid>https://www.oschina.net/p/obs-studio</guid>
+    </item>
+	<item>
+        <title>每日一博 | 如何通过 OIDC 协议实现单点登录？</title>
+        <link>https://my.oschina.net/authing/blog/3212301</link>
+        <category>综合新闻</category>
+        <description><![CDATA[单点登录（Single Sign On），简称为 SSO，是目前比较流行的企业业务整合的解决方案之一。 SSO 的定义是在多个应用系统中，用户只需要登录一次就可以访问所有相互信任的应用系统。]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:06:01 +0800</pubDate>
+        <guid>https://my.oschina.net/authing/blog/3212301</guid>
+    </item>
+	<item>
+        <title>小米开源 Redmi K30 Pro 内核源码</title>
+        <link>https://www.oschina.net/news/114529/xiaomi-redmi-k30-pro-kernel-source-code</link>
+        <category>综合新闻</category>
+        <description><![CDATA[小米已开源基于 Android Q 的 Redmi K30 Pro 的内核源码，可从 GitHub 进行下载。 Redmi K30 Pro 的预装系统为 MIUI 11（基于 Android Q），随着内核源码的发布，开发者和愿意折腾的用户能够充分利用硬件的潜力，相信市场上也会很快出现该机型的第三方固件。 小米在开源内核方面的动作一直以来都比较积极，比如在发布 PO...]]></description>
+        <pubDate>Wed, 01 Apr 2020 08:03:01 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114529/xiaomi-redmi-k30-pro-kernel-source-code</guid>
+    </item>
+	<item>
+        <title>码云推荐 | 好用小巧、功能全面的汉字拼音笔画 js 库 cnchar</title>
+        <link>https://gitee.com/theajack/cnchar</link>
+        <category>综合新闻</category>
+        <description><![CDATA[支持简体字、繁体字、火星文互转；多端可用；支持查找指定笔画数的所有汉字、繁体字；体积小，min 版本仅 46 kb，zip 版本 34 kb]]></description>
+        <pubDate>Wed, 01 Apr 2020 07:51:02 +0800</pubDate>
+        <guid>https://gitee.com/theajack/cnchar</guid>
+    </item>
+	<item>
+        <title> Gitee 全站最「渣」仓库，进来就知道是真的渣</title>
+        <link>https://gitee.com/gitee-frontend/page-animation</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Gitee 全站最「渣」仓库，进来就知道是真的渣]]></description>
+        <pubDate>Wed, 01 Apr 2020 00:17:42 +0800</pubDate>
+        <guid>https://gitee.com/gitee-frontend/page-animation</guid>
+    </item>
+	<item>
+        <title>「OSCHINA 开源软件趋势榜」即将上线，等你来揭榜</title>
+        <link>https://www.oschina.net/question/2918182_2315610</link>
+        <category>综合新闻</category>
+        <description><![CDATA[你觉得哪些项目可以进入候选名单？目前用户提名通道已经开启，具体方式见本文“如何参与”部分。]]></description>
+        <pubDate>Tue, 31 Mar 2020 08:42:30 +0800</pubDate>
+        <guid>https://www.oschina.net/question/2918182_2315610</guid>
+    </item>
+	<item>
+        <title>什么是 ALC (Apache Local Community) Beijing？</title>
+        <link>https://www.oschina.net/news/114500/what-is-alc</link>
+        <category>综合新闻</category>
+        <description><![CDATA[本文转载自： ALC Beijing 公众号 背景 当提起 Apache 软件基金会（Apache Software Foundation，ASF）项目时，国内大多数程序员都不会陌生。下图展示了在 ASF 2019 年年度报告中披露的 ASF 软件在全球各国家的下载量排名。 可以看到，中国已然成为 Apache 软件基金会项目下载量最大的地区。然而，这个看起来脱颖而出的数...]]></description>
+        <pubDate>Tue, 31 Mar 2020 08:40:50 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114500/what-is-alc</guid>
+    </item>
+	<item>
+        <title>新版 Microsoft Edge 将带来垂直标签和密码监视器</title>
+        <link>https://www.oschina.net/news/114498/new-microsoft-edge-vertical-tabs</link>
+        <category>综合新闻</category>
+        <description><![CDATA[虽然微软跟随上游 Chromium 的节奏，暂缓了 Microsoft Edge 的更新。不过，他们没有放缓对新功能的分享。Edge 副总裁 Liat Ben-Zur 在微软官网发布了一篇文章——《切换到新版 Microsoft Edge 的十大理由》，并大致介绍了新版 Edge 浏览器接下来将带来的一些功能。 垂直标签 垂直标签可用于轻松管理同时打卡的多个标签页...]]></description>
+        <pubDate>Tue, 31 Mar 2020 08:24:54 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114498/new-microsoft-edge-vertical-tabs</guid>
+    </item>
+	<item>
+        <title>Ubuntu 20.04 LTS 已引入 PHP 7.4</title>
+        <link>https://www.oschina.net/news/114497/php-7-4-lands-ubuntu-20-04</link>
+        <category>综合新闻</category>
+        <description><![CDATA[Canonical 的 Bryce Harrington 在上周四分享了成功将 PHP 7.4 引入 Ubuntu 20.04 软件包档案库中的消息，这并不令人感到意外，毕竟早在上个月 Bryce 就已开始这项工作。 PHP 7.4 于去年 11 月底正式发布， 带来了不少实用的新功能，例如可用于在原生 PHP 代码中访问 C 结构/函数/变量的 FFI 、Opcache 预加载、简化匿名...]]></description>
+        <pubDate>Tue, 31 Mar 2020 07:56:20 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114497/php-7-4-lands-ubuntu-20-04</guid>
+    </item>
+	<item>
+        <title>谷歌取消今年愚人节恶作剧</title>
+        <link>https://www.oschina.net/news/114496/google-cancels-april-fools-jokes-2020-covid19</link>
+        <category>综合新闻</category>
+        <description><![CDATA[谷歌表示，鉴于当前的形势，他们应该专注于帮助对抗 COVID-19，而不是准备恶作剧。 谷歌向来都有在愚人节这天在其产品中用精心制作的恶作剧“整蛊”用户的传统，但今年由于受到新冠肺炎的严重威胁，谷歌决定暂时取消这项节目。 根据 Business Insider 获得的内部电子邮件，谷歌为了表达对所有与 COVID-19 抗争的人们的敬...]]></description>
+        <pubDate>Tue, 31 Mar 2020 07:55:12 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114496/google-cancels-april-fools-jokes-2020-covid19</guid>
+    </item>
+	<item>
+        <title>Mozilla 表示不会延迟 Firefox 的发布</title>
+        <link>https://www.oschina.net/news/114495/mozilla-firefox-schedule-update</link>
+        <category>综合新闻</category>
+        <description><![CDATA[据 Mozilla Wiki 官方网站上发布的最新日程表更新显示，Mozilla 目前不会更改 Firefox 的发布日程表。此前，因新冠病毒（Covid-19）爆发的影响，谷歌和微软曾相继宣布，暂停 Chrome、Chrome OS 的版本更新和暂停 Microsoft Edge 的更新。日前，谷歌还发布了调整后的 Chrome 和 Chrome OS 版本更新时间表。 按照 Mozilla ...]]></description>
+        <pubDate>Tue, 31 Mar 2020 07:52:55 +0800</pubDate>
+        <guid>https://www.oschina.net/news/114495/mozilla-firefox-schedule-update</guid>
+    </item>
+</channel>
+</rss>
+<!-- Generated by oschina (init:1[ms],page:17[ms],ip:58.35.23.180) //-->
