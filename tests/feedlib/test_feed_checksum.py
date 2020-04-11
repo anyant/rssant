@@ -109,7 +109,7 @@ def _format_t(t):
     return '{:.1f}ms'.format(t * 1000)
 
 
-def benchmark_feed_checksum():
+def test_benchmark_feed_checksum():
     for n in range(100, 1001, 100):
         storys = _random_storys(n)
         checksum = FeedChecksum()
@@ -134,4 +134,4 @@ def benchmark_feed_checksum():
 
 
 if __name__ == "__main__":
-    benchmark_feed_checksum()
+    test_benchmark_feed_checksum()
