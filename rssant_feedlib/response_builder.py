@@ -66,6 +66,12 @@ def _detect_xml_encoding(content: bytes) -> str:
     return None
 
 
+def _detect_json_encoding(content: bytes) -> str:
+    if content.startswith(b'{') or content.startswith(b'['):
+        return 'utf-8'
+    return None
+
+
 def _detect_chardet_encoding(content: bytes) -> str:
     # chardet检测编码有些情况会非常慢，换成cchardet实现，性能可以提升100倍
     r = cchardet.detect(content)
@@ -74,9 +80,6 @@ def _detect_chardet_encoding(content: bytes) -> str:
         # 解决常见的乱码问题，chardet没检测出来基本就是iso8859-*和windows-125*编码
         if encoding.startswith('iso8859') or encoding.startswith('windows'):
             encoding = 'utf-8'
-    elif encoding == 'ascii':
-        # ascii 是 utf-8 的子集，没必要用 ascii 编码
-        encoding = 'utf-8'
     return encoding
 
 
@@ -87,7 +90,11 @@ def _parse_content_type_header(content_type: str) -> typing.Tuple[str, str]:
 
 
 def _normalize_encoding(encoding: str) -> str:
-    return codecs.lookup(encoding).name
+    encoding = codecs.lookup(encoding).name
+    if encoding == 'ascii':
+        # ascii 是 utf-8 的子集，没必要用 ascii 编码
+        encoding = 'utf-8'
+    return encoding
 
 
 class EncodingChecker:
@@ -98,7 +105,7 @@ class EncodingChecker:
         self._content = content
         self._encodings: typing.Dict[str, bool] = {}
 
-    def check(self, encoding: str) -> str:
+    def _check(self, encoding: str) -> str:
         if not encoding:
             return None
         try:
@@ -116,6 +123,16 @@ class EncodingChecker:
             self._encodings[encoding] = False
             return None
         self._encodings[encoding] = True
+        return encoding
+
+    def check(self, encoding: str) -> str:
+        encoding = self._check(encoding)
+        if not encoding:
+            return encoding
+        # Since ISO-8859-1 is a 1 byte per character encoding, it will always work.
+        if '8859' in encoding or 'latin' in encoding:
+            if self._check('utf-8'):
+                return 'utf-8'
         return encoding
 
 
@@ -137,15 +154,16 @@ def detect_content_encoding(content: bytes, http_encoding: str = None):
         encoding = checker.check(http_encoding)
         if encoding is not None:
             return encoding
+    encoding = checker.check(_detect_json_encoding(content))
+    if encoding is not None:
+        return encoding
     encoding = checker.check(_detect_xml_encoding(content))
     if encoding is not None:
         return encoding
     encoding = checker.check(_detect_chardet_encoding(content))
     if encoding is not None:
         return encoding
-    if checker.check('utf-8'):
-        return 'utf-8'
-    return None
+    return 'utf-8'
 
 
 class FeedResponseBuilder:

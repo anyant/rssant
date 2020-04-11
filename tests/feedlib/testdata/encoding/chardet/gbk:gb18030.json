@@ -1,0 +1,18 @@
+{
+  "version": "https://jsonfeed.org/version/1",
+  "title": "中国国家标准简体中文字符集，全称《信息交换用汉字编码字符集·基本集》",
+  "home_page_url": "https://example.org/",
+  "feed_url": "https://example.org/feed.json",
+  "items": [
+    {
+      "id": "2",
+      "content_text": "This is a second item.",
+      "url": "https://example.org/second-item"
+    },
+    {
+      "id": "1",
+      "content_html": "<p>Hello, world!</p>",
+      "url": "https://example.org/initial-post"
+    }
+  ]
+}

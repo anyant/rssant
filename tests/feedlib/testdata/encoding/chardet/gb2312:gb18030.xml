@@ -1,0 +1,12 @@
+<!--
+SkipUnless:   __import__('chardet')
+Description:  GB2312 with no encoding information
+Expect:       bozo and encoding == 'GB2312'
+-->
+<rss>
+<channel>
+<item>
+<title>信息交换用汉字编码字符集·基本集，通常简称GB</title>
+</item>
+</channel>
+</rss>
