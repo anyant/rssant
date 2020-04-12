@@ -181,12 +181,12 @@ class AsyncFeedReader:
             response: aiohttp.ClientResponse
             if not is_ok_status(response.status):
                 body = await self._read_text(response)
-                message = f'{response.status} body={body!r}'
+                message = f'status={response.status} body={body!r}'
                 raise RSSProxyError(message)
             proxy_status = response.headers.get('x-rss-proxy-status', None)
             if proxy_status and proxy_status.upper() == 'ERROR':
                 body = await self._read_text(response)
-                message = f'{response.status} body={body!r}'
+                message = f'status={response.status} body={body!r}'
                 raise RSSProxyError(message)
             proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
             content = None

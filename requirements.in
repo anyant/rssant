@@ -73,7 +73,7 @@ packaging==19.2
 # test
 pytest==5.4.1
 pytest-cov==2.8.1
-pytest-asyncio==0.10.0
+pytest-httpserver==0.3.4
 flake8==3.7.9
 pycodestyle==2.5.0
 coverage==4.5.4
