@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -55,6 +56,18 @@ def test_raw_parse_warn(filename):
 @pytest.mark.parametrize('filename', _collect_filenames(_data_dir / 'failed'))
 def test_raw_parse_failed(filename):
     response = _read_response(_data_dir / 'failed', filename)
+    parser = RawFeedParser()
+    with pytest.raises(FeedParserError) as ex:
+        parser.parse(response)
+    assert ex
+
+
+def test_raw_parse_bad_encoding():
+    content = os.urandom(16 * 1024)
+    builder = FeedResponseBuilder()
+    builder.url('https://blog.example.com/feed')
+    builder.content(content)
+    response = builder.build()
     parser = RawFeedParser()
     with pytest.raises(FeedParserError) as ex:
         parser.parse(response)

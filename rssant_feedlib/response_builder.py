@@ -85,6 +85,8 @@ def _detect_json_encoding(content: bytes) -> str:
 def _detect_chardet_encoding(content: bytes) -> str:
     # chardet检测编码有些情况会非常慢，换成cchardet实现，性能可以提升100倍
     r = cchardet.detect(content)
+    if not r or not r.get('encoding'):
+        return None
     encoding = r['encoding'].lower()
     if r['confidence'] < 0.5:
         # 解决常见的乱码问题，chardet没检测出来基本就是iso8859-*和windows-125*编码
