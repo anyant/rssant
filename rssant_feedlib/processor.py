@@ -3,6 +3,7 @@ import re
 import logging
 from collections import namedtuple
 from urllib.parse import urljoin, quote, unquote, urlsplit, urlunsplit
+
 import lxml.etree
 import lxml.html
 from lxml.html import soupparser
@@ -10,8 +11,8 @@ from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from lxml.html.clean import Cleaner
 from readability import Document as ReadabilityDocument
 from django.utils.html import escape as html_escape
-
 from validr import T, Invalid
+
 from rssant_common.validator import compiler
 
 from .importer import RE_URL
@@ -119,10 +120,14 @@ def is_replaced_image(url):
     return url and RSSANT_IMAGE_TAG in url
 
 
+def _is_url(url):
+    return bool(re.match(r'^https?:\/\/', url))
+
+
 def make_absolute_url(url, base_href):
     if not base_href:
         return url
-    if not url.startswith('http://') and not url.startswith('https://'):
+    if not _is_url(url):
         url = urljoin(base_href, url)
     return url
 
@@ -166,7 +171,7 @@ def normlize_url(url: str, base_url: str = None):
     url = url.replace('%3A//', '://')
     if url.startswith('://'):
         url = 'http' + url
-    if not url.startswith('http'):
+    if not _is_url(url):
         # ignore urn: or magnet:
         if re.match(r'^[a-zA-Z0-9]+:', url):
             return url
@@ -204,7 +209,8 @@ def normlize_url(url: str, base_url: str = None):
         netloc = netloc.split(':')[0]
     # fix: http://example.com//blog
     path = re.sub(r'^\/\/+', '/', path)
-    path = quote(path)
+    # quote is not idempotent, can not quote multiple times
+    path = quote(unquote(path))
     url = urlunsplit((scheme, netloc, path, query, fragment))
     return url
 
