@@ -15,6 +15,10 @@ WORKDIR /app
 
 # https://opsx.alibaba.com/mirror debian 9.x (stretch)
 COPY etc/apt-sources.list /etc/apt/sources.list
+
+# Fix DNS pollution of local network
+COPY etc/resolv.conf /etc/resolv.conf
+
 RUN apt-get update && \
     apt-get install -y \
         git neovim tree xz-utils lsof strace htop tcpdump dstat gdb \
