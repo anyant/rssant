@@ -167,3 +167,6 @@ VALIDATORS = {
 
 
 compiler = Compiler(validators=VALIDATORS)
+
+# warming up django url validator
+compiler.compile(T.url)('https://example.com/')
