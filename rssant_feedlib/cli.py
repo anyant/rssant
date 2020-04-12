@@ -88,14 +88,13 @@ def _do_parse(url: str, printer, allow_private_address, checksum, save_checksum)
     if not url.startswith('http://') and not url.startswith('https://'):
         response_file = FeedResponseFile(url)
         response = response_file.read()
-        print('-> {}'.format(response))
     else:
         reader = FeedReader(allow_private_address=allow_private_address)
         with reader:
             response = reader.read(url)
-            print('-> {}'.format(response))
-            if not response.ok:
-                return
+    print('-> {}'.format(response))
+    if not response.ok:
+        return
     if checksum:
         with open(checksum, 'rb') as f:
             data = f.read()
