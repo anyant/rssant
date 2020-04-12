@@ -84,14 +84,21 @@ def _do_find(url, max_trys, allow_private_address, printer, rss_proxy_url, rss_p
             printer(pretty_format_json(story))
 
 
-def _do_parse(url: str, printer, allow_private_address, checksum, save_checksum):
+def _do_parse(
+    url: str, printer, allow_private_address, checksum, save_checksum,
+    rss_proxy_url, rss_proxy_token,
+):
     if not url.startswith('http://') and not url.startswith('https://'):
         response_file = FeedResponseFile(url)
         response = response_file.read()
     else:
-        reader = FeedReader(allow_private_address=allow_private_address)
+        reader = FeedReader(
+            allow_private_address=allow_private_address,
+            rss_proxy_url=rss_proxy_url,
+            rss_proxy_token=rss_proxy_token,
+        )
         with reader:
-            response = reader.read(url)
+            response = reader.read(url, use_proxy=reader.has_rss_proxy)
     print('-> {}'.format(response))
     if not response.ok:
         return
@@ -121,12 +128,16 @@ def _do_parse(url: str, printer, allow_private_address, checksum, save_checksum)
             f.write(data)
 
 
-def _do_save(url, output_dir, allow_private_address):
+def _do_save(url, output_dir, allow_private_address, rss_proxy_url, rss_proxy_token):
     if not output_dir:
         output_dir = os.getcwd()
-    reader = FeedReader(allow_private_address=allow_private_address)
+    reader = FeedReader(
+        allow_private_address=allow_private_address,
+        rss_proxy_url=rss_proxy_url,
+        rss_proxy_token=rss_proxy_token,
+    )
     with reader:
-        response = reader.read(url)
+        response = reader.read(url, use_proxy=reader.has_rss_proxy)
         print(f'-> {response}')
         filename = os.path.join(output_dir, slugify.slugify(url))
         response_file = FeedResponseFile(filename)
@@ -162,9 +173,19 @@ def find(
 @click.option('--output-dir', help='output dir')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
 @click.option('--allow-private-address', is_flag=True, help='Allow private address')
-def save(url, profile=False, output_dir=None, allow_private_address=False):
+@click.option('--rss-proxy-url', help='rss proxy url')
+@click.option('--rss-proxy-token', help='rss proxy token')
+def save(
+    url, profile=False, output_dir=None, allow_private_address=False,
+    rss_proxy_url=None, rss_proxy_token=None,
+):
     with ProfilerContext(profile):
-        _do_save(url, output_dir=output_dir, allow_private_address=allow_private_address)
+        _do_save(
+            url, output_dir=output_dir,
+            allow_private_address=allow_private_address,
+            rss_proxy_url=rss_proxy_url,
+            rss_proxy_token=rss_proxy_token,
+        )
 
 
 @cli.command()
@@ -172,16 +193,21 @@ def save(url, profile=False, output_dir=None, allow_private_address=False):
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
 @click.option('--allow-private-address', is_flag=True, help='Allow private address')
+@click.option('--rss-proxy-url', help='rss proxy url')
+@click.option('--rss-proxy-token', help='rss proxy token')
 @click.option('--save-checksum', help='save checksum')
 @click.option('--checksum', help='feed checksum')
 def parse(
     url, no_content=False, profile=False, allow_private_address=False,
+    rss_proxy_url=None, rss_proxy_token=None,
     save_checksum=None, checksum=None,
 ):
     printer = Printer(profile or no_content)
     with ProfilerContext(profile):
         _do_parse(
             url, printer=printer, allow_private_address=allow_private_address,
+            rss_proxy_url=rss_proxy_url,
+            rss_proxy_token=rss_proxy_token,
             save_checksum=save_checksum, checksum=checksum,
         )
 
