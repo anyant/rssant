@@ -4,6 +4,7 @@ from rssant_feedlib.response import FeedResponseStatus, FeedResponse, FeedConten
 def test_response_status():
     status = FeedResponseStatus(-200)
     assert status == -200
+    assert status in (-200, -300)
     assert FeedResponseStatus.name_of(200) == 'OK'
     assert FeedResponseStatus.name_of(600) == 'HTTP_600'
     assert FeedResponseStatus.name_of(-200) == 'FEED_CONNECTION_ERROR'

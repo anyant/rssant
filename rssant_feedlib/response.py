@@ -133,7 +133,7 @@ class FeedResponse:
         use_proxy: bool = None,
     ):
         self._content = content
-        self._status = status if status is not None else HTTPStatus.OK.value
+        self._status = int(status if status is not None else HTTPStatus.OK.value)
         self._url = url
         self._encoding = encoding
         self._etag = etag

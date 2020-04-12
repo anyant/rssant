@@ -56,7 +56,7 @@ def _normalize_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
 
-def _do_find(url, max_trys, allow_private_address, printer):
+def _do_find(url, max_trys, allow_private_address, printer, rss_proxy_url, rss_proxy_token):
 
     def message_handler(msg):
         print(msg)
@@ -64,6 +64,8 @@ def _do_find(url, max_trys, allow_private_address, printer):
     finder = FeedFinder(
         url, max_trys=max_trys,
         allow_private_address=allow_private_address,
+        rss_proxy_url=rss_proxy_url,
+        rss_proxy_token=rss_proxy_token,
         message_handler=message_handler,
     )
     with finder:
@@ -139,10 +141,21 @@ def _do_save(url, output_dir, allow_private_address):
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
 @click.option('--allow-private-address', is_flag=True, help='Allow private address')
-def find(url, max_trys, no_content=False, profile=False, allow_private_address=False):
+@click.option('--rss-proxy-url', help='rss proxy url')
+@click.option('--rss-proxy-token', help='rss proxy token')
+def find(
+    url, max_trys, no_content=False, profile=False,
+    allow_private_address=False,
+    rss_proxy_url=None, rss_proxy_token=None,
+):
     printer = Printer(profile or no_content)
     with ProfilerContext(profile):
-        _do_find(url, max_trys, printer=printer, allow_private_address=allow_private_address)
+        _do_find(
+            url, max_trys, printer=printer,
+            allow_private_address=allow_private_address,
+            rss_proxy_url=rss_proxy_url,
+            rss_proxy_token=rss_proxy_token,
+        )
 
 
 @cli.command()
