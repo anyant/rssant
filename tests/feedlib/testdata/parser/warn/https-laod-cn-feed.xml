@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>老D博客</title>
+	<atom:link href="https://laod.cn/feed/" rel="self" type="application/rss+xml" />
+	<link>https://laod.cn</link>
+	<description>关注谷歌服务，分享互联网精神！</description>
+	<lastBuildDate>Sat, 04 Apr 2020 01:36:19 +0000</lastBuildDate>
+	<language>zh-CN</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=5.4</generator>
+	<item>
+		<title>思念与希望同在</title>
+		<link>https://laod.cn/journal/4-4.html</link>
+					<comments>https://laod.cn/journal/4-4.html#respond</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Fri, 03 Apr 2020 17:13:00 +0000</pubDate>
+				<category><![CDATA[心情琐事]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6849</guid>
+
+					<description><![CDATA[&#160; 很久没更新博客了，最近比较忙，原来使用的服务器快到期了，然后刚刚更换了另一个服务器。 还有丢失了 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/journal/4-4.html/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>下载小电影总卡在99.9%的原因，终于找到了</title>
+		<link>https://laod.cn/tools/xiazai-99.html</link>
+					<comments>https://laod.cn/tools/xiazai-99.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Wed, 18 Mar 2020 05:57:50 +0000</pubDate>
+				<category><![CDATA[工具软件]]></category>
+		<category><![CDATA[99.9%]]></category>
+		<category><![CDATA[下载到99.9]]></category>
+		<category><![CDATA[迅雷99.9%]]></category>
+		<category><![CDATA[迅雷下载到99.9%]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6832</guid>
+
+					<description><![CDATA[自从学会上网冲浪后，看电影、美剧都是下载回来看的，最最最讨厌的一个数字就是：99.9%。 这是一个充满魔力的数 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/tools/xiazai-99.html/feed/</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>使用CoreDNS搭建无污染DNS</title>
+		<link>https://laod.cn/dns/coredns-dns.html</link>
+					<comments>https://laod.cn/dns/coredns-dns.html#respond</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Wed, 18 Mar 2020 05:37:15 +0000</pubDate>
+				<category><![CDATA[DNS]]></category>
+		<category><![CDATA[CoreDNS]]></category>
+		<category><![CDATA[自建DNS]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6827</guid>
+
+					<description><![CDATA[CoreDNS 其实就是一个 DNS 服务，而 DNS 作为一种常见的服务发现手段，所以很多开源项目以及工程师 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/dns/coredns-dns.html/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>EA重制《红警》4K版 售价140元</title>
+		<link>https://laod.cn/news/command-conquer.html</link>
+					<comments>https://laod.cn/news/command-conquer.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Wed, 11 Mar 2020 14:41:11 +0000</pubDate>
+				<category><![CDATA[业界资讯]]></category>
+		<category><![CDATA[Steam]]></category>
+		<category><![CDATA[红警]]></category>
+		<category><![CDATA[命令与征服]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6821</guid>
+
+					<description><![CDATA[EA宣布，《命令与征服：重置版合集》将于6月6日登陆Origin和Steam平台，Steam国区已开启预售，售 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/news/command-conquer.html/feed/</wfw:commentRss>
+			<slash:comments>3</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>Let&#8217;s Encrypt将于3月4日撤销三百万证书</title>
+		<link>https://laod.cn/ssl/letsencrypt-3-4.html</link>
+					<comments>https://laod.cn/ssl/letsencrypt-3-4.html#respond</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Wed, 04 Mar 2020 04:09:18 +0000</pubDate>
+				<category><![CDATA[SSL]]></category>
+		<category><![CDATA[Let’s Encrypt]]></category>
+		<category><![CDATA[撤销证书]]></category>
+		<category><![CDATA[撤销SSL]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6817</guid>
+
+					<description><![CDATA[Let's Encrypt 刚刚宣布，其将于 3 月 4 日起撤销大量 TLS / TTS 证书，并正在向受影 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/ssl/letsencrypt-3-4.html/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>黑苹果与Windows系统时间不对（不同步）的解决办法</title>
+		<link>https://laod.cn/hackintosh/windows-shijian.html</link>
+					<comments>https://laod.cn/hackintosh/windows-shijian.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Sun, 23 Feb 2020 05:46:48 +0000</pubDate>
+				<category><![CDATA[黑苹果]]></category>
+		<category><![CDATA[黑苹果win10时间不对]]></category>
+		<category><![CDATA[黑苹果Windows双系统]]></category>
+		<category><![CDATA[双系统时间不同步]]></category>
+		<category><![CDATA[双系统时间不对]]></category>
+		<category><![CDATA[黑苹果时间]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6804</guid>
+
+					<description><![CDATA[昨天由于手贱把在macOS下Windows的D盘给分区了，本来是想给黑苹果单独弄出一个单独的数据盘的，然后操作 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/hackintosh/windows-shijian.html/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>2020 hosts 最新Google hosts</title>
+		<link>https://laod.cn/hosts/2020-hosts.html</link>
+					<comments>https://laod.cn/hosts/2020-hosts.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Tue, 11 Feb 2020 06:19:19 +0000</pubDate>
+				<category><![CDATA[hosts]]></category>
+		<category><![CDATA[Google hosts]]></category>
+		<category><![CDATA[最新hosts]]></category>
+		<category><![CDATA[2020hosts]]></category>
+		<category><![CDATA[CECPQ2]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6792</guid>
+
+					<description><![CDATA[本页面长期更新2019年最新Google、谷歌学术、维基百科、ccFox.info、ProjectH、Batt [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/hosts/2020-hosts.html/feed/</wfw:commentRss>
+			<slash:comments>5</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>SwitchHosts 一个修改、管理、切换多个 hosts 方案的开源工具</title>
+		<link>https://laod.cn/hosts/switchhosts.html</link>
+					<comments>https://laod.cn/hosts/switchhosts.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Sun, 09 Feb 2020 10:07:44 +0000</pubDate>
+				<category><![CDATA[hosts]]></category>
+		<category><![CDATA[SwitchHosts]]></category>
+		<category><![CDATA[hosts修改工具]]></category>
+		<category><![CDATA[hosts订阅]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6786</guid>
+
+					<description><![CDATA[Hosts 相关的小工具着实不少，大家需求最多的肯定是 hosts 切换工具了。SwitchHosts! 是一 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/hosts/switchhosts.html/feed/</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>谷歌浏览器下载速度慢？那是你没打开多线程下载</title>
+		<link>https://laod.cn/tools/chrome-duoxiancheng.html</link>
+					<comments>https://laod.cn/tools/chrome-duoxiancheng.html#comments</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Sat, 08 Feb 2020 10:56:26 +0000</pubDate>
+				<category><![CDATA[工具软件]]></category>
+		<category><![CDATA[谷歌浏览器]]></category>
+		<category><![CDATA[多线程下载]]></category>
+		<category><![CDATA[chrome flags]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6781</guid>
+
+					<description><![CDATA[Google Chrome是一款由谷歌公司开发的网页浏览器产品，它的首个beta测试版本是在2008年9月2日 [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/tools/chrome-duoxiancheng.html/feed/</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>又一个私人云盘：Z-File &#8211; 开源免费的个人自建网盘程序(支持云存储/OneDrive)</title>
+		<link>https://laod.cn/tools/z-file.html</link>
+					<comments>https://laod.cn/tools/z-file.html#respond</comments>
+		
+		<dc:creator><![CDATA[老D]]></dc:creator>
+		<pubDate>Thu, 06 Feb 2020 14:50:54 +0000</pubDate>
+				<category><![CDATA[工具软件]]></category>
+		<category><![CDATA[网盘程序]]></category>
+		<category><![CDATA[Z-File]]></category>
+		<category><![CDATA[私人云盘]]></category>
+		<category><![CDATA[私人网盘]]></category>
+		<guid isPermaLink="false">https://laod.cn/?p=6772</guid>
+
+					<description><![CDATA[如今百度网盘限速严重，还强制用客户端才能下载，有时非常不便。其实，买一台服务器搭建私有网盘才是王道，而最近 V [&#8230;]]]></description>
+		
+					<wfw:commentRss>https://laod.cn/tools/z-file.html/feed/</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+	</channel>
+</rss>

@@ -1,0 +1,15 @@
+{
+  "version": "https://jsonfeed.org/version/1", 
+  "title": "JSON Feed", 
+  "home_page_url": "https://www.v2ex.com/go/jsonfeed", 
+  "feed_url": "https://www.v2ex.com/feed/jsonfeed.json", 
+  "icon": "https://cdn.v2ex.com/navatar/db57/6a7d/1054_large.png?m=1567059308", 
+  "favicon": "https://cdn.v2ex.com/navatar/db57/6a7d/1054_normal.png?m=1567059308", 
+  "items": [
+    {
+      "author": {
+        "url": "https://www.v2ex.com/member/DEVN", 
+        "name": "DEVN", 
+        "avatar": "https://cdn.v2ex.com/avatar/6fc1/cc76/467193_large.png?m=1583239760"
+      }, 
+}

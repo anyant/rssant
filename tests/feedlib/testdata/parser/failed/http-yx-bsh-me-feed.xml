@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang='zh-cn'>
+<head>
+<meta charset='UTF-8'>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+<title>异星软件空间-新域名直通车</title>
+<link rel='stylesheet' href='http://yx.bsh.me/normalize.min.css'>
+<script>	
+	//使用匿名函数方法
+			function countDown(){
+				var time = document.getElementById("Time");
+				//alert(time.innerHTML);
+				//获取到id为time标签中的内容，现进行判断
+				if(time.innerHTML == 0){
+					//等于0时清除计时
+					window.location
+				}else{
+					time.innerHTML = time.innerHTML-1;
+				}
+			}
+			//1000毫秒调用一次
+			window.setInterval("countDown()",1000);
+		</script>	
+<style>
+.zm {font-size:13px;width:340px;margin-left: -20px;}
+.zm1 {color:#018250;}
+html,body {height:100%;margin:0;padding:0;}
+body {font-family:'lucida grande','lucida sans unicode',lucida,helvetica,'Hiragino Sans GB','Microsoft YaHei','WenQuanYi Micro Hei',sans-serif;align-items:center;display:flex;}
+a {text-decoration:none;}
+#container {max-width:700px;flex-basis:100%;margin:0 auto;background:#FFF;border-radius:10px;box-shadow:0 0 30px rgba(0,0,0,0.3);-webkit-box-shadow:0 0 30px rgba(0,0,0,0.3);overflow:hidden;}
+#container #hero-img {width:100%;height:200px;background:#018250;}
+#container #profile-img {width:160px;height:160px;margin:-80px auto 0 auto;border:6px solid #FFF;border-radius:50%;box-shadow:0 0 5px rgba(90,90,90,0.3);}
+#container #profile-img img {width:100%;background:#FFF;border-radius:50%;}
+#container #content {text-align:center;width:320px;margin:0 auto;padding:0 0 50px 0;}
+#container #content h1 {font-size:29px;font-weight:500;margin:50px 0 0 0;}
+#container #content p {font-size:18px;font-weight:400;line-height:1.4;color:#666;margin:15px 0 40px 0;}
+#container #content a {color:#CCC;font-size:14px;margin:0 10px;transition:color .3s ease-in-out;-webkit-transition:color .3s ease-in-out;}
+#container #content a:hover {color:#018250;}
+.btn {background:none repeat scroll 0 0 #018250;border:0 none;border-radius:2px;color:#FFFFFF !important;cursor:pointer;font-family:"Open Sans","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Micro Hei",Arial,Verdana,Tahoma,sans-serif;font-size:14px;padding:6px 10%;}
+.btn:hover,.yanshibtn:hover {background:none repeat scroll 0 0 #9B59B6;border:0 none;border-radius:2px;color:#FFFFFF!important;cursor:pointer;font-family:"Open Sans","Hiragino Sans GB","Microsoft YaHei","WenQuanYi Micro Hei",Arial,Verdana,Tahoma,sans-serif;font-size:14px;padding:8px 10%;}
+</style>
+</head>
+<body>
+<div id='container'>
+	<div id='hero-img'>
+	</div>
+	<div id='profile-img'>
+		<img src='http://yx.bsh.me/11.png'/>
+	</div>
+
+	<div id='content'>
+		<h1>“异星软件空间”更换新域名：yxssp.com</h1>
+		<p>
+		<div style="font-size:15px;"><b class="zm1" id="Time">10</b> 秒后将自动跳转到新域名 的相同页面<div>		</p>
+			<div class="zm">当前域名：yx.bsh.me /feed</div><div class="zm"><br><zm1>跳转域名：<zm1>http://www.yxssp.com/feed</div><br /><br /><br />
+<a class="btn btn-default"  href="http://www.yxssp.com/feed" target="_blank" title="立即跳转页面"><i class="fa fa-th-large"></i>立即跳转</a>		<a href='http://www.yxssp.com' class="btn btn-default" rel='nofollow'>联系站长</a>
+	</div>
+	
+</div>
+<br /><br /><br /><br />
+	<p style="font-size: 11px; color: darkgray; margin:0px 0px -15px 0px; ">Copyright © 2020 异星软件空间</p> <br /> <a href="http://www.beian.miit.gov.cn" target="_blank" rel="external nofollow">津ICP备15006517号-1</a>
+</body>
+</html>

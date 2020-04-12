@@ -1,0 +1,1176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>V2EX - guyskk</title>
+<subtitle>way to explore</subtitle>
+
+
+<link rel="alternate" type="text/html" href="https://www.v2ex.com/" />
+<link rel="self" type="application/atom+xml" href="https://www.v2ex.com/feed/member/guyskk.xml" />
+<id>https://www.v2ex.com/</id>
+
+<updated>2017-08-31T11:31:21Z</updated>
+
+<rights>Copyright © 2010-2018, V2EX</rights>
+<entry>
+	<title>[Python] 最近看异步 IO，发现 curio 真是好，看了一半感觉豁然开朗</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/387702#reply0" />
+	<id>tag:www.v2ex.com,2017-09-02:/t/387702</id>
+	<published>2017-09-02T11:34:21Z</published>
+	<updated>2017-08-31T11:31:21Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	GitHub： <a target="_blank" href="https://github.com/dabeaz/curio" rel="nofollow">https://github.com/dabeaz/curio</a><br />开发文档（推荐）： <a target="_blank" href="http://curio.readthedocs.io/en/latest/devel.html" rel="nofollow">http://curio.readthedocs.io/en/latest/devel.html</a><br />对比 asyncio： <a target="_blank" href="https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/" rel="nofollow">https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/</a><br /><br />初步看了一下源码，在架构设计上完胜 asyncio，也有很多关于实现细节的注解，对理解异步 IO 大有帮助。
+	]]></content>
+</entry><entry>
+	<title>[分享创造] 发现 unicode 有点意思ௐ，用来做 icon 怎么样ൠ？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/378265#reply5" />
+	<id>tag:www.v2ex.com,2017-07-27:/t/378265</id>
+	<published>2017-07-27T02:27:43Z</published>
+	<updated>2017-07-27T07:12:31Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	偶然发现一个网站介绍了所有的 unicode 码，里面非常多好玩的符号<br /><a target="_blank" href="http://graphemica.com/unicode/characters/page/13" rel="nofollow">http://graphemica.com/unicode/characters/page/13</a>
+	]]></content>
+</entry><entry>
+	<title>[随想] 和圣经有关的一次奇妙经历</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/376049#reply3" />
+	<id>tag:www.v2ex.com,2017-07-17:/t/376049</id>
+	<published>2017-07-17T18:49:10Z</published>
+	<updated>2017-10-24T17:54:38Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>下班回去的路上，下着大雨，突然一个女生从后面追上来，问我想不想参加读圣经。
+我有点疑惑，我也不想信教（以前遇到过几次，都被我拒绝了），便回答她没时间，
+她没有放弃，我继续答对宗教不怎么感兴趣，想打消她的念头。
+她已经走到我边上了，很有兴致的继续劝说。她长得很瘦小，像个小孩子。</p>
+<p>我停了下来，发现她没有伞，便把伞往她身上移了一点，问她怎么不带伞，她说忘带了。
+我撑着伞，边走边听她讲。她说她刚工作的时候，不喜欢帮别人的忙，但拒绝别人自己心里又很难受，
+那段时间非常痛苦，之后她读了圣经，明白了一些真理，世界秩序等等。
+她说圣经对她的帮助非常大，她也从痛苦中走出来了。</p>
+<p>走了一会到了个岔路口，我发现我到了住的地方，便和她说我到了，
+又想到她没带伞，便问她要去哪，她说去地铁站，我说我送你过去吧。她默许了。</p>
+<p>我继续撑着伞，边走边和她聊。她问我知道耶稣基督吗，我说那不就是上帝吗。
+她说耶稣基督是上帝的儿子，在马厩里出生，圣经分旧约和新约，旧约讲上帝创世界，
+新约讲基督传教，十二门徒，等等。她讲的不是很流畅，但能看出来她非常认真，神采奕奕。</p>
+<p>她又问我知不知道福音书，我说听过但不知道意思。
+她说福音就是好消息的意思，给我讲圣经就是把福音传给我。
+我问她第一次给陌生人讲圣经时会不会害羞紧张，觉得不好意思，她说会，
+但圣经告诉她要这么做，就不觉得害羞和紧张了。</p>
+<p>走了很久到了地铁站，我问她要不要留个联系方式，她说好，但手机没电了，
+便用我的手机给她发了好友申请。最后互说了再见，各自离开了。</p>
+<p>我回到住处，突然觉得圣经很神奇，便搜索了一下，看到了 Livid 写的
+<a href="https://livid.v2ex.com/essays/2012/01/24/a-letter-from-26-to-18/" rel="nofollow">在 26 岁时写给 18 岁的自己</a>。
+这篇文章我之前读过，得到不少启发，但这次特别注意到 <strong>“读《圣经》。找到一个轻便的版本，放进你随身的包里。”</strong> 这句。
+世界好奇妙，也许我也该买本《圣经》读一读了。</p>
+<br>
+<br>
+PS：偏个题，想起高中写作文，总是绞尽脑汁编故事，现在有故事了，却发现很难组织语言把它表达出来。
+
+	]]></content>
+</entry><entry>
+	<title>[问与答] Linux 高分屏显示文字太小了，简直要瞎，怎么配置？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/360688#reply1" />
+	<id>tag:www.v2ex.com,2017-05-11:/t/360688</id>
+	<published>2017-05-11T09:30:40Z</published>
+	<updated>2017-05-09T21:37:42Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	系统是 Arch Linux，桌面是 Cinnamon，屏幕分辨率 1920x1080，目前显示文字太小了，简直要瞎。电脑是小米笔记本 Air 13.3 英寸，用的集成显卡。<br />参照  <a target="_blank" href="https://wiki.archlinux.org/index.php/HiDPI#Cinnamon" rel="nofollow">https://wiki.archlinux.org/index.php/HiDPI#Cinnamon</a>  ，可以设置 2 倍缩放，但这样文字又太大了，还是瞎。算了下，1.5 倍是正好的，但是不知道怎么配置，求助！
+	]]></content>
+</entry><entry>
+	<title>[分享创造] 分享一个格式化 Python 代码的 Atom [插件的插件]</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/355501#reply0" />
+	<id>tag:www.v2ex.com,2017-04-17:/t/355501</id>
+	<published>2017-04-17T14:56:41Z</published>
+	<updated>2017-04-15T14:53:41Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>给 <a href="https://github.com/Glavin001/atom-beautify" rel="nofollow">https://github.com/Glavin001/atom-beautify</a> 增加了一个 pybeautifier 格式化器，通过 TCP server 来格式化代码，执行的时候不需要创建新进程，所以速度比原来的 autopep8 和 yapf 快很多。</p>
+<p>PR 在这： <a href="https://github.com/Glavin001/atom-beautify/pull/1330" rel="nofollow">https://github.com/Glavin001/atom-beautify/pull/1330</a> ，昨天刚合并，自己用了好几个月了<br>
+Server 代码在这： <a href="https://github.com/guyskk/pybeautifier" rel="nofollow">https://github.com/guyskk/pybeautifier</a></p>
+<p>快速上手：</p>
+<ol>
+<li>安装 atom-beautify ，并选择 pybeautifier 作为默认格式化器</li>
+<li><code>pip3 install pybeautifier autopep8</code></li>
+<li>启动 Server: <code>pybeautifier</code> 或者 <code>pybeautifier -d</code> (后台进程)</li>
+</ol>
+
+	]]></content>
+</entry><entry>
+	<title>[程序员] 垃圾币信</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/353760#reply52" />
+	<id>tag:www.v2ex.com,2017-04-10:/t/353760</id>
+	<published>2017-04-10T03:49:00Z</published>
+	<updated>2017-04-19T18:24:50Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>前几天注册了个币信账号（没错，就是酷工作里天天置顶那个），给里面充了 0.002 个币（还好没多充），我也就是试试。
+然后，我打算把币转到另一个钱包里去，结果告诉我：</p>
+<pre><code>您最近对账号设置进行了修改,为了您的账号安全,暂时锁定您的交易功能。锁定将在 25 小时后结束。
+</code></pre>
+<p>搞什么名堂，我就联系客服，过了一天，客服回复了：</p>
+<pre><code>您好，您修改密码或者手机号之后为了您的账户安全都会对您的账户进行锁定。望您知悉。解锁方法-为了保证账户安全，请按以下格式 [创建工单] ，标题：申请解除账号锁定 详情： 您的登录账号，并上传您本人手持身份证照片（需为申请当日拍摄，不得与注册账户时提交照片相同），通过审核后，我们将解除您的账号锁定。
+</code></pre>
+<p>要证件照，那我再等几个小时。</p>
+<p>今早再去看，应该能提现了吧，结果还要手持证件照：
+<img alt="" src="https://ws2.sinaimg.cn/large/006bQNKbly1fehexyti52j31kw0w9tov.jpg"></p>
+<p>想想还是算了，这点币就当喂*了。</p>
+<p>再附两张图对比一下:
+这是币信的
+<img alt="" src="https://ws2.sinaimg.cn/large/006bQNKbly1fehfhp59ucj313m0d6k0a.jpg">
+这是 BTCC 的
+<img alt="" src="https://ws2.sinaimg.cn/large/006bQNKbly1fehffqgkhmj315s0ciaby.jpg">
+另外 BTCC 比特币提现不需要证件照。</p>
+<p>我的工作不涉及比特币，发帖也不是为了给 BTCC 打广告，只是看不惯广告吹上天，服务却 Low 的一逼。
+欢迎各位 V 友推荐更好的平台。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Python 3 的函数 Annotations 还可以这样用</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/350274#reply1" />
+	<id>tag:www.v2ex.com,2017-03-25:/t/350274</id>
+	<published>2017-03-25T11:19:31Z</published>
+	<updated>2017-03-23T23:33:50Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>Python 3.5 开始支持 Annotations ，可以用来给函数参数加上注解，也有一个叫 <a href="http://mypy.readthedocs.io/" rel="nofollow">mypy</a> 的库用它来做静态类型检查。</p>
+<p>前几天发布 <a href="https://github.com/guyskk/validr" rel="nofollow">Validr</a> 0.14.0 版，在 <a href="https://www.reddit.com/r/Python/comments/60upat/validr_the_fastest_data_validation_library_in/" rel="nofollow">reddit</a> 上也有人问支不支持 mypy ，今天突发奇想写了个用来运行时检查参数和返回值。</p>
+<p>一个简单的实现：</p>
+<pre><code># python &gt;= 3.5
+# pip install validr
+from validr import SchemaParser, mark_key
+
+
+def validation(f):
+    """Decorator for validate function params and return by __annotations__"""
+    parser = SchemaParser()
+    return_ = None
+    params = {}
+    for k, v in f.__annotations__.items():
+        if k == 'return':
+            return_ = parser.parse(v)
+        else:
+            params[k] = parser.parse(v)
+
+    def wrapper(**kwargs):
+        for k, v in params.items():
+            with mark_key(k):
+                kwargs[k] = v(kwargs.get(k, None))
+        result = f(**kwargs)
+        if return_:
+            with mark_key('return'):
+                result = return_(result)
+        return result
+    return wrapper
+
+
+@validation
+def login(
+    username: 'str',
+    password: 'str&amp;minlen=6',
+) -&gt; {
+    'id?int': 'User ID',
+}:
+    return {'id': 1000000}
+
+
+if __name__ == '__main__':
+    print(login(username='guyskk', password='123456'))
+    print(login(username='guyskk', password='1234'))
+</code></pre>
+<p>另外这种写法也是能实现的：</p>
+<pre><code>@validation
+def login(
+    username: StringType(),
+    password: StringType(minlen=6),
+) -&gt; {
+    'id': IntType(desc='User ID'),
+}:
+    return {'id': 1000000}
+</code></pre>
+<p>大家觉得这两个写法怎么样，有需要这样一个库的吗</p>
+
+	]]></content>
+</entry><entry>
+	<title>[分享创造] Validr-速度最快的数据校验库</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/349564#reply0" />
+	<id>tag:www.v2ex.com,2017-03-22:/t/349564</id>
+	<published>2017-03-22T12:47:02Z</published>
+	<updated>2017-03-20T12:44:02Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>Validr 从 v0.14.0 开始用 <a href="http://cython.org/" rel="nofollow">Cython</a> 实现，比纯 Python 实现快了 5 倍。</p>
+<p>现在，它比 <a href="https://github.com/Julian/jsonschema" rel="nofollow">jsonschema</a> 快 10 倍，比 <a href="https://github.com/schematics/schematics" rel="nofollow">schematics</a> 快 40 倍。</p>
+<p>travis-ci 上的测试结果:</p>
+<pre><code>        json:loads-dumps              1000
+  jsonschema:draft3                   180
+  jsonschema:draft4                   184
+      schema:default                  41
+  schematics:default                  51
+      validr:default                  2384
+      validr:use-refer-merge          2106
+  voluptuous:default                  100
+</code></pre>
+<p>GitHub 地址： <a href="https://github.com/guyskk/validr" rel="nofollow">https://github.com/guyskk/validr</a></p>
+
+	]]></content>
+</entry><entry>
+	<title>[分享创造] [LightPipes]还记得杨氏双缝干涉实验吗</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/347760#reply6" />
+	<id>tag:www.v2ex.com,2017-03-15:/t/347760</id>
+	<published>2017-03-15T14:40:07Z</published>
+	<updated>2017-03-15T16:37:07Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>在经典力学里，双缝实验又称为“杨氏双缝实验”，或“杨氏实验”，专门演示光波的干涉行为，是因物理学者托马斯·杨而命名。</p>
+<p>实验原理:</p>
+<p><img alt="实验原理" src="https://raw.githubusercontent.com/opticspy/lightpipes/master/img/twoholesSetUp.png"></p>
+<p>现在，有一个神奇的 Python 工具包，可以仿真这个实验了!!</p>
+<p>第 0 步，安装软件:</p>
+<pre><code>pip install numpy matplotlib
+pip install LightPipes
+</code></pre>
+<p>第 1 步，开始做实验:</p>
+<pre><code>import matplotlib.pyplot as plt
+from LightPipes import *
+</code></pre>
+<p>第 2 步，一束光(F 是一个表示光场的矩阵):</p>
+<pre><code>wavelength = 20*um
+size = 30.0*mm
+N = 500
+F = Begin(size,wavelength,N)
+</code></pre>
+<p>第 3 步，分别穿过 2 个小孔，再汇聚到一起:</p>
+<pre><code>F1 = CircAperture(0.15*mm, -0.6*mm,0, F)
+F2 = CircAperture(0.15*mm, 0.6*mm,0, F)    
+F = BeamMix(F1,F2)
+</code></pre>
+<p>第 4 步，在空间中菲涅尔衍射一段距离:</p>
+<pre><code>F = Fresnel(10*cm,F)
+</code></pre>
+<p>第 5 步，计算光强度:</p>
+<pre><code>I = Intensity(2,F)
+</code></pre>
+<p>第 6 步，将图像显示出来:</p>
+<pre><code>plt.imshow(I, cmap='rainbow');
+plt.axis('off');
+plt.title('intensity pattern')
+plt.show()
+</code></pre>
+<p><img alt="实验结果" src="https://raw.githubusercontent.com/opticspy/lightpipes/master/img/twoholesPattern.png"></p>
+<p>这个库在近距离衍射方面非常出色，作者是 Fred van Goor ，来自荷兰的已退休教授，一个慈祥的老爷爷:</p>
+<blockquote>
+<p>I am a retired assistant professor in optics and laser physics at the University of Twente, Enschede, The Netherlands ( <a href="http://lpno.tnw.utwente.nl/)" rel="nofollow">http://lpno.tnw.utwente.nl/)</a>. I live in The Netherlands, UTC + 1. Retired since 1-1-2014. I gave the lecture "Introduction to Optics" during about 20 years, theory as well as practical. During this period I used LightPipes as a bunch of computer assignments for my students. They had to do some exercises such as Fabry Perot, two holes, Michelson interferometers and also diffraction experiments like Fraunhofer and Fresnel from a small hole. Later they had to repeat those experiments in a real lab. Besides education I also did research in laser physics, I realized a very big XeCl laser system (1kHz, 1kW at 308nm). For that laser I wanted to design an unstable resonator with a Gaussian outcoupler, to get single transverse mode operation in an (almost) fundamental Gauss mode. For that I used Gleb Vdovin's LightPipes optical toolbox for the first time in the beginning of 1990. (It is the same set of c-routines you found on his company's website <a href="http://okotech.com" rel="nofollow">okotech.com</a>) In 1990 they were meant for ms-dos: output from one command = input for the next one, it uses the "pipe" feature of ms-dos. That's why it is called LightPipes. Later (1994) I made versions for Mathcad and Matlab and sold a number of those packages all over the world. Gleb and I shared the profits. (I believe it is more or less obsolete now, but you can still buy it from okotech, although the selling is low at this moment).</p>
+</blockquote>
+<blockquote>
+<p>Now I have time to improve LightPipes using modern software like Python and Qt, especially for education in optics, although companies can use it as well I believe (for companies there is expensive  software like ZEMAX available. Very good but too expensive for students and even universities). I have no commercial interests, but donations from companies could be welcome of course.</p>
+</blockquote>
+<blockquote>
+<p>As Gleb Vdovin already published the source code of the library on <a href="http://okotech.com" rel="nofollow">okotech.com</a>, it is not a problem to do that for the Python library as well.</p>
+</blockquote>
+<p>项目地址: <a href="https://github.com/opticspy/lightpipes" rel="nofollow">https://github.com/opticspy/lightpipes</a></p>
+<p>欢迎大家分享给身边的朋友，尤其是做物理，光学方面的研究人员。<br>
+我们期待更多的人一起学习、研究和完善。<br>
+任何问题都可以通过<a href="https://github.com/opticspy/lightpipes/issues" rel="nofollow">issues</a>反馈给我们。<br>
+也欢迎加入 <a href="https://github.com/opticspy" rel="nofollow">https://github.com/opticspy</a> 组织，一起完善 LightPipes!</p>
+
+	]]></content>
+</entry><entry>
+	<title>[沙盒] 发帖～</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/334121#reply0" />
+	<id>tag:www.v2ex.com,2017-01-12:/t/334121</id>
+	<published>2017-01-12T06:41:04Z</published>
+	<updated>2017-01-10T06:38:04Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	
+	]]></content>
+</entry><entry>
+	<title>[问与答] 用 Python 批量转换 C 源码遇到问题</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/334110#reply1" />
+	<id>tag:www.v2ex.com,2017-01-12:/t/334110</id>
+	<published>2017-01-12T05:57:54Z</published>
+	<updated>2017-01-30T08:45:22Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>有 40 多个 C 源码文件，每一个里面都有 main 函数，都是从 stdin 或者文件读取参数，结果直接 print 到 stdout 或者 stderr 。
+我想把它全部改写成普通函数，直接传参数调用函数，然后返回状态码(编译成动态链接库然后从 Python 里面调用)。
+我尝试用正则替换实现，但是只能做到把 <code>errorprint</code> 函数提取出来，读取参数和输出不知道怎么处理。
+求 V 友们指点，非常感谢！</p>
+<p>样本 1 ：</p>
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;math.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define Pi 3.141592654
+
+
+double aa[4096];
+void error_print();
+
+void main(int argc, char *argv[]){
+    double *x, dum;
+    int i ,  nn,  j, im, jm ;
+    long ik;
+    FILE *fr ;
+
+    if (argc&lt; 2 || argc &gt;2 ){
+        error_print(argv[0]);
+        exit(1);
+    }
+
+
+
+    fr=fopen(argv[1],"r");
+    x = (double *) calloc( 1, sizeof(double) );
+
+    ik=0;
+    while ((fscanf(fr,"%le", &amp;dum))!= EOF){
+        x = (double *) realloc ( x, sizeof(double)*(ik+1));
+
+        if(x == NULL ){
+            fprintf(stderr,"%s: Allocation error while reading, exiting\n", argv[0]);
+            exit(1);
+        }
+        x[ik]=dum;	 
+	/* fprintf(stderr," %e \n", x[ik]); */
+        ik++;
+    }
+    nn=(int) sqrt( (double) ik);
+   fclose(fr); 
+
+
+    
+    for(i=1; i&lt;=nn; i++){
+      im = nn+1-i;
+      
+        for (j=1; j&lt;=nn; j++){
+	  double fdd=0;
+	  jm=nn+1-j;
+	
+	  ik=(i-1)*nn+j-1;
+	  fdd += x[ik];
+	  ik=(j-1)*nn+i-1;
+	  fdd += x[ik];	  
+	  ik=(j-1)*nn+im-1; 
+	  fdd += x[ik];
+	  ik=(i-1)*nn+jm-1; 
+	  fdd += x[ik];
+
+/*	  ik=(j-1)*nn+i-1;
+	  fdd += x[ik];
+	  ik=(j-1)*nn+im-1;  
+	  fdd += x[ik];	  */
+	    printf("%g\n", fdd);
+	    }
+      printf("\n");
+}
+
+
+    free(x);
+
+    fclose(fr);
+}
+
+void error_print(char *arr) { 
+
+    fprintf(stderr,"\n%s  converts the intensity file into sum of itself three times rotated 90 degrees\n", arr);
+
+    fprintf(stderr,"\nUSAGE: %s F &gt; M_F  where F is the file in gnuplot format, M_F is the output file in the gnuplot format\n\n", arr);
+
+}
+</code></pre>
+<p>样本 2</p>
+<pre><code> 
+#include "pipes.h"
+#include &lt;math.h&gt;
+#include &lt;string.h&gt;
+
+void main(int argc, char *argv[]){
+    void error_print();
+
+    int i,j, n2;
+    double sum, sum1r, sum1i, sum1, sum2, dx,dx2, s_p, x,y, x_c, y_c;
+    double sum1x, sum1y;
+    long ik1;
+
+
+
+    /* Processing the command line argument  */
+
+    if (argc!= 2){
+        error_print(argv[0]);
+        exit(1);
+    }
+
+
+    read_field();
+
+    dx =field.size/(field.number);
+    dx2 = dx*dx;
+    n2=field.number/2+1;
+
+
+
+    /* Calculating the power */
+    sum=sum1r=sum1i=sum2=0.;
+    ik1=0;
+    for (i=1;i&lt;=field.number ;i++){
+        for (j=1;j&lt;=field.number ;j++){
+
+
+
+            
+	      s_p=(field.real[ik1]*field.real[ik1]+ \
+field.imaginary[ik1]*field.imaginary[ik1]);
+	    sum2 += s_p;
+	    sum += sqrt(s_p);
+            sum1r += field.real[ik1];
+            sum1i += field.imaginary[ik1];
+            ik1++;
+        }
+    }
+    sum1=(sum1r*sum1r+sum1i*sum1i);
+
+
+    if (sum == 0) {
+
+fprintf(stderr,"Strehl: Zero beam power, program terminated\n");
+        exit(1);
+			      }
+
+if(strstr(argv[1], "y")!= NULL)fprintf(stderr,"Strehl: ratio= %e energy= %e\n",sum1/sum/sum, sum2*dx2);
+
+/* Calculating the center of gravity: */
+ sum=sum1r=sum1i=sum2=0.;
+ ik1=0;
+    for (i=1;i&lt;=field.number ;i++){
+      y=(i-n2)*dx;
+        for (j=1;j&lt;=field.number ;j++){
+	  x=(j-n2)*dx;
+	  sum2=(field.real[ik1]*field.real[ik1]\
++field.imaginary[ik1]*field.imaginary[ik1]);
+	  sum1r += sum2*x;
+	  sum1i += sum2*y;
+	  sum += sum2;
+
+            ik1++;
+        }
+    }
+
+    x_c=sum1r/sum;
+    y_c=sum1i/sum;
+
+   fprintf(stderr,"Center_of_gravity: x= %e y= %e\n", x_c, y_c);
+  
+
+/* Calculating moments of the distribution */
+ sum1r=sum1x=sum1y=0.;
+ ik1=0;
+    for (i=1;i&lt;=field.number ;i++){
+      double y_y_c;
+      y=(i-n2)*dx;
+      y_y_c=y-y_c;
+      
+        for (j=1;j&lt;=field.number ;j++){
+	  double temp_int, x_x_c;
+	  x=(j-n2)*dx;
+	  x_x_c=x-x_c;
+	  temp_int = (field.real[ik1]*field.real[ik1]\
++field.imaginary[ik1]*field.imaginary[ik1]);
+	  sum1r += temp_int*(x_x_c*x_x_c+y_y_c*y_y_c);
+	  sum1x += temp_int*(x_x_c*x_x_c);
+	  sum1y += temp_int*(y_y_c*y_y_c);
+
+            ik1++;
+        }
+    }
+
+
+   fprintf(stderr,"Standard deviation:  S_r=%e S_x= %e S_y= %e\n", sqrt(sum1r/sum), sqrt(sum1x/sum), sqrt(sum1y/sum));
+ fprintf(stderr,"Grid size: %e, Grid sampling: %d\n", field.size, field.number); 
+
+
+    write_field();
+
+
+}
+
+
+void error_print(char *arr) { 
+
+    fprintf(stderr,"\n%s: prints the general info to the stderr\n",arr);
+
+
+    fprintf(stderr,"\n%s y, y prevents arrival of this message\n\n",arr);
+
+
+
+
+}
+</code></pre>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Top 10 Python libraries of 2016</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/329134#reply0" />
+	<id>tag:www.v2ex.com,2016-12-21:/t/329134</id>
+	<published>2016-12-21T05:23:57Z</published>
+	<updated>2016-12-19T05:20:57Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<a target="_blank" href="https://tryolabs.com/blog/2016/12/20/top-10-python-libraries-of-2016/" rel="nofollow">https://tryolabs.com/blog/2016/12/20/top-10-python-libraries-of-2016/</a>
+	]]></content>
+</entry><entry>
+	<title>[Python] Python 循环导入的大坑(模拟 Flask 典型场景)</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/325044#reply0" />
+	<id>tag:www.v2ex.com,2016-12-03:/t/325044</id>
+	<published>2016-12-03T08:38:14Z</published>
+	<updated>2016-12-01T08:35:14Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p><a href="http://app.py" rel="nofollow">app.py</a></p>
+<pre><code>import pdb;pdb.set_trace()
+app = 1
+import model
+#from model import User #ImportError: cannot import name 'User'
+print(app)
+print(model)
+#print(model.User) #AttributeError: module 'model' has no attribute 'User'
+</code></pre>
+<p><a href="http://model.py" rel="nofollow">model.py</a></p>
+<pre><code>import pdb;pdb.set_trace()
+from app import app
+User = app + 1
+</code></pre>
+<p>执行顺序</p>
+<pre><code>$ python app.py
+&gt; /tmp/demo/app.py(2)&lt;module&gt;()
+-&gt; app = 1
+(Pdb) n
+&gt; /tmp/demo/app.py(3)&lt;module&gt;()
+-&gt; import model
+(Pdb) n
+&gt; /tmp/demo/model.py(2)&lt;module&gt;()
+-&gt; from app import app
+(Pdb) n
+&gt; /tmp/demo/app.py(2)&lt;module&gt;()
+-&gt; app = 1
+(Pdb) n
+&gt; /tmp/demo/app.py(3)&lt;module&gt;()
+-&gt; import model
+(Pdb) n
+&gt; /tmp/demo/app.py(4)&lt;module&gt;()
+-&gt; print(app)
+(Pdb) n
+1
+&gt; /tmp/demo/app.py(5)&lt;module&gt;()
+-&gt; print(model)
+(Pdb) n
+&lt;module 'model' from '/tmp/demo/model.py'&gt;
+--Return--
+&gt; /tmp/demo/app.py(5)&lt;module&gt;()-&gt;None
+-&gt; print(model)
+(Pdb) n
+--Return--
+&gt; &lt;frozen importlib._bootstrap&gt;(222)_call_with_frames_removed()-&gt;None
+(Pdb) c
+1
+&lt;module 'model' from '/tmp/demo/model.py'&gt;
+</code></pre>
+<p>回想自己学 Flask 的时候，也在这里被坑的好惨（前几天不长记性又被坑了一次）。<br>
+这里有个很严重的问题，你需要小心翼翼地理清导入顺序，而且就算程序跑起来了，
+某些模块可能执行了两次，造成意想不到的结果。<br>
+解决方法是采用 Flask 最佳实践  <a href="https://zhuanlan.zhihu.com/p/22774028" rel="nofollow">https://zhuanlan.zhihu.com/p/22774028</a></p>
+<p>但是呢，这是 Python 的缺陷还是 Flask 的缺陷？<br>
+我认为这是 Flask 的设计缺陷，<code>@app.route</code>看起来简单，全局对象用着一时爽，
+但是非常容易产生循环依赖，一不小心就掉坑里了。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[反馈] IP 被封, 申请解封: 222.204.27.15</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/315643#reply1" />
+	<id>tag:www.v2ex.com,2016-10-26:/t/315643</id>
+	<published>2016-10-26T08:02:18Z</published>
+	<updated>2016-10-25T19:40:14Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	昨天在 <a target="_blank" href="https://www.v2ex.com/t/137724" rel="nofollow">https://www.v2ex.com/t/137724</a> 发了个 test[emoji]，然后就被封了。。求解封
+	]]></content>
+</entry><entry>
+	<title>[分享创造] Python 魔法: 给 MKDocs 添加 autodoc 插件，并且支持自定义主题</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/314898#reply1" />
+	<id>tag:www.v2ex.com,2016-10-23:/t/314898</id>
+	<published>2016-10-23T19:04:02Z</published>
+	<updated>2016-10-23T20:01:02Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>之前项目文档是用 reStructuredText 格式写的，但是这个语法比较复杂，还是更喜欢用 Markdown 写。
+这几天把文档从 Sphinx 迁移到 MKDocs ，还是托管在 ReadTheDocs 上面，遇到几个坑。</p>
+<ol>
+<li>
+<p>MKDocs 没有 autodoc 插件，而且还没有插件 API <a href="https://github.com/mkdocs/mkdocs/issues/206" rel="nofollow">Issue</a>。
+其实是有一个 autodoc 插件的，但是 MKDocs 没有插件 API ，那个插件作者只好把 MKDocs 代码给改了，
+到现在已经大半年了插件 API 还没搞定。。。这样也就没法在 ReadTheDocs 上使用。</p>
+</li>
+<li>
+<p>托管到 ReadTheDocs 上只能用 ReadTheDocs 的主题，<a href="https://github.com/rtfd/readthedocs.org/issues/978" rel="nofollow">Issue</a>。<br>
+At present the theme is hard-coded: <a href="https://github.com/rtfd/readthedocs.org/blob/master/readthedocs/doc_builder/backends/mkdocs.py#L147" rel="nofollow">https://github.com/rtfd/readthedocs.org/blob/master/readthedocs/doc_builder/backends/mkdocs.py#L147</a></p>
+</li>
+</ol>
+<p>研究了两天源码，最后用 Hack 手段搞定，核心代码:</p>
+<pre><code>@patch(build.build)
+def patched_build(f, config, *args, **kwargs):
+    print("HACK".center(60, "-"))
+    real_config = load_config(config_file=None)
+    for k in ["theme", "theme_dir"]:
+        config[k] = real_config[k]
+    return f(config, *args, **kwargs)
+</code></pre>
+<p>运行时修改 build 函数</p>
+<pre><code>PATCHED = {}
+
+
+def patch(f_be_patched):
+    def decorater(f):
+        key = str(uuid.uuid4())
+        PATCHED[key] = functools.partial(f, copy_func(f_be_patched))
+        code = """
+def wrapper(*args, **kwargs):
+    return __import__("magicpatch").PATCHED["{}"](*args, **kwargs)
+        """.format(key)
+        context = {}
+        exec(code, context)
+        f_be_patched.__code__ = context["wrapper"].__code__
+        return f
+    return decorater
+</code></pre>
+<p>这句<code>f_be_patched.__code__ = context["wrapper"].__code__</code>比较魔性，直接修改函数定义，
+但是有限制， locals,globals,closure 这些必须一致(无法修改)，也就是只能使用原有的函数能用的变量。</p>
+<p>完整代码在这: <a href="https://github.com/restaction/mkdocs-autodoc" rel="nofollow">https://github.com/restaction/mkdocs-autodoc</a><br>
+Demo: <a href="http://restaction.readthedocs.io/zh_CN/latest/api/" rel="nofollow">http://restaction.readthedocs.io/zh_CN/latest/api/</a></p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Flask-Restaction - 为 RESTful API 而生的 Web 框架</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/313280#reply10" />
+	<id>tag:www.v2ex.com,2016-10-17:/t/313280</id>
+	<published>2016-10-17T04:00:09Z</published>
+	<updated>2016-10-17T13:02:31Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>Flask-Restaction 是什么？</p>
+<ul>
+<li>创建 RESTful API</li>
+<li>校验用户输入以及将输出转化成合适的响应格式</li>
+<li>身份验证和权限控制</li>
+<li>自动生成 Javascript SDK 和 API 文档</li>
+</ul>
+<p>写接口的新姿势，<a href="https://github.com/guyskk/purepage/blob/master/api/purepage/views/user.py#L63" rel="nofollow">登录接口为例</a>:</p>
+<pre><code>def post_login(self, account, password):
+    """
+    登录
+
+    $input:
+        account?str: 用户 ID 或邮箱
+        password?str: 密码
+    $output: @user
+    $error:
+        403.UserNotFound: 帐号不存在
+        403.WrongPassword: 密码错误
+    """
+    user = db.run(r.table("user").get(account))
+    if not user:
+        user = db.first(r.table("user").get_all(account, index="email"))
+    if not user:
+        abort(403, "UserNotFound", "帐号不存在")
+    # ...省略若干逻辑
+    g.token = {"type": "login", "id": user["id"]}
+    return user
+</code></pre>
+<p>Github: <a href="https://github.com/guyskk/flask-restaction" rel="nofollow">https://github.com/guyskk/flask-restaction</a></p>
+<hr>
+<p>介绍完了，说一些我的碎碎念。</p>
+<p>原本我是打算等框架再成熟一些(大概会是半年之后)再来介绍的，但因为一些原因，我决定早点分享给大家。</p>
+<p>这个框架从第一个 Commit 到现在有一年多了，内部有两个小项目在用(一个是我自己负责的，另一个是一个学弟负责，题主目前大三)。
+还有一个是开源项目<a href="https://github.com/guyskk/purepage" rel="nofollow">PurePage</a>，这个项目很早就开始了，
+中间换了一次数据库，最近一次重写是在一周前，我花了两天时间写 API 和接口测试，三天写前端(还没写完)，
+现在我又没有方向了，不清楚自己到底想把它做成什么样。
+暂时先把它当作一个 Demo ，大家可以看生成的<a href="http://purepage.org/api/" rel="nofollow">API 文档</a>，Chrome打开控制台就能用生成的JS，非常欢迎各位提建议！</p>
+<p>另一个原因就是昨天看到<a href="https://github.com/channelcat/sanic" rel="nofollow">Sanic is a Flask-like Python 3.5+ web server that's written to go fast.</a>。
+我打算让 Flask-Restaction 适配 Sanic ，这样就能愉快的写异步 API 了。
+另外没在这里看到有 Sanic 的讨论，有兴趣的朋友出来聊聊吧。</p>
+<p>最后一个原因是我决定这周把英文文档写出来，其实早就有这个想法，但一直畏难+懒，题主英文写作比较菜，
+重度依赖词典&gt;﹏&lt;。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Python 3.6 要让所有字典有序？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/310381#reply16" />
+	<id>tag:www.v2ex.com,2016-10-03:/t/310381</id>
+	<published>2016-10-03T05:35:57Z</published>
+	<updated>2016-10-03T15:33:56Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p><a href="https://www.reddit.com/r/Python/comments/55iqpo/guido_on_dicts_in_python_36/" rel="nofollow">https://www.reddit.com/r/Python/comments/55iqpo/guido_on_dicts_in_python_36/</a></p>
+<p><a href="https://mail.python.org/pipermail/python-dev/2016-September/146348.html" rel="nofollow">https://mail.python.org/pipermail/python-dev/2016-September/146348.html</a></p>
+<p>I've been asked about this. Here's my opinion on the letter of the law in 3.6:</p>
+<ul>
+<li>keyword args are ordered</li>
+<li>the namespace passed to a metaclass is ordered by definition order</li>
+<li>ditto for the class <strong>dict</strong></li>
+</ul>
+<p>A compliant implementation may ensure the above three requirements
+either by making all dicts ordered, or by providing a custom dict
+subclass (e.g. OrderedDict) in those three cases.</p>
+<p>I'd like to handwave on the ordering of all other dicts. Yes, in
+CPython 3.6 and in PyPy they are all ordered, but it's an
+implementation detail. I don't want to <em>force</em> all other
+implementations to follow suit. I also don't want too many people
+start depending on this, since their code will break in 3.5. (Code
+that needs to depend on the ordering of keyword args or class
+attributes should be relatively uncommon; but people will start to
+depend on the ordering of all dicts all too easily. I want to remind
+them that they are taking a risk, and their code won't be backwards
+compatible.)</p>
+<p>--Guido</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Validr: 简单，快速，可拓展的数据校验库</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/310291#reply2" />
+	<id>tag:www.v2ex.com,2016-10-02:/t/310291</id>
+	<published>2016-10-02T09:11:21Z</published>
+	<updated>2016-10-02T13:19:39Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p><a href="https://github.com/guyskk/validr" rel="nofollow">https://github.com/guyskk/validr</a><br>
+<a href="https://github.com/vinta/awesome-python/pull/736" rel="nofollow">https://github.com/vinta/awesome-python/pull/736</a></p>
+<p>这是今天给它取的新名字，不用再纠结名字了，好开心:D<br>
+觉得好用帮帮忙给个 Star 和 Upvote ，不满意请轻拍，欢迎各位提提建议:P</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 写了一个校验数据的库，现在打算换个名字: validatr validating 哪个好？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/309980#reply2" />
+	<id>tag:www.v2ex.com,2016-09-30:/t/309980</id>
+	<published>2016-09-30T05:19:41Z</published>
+	<updated>2016-09-27T07:58:27Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p><a href="https://github.com/guyskk/validater" rel="nofollow">Validater</a> A simple,fast,extensible library for validating.</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Token 过期的问题</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/306017#reply22" />
+	<id>tag:www.v2ex.com,2016-09-13:/t/306017</id>
+	<published>2016-09-13T11:35:54Z</published>
+	<updated>2016-09-14T01:52:53Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>目前流程是用户登录成功之后，返回一个 token 给客户端， token 过期时间为 30 分钟。请求其他 API 时客户端带上 token ，服务端依据此 token 判断是否登录。
+现在问题是 token 会过期，过一段时间就要重新登录，把过期时间设长一点只能减少过期的频率，不能根本上解决问题。
+所以有没有像 Session 那样，只要用户一直在线就不过期，超过一定时间不在线才会过期的库 /算法 /Demo ？</p>
+<p><a href="https://github.com/mattupstate/flask-jwt/isues/29" rel="nofollow">https://github.com/mattupstate/flask-jwt/isues/29</a><br>
+refresh token 也看了一些，感觉有点复杂</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Coding] Coding 又挂了吗</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/301582#reply12" />
+	<id>tag:www.v2ex.com,2016-08-24:/t/301582</id>
+	<published>2016-08-24T14:40:45Z</published>
+	<updated>2016-08-24T16:02:47Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>@CodingNET</p>
+<pre><code>ssh_exchange_identification: Connection closed by remote host
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+</code></pre>
+<p>问了下其他人也是这样，无语</p>
+
+	]]></content>
+</entry><entry>
+	<title>[互联网] 如何处理 URL 不友好的用户名?</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/300414#reply9" />
+	<id>tag:www.v2ex.com,2016-08-19:/t/300414</id>
+	<published>2016-08-19T05:45:33Z</published>
+	<updated>2016-08-19T07:57:43Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>我想让网站的 URL 类似 Github 这样，<code>/guyskk</code> 是对应的用户的页面，但是 <code>/login</code> 是登录页面。
+然后我就去 Github 注册页面是，发现对用户名做了限制，提示 <code>Username is a reserved word</code>，
+我又去搜有哪些是保留词，找到 <a href="https://gist.github.com/caseyohara/1453705" rel="nofollow">https://gist.github.com/caseyohara/1453705</a>
+和 <a href="https://github.com/theskumar/python-usernames" rel="nofollow">https://github.com/theskumar/python-usernames</a> 保留词有几百个，
+而 Github 实际上没有限制那么多，比如 <code><a href="https://github.com/china" rel="nofollow">https://github.com/china</a></code>, <code><a href="https://github.com/kfc" rel="nofollow">https://github.com/kfc</a></code> 都是有效的。</p>
+<p>ruby-china 是这么做的： <a href="https://ruby-china.org/topics/5004" rel="nofollow">https://ruby-china.org/topics/5004</a></p>
+<blockquote>
+<p>这种情况我早就考虑到了，当初就是这么想的，
+如果有人非要用这里完全不可能是昵称的词语作为用户名的时候，那就让他的页面永远打不开吧</p>
+</blockquote>
+<p>大家觉得怎么处理比较好？</p>
+
+	]]></content>
+</entry><entry>
+	<title>[问与答] 数据库迁移问题</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/295076#reply0" />
+	<id>tag:www.v2ex.com,2016-07-26:/t/295076</id>
+	<published>2016-07-26T09:47:48Z</published>
+	<updated>2016-07-26T09:44:48Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>请问大家用 alembic 做数据库自动迁移吗？如果不用的话怎么处理修改数据库表的问题？</p>
+<p>原来数据库用的是 sqlite ，开发的时候用了 alembic 做自动迁移，现在数据库换成 mysql ，那些迁移脚本都没法用了，数据类型很多不兼容。我现在已经手工把 sqlite 的数据 dump 出来然后导入 mysql 了，数据都还好，只是不能继续用 alembic 了。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 一个可以校验&amp;序列化任意类型数据的库 Validater 发布</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/291581#reply10" />
+	<id>tag:www.v2ex.com,2016-07-10:/t/291581</id>
+	<published>2016-07-10T15:11:13Z</published>
+	<updated>2016-09-15T13:24:01Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<h1>Validater</h1>
+<p><img alt="travis-ci" src="https://api.travis-ci.org/guyskk/validater.svg"> <a href="https://codecov.io/gh/guyskk/validater" rel="nofollow"><img alt="codecov" src="https://codecov.io/gh/guyskk/validater/branch/master/graph/badge.svg"></a></p>
+<p>为 RESTful API 而生的校验器：</p>
+<ul>
+<li>可以作为 API 文档， Schema 即文档</li>
+<li>可以用来校验请求参数</li>
+<li>可以用来校验输出与 API 文档是否一致</li>
+<li>可以用来序列化任意类型的对象</li>
+</ul>
+<p>注意：仅支持 python 3.3+</p>
+<p>项目主页： <a href="https://github.com/guyskk/validater" rel="nofollow">https://github.com/guyskk/validater</a></p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 如何简化下面这些代码，避免 copy?</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/291002#reply10" />
+	<id>tag:www.v2ex.com,2016-07-07:/t/291002</id>
+	<published>2016-07-07T14:51:46Z</published>
+	<updated>2016-07-07T17:19:52Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>我需要写很多的校验函数，这些校验函数都有 <code>default=None, optional=False, desc=None</code>这几个参数。</p>
+<pre><code>def int_validater(min=0, max=1024,
+                  default=None, optional=False, desc=None):
+    def validater(value):
+        if value is None:
+            if default is not None:
+                return default
+            elif optional:
+                return None
+            else:
+                raise Invalid("required")
+        try:
+            v = int(value)
+        except ValueError:
+            raise Invalid("invalid int")
+        if v &lt; min:
+            raise Invalid("value must &gt;= %d" % min)
+        elif v &gt; max:
+            raise Invalid("value must &lt;= %d" % max)
+        return v
+    return validater
+
+
+def bool_validater(default=None, optional=False, desc=None):
+    def validater(value):
+        if value is None:
+            if default is not None:
+                return default
+            elif optional:
+                return None
+            else:
+                raise Invalid("required")
+        if isinstance(value, bool):
+            return value
+        else:
+            raise Invalid("invalid bool")
+    return validater
+</code></pre>
+<p>这些校验函数用法类似这样：</p>
+<pre><code>validater = int_validater(0,10,default=5)
+validater(-1) # raise Invalid("value must &gt;= %d" % min)
+validater(20) # raise Invalid("value must &lt;= %d" % max)
+</code></pre>
+<p>怎么简化代码，避免 copy?
+我试了用装饰器，但是不能处理好参数顺序，装饰后的函数原型因该是下面这样：</p>
+<pre><code>wraped_validater(default=None, optional=False, desc=None,*args,**kwargs)
+</code></pre>
+<p>如果<code>int_validater(0,10,default=5)</code>，这样 0 和 10 对应的是 optional 和 desc ，而不是*args 。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[编程] 如何校验 JSON 数据？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/290735#reply12" />
+	<id>tag:www.v2ex.com,2016-07-06:/t/290735</id>
+	<published>2016-07-06T14:14:54Z</published>
+	<updated>2016-07-06T20:49:23Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>现在的情况是前后端分离，后端只提供 API ，前端 AJAX 调用，使用 JSON 格式传送数据。
+这里涉及到 2 个问题：<br>
+(1)如何描述 API?如何告诉前端你的接口需要什么参数，返回什么？<br>
+(2)如何校验 JSON 数据？前端可能漏了参数，或是传了错误的参数。用户可能输入错误，需要有错误提示。黑客也可能构造非法的参数进行攻击。</p>
+<p>考虑过用 JSON-Schema ，但是 JSON-Schema 太复杂了，写起来也很累，用来描述 API 并不合适，我想要一种易读易写的格式，写完可以直接拿来当文档看。</p>
+<p>另外关于防攻击的： <a href="https://github.com/pallets/flask/issues/1421" rel="nofollow">https://github.com/pallets/flask/issues/1421</a><br>
+如果提交大量嵌套非常深的数据，服务器资源不是很容易就会耗尽吗，例如： <code>json.loads('[' * 800 + ']' * 800)</code>。</p>
+<p>求前人指路，分享经验。</p>
+
+	]]></content>
+</entry><entry>
+	<title>[分享创造] REST-Action 风格的 Web 架构</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/278435#reply0" />
+	<id>tag:www.v2ex.com,2016-05-13:/t/278435</id>
+	<published>2016-05-13T06:21:12Z</published>
+	<updated>2016-05-13T06:18:12Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>REST-Action 是基于 REST 的 Web 架构，目的是使 REST 架构标准化，提高易用性。</p>
+<p>-&gt; <a href="https://github.com/guyskk/flask-restaction/wiki" rel="nofollow">https://github.com/guyskk/flask-restaction/wiki</a></p>
+<p>欢迎讨论:)</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 奇怪的 bug</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/271356#reply5" />
+	<id>tag:www.v2ex.com,2016-04-15:/t/271356</id>
+	<published>2016-04-15T07:30:25Z</published>
+	<updated>2016-04-15T11:19:29Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p><a href="https://github.com/djc/couchdb-python/issues/281" rel="nofollow">https://github.com/djc/couchdb-python/issues/281</a><br>
+<a href="https://github.com/kennethreitz/requests/issues/3098" rel="nofollow">https://github.com/kennethreitz/requests/issues/3098</a></p>
+<p>唯独 "关闭" 会出 bug ，其他中文字符串不会（目前我还没发现）</p>
+
+	]]></content>
+</entry><entry>
+	<title>[程序员] travis-ci 不靠谱啊</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/270105#reply12" />
+	<id>tag:www.v2ex.com,2016-04-11:/t/270105</id>
+	<published>2016-04-11T03:41:14Z</published>
+	<updated>2016-04-11T14:02:20Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>我用 <a href="http://travis-ci.org" rel="nofollow">travis-ci.org</a> 对我的项目做持续集成测试，结果有个 bug 没测出来，后来还是自己找出来的。</p>
+<p>travis-ci 的测试
+<img alt="" src="http://ww4.sinaimg.cn/large/006bQNKbjw1f2slzagllyj30ro0ejace.jpg"></p>
+<p>自己运行的测试（版本号： 5efaedf ）
+<img alt="" src="http://ww1.sinaimg.cn/large/006bQNKbjw1f2sm1fk0qkj31170jetej.jpg"></p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 设计无状态验证码，大家看下是否可行，有没有什么漏洞？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/267305#reply31" />
+	<id>tag:www.v2ex.com,2016-03-30:/t/267305</id>
+	<published>2016-03-30T03:49:05Z</published>
+	<updated>2016-04-27T12:22:15Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>无状态验证码不需要在 SESSION 中保存数据，流程如下：</p>
+<ol>
+<li>服务端先配置一个密钥 KEY</li>
+<li>客户端请求验证码 TOKEN，
+服务端生成一个随机字符串 TEXT ，再生成一个 SALT ，用 KEY 和 SALT 对 TEXT 进行加密
+加密后的 TEXT 和 SALT 拼接到一起，作为 TOKEN 返回给客户端</li>
+<li>客户端请求验证码图片，携带验证码 TOKEN，
+服务端根据 KEY 和 TOKEN 中的 SALT ，解密出 TEXT ，用这个 TEXT 生成一幅图片</li>
+<li>客户端发送业务请求，携带验证码 TOKEN 和用户输入的 CODE，
+服务端根据 KEY 和 TOKEN 中的 SALT ，解密出 TEXT ，和 CODE 比对</li>
+</ol>
+<p>代码
+<a href="https://github.com/guyskk/kkblog/blob/master/kkblog/captcha.py" rel="nofollow">https://github.com/guyskk/kkblog/blob/master/kkblog/captcha.py</a></p>
+<p>大家看下是否可行，有没有什么漏洞？</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] Welcome to Flask-Restaction!</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/255107#reply6" />
+	<id>tag:www.v2ex.com,2016-02-02:/t/255107</id>
+	<published>2016-02-02T16:44:57Z</published>
+	<updated>2016-02-03T17:28:41Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>深夜把文档更新好了，大家看看吧</p>
+
+<p>文档: <a target="_blank" rel="nofollow" href="http://flask-restaction.readthedocs.org/zh/latest/index.html">http://flask-restaction.readthedocs.org/zh/latest/index.html</a><br>
+github: <a target="_blank" rel="nofollow" href="https://github.com/guyskk/flask-restaction">https://github.com/guyskk/flask-restaction</a></p>
+
+<p>安装<br>
+<code>git clone https://github.com/guyskk/flask-restaction.git</code><br>
+<code>cd flask-restaction</code><br>
+<code>pip install -e .</code></p>
+
+<p>我 js 和 android 学的不深， res.js 并没有完整测试，希望有 jser 来做。<br>
+res.java 希望有做 android 的来做。</p>
+
+<p>目前自动生成文档和权限管理界面是通过 jinja2 模板生成的，我尝试过用 vue.js 做动态页面也可以。</p>
+
+<hr>
+
+<p>先睡一觉，明天尽量早点起来</p>
+
+	]]></content>
+</entry><entry>
+	<title>[Python] 遇到一个奇怪的问题，怀疑是 python 的 bug</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/252754#reply7" />
+	<id>tag:www.v2ex.com,2016-01-22:/t/252754</id>
+	<published>2016-01-22T15:51:17Z</published>
+	<updated>2016-01-22T16:39:06Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<p>代码在这：<br>
+<a target="_blank" rel="nofollow" href="https://gist.github.com/guyskk/8ae152653220800e9b9a">https://gist.github.com/guyskk/8ae152653220800e9b9a</a><br>
+被注释掉的都会报 KeyError<br>
+最后那句<code>print(dict([(k, items[k]) for k in keys]))</code>在 python3 会报错,python2 正常</p>
+
+	]]></content>
+</entry><entry>
+	<title>[硬件] 寻找一款称手的装备</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/250195#reply57" />
+	<id>tag:www.v2ex.com,2016-01-12:/t/250195</id>
+	<published>2016-01-12T09:24:20Z</published>
+	<updated>2016-02-13T02:50:22Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	这个可以是平板，笔记本，超级本……，暂且称之为装备，只要能满足要求就行。<br /><br />1. 不打游戏，主要用来写代码，上网，连服务器。写代码不需要开 IDE ，有个称手的编辑器即可<br />2. 要能续航 8 小时<br />3. 要轻薄，便于携带<br />4. 价钱最好是 3000 以内， 4000 以上不考虑<br /><br />目前看中 remix 的一款 <a target="_blank" href="https://shop.jide.com/m/detail?pid=1" rel="nofollow">https://shop.jide.com/m/detail?pid=1</a><br />最大的担心是 android 上没有称手的编辑器，我想到可以用的只有 vim ，有没有和 sublime 差不多的？<br /><br />大家有没有其他的推荐？
+	]]></content>
+</entry><entry>
+	<title>[Python] 推荐 Flask-Restaction，为 restful api 而生</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/233045#reply7" />
+	<id>tag:www.v2ex.com,2015-11-02:/t/233045</id>
+	<published>2015-11-02T12:39:27Z</published>
+	<updated>2015-11-04T01:28:20Z</updated>
+	<author>
+		<name>guyskk</name>
+		<uri>https://www.v2ex.com/member/guyskk</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	<h3>主要特性</h3>
+
+<h3>you can do this Easily</h3>
+
+<ul>
+<li>Create restful api </li>
+<li>Validate inputs and Convert outputs</li>
+<li>Authorize and Permission control</li>
+<li>Auto generate res.js</li>
+<li>Auto generate documents</li>
+</ul>
+
+<p><strong>Support py3 since v0.17.0</strong></p>
+
+<p>主页 <a target="_blank" rel="nofollow" href="https://github.com/guyskk/flask-restaction">https://github.com/guyskk/flask-restaction</a><br>
+文档 <a target="_blank" rel="nofollow" href="http://flask-restaction.readthedocs.org/zh/latest/">http://flask-restaction.readthedocs.org/zh/latest/</a></p>
+
+<p>目前趋于稳定，正在用它做一个博客系统 <a target="_blank" rel="nofollow" href="https://github.com/guyskk/kkblog">https://github.com/guyskk/kkblog</a><br>
+希望听听社区的反馈意见</p>
+
+	]]></content>
+</entry>
+</feed>

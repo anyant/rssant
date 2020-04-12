@@ -1,14 +1,12 @@
 import os
 import json
 import time
-import codecs
 import logging
 import socket
 import contextlib
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
-import cchardet
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -47,46 +45,6 @@ def format_table(rows, *, header=None, border=True):
         table.inner_column_border = False
         table.outer_border = False
     return table.table
-
-
-def _is_encoding_exists(response):
-    content_type = response.headers.get('content-type')
-    return content_type and 'charset' in content_type
-
-
-def detect_response_encoding(content):
-    """
-    >>> detect_response_encoding("你好".encode('utf-8'))
-    'utf-8'
-    """
-    # response.apparent_encoding使用chardet检测编码，有些情况会非常慢
-    # 换成cchardet实现，性能可以提升100倍
-    encoding = cchardet.detect(bytes(content[:4096]))['encoding']
-    if encoding:
-        encoding = encoding.lower()
-        # 解决常见的乱码问题，chardet没检测出来基本就是windows-1254编码
-        if encoding == 'windows-1254' or encoding == 'ascii':
-            encoding = 'utf-8'
-    else:
-        encoding = 'utf-8'
-    encoding = codecs.lookup(encoding).name
-    return encoding
-
-
-def resolve_response_encoding(response):
-    if _is_encoding_exists(response) and response.encoding:
-        encoding = codecs.lookup(response.encoding).name
-    else:
-        encoding = detect_response_encoding(response.content)
-    response.encoding = encoding
-
-
-async def resolve_aiohttp_response_encoding(response, content):
-    if _is_encoding_exists(response) and response.charset:
-        encoding = codecs.lookup(response.charset).name
-    else:
-        encoding = detect_response_encoding(content)
-    return encoding
 
 
 def coerce_url(url, default_schema='http'):

@@ -1,0 +1,1761 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+
+<channel>
+	<title>火丁笔记</title>
+	<atom:link href="https://blog.huoding.com/feed" rel="self" type="application/rss+xml" />
+	<link>https://blog.huoding.com</link>
+	<description>多研究些问题，少谈些主义。</description>
+	<lastBuildDate>Thu, 02 Apr 2020 13:36:53 +0000</lastBuildDate>
+	<language>zh-CN</language>
+	<sy:updatePeriod>
+	hourly	</sy:updatePeriod>
+	<sy:updateFrequency>
+	1	</sy:updateFrequency>
+	<generator>https://wordpress.org/?v=5.4</generator>
+	<item>
+		<title>如何在OpenResty里实现代码热更新</title>
+		<link>https://blog.huoding.com/2020/03/25/807</link>
+					<comments>https://blog.huoding.com/2020/03/25/807#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Wed, 25 Mar 2020 07:26:31 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=807</guid>
+
+					<description><![CDATA[所谓「代码热更新」，是指代码发生变化后，不用 reload 或者 gracefu &#8230; <a href="https://blog.huoding.com/2020/03/25/807">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>所谓「代码热更新」，是指代码发生变化后，不用 reload 或者 graceful restart 进程就能生效。比如有一个聊天服务，连接着一百万个用户的长连接，所谓代码热更新就是在长连接不断的前提下完成代码更新。实际上因为所有的 require 操作都是通过 package.loaded 来加载模块的，只要代码是以 module 的形式组织的，那么就可以通过 package.loaded 实现代码热更新，并且基本不影响性能。</p>
+<p><span id="more-807"></span></p>
+<p>下面让我们做个实验来说明一下如何实现代码热更新的，首先设置如下配置：</p>
+<pre>lua_code_cache on;
+worker_processes 1;
+
+location /run {
+    content_by_lua '
+        ngx.say(require("test").run())
+    ';
+}
+
+location /unload {
+    allow 127.0.0.1;
+    deny all;
+
+    content_by_lua '
+        package.loaded[ngx.var.arg_m] = nil
+    ';
+}</pre>
+<p>需要说明的是，之所以把 worker_processes 设置为 1，是因为每个 worker 进程都有一个独立的 lua vm，设置成 1 更方便测试，稍后我会说明大于 1 的时候怎么办。此外，有两个 location，其中 run 是用来运行模块的，unload 的是用来卸载模块的。</p>
+<p>接着在 package.path 所包含的某个路径上创建 test 模块：</p>
+<pre>local _M = {}
+
+function _M.run()
+    return 1
+end
+
+return _M</pre>
+<p>逻辑很简单，就是返回一个数字。一切准备就绪后，reload 一下 ngx，让我们开始实验：</p>
+<ol>
+<li>请求 http://localhost/run，显示 1</li>
+<li>修改模块 test.lua，把 1 改成 100</li>
+<li>请求 http://localhost/unload?m=test，卸载 package.loaded 中的 test</li>
+<li>请求 http://localhost/run，显示 100</li>
+</ol>
+<p>由此可见，在模块内容被修改后，我们没有 reload 进程，只是通过卸载 package.loaded 中对应的模块，就实现了代码热更新。</p>
+<p>看起来实现代码热更新非常简单。打住！有例外，让我们修改一下 test 模块：</p>
+<pre>local ffi = require("ffi")
+
+ffi.cdef[[
+struct test { int v; };
+]]
+
+local _M = {}
+
+function _M.run()
+    local test = ffi.new("struct test", {1})
+
+    return test.v
+end
+
+return _M</pre>
+<p>还是打印一个数字，只是用 ffi 实现的，让我们再来重复一下实验步骤，结果报错了：</p>
+<blockquote><p>attempt to redefine &#8230;</p></blockquote>
+<p>究其原因，是因为当我们通过 package.loaded 卸载模块的时候，如果用到了 ffi.cdef 之类的 ffi 操作，那么其中的 C 语言类型声明是无法卸载的。</p>
+<p>好在我们可以通过条件判断来决定是否要执行 ffi.cdef 语句：</p>
+<pre>if not pcall(ffi.typeof, "struct test") then
+    ffi.cdef[[
+    struct test { int v; };
+    ]]
+end</pre>
+<p>说明：如果我们要修改原始定义的话，那么就只能 reload 了。好在这种情况不多。</p>
+<p>最后，让我来说一说多进程的问题，在测试过程中，我只使用了一个进程，并且通过一个特定的 location 来实现卸载 package.loaded 中指定模块的功能，但是在实际情况中， worker_processes 多半是大于 1 的，也就说有多个 worker 进程，此时，如果再使用特定 location 来操作的话，你是无法确定到底是操作在哪个 worker 上的。</p>
+<p>比较直观的解决方案是：</p>
+<div>
+<ol>
+<li>把需要动态加载的代码放在一个模块文件中，并标记版本号。</li>
+<li>暴露一个 location，允许从外部写最新的版本号到共享内存字典。</li>
+<li>通过 <a href="https://www.lua.org/manual/5.1/manual.html#pdf-package.loaders" target="_blank" rel="noopener noreferrer">package.loaders</a> 实现自定义的 loader，把它插在 package.loaders 第二个位置上（因为缺省情况下第一个位置是为 <a href="https://www.lua.org/manual/5.1/manual.html#pdf-package.preload" target="_blank" rel="noopener noreferrer">package.preload</a> 准备的，第二个位置是为 <a href="https://www.lua.org/manual/5.1/manual.html#pdf-package.path" target="_blank" rel="noopener noreferrer">package.path</a> 准备的），这样在 require 的时候就可以按照自定义的逻辑加载模块：检查模块的版本号与共享内存字典中的最新版本号是否一致，如果不一致的话，则通过 loadstring 重新加载模块，并且缓存到 package.loaded 中去。</li>
+</ol>
+<p>如此可以解决问题，但是不爽的是每个请求都要检查版本号。看看另一个方案：</p>
+<ol>
+<li>在 init_worker 设置每个 worker 都通过 timer 定时扫描自己的共享内存队列。</li>
+<li>暴露一个 location，允许从外部写模块名字到每一个 worker 的共享内存队列。</li>
+<li>如果 timer 发现新数据，就说明有模块变化了，通过 package.loaded 卸载，再通过 require 重新加载模块，当然也可以自定义 loader，通过 loadstring 重新加载模块。</li>
+</ol>
+<p>补充：如果自定义 loader 的话，那么在通过 loadstring 加载模块的时候，不一定非要从本地磁盘加载模块，思维发散一下，可以通过读取远程数据来加载。比如说有一百台服务器需要更新代码，那么可以把新代码发送到某个 redis 上，然后所有服务器通过请求 redis 拿到新代码，并把 loadstring 缓存到 package.loaded 中去，如此避免了部署的麻烦。</p>
+</div>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/03/25/807/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>手把手教你用OpenResty里的FFI</title>
+		<link>https://blog.huoding.com/2020/03/08/805</link>
+					<comments>https://blog.huoding.com/2020/03/08/805#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Sun, 08 Mar 2020 13:13:37 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=805</guid>
+
+					<description><![CDATA[了解 OpenResty 的人应该知道，OpenResty 原本的 API 都是 &#8230; <a href="https://blog.huoding.com/2020/03/08/805">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>了解 OpenResty 的人应该知道，OpenResty 原本的 API 都是基于 C 实现的，不过在新版里都已经改成了基于 FFI 实现的，为什么这么做？因为 FFI 在效率上更有优势，除此以外，FFI 还有一个优点是可以很便利的和 C 交互，我们不妨设想一下，C 语言有那么多成熟的库，通过 FFI，我们可以轻而易举的引入到自己的应用中，何乐而不为呢？</p>
+<p><span id="more-805"></span></p>
+<p>本文通过 <a href="https://hashids.org/" target="_blank" rel="noopener noreferrer">Hashids</a> 手把手教你用 OpenResty 里的 FFI。说起 Hashids，它的功能是把一个正整数转换成一个相对更短的唯一 ID，比如把 123456789 转换成 NRv345。基本上主流语言都实现了 Hashids，当然也有 <a href="https://github.com/leihog/hashids.lua" target="_blank" rel="noopener noreferrer">Lua</a> 版本，不过本文即然是讲解 FFI 的，自然不会采用此版本，实际上我们使用的是 <a href="https://hashids.org/c/" target="_blank" rel="noopener noreferrer">C</a> 版本。</p>
+<p>下载了 C 版本的 Hashids 源代码之后，第一件事是编译出动态链接库：</p>
+<pre>➜ gcc -shared -fPIC -o libhashids.so /path/to/hashids.c
+➜ gcc -dynamiclib -fPIC -o libhashids.dylib /path/to/hashids.c</pre>
+<p>不同操作系统使用不同的命令：Linux 用前一个，Mac 用后一个。此外还需要把库文件放到系统路径里，同样有操作系统差异，Linux 用 ldconfig，Mac 用 install_name_tool，细节不赘述，让我们直接看看如何通过 FFI 来使用 C 语言的动态链接库，简单说和把大象放冰箱一样，分三步：首先通过 ffi.cdef 添加头文件；然后通过 ffi.load 加载动态链接库，最后把 C 语言的操作步骤翻译成 Lua 代码。看代码吧：</p>
+<pre>local ffi = require "ffi"
+
+ffi.cdef[[
+struct hashids_s {
+    char *alphabet;
+    char *alphabet_copy_1;
+    char *alphabet_copy_2;
+    size_t alphabet_length;
+
+    char *salt;
+    size_t salt_length;
+
+    char *separators;
+    size_t separators_count;
+
+    char *guards;
+    size_t guards_count;
+
+    size_t min_hash_length;
+};
+typedef struct hashids_s hashids_t;
+
+void
+hashids_free(hashids_t *hashids);
+
+hashids_t *
+hashids_init(const char *salt);
+
+size_t
+hashids_encode(hashids_t *hashids, char *buffer, size_t numbers_count,
+    unsigned long long *numbers);
+
+size_t
+hashids_decode(hashids_t *hashids, const char *str,
+    unsigned long long *numbers, size_t numbers_max);
+
+size_t
+hashids_estimate_encoded_size(hashids_t *hashids, size_t numbers_count,
+    unsigned long long *numbers);
+]]
+
+local id = 123456789
+
+local C = ffi.load("hashids")
+local hashids = C.hashids_init("this is my salt")
+local numbers = ffi.new("unsigned long long[1]", id)
+local size = C.hashids_estimate_encoded_size(hashids, 1, numbers)
+local buffer = ffi.new("char[?]", size)
+local length = C.hashids_encode(hashids, buffer, 1, numbers)
+local hashid = ffi.string(buffer, length)
+local str = ffi.new("char[?]", #hashid, hashid)
+numbers = ffi.new("unsigned long long[1]")
+C.hashids_decode(hashids, str, numbers, -1)
+C.hashids_free(hashids)
+
+ngx.say("id: ", id)                       -- id: 123456789
+ngx.say("hashid: ", hashid)               -- hashid: NRv345
+ngx.say("decode: ", numbers[0])           -- decode: 123456789ULL
+ngx.say("decode: ", tonumber(numbers[0])) -- decode: 123456789
+</pre>
+<p>在使用 Lua 操作动态链接库的时候，和 C 语言总体保持一致，常见的整数，字符串等数据类型都可以直接使用，唯一需要注意的是 C 语言的指针类型无法直接映射到 Lua 的数据类型，此时的变通做法是通过 ffi.new 声明一个「只有一个元素的数组」。</p>
+<p>LuaJIT FFI 不仅可以调用 C 语言，还可以调用其他语言，比如 Go，详情可以参考：</p>
+<ul>
+<li><a href="https://dev.to/vladimirvivien/calling-go-functions-from-other-languages" target="_blank" rel="noopener noreferrer">Calling Go Functions from Other Languages</a></li>
+<li><a href="https://segmentfault.com/a/1190000008633849" target="_blank" rel="noopener noreferrer">在 LuaJIT 中调用 Go 函数</a></li>
+</ul>
+<p>关于 LuaJIT FFI 更多信息，建议浏览<a href="https://luajit.org/ext_ffi.html" target="_blank" rel="noopener noreferrer">官方文档</a>。下面文档也值得一看：</p>
+<ul>
+<li><a href="https://segmentfault.com/a/1190000015802547" target="_blank" rel="noopener noreferrer">LuaJIT FFI 介绍，及其在 OpenResty 中的应用（上）</a></li>
+<li><a href="https://segmentfault.com/a/1190000016149595" target="_blank" rel="noopener noreferrer">LuaJIT FFI 介绍，及其在 OpenResty 中的应用（下）</a></li>
+</ul>
+<p>此外，<a href="https://github.com/luapower" target="_blank" rel="noopener noreferrer">luapower</a> 上能找到不少使用 <a href="https://github.com/luapower?q=ffi" target="_blank" rel="noopener noreferrer">FFI</a> 的代码，建议多看看。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/03/08/805/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>一个尾调用相关的诡异报错信息</title>
+		<link>https://blog.huoding.com/2020/03/03/804</link>
+					<comments>https://blog.huoding.com/2020/03/03/804#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Tue, 03 Mar 2020 11:32:53 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=804</guid>
+
+					<description><![CDATA[一个 OpenResty 的接口报错了，我查了一下日志，发现如下报错信息： ba &#8230; <a href="https://blog.huoding.com/2020/03/03/804">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>一个 OpenResty 的接口报错了，我查了一下日志，发现如下报错信息：</p>
+<blockquote><p>bad argument #1 to &#8216;test&#8217; (string expected, got userdata)</p></blockquote>
+<p>看上去这就是一道送分题啊：无非就是 test 函数的第一个参数类型应该是 string，实际传递的却是 userdata。就当我觉得可以轻而易举解决问题的时候，突然发现 test 函数定义就没有参数，调用的时候也没传参数，真是太诡异了。</p>
+<p><span id="more-804"></span></p>
+<p>群里问了一些网友，结合自己瞎蒙，大概搞清楚了问题的来龙去脉，看看复现过程：</p>
+<pre>➜ cat t.lua
+local cjson = require "cjson"
+local function test()
+    return cjson.decode(ngx.null)
+end
+test()
+➜ resty t.lua
+ERROR: t.lua:5: bad argument #1 to 'test' (string expected, got userdata)
+stack traceback:
+	t.lua:5: in function 'file_gen'
+	init_worker_by_lua:45: in function 
+	[C]: in function 'xpcall'
+	init_worker_by_lua:52: in function</pre>
+<p>看到这里，估计有人已经猜到原因了：问题似乎和尾调用（<a href="https://en.wikipedia.org/wiki/Tail_call" target="_blank" rel="noopener noreferrer">Tall call</a>）相关，验证一下：</p>
+<pre>➜ cat t.lua
+local cjson = require "cjson"
+local function test()
+    local result = cjson.decode(ngx.null)
+    return result
+end
+test()
+➜ resty t.lua
+ERROR: t.lua:3: bad argument #1 to 'decode' (string expected, got userdata)
+stack traceback:
+	t.lua:3: in function 'test'
+	t.lua:6: in function 'file_gen'
+	init_worker_by_lua:45: in function 
+	[C]: in function 'xpcall'
+	init_worker_by_lua:52: in function</pre>
+<p>当我们去掉尾调用后，错误信息恢复了正常，验证了我们的猜测，诡异错误信息确实和尾调用相关。当然，真正的问题是因为我们在使用 cjson.decode 的时候传递了错误的参数，尾调用本身并没有问题，但是不得不说的是，它拐带的错误信息实在是坑人。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/03/03/804/feed</wfw:commentRss>
+			<slash:comments>2</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>如何扩展一个OpenResty模块</title>
+		<link>https://blog.huoding.com/2020/02/19/801</link>
+					<comments>https://blog.huoding.com/2020/02/19/801#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Wed, 19 Feb 2020 06:07:18 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=801</guid>
+
+					<description><![CDATA[因为 Lua 本身并没有继承之类的语法，所以我们不能通过 OOP 的套路来扩展模 &#8230; <a href="https://blog.huoding.com/2020/02/19/801">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>因为 Lua 本身并没有继承之类的语法，所以我们不能通过 OOP 的套路来扩展模块，不过实际上对于 Lua 来说，扩展一个模块有更简单的方法，下面我们以 <a href="https://github.com/openresty/lua-resty-string" target="_blank" rel="noopener noreferrer">lua-resty-string</a> 模块中的 <a href="https://github.com/openresty/lua-resty-string/blob/master/lib/resty/aes.lua" target="_blank" rel="noopener noreferrer">aes</a> 加解密功能为例子来说明一下。</p>
+<p><span id="more-801"></span></p>
+<p>在 aes 加解密的过程中，有一个「填充」的过程，相关技术细节可以参考我以前写的「<a href="/2019/05/06/739" target="_blank" rel="noopener noreferrer">聊聊AES</a>」，当然，不懂也没关系，你只要知道目前的 resty.aes 不支持配置填充的功能即可，因为 OpenSSL 缺省是激活了填充的，所以一旦我们需要自定义填充方法，那么就需要关闭缺省的填充行为，此时 resty.aes 无能为力。</p>
+<p>通过查看 resty.aes 源代码，我们知道它是通过 ffi 调用 <a href="https://www.openssl.org/docs/man1.0.2/man3/" target="_blank" rel="noopener noreferrer">OpenSSL</a> 来实现相关功能的，所以我们只需要依葫芦画瓢扩展 resty.aes 即可，不过最好不要修改 resty.aes 源代码，否则日后的升级会变得麻烦，推荐新建一个模块，比如本例中的 resty.aes_with_padding：</p>
+<pre>local aes = require "resty.aes"
+local ffi = require "ffi"
+
+local C = ffi.C
+
+ffi.cdef[[
+int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *ctx, int padding);
+]]
+
+function aes.set_padding(self, padding)
+    local encrypt_ctx, decrypt_ctx = self._encrypt_ctx, self._decrypt_ctx
+
+    if encrypt_ctx == nil or decrypt_ctx == nil then
+        return nil, "not initialized"
+    end
+
+    C.EVP_CIPHER_CTX_set_padding(encrypt_ctx, padding)
+    C.EVP_CIPHER_CTX_set_padding(decrypt_ctx, padding)
+
+    return 1
+end
+
+return aes
+</pre>
+<p>实际使用的时候，把原本调用 resty.aes 的地方改成 resty.aes_with_padding，然后代码里通过调用新创建的 set_padding 方法来控制开启还是关闭填充。</p>
+<p>如上可见，扩展一个 OpenResty 模块和把大象放冰箱一样简单，只需三步：首先创建一个新模块；接着引入要扩展的旧模块；最后直接在新模块中给旧模块添加新方法。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/02/19/801/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>关于 Cosocket 的 socket busy 报错</title>
+		<link>https://blog.huoding.com/2020/01/15/795</link>
+					<comments>https://blog.huoding.com/2020/01/15/795#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Wed, 15 Jan 2020 06:06:40 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=795</guid>
+
+					<description><![CDATA[关于 OpenResty 的 cosocket，文档里有如下一段描述： the  &#8230; <a href="https://blog.huoding.com/2020/01/15/795">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>关于 OpenResty 的 <a href="https://github.com/openresty/lua-nginx-module#ngxsockettcp" target="_blank" rel="noopener noreferrer">cosocket</a>，文档里有如下一段描述：</p>
+<blockquote><p>the cosocket object here is full-duplex, that is, a reader &#8220;light thread&#8221; and a writer &#8220;light thread&#8221; can operate on a single cosocket object simultaneously (both &#8220;light threads&#8221; must belong to the same Lua handler though, see reasons above). But you cannot have two &#8220;light threads&#8221; both reading (or writing or connecting) the same cosocket, otherwise you might get an error like &#8220;socket busy reading&#8221; when calling the methods of the cosocket object.</p></blockquote>
+<p>简单点儿说，cosocket 是全双工的，如果同一个 lua handler 有一个读线程和一个写线程的话，那么它们可以同时操作一个 cosocket 对象，但是如果两个线程一起读或者写一个 cosocket 对象的话，那么会触发「socket busy」错误。</p>
+<p><span id="more-795"></span></p>
+<p>测试需要，我用「nc -l 1111」命令启动了一个 TCP 服务，监听 1111 端口，如果手头没有 linux 环境，不能使用 nc 命令的话，那么你随便用某个网址的 80 端口也是一样的。</p>
+<p>首先让我们编程复现一下「socket busy」错误，代码逻辑很简单，就是让两个线程对同一个 cosocket 一起发出写操作。通过 <a href="https://github.com/openresty/resty-cli" target="_blank" rel="noopener noreferrer">resty</a> 运行如下代码：</p>
+<pre>local sock = ngx.socket.tcp()
+sock:connect("127.0.0.1", 1111) -- shell: nc -l 1111
+
+local data = {}
+
+for i = 1, 1024 do
+    data[i] = "data"
+end
+
+data = table.concat(data) .. "\n"
+
+local function test(worker)
+    for i = 1, 9999 do
+        ngx.log(ngx.ERR, worker, ": ", i)
+
+        local _, err = sock:send(data)
+        -- ngx.sleep(0)
+
+        if err then
+            ngx.log(ngx.ERR, worker, ": ", i, " err: ", err)
+            break
+        end
+    end
+end
+
+local a = ngx.thread.spawn(test, "a")
+local b = ngx.thread.spawn(test, "b")
+
+ngx.thread.wait(a, b)
+
+ngx.thread.kill(a)
+ngx.thread.kill(b)
+</pre>
+<p>结果如下，确实出现了错误「socket busy」：</p>
+<div id="attachment_797" style="width: 1008px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2020/01/socket1.png"><img aria-describedby="caption-attachment-797" class="size-full wp-image-797" src="https://blog.huoding.com/wp-content/uploads/2020/01/socket1.png" alt="并发出错" width="998" height="518" /></a><p id="caption-attachment-797" class="wp-caption-text">并发出错</p></div>
+<p>我在做实验的时候遇到了两个问题需要说明一下：</p>
+<ul>
+<li>问题一：测试数据（本例中 data 为 4k）最好大一点，否则可能无法复现错误。</li>
+<li>问题二：从结果看，线程 a 运行了几百次后，线程 b 才开始运行，也就是说线程 a 得到了 CPU 就不愿意撒手，此时可以通过 ngx.sleep(0) 主动交出 CPU 控制权。</li>
+</ul>
+<p>接下来看看如何解决「socket busy」错误，既然出现「socket busy」错误的原因是多线程一起读或者写同一个 cosocket 对象，那我们只要加一把锁让操作串行就行了，不过需要注意的是，这里不要通过 <a href="https://github.com/openresty/lua-resty-lock" target="_blank" rel="noopener noreferrer">lua-resty-lock</a> 来加锁，而应该通过 <a href="https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/semaphore.md" target="_blank" rel="noopener noreferrer">semaphore</a> 来加锁，这是因为 lua-resty-lock 的控制粒度比较粗，适合请求在多个 worker 时的情况，而 semaphore 的控制粒度比较细，适合请求在单个 worker 时的情况。通过 <a href="https://github.com/openresty/resty-cli" target="_blank" rel="noopener noreferrer">resty</a> 运行如下代码：</p>
+<pre>local semaphore = require "ngx.semaphore"
+local sema = semaphore.new()
+
+local sock = ngx.socket.tcp()
+sock:connect("127.0.0.1", 1111) -- shell: nc -l 1111
+
+local data = {}
+
+for i = 1, 1024 do
+    data[i] = "data"
+end
+
+data = table.concat(data) .. "\n"
+
+local function test(worker)
+    for i = 1, 9999 do
+        ngx.log(ngx.ERR, worker, ": ", i)
+
+        local ok, _ = sema:wait(1)
+
+        if not ok then
+            break
+        end
+
+        local _, err = sock:send(data)
+        sema:post()
+
+        if err then
+            ngx.log(ngx.ERR, worker, ": ", i, " err: ", err)
+            break
+        end
+    end
+end
+
+local a = ngx.thread.spawn(test, "a")
+local b = ngx.thread.spawn(test, "b")
+
+sema:post()
+
+ngx.thread.wait(a, b)
+
+ngx.thread.kill(a)
+ngx.thread.kill(b)
+</pre>
+<p>结果如下，你会发现请求完全执行完了，整个过程中没有出错：</p>
+<div id="attachment_798" style="width: 1010px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2020/01/socket2.png"><img aria-describedby="caption-attachment-798" class="size-full wp-image-798" src="https://blog.huoding.com/wp-content/uploads/2020/01/socket2.png" alt="并发未出错" width="1000" height="518" /></a><p id="caption-attachment-798" class="wp-caption-text">并发未出错</p></div>
+<p>和前一个图相比较，你会发现本图中，线程 a 和线程 b 交错执行，不再需要通过 ngx.sleep(0) 来主动交出 CPU 控制权，这是因为 semo:wait 完成了类似的操作。</p>
+<p>以后使用 OpenResty 的时候，如果多个线程要同时读或者写同一个 cosocket 对象，那么切记要用 semaphore 控制一下，避免出现「socket busy」错误。当然了，最理想的情况是不用引入 semaphore，每个 cosocket 对象都有一个专门的读线程，一个专门的写线程，此时如果读线程需要写操作，可以考虑通过队列把写操作转给写线程去完成，如此一来既避免使用 semaphore，又充分发挥了全双工的效率，爽歪歪。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/01/15/795/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>如何使用PHP解析XML大文件</title>
+		<link>https://blog.huoding.com/2020/01/05/790</link>
+					<comments>https://blog.huoding.com/2020/01/05/790#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Sun, 05 Jan 2020 04:23:25 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[PHP]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=790</guid>
+
+					<description><![CDATA[如果使用 PHP 解析 XML 的话，那么常见的选择有如下几种：DOM、Simp &#8230; <a href="https://blog.huoding.com/2020/01/05/790">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>如果使用 PHP 解析 XML 的话，那么常见的选择有如下几种：<a href="https://www.php.net/manual/en/book.dom.php" target="_blank" rel="noopener noreferrer">DOM</a>、<a href="https://www.php.net/manual/en/book.simplexml.php" target="_blank" rel="noopener noreferrer">SimpleXML</a>、<a href="https://www.php.net/manual/en/book.xmlreader.php" target="_blank" rel="noopener noreferrer">XMLReader</a>。如果要解析 XML 大文件的话，那么首先要排除的是 DOM，因为使用 DOM 的话，需要把整个文件全部加载才能解析，效率堪忧，相比较而言，SimpleXML 和 XMLReader 更好些，SimpleXML 相对简单，而 XMLReader 相对复杂，但是它可以自定义解析整个过程，特别是流式解析的特点让其效率更高。</p>
+<p><span id="more-790"></span></p>
+<p>下面我以一个 XML 大文件例子来对比一下 SimpleXML 和 XMLReader 的用法：</p>
+<pre>&lt;certificates&gt;
+  ...
+  &lt;certificate&gt;
+    &lt;domain&gt;...&lt;/domain&gt;
+    &lt;id_status&gt;...&lt;/id_status&gt;
+    &lt;official_site_status&gt;...&lt;/official_site_status&gt;
+    &lt;business_status&gt;...&lt;/business_status&gt;
+    &lt;host&gt;...&lt;/host&gt;
+    &lt;auth_level&gt;...&lt;/auth_level&gt;
+    &lt;sitename&gt;...&lt;/sitename&gt;
+    &lt;sitetype&gt;...&lt;/sitetype&gt;
+    &lt;phone&gt;...&lt;/phone&gt;
+    &lt;auth_num&gt;...&lt;/auth_num&gt;
+    &lt;nickname0&gt;...&lt;/nickname0&gt;
+    &lt;icp&gt;...&lt;/icp&gt;
+    &lt;is_certed&gt;...&lt;/is_certed&gt;
+    &lt;is_official&gt;...&lt;/is_official&gt;
+    &lt;existed_years&gt;...&lt;/existed_years&gt;
+    &lt;addr&gt;...&lt;/addr&gt;
+    &lt;type&gt;...&lt;/type&gt;
+  &lt;/certificate&gt;
+  ...
+&lt;certificates&gt;
+</pre>
+<p>先看看用 SimpleXML 的话怎么搞：</p>
+<pre>&lt;?php
+
+$values = simplexml_load_file('file.xml');
+
+foreach ($values as $value) {
+    var_dump($value);
+}
+
+?&gt;</pre>
+<p>在看看用 XMLReader 的话怎么搞：</p>
+<pre>&lt;?php
+
+$xml = new XMLReader();
+$xml-&gt;open('file.xml');
+
+for ($name = null, $value = []; $xml-&gt;read(); null) {
+    if ($xml-&gt;nodeType == XMLReader::ELEMENT) {
+        $name = $xml-&gt;name;
+
+        if ($name == 'certificate') {
+            if ($value) {
+                var_dump($value);
+            }
+
+            $value = [];
+            continue;
+        }
+    }
+
+    if ($xml-&gt;nodeType == XMLReader::TEXT) {
+        if ($name) {
+            $value[$name] = $xml-&gt;value;
+        }
+    }
+}
+
+?&gt;</pre>
+<p>在本例中，XML 文件有几百万行，XMLReader 的效率是 SimpleXML 的两倍左右。</p>
+<p>了解了相关知识，让我们看看如何选择合适的 XML 解析方法：如果规则比较复杂的话， 比如要查询当前节点的上下文，那么 DOM 是合理的选择；如果 XML 体积比较大的话，那么 XMLReader 是效率更高。不过如果没有特殊需求的话，那么尽量选择 SimpleXML，毕竟它用起来更简单。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2020/01/05/790/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>被忽视的time命令</title>
+		<link>https://blog.huoding.com/2019/12/08/788</link>
+					<comments>https://blog.huoding.com/2019/12/08/788#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Sun, 08 Dec 2019 03:57:36 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Linux]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=788</guid>
+
+					<description><![CDATA[如果要选 Linux 下最容易被忽视的命令，time 应该算一个。简单来说，它是 &#8230; <a href="https://blog.huoding.com/2019/12/08/788">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>如果要选 Linux 下最容易被忽视的命令，time 应该算一个。简单来说，它是一个用来计算命令运行时间的工具，之所以说它容易被忽视，一方面很多人根本不知道 time 的存在，而是习惯在命令启动前后记录两个时间戳，然后手动计算命令运行时间；另一方面很多人虽然知道 time 的存在，但是却并没有真正理解它的含义。</p>
+<p><span id="more-788"></span></p>
+<p>下面让我们通过若干例子来理解 time 的真正含义：</p>
+<pre>shell&gt; time ls
+
+real	0m0.003s
+user	0m0.001s
+sys	0m0.002s</pre>
+<p>大概意思是 ls 命令运行花了 0.003 秒，其中用户态花了 0.001 秒，内核态花了 0.002 秒，看上去似乎「real = user + sys」？此等式是否成立，在回答这个问题之前我们不妨看看 real、user、sys 的确切含义，如下定义源自 <a href="https://stackoverflow.com/questions/556405/what-do-real-user-and-sys-mean-in-the-output-of-time1" target="_blank" rel="noopener noreferrer">Stackoverflow</a>：</p>
+<ul>
+<li>
+<div>
+<div>Real is wall clock time &#8211; time from start to finish of the call. This is all elapsed time including time slices used by other processes and time the process spends blocked (for example if it is waiting for I/O to complete).</div>
+</div>
+</li>
+<li>User is the amount of CPU time spent in user-mode code (outside the kernel) within the process. This is only actual CPU time used in executing the process. Other processes and time the process spends blocked do not count towards this figure.</li>
+<li>Sys is the amount of CPU time spent in the kernel within the process. This means executing CPU time spent in system calls within the kernel, as opposed to library code, which is still running in user-space. Like &#8216;user&#8217;, this is only CPU time used by the process.</li>
+</ul>
+<p>总的来说，real 是我们直观感受到的消耗的时间，如果命令运行时被堵塞了，那么堵塞时间也是被统计在内的， user 统计在用户态态模式下消耗的 CPU 时间，如果命令运行时被堵塞了，那么堵塞时间并不被统计在内，sys 统计在内核态模式下消耗的 CPU 时间，如果命令运行时被堵塞了，那么堵塞时间并不被统计在内。</p>
+<p>看上去是否统计堵塞时间是区分 real 和 user、sys 的关键，看看下面这个 sleep 例子：</p>
+<pre>shell&gt; time sleep 1
+
+real	0m1.002s
+user	0m0.001s
+sys	0m0.001s</pre>
+<p>那么除了堵塞时间，还有别的关键点么，让我们再看看下面两个例子：</p>
+<pre>shell&gt; time find /etc -type f | xargs -n1 -I{} cat {} &gt; /dev/null
+
+real	0m2.050s
+user	0m0.626s
+sys	0m1.533s
+
+shell&gt; time find /etc -type f | xargs -n1 -I{} -P2 cat {} &gt; /dev/null
+
+real	0m1.079s
+user	0m0.681s
+sys	0m1.486s
+</pre>
+<p>前后两个例子的区别在于后者在使用 xargs 的时候通过「-P」选项激活了多进程，换句话说，后者可以同时用到多个 CPU。</p>
+<p>了解了相关知识之后，我们通过 real、user、sys 的大小就可以判断程序的行为：</p>
+<ul>
+<li>如果 real 远远大于 user + sys，那么说明程序可能有严重的堵塞问题。</li>
+<li>如果 real 基本等于 user + sys，那么说明程序可能没有用到多 CPU 能力，</li>
+<li>如果 real 远远小于 user + sys，那么说明程序可能用到了多 CPU 能力。</li>
+</ul>
+<p>怎么样？看似简单的 time 命令，是不是远比你想的要复杂得多！</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/12/08/788/feed</wfw:commentRss>
+			<slash:comments>3</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>使用Fiddler把请求从HTTPS改成HTTP</title>
+		<link>https://blog.huoding.com/2019/11/30/784</link>
+					<comments>https://blog.huoding.com/2019/11/30/784#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Sat, 30 Nov 2019 08:03:32 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=784</guid>
+
+					<description><![CDATA[为什么我要把请求从 HTTPS 改成 HTTP？这是因为生产环境是 HTTPS  &#8230; <a href="https://blog.huoding.com/2019/11/30/784">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>为什么我要把请求从 HTTPS 改成 HTTP？这是因为生产环境是 HTTPS 的，而测试环境却是 HTTP 的，我要在测试环境测试应用，所以需要把请求从 HTTPS 改成 HTTP。为什么我不在测试环境部署一套 HTTPS 证书？这是因为 HTTPS 证书属于敏感信息。</p>
+<p><span id="more-784"></span></p>
+<p>最开始，我的想法是应用打包的时候打两个包，分别是正式包和测试包，正式包使用 HTTPS 来请求服务器，测试包使用 HTTP 来请求服务器。这个方法当然可以工作，不过实在是太蠢了！好在公司的测试兄弟告诉我可以用 Fiddler 来搞定这个问题：</p>
+<div id="attachment_785" style="width: 1151px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/11/fiddler.jpg"><img aria-describedby="caption-attachment-785" class="size-full wp-image-785" src="https://blog.huoding.com/wp-content/uploads/2019/11/fiddler.jpg" alt="Fiddler" width="1141" height="352" /></a><p id="caption-attachment-785" class="wp-caption-text">Fiddler</p></div>
+<p>也就是说，Fiddler 在这里就是一个「中间人」的角色，当客户端发送 HTTPS 请求 给服务器的时候，Fiddler 拦截到请求，将其解密后以 HTTP 的形式转发给服务器，然后再把服务器的响应加密成 HTTPS 返回给客户端。</p>
+<p>了解了原理之后，我们只要一小段 FiddlerScript 代码就能完成此功能：</p>
+<pre>if (oSession.isHTTPS &amp;&amp; oSession.HostnameIs("test.com")) {
+    oSession.oRequest.headers.UriScheme = "http";
+}</pre>
+<p>添加的位置：在 FiddlerScript 标签里搜索 OnBeforeRequest 方法，加到最上面即可：</p>
+<div id="attachment_786" style="width: 685px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/11/script.png"><img aria-describedby="caption-attachment-786" class="size-full wp-image-786" src="https://blog.huoding.com/wp-content/uploads/2019/11/script.png" alt="Script" width="675" height="550" /></a><p id="caption-attachment-786" class="wp-caption-text">Script</p></div>
+<p>BTW：记得在 Options -&gt; HTTPS 里选中 Decrypt HTTPS traffic。</p>
+<p>本文好像太水了，<a href="https://libgen.is/" target="_blank" rel="noopener noreferrer">LibGen</a> 上有一本名为「<a href="https://libgen.is/book/index.php?md5=C9396C3D8CE62D59969A75620B1EE2C2" target="_blank" rel="noopener noreferrer">Debugging with Fiddler</a>」的电子书，完整介绍了 Fiddler 各种高大上的用法，有兴趣的不妨下载看看。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/11/30/784/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>OpenResty与模块</title>
+		<link>https://blog.huoding.com/2019/10/31/779</link>
+					<comments>https://blog.huoding.com/2019/10/31/779#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Thu, 31 Oct 2019 11:59:27 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=779</guid>
+
+					<description><![CDATA[Lua 中没有常见面向对象语言中所谓类的概念，取而代之使用模块来组织管理代码。关 &#8230; <a href="https://blog.huoding.com/2019/10/31/779">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>Lua 中没有常见面向对象语言中所谓类的概念，取而代之使用模块来组织管理代码。关于模块的基础知识大家可以参考「<a href="https://moonbingbing.gitbooks.io/openresty-best-practices/lua/module.html" target="_blank" rel="noopener noreferrer">OpenResty 最佳实战</a>」，本文聊点别的。</p>
+<p><span id="more-779"></span></p>
+<p>如何实现一个模块呢？假设我们要实现一个不太安全的房奴模块（houseslave.lua）：</p>
+<pre>local _M = {}
+
+
+local mt = { __index = _M }
+
+
+function _M.new(me, bank)
+    local t = {
+        me = me,
+        bank = bank,
+    }
+
+    return setmetatable(t, mt)
+end
+
+
+function _M.repay(self, money)
+    self.me.money = self.me.money - money
+    self.bank.money = self.bank.money + money
+end
+
+
+return _M</pre>
+<p>如果我们借用类的思维来解释这段代码，那么大概意思就是：类的属性保存在表（t）中，类的方法保存在元表（mt）中，二者通过 <a href="https://moonbingbing.gitbooks.io/openresty-best-practices/lua/metatable.html" target="_blank" rel="noopener noreferrer">setmetatable</a> 关联起来。</p>
+<p>实际使用的时候，大致如下所示：</p>
+<pre>local houseslave = require "houseslave"
+local hs = houseslave.new(me, bank)
+hs:repay(10000)</pre>
+<p>学习模块最好的方法就是多看别人是如何搞的，但也不能完全照搬，以很多人都很熟悉的 <a href="https://github.com/openresty/lua-resty-redis" target="_blank" rel="noopener noreferrer">lua-resty-redis</a> 模块为例，如果通过 <a href="https://github.com/mpeterv/luacheck" target="_blank" rel="noopener noreferrer">luacheck</a> 来检查的话，会发现很多问题，我们就以 new 方法的问题为例来说明一下，<a href="https://github.com/openresty/lua-resty-redis#new" target="_blank" rel="noopener noreferrer">官方文档</a>的描述如下：</p>
+<blockquote><p>red, err = redis:new()</p></blockquote>
+<p>通过冒号语法糖，self 参数被隐式传递了，但这不是重点，要紧的是 self 在这里有没有意义？实际上，new 相当于是类里的构造函数，在调用构造函数之前，还没有实例化出对象，此时 self 是多余的，应该去掉 new 参数中 self 的定义，当然调用方式也要改一下：</p>
+<blockquote><p>red, err = redis.new()</p></blockquote>
+<p>如果你没搞清楚，可以多看看前面房奴的例子，体会一下「点」和「冒号」的差异。</p>
+<p>OpenResty 通过 package.path 来查找模块，初学者往往不知道应该把自己写的模块放到哪个目录，此时可以通过 <a href="https://github.com/openresty/resty-cli" target="_blank" rel="noopener noreferrer">resty-cli</a> 工具来确认你的 package.path 设置：</p>
+<div id="attachment_781" style="width: 1034px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/10/package.path_.jpg"><img aria-describedby="caption-attachment-781" class="size-full wp-image-781" src="https://blog.huoding.com/wp-content/uploads/2019/10/package.path_.jpg" alt="package.path" width="1024" height="453" /></a><p id="caption-attachment-781" class="wp-caption-text">package.path</p></div>
+<p>已经装载的模块保存在 package.loaded.* 中，于是我们可以通过 package.loaded.* = nil 的方式卸载对应的模块，如此一来就实现了<a href="https://moonbingbing.gitbooks.io/openresty-best-practices/ngx_lua/hot_load.html" target="_blank" rel="noopener noreferrer">热装载代码</a>，同把大象放冰箱一样分三步：</p>
+<ol>
+<li>把需要动态加载的代码放在一个 Lua 模块文件 foo.lua 中，并标记版本号。</li>
+<li>暴露一个 location 以便从外部写最新的版本号到一个 ngx_lua 共享内存字典中。</li>
+<li>在 Lua 代码中，首先检查当前 foo 模块的版本号与共享内存字典中的最新版本号是否一致；如果不一致的话，则卸载当前的 foo 模块（package.loaded.foo = nil ），然后再调用 local foo = require &#8220;foo&#8221;，从而完成热装载代码。</li>
+</ol>
+<p>需要说明的是，使用了 LuaJIT FFI 的模块是不能通过清空 package.loaded 中的对应字段卸载的，好在多数时候，需要频繁热装载代码的模块往往是业务相关的模块，我们可以在设计之初，有意识的把 LuaJIT FFI 相关的代码单独剥离出来。</p>
+<p>好了，赶在十月底最后一天完成了本月的文章，虽然没什么营养，但习惯不能丢。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/10/31/779/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>如何查询同时包含多个指定标签的文章</title>
+		<link>https://blog.huoding.com/2019/09/22/775</link>
+					<comments>https://blog.huoding.com/2019/09/22/775#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Sun, 22 Sep 2019 02:29:03 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[MySQL]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=775</guid>
+
+					<description><![CDATA[文章和标签是典型的多对多的关系，也就是说每一篇文章都可以包含多个标签，如图： 下 &#8230; <a href="https://blog.huoding.com/2019/09/22/775">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>文章和标签是典型的多对多的关系，也就是说每一篇文章都可以包含多个标签，如图：</p>
+<div id="attachment_776" style="width: 930px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/09/articles_tags.png"><img aria-describedby="caption-attachment-776" class="size-full wp-image-776" src="https://blog.huoding.com/wp-content/uploads/2019/09/articles_tags.png" alt="每一篇文章都可以包含多个标签" width="920" height="398" /></a><p id="caption-attachment-776" class="wp-caption-text">每一篇文章都可以包含多个标签</p></div>
+<p>下面问题来了：如何查询 tag_id 同时包含 1、2、3 的 article_id？此问题看似简单，实际上也非常简单，本来是一道送分题，但是很多人却做不出来！</p>
+<p><span id="more-775"></span></p>
+<h2>方法一：</h2>
+<pre>SELECT article_id FROM (
+    SELECT article_id, GROUP_CONCAT(tag_id ORDER BY tag_id) tag_ids
+    FROM articles_tags
+    WHERE article_id in (1, 2, 3)
+    GROUP BY article_id
+) t WHERE tag_ids LIKE '%1,2,3%';</pre>
+<p>说明：此方法利用 GROUP_CONCAT 来解决问题，不过鉴于 GROUP_CONAT 是 MySQL 专有函数，出于通用性的考虑，我们并不推荐使用此方法。</p>
+<h2>方法二：</h2>
+<pre>SELECT at1.article_id
+FROM articles_tags at1
+JOIN articles_tags at2 ON at1.article_id = at2.article_id AND at2.tag_id = 2
+JOIN articles_tags at3 ON at1.article_id = at3.article_id AND at3.tag_id = 3
+WHERE at1.tag_id = 1</pre>
+<h2>方法三：</h2>
+<pre>SELECT article_id
+FROM articles_tags
+WHERE tag_id in (1, 2, 3)
+GROUP BY article_id
+HAVING COUNT(*) = 3</pre>
+<p>关于一对多关系的查询问题，实际情况可能会更复杂一些，让我们扩展一下本题：</p>
+<ul>
+<li>如何查询 tag_id 包含 1、2 但不包含 3 的 article_id？</li>
+<li>如何查询 tag_id 包含 1、2、3 中至少两个的 article_id？</li>
+</ul>
+<p>如果你理解了前面介绍的几种方法，那么解决这些扩展问题并不困难，不要固守某一种方法，要根据情况选择合适的方法，篇幅所限，恕不赘述，留给大家自己解决吧。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/09/22/775/feed</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>为什么「0.1+0.2!=0.3」，而「0.1+0.3==0.4」</title>
+		<link>https://blog.huoding.com/2019/08/23/769</link>
+					<comments>https://blog.huoding.com/2019/08/23/769#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Fri, 23 Aug 2019 07:44:28 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=769</guid>
+
+					<description><![CDATA[我们都知道潮汐现象，上学的时候老师多半简单解释一句「月球引力所致」就算了，而我们 &#8230; <a href="https://blog.huoding.com/2019/08/23/769">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>我们都知道潮汐现象，上学的时候老师多半简单解释一句「月球引力所致」就算了，而我们也都觉得自己明白了，但是凡事就怕琢磨：如果涨潮仅仅是月球对地球万有引力的作用结果的话，那么每天同一个地点，应该仅仅在距离月球最近引力最强的时候有一次涨潮才对，但是住在海边的人都知道，同一个地点，每天会有两次涨潮，<a href="https://book.douban.com/review/6653141/" target="_blank" rel="noopener noreferrer">为什么</a>？</p>
+<p>我抛出这个问题并不是我转行搞物理学了，而是我发现很多司空见惯的问题，如果深究的话，你就会发现很多人根本就没搞懂。浮点数运算就是这样一个问题，每个人都知道浮点数运算有精度损失，但是为什么「0.1+0.2!=0.3」，而「0.1+0.3==0.4」：</p>
+<div id="attachment_770" style="width: 1330px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/08/float.png"><img aria-describedby="caption-attachment-770" class="size-full wp-image-770" src="https://blog.huoding.com/wp-content/uploads/2019/08/float.png" alt="" width="1320" height="500" /></a><p id="caption-attachment-770" class="wp-caption-text">float</p></div>
+<p>除了含含糊糊的精度损失，你能给出更有营养的解释么？让我们看看到底是为什么！</p>
+<p><span id="more-769"></span></p>
+<p>首先，让我们举一个整数的例子，比如：</p>
+<ul>
+<li>十进制「13」：1*(10^1) + 3(10^0) = 10 + 3 = 13</li>
+<li>二进制「1101」：1*(2^3) + 1*(2^2) + 0*(2^1) + 1*(2^0) = 8 + 4 + 0 + 1 = 13</li>
+</ul>
+<p>接着，让我们再举一个小数的例子，比如：</p>
+<ul>
+<li>十进制「0.625」：6*(10^-1) + 2*(10^-2) + 5*(10^-3) = 0.625</li>
+<li>二进制「0.101」：1*(2^-1) + 0*(2^-2) + 1*(2^-3) = 5/8 = 0.625</li>
+</ul>
+<p>最重要的一点是你要明白计算机是如何表示小数的：比如二进制的「0.1111111」，无非就是十进制的「1/2 + 1/4 + 1/8 + 1/16 + 1/32 + 1/64 + 1/128」，不过细心的你可能已经发现问题了，计算机这种处理小数的方式存在精度损失的，比如一个十进制的「0.1」，换算成分数的话就是十进制的「1/10」，对比前面的结果，你会发现计算机没办法精确表示它，只能近似等于二进制的「0.00011」，也就是十进制的「1/16 + 1/32 = 3/32」，当然二进制小数点后可以多取几位，可惜结果是只能无限趋近，但永远不可能等于。</p>
+<p>下面看看为什么「0.1 + 0.2 != 0.3」，而「0.1 + 0.3 == 0.4」。既然存在精度损失，那么「0.1 + 0.2 != 0.3」也说得过去，我们推算一下为什么「0.1 + 0.3 == 0.4」：</p>
+<ul>
+<li>十进制的「0.1」近似等于二进制「0.00011」</li>
+<li>十进制的「0.3」近似等于二进制「0.01001」</li>
+<li>十进制的「0.4」近似等于二进制「0.01100」</li>
+</ul>
+<p>于是，十进制的「0.1 + 0.3」也就是二进制的「0.00011 + 0.01001」：</p>
+<pre>  0.00011
++ 0.01001
+---------
+  0.01100</pre>
+<p>不多不少，答案正好是 0.4！也就是说，虽然有精度损失，但是刚刚好碰巧抵消了彼此的误差。希望大家阅读完本文之后，能够彻底搞清楚浮点数运算的相关问题，如果还有不清楚的地方，推荐阅读：<a href="https://zh.wikipedia.org/wiki/IEEE_754" target="_blank" rel="noopener noreferrer">IEEE 754</a> 和 <a href="https://floating-point-gui.de/" target="_blank" rel="noopener noreferrer">THE FLOATING-POINT GUIDE</a>。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/08/23/769/feed</wfw:commentRss>
+			<slash:comments>3</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>数据库ID生成器基准测试</title>
+		<link>https://blog.huoding.com/2019/08/21/768</link>
+					<comments>https://blog.huoding.com/2019/08/21/768#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Wed, 21 Aug 2019 02:30:38 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Benchmark]]></category>
+		<category><![CDATA[Golang]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=768</guid>
+
+					<description><![CDATA[在说明如何基准测试之前，我想聊聊我为什么要做这个事儿，话说最近做某后台的时候需要 &#8230; <a href="https://blog.huoding.com/2019/08/21/768">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>在说明如何基准测试之前，我想聊聊我为什么要做这个事儿，话说最近做某后台的时候需要一个 ID 生成器，我不太想用 snowflake 等复杂的解决方案，也不太想用 redis 来实现，因为我手头只有 mysql，所以我琢磨着就用 mysql 实现吧。</p>
+<p><span id="more-768"></span></p>
+<p>实际上当初 <a href="https://code.flickr.net/2010/02/08/ticket-servers-distributed-unique-primary-keys-on-the-cheap/" target="_blank" rel="noopener noreferrer">flickr</a> 就是这么干的，利用 <a href="https://dev.mysql.com/doc/refman/8.0/en/information-functions.html#function_last-insert-id" target="_blank" rel="noopener noreferrer">LAST_INSERT_ID</a> 返回最新插入的 id：</p>
+<pre>mysql&gt; CREATE TABLE `Tickets64` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `stub` char(1) NOT NULL default '',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `stub` (`stub`)
+) ENGINE=MyISAM;
+
+mysql&gt; REPLACE INTO Tickets64 (stub) VALUES ('a');
+mysql&gt; SELECT LAST_INSERT_ID();</pre>
+<p>不过我没有直接拷贝此方案，因为看上去它至少有两个可以优化的地方：</p>
+<ol>
+<li>因为一张表只能有一个自增字段，所以一个表只能做一个独立的 id 生成器。</li>
+<li>REPLACE 实际上相当于先 DELETE 再 INSERT，也就是两步操作。</li>
+</ol>
+<p>按照文档描述 LAST_INSERT_ID 支持表达式参数，如此说来我们可以通过它来自行维护 id，从而去掉对 auto_increment 的依赖，进而不再需要 REPLACE，直接 UPDATE 即可：</p>
+<pre>mysql&gt; CREATE TABLE `seq` (
+  `id` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `name` varchar(255) NOT NULL DEFAULT '',
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB;
+
+mysql&gt; INSERT INTO seq (id, name) VALUES (0, 'global');
+mysql&gt; INSERT INTO seq (id, name) VALUES (0, 'another');
+
+mysql&gt; UPDATE seq SET id = LAST_INSERT_ID(id+1) WHERE name = 'global';
+mysql&gt; SELECT LAST_INSERT_ID();</pre>
+<p>确定了解决方案，我琢磨着得 Benchmark 看看这条 SQL 语句的性能怎么样，其实 MySQL 本身有一个 <a href="https://dev.mysql.com/doc/refman/5.5/en/information-functions.html#function_benchmark" target="_blank" rel="noopener noreferrer">Benchmark</a> 函数，但是它只能用来测试 SELECT 这样的读操作 SQL，不能用来测试 UPDATE，REPLACE 这样的写操作 SQL，于是我到处找 SQL 性能测试工具，结果发现虽然有 <a href="https://dev.mysql.com/doc/refman/8.0/en/mysqlslap.html" target="_blank" rel="noopener noreferrer">mysqlslap</a>、<a href="https://github.com/Percona-Lab/tpcc-mysql" target="_blank" rel="noopener noreferrer">tpcc-mysql</a> 之类的重量级测试工具，但是却不符合我的需求：我只想要一个能压力测试一条 SQL 的小工具！</p>
+<p>既然没有现成的，那么我们不妨自己实现一个：</p>
+<pre>package main
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	_ "github.com/go-sql-driver/mysql"
+)
+
+var db *sql.DB
+var number, concurrency int
+
+var cmd = &amp;cobra.Command{
+	Use:   "benchmark sql",
+	Short: "a sql benchmark tool",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			cmd.Usage()
+			os.Exit(1)
+		}
+
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		b := benchmark{
+			sql:         args[0],
+			number:      number,
+			concurrency: concurrency,
+		}
+
+		b.run()
+	},
+}
+
+func init() {
+	cobra.OnInitialize(config)
+
+	cmd.Flags().IntVarP(&amp;number, "number", "n", 100, "number")
+	cmd.Flags().IntVarP(&amp;concurrency, "concurrency", "c", 1, "concurrency")
+	cmd.Flags().SortFlags = false
+}
+
+func config() {
+	viper.AddConfigPath(".")
+	viper.SetConfigName("db")
+	viper.SetConfigType("toml")
+
+	err := viper.ReadInConfig()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	driver := viper.GetString("driver")
+	dsn := viper.GetString("dsn")
+
+	db, err = sql.Open(driver, dsn)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func main() {
+	if err := cmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+type benchmark struct {
+	sql         string
+	number      int
+	concurrency int
+	duration    chan time.Duration
+	start       time.Time
+	end         time.Time
+}
+
+func (b *benchmark) run() {
+	b.duration = make(chan time.Duration, b.number)
+	b.start = time.Now()
+	b.runWorkers()
+	b.end = time.Now()
+
+	b.report()
+}
+
+func (b *benchmark) runWorkers() {
+	var wg sync.WaitGroup
+
+	wg.Add(b.concurrency)
+
+	for i := 0; i &lt; b.concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			b.runWorker(b.number / b.concurrency)
+		}()
+	}
+
+	wg.Wait()
+	close(b.duration)
+}
+
+func (b *benchmark) runWorker(num int) {
+	for i := 0; i &lt; num; i++ {
+		start := time.Now()
+		b.request()
+		end := time.Now()
+
+		b.duration &lt;- end.Sub(start)
+	}
+}
+
+func (b *benchmark) request() {
+	if _, err := db.Exec(b.sql); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (b *benchmark) report() {
+	sum := 0.0
+	num := float64(len(b.duration))
+
+	for duration := range b.duration {
+		sum += duration.Seconds()
+	}
+
+	qps := int(num / b.end.Sub(b.start).Seconds())
+	tpq := sum / num * 1000
+
+	fmt.Printf("qps: %d [#/sec]\n", qps)
+	fmt.Printf("tpq: %.3f [ms]\n", tpq)
+}
+</pre>
+<p>代码是用 Golang 写的，运行前记得在命令同级目录编辑好数据库配置文件 db.toml：</p>
+<pre>driver = "mysql"
+dsn = "&lt;username&gt;:&lt;passwrod&gt;@&lt;protocol&gt;(&lt;host&gt;:&lt;port&gt;)/&lt;database&gt;"</pre>
+<p>下面让我们看看原始方案和我们改进的方案有什么不同：</p>
+<pre>shell&gt; /path/to/benchmark -n 100000 -c 10 "
+    REPLACE INTO Tickets64 (stub) VALUES ('a')
+"
+shell&gt; /path/to/benchmark -n 100000 -c 10 "
+    UPDATE seq SET id = LAST_INSERT_ID(id+1) WHERE name = 'global'
+"</pre>
+<p>结果令人大吃一惊，所谓的改进方案比原始方案慢得多！仔细对比两个方案的表结构，发现原始方案数据引擎使用的是 MyISAM，而改进方案使用的是 InnoDB，于是我把数据引擎统一改成 MyISAM，重新测试，性能终于上来了，不过两者性能差异并不大，甚至 REPLACE 的性能还要比 UPDATE 好一点，具体原因我没有深究，就留给读者去探索吧。</p>
+<p>虽然有一些小问题悬而未决，好在搞出一个压测 SQL 的小工具，也算是有所得吧。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/08/21/768/feed</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>WRK：一个可编程的HTTP性能测试工具</title>
+		<link>https://blog.huoding.com/2019/08/19/763</link>
+					<comments>https://blog.huoding.com/2019/08/19/763#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Mon, 19 Aug 2019 06:20:08 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Benchmark]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=763</guid>
+
+					<description><![CDATA[同 ab 这种单线程 HTTP 性能测试工具相比，wrk 是一个足够现代化的 H &#8230; <a href="https://blog.huoding.com/2019/08/19/763">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>同 ab 这种单线程 HTTP 性能测试工具相比，<a href="https://github.com/wg/wrk" target="_blank" rel="noopener noreferrer">wrk</a> 是一个足够现代化的 HTTP 性能测试工具，最重要的特性是：它是可编程的，借助内嵌 lua，我们可以控制测试的全过程。</p>
+<p><span id="more-763"></span></p>
+<p>关于 wrk 中 lua 扩展的数据结构，可以参考官方源代码中的 <a href="https://github.com/wg/wrk/blob/master/src/wrk.lua" target="_blank" rel="noopener noreferrer">wrk.lua</a> 文件：</p>
+<pre>local wrk = {
+   scheme  = "http",
+   host    = "localhost",
+   port    = nil,
+   method  = "GET",
+   path    = "/",
+   headers = {},
+   body    = nil,
+   thread  = nil,
+}</pre>
+<p>此外，还有一些钩子方法可供使用：</p>
+<ul>
+<li>setup(thread)：启动阶段执行，每个线程调用一次</li>
+<li>init(args)：运行阶段执行，每个线程调用一次</li>
+<li>delay()，运行阶段执行，每个请求调用一次</li>
+<li>request()，运行阶段执行，每个请求调用一次</li>
+<li>response(status, headers, body)，运行阶段执行，每个请求调用一次</li>
+<li>done(summary, latency, requests)，结束阶段执行，整个过程调用一次</li>
+</ul>
+<p>多数情况下，我们只要关注 request 钩子方法即可，通过它我们可以自定义请求的各个参数，如果想要了解更多的用法，可以参考官方源代码的 <a href="https://github.com/wg/wrk/tree/master/scripts" target="_blank" rel="noopener noreferrer">scripts</a> 目录。</p>
+<p>让我们动手实战一下，假设一个网站，主要的请求有三种，分别是：</p>
+<ul>
+<li>/a：GET 请求，占比 20%</li>
+<li>/b：GET 请求，占比 30%</li>
+<li>/c：POST 请求，占比 50%</li>
+</ul>
+<p>结合前面提到的 wrk 中 lua 扩展的相关知识，我们可以实现如下代码：</p>
+<pre>-- benchmark.lua
+
+math.randomseed(os.time())
+
+local config = {
+    {num=20, path="/a"},
+    {num=30, method="get", path="/b"},
+    {num=50, method="post", path="/c", body="foo=x&amp;bar=y"},
+}
+
+local requests = {}
+
+for i, request in ipairs(config) do
+    if request.method then
+        request.method = string.upper(request.method)
+    end
+
+    for _ = 1, request.num do
+        requests[#requests + 1] = i
+    end
+end
+
+local length = #requests
+
+for _ = 1, length do
+    local m, n = math.random(length), math.random(length)
+    requests[m], requests[n] = requests[n], requests[m]
+end
+
+local count = 0
+
+function request()
+    local i = (count % length) + 1
+    local request = config[requests[i]]
+    count = count + 1
+
+    return wrk.format(
+        request.method,
+        request.path,
+        request.headers,
+        request.body
+    )
+end
+</pre>
+<p>代码逻辑很简单，无非就是根据配置信息生成一个大数组，然后把数据随机化一下，每个请求来的时候，根据计数器直接给一条数据即可。</p>
+<p>我在我的笔记本上以此脚本为例实际跑了一个 100 并发的例子，这里有个题外话需要提一下，很多人做 benchmark 只关注 rps，却忽略了 latency，这是不严谨的，设想一个网站的 rps 数据很好，但是总有一定百分比的请求出现高 latency，依然是有问题的：</p>
+<pre>shell&gt; wrk -c 100 -s ./benchmark.lua http://localhost
+
+Running 10s test @ http://localhost
+  2 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.26ms    1.04ms  23.95ms   94.87%
+    Req/Sec    11.85k   662.52    13.08k    67.50%
+  235787 requests in 10.00s, 71.95MB read
+  Non-2xx or 3xx responses: 0
+Requests/sec: 23573.71
+Transfer/sec: 7.19MB</pre>
+<p>在测试的时候我顺手用 ngrep 监控了一下请求：</p>
+<div id="attachment_764" style="width: 1150px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/08/ngrep.png"><img aria-describedby="caption-attachment-764" class="wp-image-764 size-full" src="https://blog.huoding.com/wp-content/uploads/2019/08/ngrep.png" alt="ngrep -W byline '' 'dst port 80'" width="1140" height="1140" /></a><p id="caption-attachment-764" class="wp-caption-text">ngrep -W byline &#8221; &#8216;dst port 80&#8217;</p></div>
+<p>如图可见，wrk 随机发送了不同的请求，完美！</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/08/19/763/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>如何在环境中存储配置</title>
+		<link>https://blog.huoding.com/2019/07/11/755</link>
+					<comments>https://blog.huoding.com/2019/07/11/755#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Thu, 11 Jul 2019 05:42:26 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=755</guid>
+
+					<description><![CDATA[关于「在环境中存储配置」，是 The Twelve-Factor App 倡导的 &#8230; <a href="https://blog.huoding.com/2019/07/11/755">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>关于「<a href="https://12factor.net/zh_cn/config" target="_blank" rel="noopener noreferrer">在环境中存储配置</a>」，是 <a href="https://12factor.net/" target="_blank" rel="noopener noreferrer">The Twelve-Factor App</a> 倡导的方法论之一。通常，应用的配置在不同环境（预发布、生产环境、开发环境等等）间会有很大差异，比如说数据库的用户名密码等等配置，通过把配置和代码分离，我们可以保证部署在不同环境的代码完全一致，如何把配置和代码分离呢？最佳实战是把配置存储到环境变量中，它可以非常方便地在不同的部署间做修改，却不动一行代码；与配置文件不同，不小心把它们签入代码库的概率微乎其微；此外环境变量与语言和系统无关。</p>
+<p><span id="more-755"></span></p>
+<p>在实际应用中，现在比较流行的解决方案是 dotenv（<a href="https://github.com/bkeepers/dotenv" target="_blank" rel="noopener noreferrer">Ruby dotenv</a>、<a href="https://github.com/vlucas/phpdotenv" target="_blank" rel="noopener noreferrer">PHP dotenv</a>）：首先创建一个 .env 文件，然后把配置信息都保存在里面，接着把这些信息加载的环境变量里，最后直接使用环境变量。</p>
+<p>通过使用此方案，我们可以给不同的环境设置不同的 .env 文件，在一定程度上实现了配置和代码分离，可惜还有一些明显的缺点，比如：</p>
+<ul>
+<li>如果有很多台服务器需要同步配置，那么是一件很痛苦的事情。</li>
+<li>如果忘了把 .env 加入到 .gitignore，那么很有可能泄露敏感信息。</li>
+<li>如果部署不当，那么很可能泄露敏感信息，比如<a href="https://www.google.com/search?q=filetype:env%20DB_PASSWORD" target="_blank" rel="noopener noreferrer">这里</a>。</li>
+</ul>
+<p>通过引入服务发现机制可以解决多台服务器同步配置的问题，主流方案如下：</p>
+<ul>
+<li><a href="https://github.com/etcd-io/etcd" target="_blank" rel="noopener noreferrer">etcd</a> + <a href="https://github.com/kelseyhightower/confd" target="_blank" rel="noopener noreferrer">confd</a></li>
+<li><a href="https://github.com/hashicorp/consul" target="_blank" rel="noopener noreferrer">consul</a> + <a href="https://github.com/hashicorp/consul-template" target="_blank" rel="noopener noreferrer">consul-template</a></li>
+</ul>
+<p>它们的实现机制类似，都是把配置保存在服务发现的存储里，一旦发生变化，可以自动通过模板技术静态化保存成本地文件，从而解决多台服务器同步配置的问题。</p>
+<p>不过这些方案归根到底还是要需要静态化保存成本地文件的，有没有直接使用环境变量保存配置的解决方案呢？答案就是 <a href="https://github.com/hashicorp/envconsul" target="_blank" rel="noopener noreferrer">envconsul</a>，其工作原理如下：在 consul 中保存配置，然后 envconsul 启动后会加载配置，并通过环境变量的方式传递给子进程，此外 envconsul 还会通过 consul 的 http 接口以 long polling 的方式监听，一旦发现配置出现了变动，就会发送信号给子进程，从而完成配置的更新。</p>
+<p>如果你已经安装好了 consul 和 envconsul，那么让我们来试一试（未考虑权限控制）：</p>
+<pre>shell&gt; consul kv put app/db/username root
+shell&gt; consul kv put app/db/password 123456
+
+shell&gt; envconsul \
+    -pristine \
+    -sanitize \
+    -upcase \
+    -prefix app \
+    env
+
+DB_USERNAME=root
+DB_PASSWORD=123456</pre>
+<p>如上，我使用 env 命令作为 envconsul 的子进程来显示环境变量，实际使用中，你可以把 ruby，php 之类的应用作为 envconsul 的子进程，下面我用一个 shell 脚本来展示配置发生变化的时候 envconsul 是如何应对的，shell 脚本名为 test.sh，内容如下：</p>
+<pre>#! /bin/bash
+
+signals=(HUP INT QUIT TERM USR1 USR2)
+
+for signal in "${signals[@]}"
+do
+    trap "echo $signal; exit" "$signal"
+done
+
+for i in {1..1000}
+do
+    echo $i: PASSWORD: $DB_PASSWORD
+    sleep 1
+done</pre>
+<p>其作用就是监听信号，并且显示 DB_PASSWORD 环境变量，这次我们开启两个命令行窗口，一个运行 envconsul，另一个运行 consul kv put app/db/password &#8230; 来修改配置：</p>
+<pre>shell&gt; envconsul \
+    -pristine \
+    -sanitize \
+    -upcase \
+    -prefix app \
+    /path/to/test.sh
+
+1: PASSWORD: &lt;OLD VALUE&gt;
+2: PASSWORD: &lt;OLD VALUE&gt;
+INT
+1: PASSWORD: &lt;NEW VALUE&gt;
+2: PASSWORD: &lt;NEW VALUE&gt;</pre>
+<p>我们能看到，当 envconsul 发现配置改变了之后，缺省情况下会发送 INT 信号（可配置）给子进程，使子进程完成重启，从而加载到新的配置。</p>
+<p>此外还有一些细节问题需要考虑，比如：假设有一百台应用服务器，都是通过 envconsul 运行的，那么当配置发生变化的时候，如果这一百台应用服务器同时重启进程的话，无疑是一场灾难，实际上 envconsul 已经考虑到了此类情况，你可以通过配置 splay 选项把重启的时间随机化，避免「<a href="https://en.wikipedia.org/wiki/Thundering_herd_problem" target="_blank" rel="noopener noreferrer">Thundering herd problem</a>」；再假设配置发生变化的时候，如果子进程一直没有完成重启怎么办，envconsul 有一个 kill_timeout 选项，重启超时的话被直接强杀子进程。其它更多配置参见<a href="https://github.com/hashicorp/envconsul" target="_blank" rel="noopener noreferrer">文档</a>说明，篇幅所限，恕不赘述。</p>
+<p>结尾再推荐一篇不同的声音：<a href="https://diogomonica.com/2017/03/27/why-you-shouldnt-use-env-variables-for-secret-data/" target="_blank" rel="noopener noreferrer">Why you shouldn&#8217;t use ENV variables for secret data</a>，其以安全性为由，不建议使用环境变量，而是推荐使用 docker swarm 的密钥机制来管理敏感信息（<a href="https://yeasy.gitbooks.io/docker_practice/swarm_mode/secret.html" target="_blank" rel="noopener noreferrer">相关教程</a>），这很酷，如果你使用 docker，不妨一试。</p>
+<p>回到 envconsul，环境变量仅针对子进程有效，虽然在一定程度上降低了风险，但是确实有可能泄露敏感信息，比如在 PHP 里，如果能运行 phpinfo 函数的话，那么可以打印出所有的环境变量，但我觉得不能因噎废食，以 PHP 为例，在生产环境中，类似 phpinfo，eval 之类的危险函数，原本就应该通过 disable_functions 禁用，而且数据库密码之类的信息，一般有 ip 访问限制，即便泄露了也影响有限，但这并不意味着可以不假思索的把任何信息都往环境变量里塞，比如银行卡密码，比特币密钥之类高度敏感的信息，如果泄露了就全完了，此时还是用 <a href="https://www.vaultproject.io/" target="_blank" rel="noopener noreferrer">Vault</a> 比较好，当然，envconsul 也支持 Vault。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/07/11/755/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>OpenResty 101</title>
+		<link>https://blog.huoding.com/2019/06/06/751</link>
+					<comments>https://blog.huoding.com/2019/06/06/751#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Thu, 06 Jun 2019 06:52:28 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[OpenResty]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=751</guid>
+
+					<description><![CDATA[本文是 OpenResty 的初学者指南，提供一些资料的汇总。 初学者在刚开始学 &#8230; <a href="https://blog.huoding.com/2019/06/06/751">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>本文是 <a href="https://openresty.org/" target="_blank" rel="noopener noreferrer">OpenResty</a> 的初学者指南，提供一些资料的汇总。</p>
+<p><span id="more-751"></span></p>
+<div id="attachment_752" style="width: 1252px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/06/openresty.jpeg"><img aria-describedby="caption-attachment-752" class="size-full wp-image-752" src="https://blog.huoding.com/wp-content/uploads/2019/06/openresty.jpeg" alt="OpenResty" width="1242" height="2209" /></a><p id="caption-attachment-752" class="wp-caption-text">OpenResty</p></div>
+<p>初学者在刚开始学习 OpenResty 的时候，肯定要搭建一个环境，通常来说，我们推荐直接使用官方提供的二进制包，比如 CentOS 的话，直接用 <a href="https://openresty.org/en/linux-packages.html#centos" target="_blank" rel="noopener noreferrer">yum</a> 安装即可，不过二进制包有一个限制是它的各种编译选项都是固定的，没办法修改，比如现在新版的二进制包缺省开启了 <a href="https://blog.openresty.com.cn/cn/luajit-gc64-mode/" target="_blank" rel="noopener noreferrer">GC64</a>，用来支持大内存，但是目前的火焰图工具并不支持 GC64，报错：</p>
+<blockquote><p>semantic error: unable to find member &#8216;ptr32&#8217; for struct MRef (alternatives: ptr64)</p></blockquote>
+<p>此时要用二进制包的话，可以考虑安装旧版二进制包：「yum install openresty-1.13.6.2」，或者使用源代码安装，编译的时候激活「without-luajit-gc64」选项，此外，社区有相应的 <a href="https://github.com/openresty/stapxx/pull/48" target="_blank" rel="noopener noreferrer">PR</a> 可供选择，在官方正式修复此问题前，可以试试。</p>
+<p>学习 OpenResty 之前必然要了解 Lua，在线的免费资料推荐阅读：</p>
+<ul>
+<li><a href="https://www.lua.org/manual/5.1/" target="_blank" rel="noopener noreferrer">Lua 5.1 Reference Manual</a></li>
+<li><a href="http://www.lua.org/pil/contents.html" target="_blank" rel="noopener noreferrer">Programming in Lua (first edition)</a></li>
+<li><a href="https://www.lua.org/faq.html" target="_blank" rel="noopener noreferrer">Frequently Asked Questions</a></li>
+<li><a href="https://www.luafaq.org/" target="_blank" rel="noopener noreferrer">Lua Unofficial FAQ (uFAQ)</a></li>
+</ul>
+<p>具体到 OpenResty 的话，推荐阅读 OpenResty 作者 agentzh 撰写的 Nginx 教程，有<a href="https://openresty.org/download/agentzh-nginx-tutorials-zhcn.html" target="_blank" rel="noopener noreferrer">中文版</a>和<a href="https://openresty.org/download/agentzh-nginx-tutorials-en.html" target="_blank" rel="noopener noreferrer">英文版</a>，一旦对 Nginx 有了基本的认知，那么可以读十遍 lua-nginx-module 的<a href="https://github.com/openresty/lua-nginx-module" target="_blank" rel="noopener noreferrer">官方文档</a>，同时 <a href="https://github.com/iresty" target="_blank" rel="noopener noreferrer">iresty</a> 上还提供了一份<a href="https://github.com/iresty/nginx-lua-module-zh-wiki" target="_blank" rel="noopener noreferrer">中文文档</a>，其中有很多细节。</p>
+<p>比如在描述 ngx.print 的时候，文档中提到：「This is an asynchronous call and will return immediately without waiting for all the data to be written into the system send buffer. To run in synchronous mode, call ngx.flush(true) after calling ngx.print.」，看上去很简单，无非是说 ngx.print 是异步的，不过如果你忽视了这一点，那么很可能会掉坑里：</p>
+<blockquote><p>我见过有人在热代码里执行 ngx.print，结果导致卡顿，究其原因，正是因为 ngx.print 是异步的，调用后直接返回，正确的做法是在适当的时候执行 ngx.flush(true)。</p></blockquote>
+<p>此外，在描述 <a href="https://github.com/openresty/lua-nginx-module#ngxsay" target="_blank" rel="noopener noreferrer">ngx.say</a> 的时候，文档中提到：「Just as ngx.print but also emit a trailing newline.」，看上去很简单，无非是说 ngx.say 比 ngx.print 多了一个新行，不过如果你忽视了这一点，那么很可能会掉坑里：</p>
+<blockquote><p>我见过有人输出了 Content-Length 响应头后，接着用 ngx.say 输出相应体，结果报错。究其原因，正是因为 ngx.say 多了一个新行，导致 Content-Length 不匹配。</p></blockquote>
+<p>类似的细节还有很多，比如：</p>
+<ul>
+<li>ngx.unescape_uri 解码时如果遇到非法数据会直接删除</li>
+<li>ngx.req.get_uri_args、ngx.req.get_post_args，ngx.req.get_headers、ngx.resp.get_headers、ngx.decode_args，这些函数的结果都是有长度限制的，可以通过返回值 err 是否等于 truncated 来判断。</li>
+<li>如果用 lua-resty-redis 查询一个不存在的 key，那么返回的是 ngx.null，而不是 nil，这是因为 nil 在 lua 里有<a href="https://github.com/openresty/lua-resty-redis/issues/90" target="_blank" rel="noopener noreferrer">特殊的意义</a>。</li>
+</ul>
+<p>如果有使用方面的问题，多留意各种官方库的<a href="https://github.com/openresty/lua-nginx-module/tree/master/t" target="_blank" rel="noopener noreferrer">测试用例</a>，比如你想看看如果使用 redis 的 pubsub 功能的话，可以参考对应的<a href="https://github.com/openresty/lua-resty-redis/blob/master/t/pubsub.t" target="_blank" rel="noopener noreferrer">测试用例</a>，还有一些开源的电子书值得推荐，比如：</p>
+<ul>
+<li><a href="https://openresty.gitbooks.io/programming-openresty/content/" target="_blank" rel="noopener noreferrer">Programming OpenResty</a></li>
+<li><a href="https://moonbingbing.gitbooks.io/openresty-best-practices/content/" target="_blank" rel="noopener noreferrer">OpenResty 最佳实践</a></li>
+</ul>
+<p>理论知识学习的差不多了之后，有时间的话推荐把讨论组（<a href="https://groups.google.com/forum/#!forum/openresty" target="_blank" rel="noopener noreferrer">中文</a>，<a href="https://groups.google.com/forum/#!forum/openresty-en" target="_blank" rel="noopener noreferrer">英文</a>）里的帖子从头到尾捋一遍，常见问题里面都有介绍，举例说明 cjson 的几个问题：</p>
+<p>比如除了 <a href="https://www.kyne.com.au/~mark/software/lua-cjson-manual.html" target="_blank" rel="noopener noreferrer">cjson</a> 模块还有一个 cjson.safe，二者的区别在于前者在编码解码出错的时候会抛出异常，此时需要通过 pcall 来处理，后者在编码解码出错的时候则是返回错误，一般来说我们不太喜欢在代码里使用 pcall，所以相对而言更推荐使用 cjson.safe。</p>
+<p>再比如 cjson 模块有一个<a href="https://www.kyne.com.au/~mark/software/lua-cjson-manual.html#encode_sparse_array" target="_blank" rel="noopener noreferrer">encode_sparse_array</a> 方法，直接上代码看看它的作用吧：</p>
+<pre>shell&gt; resty -e '
+    local cjson = require "cjson";
+    ngx.say(cjson.encode({[11]="x"})
+)'
+
+Cannot serialise table: excessively sparse array
+
+shell&gt; resty -e '
+    local cjson = require "cjson";
+    cjson.encode_sparse_array(true)
+    ngx.say(cjson.encode({[11]="x"})
+)'
+
+{"11":"x"}</pre>
+<p>再比如 openresty 版本的 cjson 有一个新方法 <a href="https://github.com/openresty/lua-cjson#encode_empty_table_as_object" target="_blank" rel="noopener noreferrer">encode_empty_table_as_object</a>，可以改变编码时的行为，具体点来说，空表会被编码成空的 json 对象，而不是空的 json 数组。</p>
+<p>此外，火焰图值得特别关注，其又分为 On-CPU 和 Off-CPU，如何选择？</p>
+<blockquote><p>如果瓶颈是 CPU 则使用 On-CPU 火焰图，如果瓶颈是 IO 或锁则使用 Off-CPU 火焰图。如果无法确定，那么可以通过压测工具来判断：通过压测工具看看能否让 CPU 使用率趋于饱和，如果能那么使用 On-CPU 火焰图，如果不管怎么压，CPU 使用率始终上不来，那么多半说明程序被 IO 或锁卡住了，此时适合使用 Off-CPU 火焰图。如果还是确认不了，那么不妨 On-CPU 火焰图和 Off-CPU 火焰图都搞搞，正常情况下它们的差异会比较大，如果两张火焰图长得差不多，那么通常认为 CPU 被其它进程抢占了。</p>
+<p>如果使用 On-CPU，压测工具把 CPU 压得越满结果越准确；如果使用 Off-CPU，则不必如此，毕竟在 Off-CPU 的时间段内，进程的用户态调用栈和内核调用栈都不会发生变化。</p>
+<p>关于压测工具，如果使用 ab 的话，一定要记得开启 -k 选项，否则可能会遇到端口不足的问题。当然 wrk 也不错。</p></blockquote>
+<p>当你用 OpenResty 写项目的时候，最好站在巨人的肩膀上，多使用一些成熟的开源组件，不过需要注意有些 Lua 库可能并不兼容 OpenResty 的非堵塞特性，在你选择的时候务必留心，比如 <a href="https://luarocks.org/" target="_blank" rel="noopener noreferrer">LuaRocks</a> 上的包，尤其是那些使用了 LuaSocket 而不是 CoSocket 的库，需要说明的是，并不是说 LuaRocks 上的包质量低下，相反，LuaRocks 上的包质量不错，只不过它的定位是整个 Lua 社区，而不是单独 OpenResty 社区，一个相对安全的选择是只在 <a href="https://opm.openresty.org/" target="_blank" rel="noopener noreferrer">opm</a> 或者 <a href="https://github.com/bungle/awesome-resty" target="_blank" rel="noopener noreferrer">awesome-resty</a> 上找。</p>
+<p>Github 上 lua-resty-* 相关的项目最好也都留意一下，特别是如下几个公司的账户：</p>
+<ul>
+<li><a href="https://github.com/upyun?utf8=%E2%9C%93&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">upyun</a></li>
+<li><a href="https://github.com/Kong?utf8=%E2%9C%93&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">kong</a></li>
+<li><a href="https://github.com/cloudflare?utf8=%E2%9C%93&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">cloudflare</a></li>
+</ul>
+<p>赞扬下 upyun，作为国内技术流公司，对社区<a href="https://github.com/upyun/upyun-resty" target="_blank" rel="noopener noreferrer">贡献</a>良多。</p>
+<p>此外，再推荐几个组织或个人的账户（排名不分先后）：</p>
+<ul>
+<li><a href="https://github.com/iresty?utf8=%E2%9C%93&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">iresty</a>：代表作 <a href="https://github.com/iresty/lua-resty-etcd" target="_blank" rel="noopener noreferrer">lua-resty-etcd</a> 等</li>
+<li><a href="https://github.com/timebug?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">timebug</a>：代表作 <a href="https://github.com/timebug/lua-resty-redis-ratelimit" target="_blank" rel="noopener noreferrer">lua-resty-redis-ratelimit</a> 等</li>
+<li><a href="https://github.com/tokers?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">tokers</a>：代表作 <a href="https://github.com/tokers/lua-resty-http2" target="_blank" rel="noopener noreferrer">lua-resty-http2</a> 等</li>
+<li><a href="https://github.com/huangnauh?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">huangnauh</a>：代表作 <a href="https://github.com/huangnauh/lua-resty-consul" target="_blank" rel="noopener noreferrer">lua-resty-consul</a> 等</li>
+<li><a href="https://github.com/doujiang24?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">doujiang24</a>：代表作 <a href="https://github.com/doujiang24/lua-resty-kafka" target="_blank" rel="noopener noreferrer">lua-resty-kafka</a> 等</li>
+<li><a href="https://github.com/spacewander?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">spacewander</a>：代表作 <a href="https://github.com/spacewander/lua-resty-rsa" target="_blank" rel="noopener noreferrer">lua-resty-rsa</a> 等</li>
+<li><a href="https://github.com/smallfish?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">smallfish</a>：代表作 <a href="https://github.com/smallfish/lua-resty-beanstalkd" target="_blank" rel="noopener noreferrer">lua-resty-beanstalkd</a> 等</li>
+<li><a href="https://github.com/bungle?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">bungle</a>：代表作 <a href="https://github.com/bungle/lua-resty-template" target="_blank" rel="noopener noreferrer">lua-resty-template</a> 等</li>
+<li><a href="https://github.com/ledgetech?utf8=%E2%9C%93&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">ledgetech</a>：代表作 <a href="https://github.com/ledgetech/lua-resty-http" target="_blank" rel="noopener noreferrer">lua-resty-http</a> 等</li>
+<li><a href="https://github.com/thibaultcha?utf8=%E2%9C%93&amp;tab=repositories&amp;q=lua-resty&amp;type=&amp;language=" target="_blank" rel="noopener noreferrer">thibaultcha</a>：代表作 <a href="https://github.com/thibaultcha/lua-resty-mlcache" target="_blank" rel="noopener noreferrer">lua-resty-mlcache</a> 等</li>
+</ul>
+<p>如果你多看几个开源库的源代码的话，那么就会发现其中很多库都是借助 <a href="http://luajit.org/ext_ffi.html" target="_blank" rel="noopener noreferrer">ffi</a> 来实现的，通过它，我们不仅可以调用 c 模块，甚至可以调用 <a href="https://scene-si.org/2017/03/13/calling-go-functions-from-lua/" target="_blank" rel="noopener noreferrer">go</a> 模块，如果想要成为高级开发者的话，必须了解 <a href="https://enqueuezero.com/ffi.html" target="_blank" rel="noopener noreferrer">ffi</a>，<a href="https://github.com/luapower" target="_blank" rel="noopener noreferrer">luapower</a> 上有很多不错的<a href="https://github.com/hnakamur/luajit-examples" target="_blank" rel="noopener noreferrer">例子</a>，此外有一些文章可供参考：</p>
+<ul>
+<li><a href="https://segmentfault.com/a/1190000015802547" target="_blank" rel="noopener noreferrer">LuaJIT FFI 介绍，及其在 OpenResty 中的应用（上）</a></li>
+<li><a href="https://segmentfault.com/a/1190000016149595" target="_blank" rel="noopener noreferrer">LuaJIT FFI 介绍，及其在 OpenResty 中的应用（下）</a></li>
+</ul>
+<p>如上几篇文章的作者都是 <a href="https://segmentfault.com/u/spacewander" target="_blank" rel="noopener noreferrer">spacewander</a>，他写过不少 Openresty 方面的好东西：</p>
+<ul>
+<li><a href="https://segmentfault.com/a/1190000007178147" target="_blank" rel="noopener noreferrer">OpenResty单元测试实践</a></li>
+<li><a href="https://segmentfault.com/a/1190000007298100" target="_blank" rel="noopener noreferrer">在 OpenResty 中使用正则</a></li>
+<li><a href="https://segmentfault.com/a/1190000017563487" target="_blank" rel="noopener noreferrer">如何编写正确且高效的 OpenResty 应用</a></li>
+<li><a href="https://segmentfault.com/a/1190000019964176" target="_blank" rel="noopener noreferrer">在 OpenResty 里实现进程间通讯</a></li>
+</ul>
+<p>很多开源项目也会分享直接开发 OpenResty 的经验，比如 <a href="https://github.com/apache/incubator-apisix" target="_blank" rel="noopener noreferrer">APISIX</a>：</p>
+<ul>
+<li><a href="https://www.upyun.com/tech/article/454/OpenResty%20%E7%A4%BE%E5%8C%BA%E7%8E%8B%E9%99%A2%E7%94%9F%EF%BC%9AAPISIX%20%E7%9A%84%E9%AB%98%E6%80%A7%E8%83%BD%E5%AE%9E%E8%B7%B5.html" target="_blank" rel="noopener noreferrer">APISIX 的高性能实践</a></li>
+<li><a href="https://www.upyun.com/tech/article/489/%E5%86%8D%E8%B0%88%20APISIX%20%E9%AB%98%E6%80%A7%E8%83%BD%E5%AE%9E%E8%B7%B5.html" target="_blank" rel="noopener noreferrer">再谈 APISIX 高性能实践</a></li>
+</ul>
+<p>不多说了，撸起袖子干吧。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/06/06/751/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>关于手机App的Https抓包</title>
+		<link>https://blog.huoding.com/2019/05/31/741</link>
+					<comments>https://blog.huoding.com/2019/05/31/741#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Fri, 31 May 2019 08:14:34 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Https]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=741</guid>
+
+					<description><![CDATA[我喜欢用 Mitmproxy 来处理手机 App 抓包之类的工作，本来用它来抓  &#8230; <a href="https://blog.huoding.com/2019/05/31/741">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>我喜欢用 <a href="https://mitmproxy.org/" target="_blank" rel="noopener noreferrer">Mitmproxy</a> 来处理手机 App 抓包之类的工作，本来用它来抓 Https 包是很容易的一件事，只要设置好代理，浏览 mitm.it 按提示安装证书即可，可是当 Android 版本升级到 7 以后，此方法就失效了，为什么呢？因为新版 Android 缺省情况下只信任系统级证书，而不再信任用户级证书，问题详细描述可以参考：<a href="https://testerhome.com/topics/17746" target="_blank" rel="noopener noreferrer">听说安卓微信 7.0 不能抓 https?</a></p>
+<p><span id="more-741"></span></p>
+<p>普通的解决方法有很多，比如说用低版本的 Android 手机，或者干脆换个苹果手机。不过那些治标不治本的方法并不是本文关注的重点，本文我们主要聊聊如何通过 root 来解决问题，但是 root 本身是有风险的，所以下面有请重量级嘉宾<a href="https://mumu.163.com/" target="_blank" rel="noopener noreferrer">网易 MuMu</a> 闪亮登场！它是一个有 root 权限的全功能 Android 模拟器。</p>
+<div id="attachment_744" style="width: 2062px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/mumu.png"><img aria-describedby="caption-attachment-744" class="size-full wp-image-744" src="https://blog.huoding.com/wp-content/uploads/2019/05/mumu.png" alt="mumu" width="2052" height="1464" /></a><p id="caption-attachment-744" class="wp-caption-text">mumu</p></div>
+<p>网易 MuMu 使用起来很简单，不过你需要注意实际抓包的时候，你需要设置模拟器的网络连接走相应的代理，设置的方法是找到对应的网络连接「长按」即可：</p>
+<div id="attachment_745" style="width: 2062px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/wlan.png"><img aria-describedby="caption-attachment-745" class="size-full wp-image-745" src="https://blog.huoding.com/wp-content/uploads/2019/05/wlan.png" alt="网络连接" width="2052" height="1464" /></a><p id="caption-attachment-745" class="wp-caption-text">网络连接</p></div>
+<p>因为我是用 Mitmproxy 来抓包的，所以要安装的也是 Mitmproxy 的证书。下面看看如何把 Mitmproxy 证书安装到网易 MuMu 里，记得安装相关工具，以 Mac 操作系统为例：</p>
+<pre>shell&gt; brew install mitmproxy
+shell&gt; brew install Caskroom/cask/android-platform-tools</pre>
+<p>安装好工具之后，别忘了启动网易 MuMu，然后通过 android-platform-tools 中的 adb 命令来连接它，只需要简单执行「adb shell」即可，如果遇到连不上的情况，可以参考<a href="http://mumu.163.com/2017/12/19/25241_730476.html" target="_blank" rel="noopener noreferrer">文档</a>。连接成功后，你可以在「/system/etc/security/cacerts/」目录看到现有的系统级证书：</p>
+<div id="attachment_742" style="width: 1088px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/cacerts.png"><img aria-describedby="caption-attachment-742" class="wp-image-742 size-full" src="https://blog.huoding.com/wp-content/uploads/2019/05/cacerts.png" alt="证书" width="1078" height="818" /></a><p id="caption-attachment-742" class="wp-caption-text">证书</p></div>
+<p>换句话说，我们只要把 Mitmproxy 证书安装到这里即可。不过这些证书的文件名都是啥意思，实际上他们就是证书文件的散列值，那 Mitmproxy 证书在哪？如何计算它的散列值？其实当我们安装好 Mitmproxy 的时候，相应的证书就已经保存在「~/.mitmproxy」目录里了，其中 mitmproxy-ca-cert.p12 证书是 windows 环境用的，剩下的 mitmproxy-ca-cert.cer 和 mitmproxy-ca-cert.pem 是用在非 windows 环境，它俩的文件内容一样，只是扩展名不同，方便一些设备识别，详见<a href="https://docs.mitmproxy.org/stable/concepts-certificates/#ca-and-cert-files" target="_blank" rel="noopener noreferrer">官方文档</a>。下面看看如何计算证书的散列值：</p>
+<pre>shell&gt; openssl x509 \
+    -subject_hash_old \
+    -inform PEM \
+    -in ~/.mitmproxy/mitmproxy-ca-cert.pem | head -1
+
+c8750f0d</pre>
+<p>接下来我们把 Mitmproxy 证书推送到模拟器系统证书所在目录：</p>
+<pre>shell&gt; adb push \
+    ~/.mitmproxy/mitmproxy-ca-cert.pem \
+    /system/etc/security/cacerts/c8750f0d.0</pre>
+<p>最后在模拟器「设置 / 安全 / 信任的凭据 / 系统」里就能看到 Mitmproxy 证书了：</p>
+<div id="attachment_743" style="width: 2062px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/systemcacert.png"><img aria-describedby="caption-attachment-743" class="size-full wp-image-743" src="https://blog.huoding.com/wp-content/uploads/2019/05/systemcacert.png" alt="系统证书" width="2052" height="1464" /></a><p id="caption-attachment-743" class="wp-caption-text">系统证书</p></div>
+<p>BTW：如果你使用 Fiddler 来抓包的话，那么因为它的证书 FiddlerRoot.cer （可以从如下路径获取：Tools/Options/HTTPS/Actions/Export Root Certificate to Desktop）是 DER 格式的，所以你需要先把它转换成 PEM 格式：</p>
+<pre>shell&gt; openssl x509 -inform DER -in FiddlerRoot.cer &gt; FiddlerRoot.pem</pre>
+<p>通过 root 安装系统证书可以解决大部分 Https 抓包问题，为什么不是全部？还有哪些特殊情况不能处理？答案是「<a href="https://xz.aliyun.com/t/2440" target="_blank" rel="noopener noreferrer">SSL Pinning</a>」，它是为了应对中间人攻击而出现的一种技术，简单点说，就是证书被打包到 App 里，每次请求都会验证证书一致性。如此一来，虽然我们可以安装系统级证书，但是当 App 验证证书一致性的时候就失败了，如何突破此限制呢？答案很简单，你不是要验证一致性么，我统统返回 OK 不就行了！</p>
+<p>为了达到 hack 的目的，我们需要安装 <a href="https://www.apkmirror.com/apk/rovo89/xposed-installer/" target="_blank" rel="noopener noreferrer">Xposed</a> 和 <a href="https://github.com/Fuzion24/JustTrustMe" target="_blank" rel="noopener noreferrer">JustTrustMe</a>，其中 Xposed 是一个 hack 框架，JustTrustMe 是一个插件。<a href="https://bbs.pediy.com/thread-226435.htm" target="_blank" rel="noopener noreferrer">安装</a>过程并不复杂，唯一需要说明的是，在安装 Xposed 之前，最好在网易 MuMu 中关闭兼容模式，路径「设置 / 应用兼容性 / 兼容模式」。</p>
+<p>BTW：有一个 <a href="https://vxposed.com/" target="_blank" rel="noopener noreferrer">VirtualXposed</a> 项目，无需 root，使用起来更简单，值得关注。</p>
+<div id="attachment_746" style="width: 2062px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/xposed.png"><img aria-describedby="caption-attachment-746" class="size-full wp-image-746" src="https://blog.huoding.com/wp-content/uploads/2019/05/xposed.png" alt="Xposed" width="2052" height="1464" /></a><p id="caption-attachment-746" class="wp-caption-text">Xposed</p></div>
+<div id="attachment_747" style="width: 2062px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/justtrustme.png"><img aria-describedby="caption-attachment-747" class="size-full wp-image-747" src="https://blog.huoding.com/wp-content/uploads/2019/05/justtrustme.png" alt="JustTrustMe" width="2052" height="1464" /></a><p id="caption-attachment-747" class="wp-caption-text">JustTrustMe</p></div>
+<p>如果你认认真真从头看到尾，那么恭喜你，关于手机 App 的 Https 抓包，你已经是专家了，最后你摸着自己的良心扪心自问一下：是不是应该给作者一个大大的红包！</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/05/31/741/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>聊聊AES</title>
+		<link>https://blog.huoding.com/2019/05/06/739</link>
+					<comments>https://blog.huoding.com/2019/05/06/739#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Mon, 06 May 2019 08:58:15 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<guid isPermaLink="false">https://blog.huoding.com/?p=739</guid>
+
+					<description><![CDATA[说起加密，通常分为对称加密和非对称加密，所谓对称加密中的对称，指的是加密和解密使 &#8230; <a href="https://blog.huoding.com/2019/05/06/739">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>说起加密，通常分为对称加密和非对称加密，所谓对称加密中的对称，指的是加密和解密使用的是同一个密钥，如此说来什么是非对称就不用我多做解释了。对称加密相对于非对称加密而言，优点是速度快，缺点是安全性相对低一点，不过只要能保证密钥不泄露，其安全性还是有保证的，所以在实际项目中，对称加密的使用非常广泛。</p>
+<p><span id="more-739"></span></p>
+<p>目前最流行的对称加密标准是 AES。需要说明的是：AES 是一个标准，而不是一个算法，实际上背后的算法是 Rijndael，二者很容易混淆，比如很多人会搞不清楚 AES256 和 Rijndael256 有什么不同，甚至会认为是一个东西。其实 AES256 中的 256 指的是密钥的长度是 256 位，而 Rijndael256 中的 256 指的是分组大小是 256 位，更进一步说明的话，因为 AES 的分组大小是固定的 128 位，所以我们可以认为 AES256 等同于密钥长度是 256 位的 Rijndael128，听着有点绕，推荐阅读「<a href="https://github.com/matt-wu/AES" target="_blank" rel="noopener noreferrer">AES 简介</a>」：</p>
+<div id="attachment_738" style="width: 4088px" class="wp-caption alignnone"><a href="https://blog.huoding.com/wp-content/uploads/2019/05/aes.jpeg"><img aria-describedby="caption-attachment-738" class="size-full wp-image-738" src="https://blog.huoding.com/wp-content/uploads/2019/05/aes.jpeg" alt="AES" width="4078" height="2066" /></a><p id="caption-attachment-738" class="wp-caption-text">AES</p></div>
+<p>了解了 AES 密钥之后，再说一下填充的概念。引用「<a href="https://zhuanlan.zhihu.com/p/45155135" target="_blank" rel="noopener noreferrer">漫画解读：什么是AES算法</a>」中的描述：在对明文加密的时候，并不是把整个明文一股脑加密成一整段密文，而是把明文拆分成一个个等长的明文块，这些明文块经过加密器的复杂处理，生成一个个独立的密文块，再把这些密文块拼接在一起，就是最终的加密结果。但是这里涉及到一个问题：假如一段明文长度是 192 位，如果按每128 位一个明文块来拆分的话，那么最后一个明文块只有 64 位，不足128 位，此时就需要填充，那为了补齐 128 位而额外填充的 64 位数据具体是什么内容呢，答案就是字节长度： 64 位换算成字节就是 8 字节，所以额外填充的 8 字节的具体内容都是 0x08。再说一个例子，如果明文长度是 128 位，按每 128 位一个明文块来拆分的话，恰好是一个完整的块，此时还需要填充么？答案是需要，仍然需要填充一个完整块的长度！为什么呢？因为加密前要填充，解密后要去掉填充，如果没有填充，假设解密后最后一个字节恰好是 0x01，那么不方便判断这个 0x01 是实际的数据还是之前填充的数据。实际使用中有很多填充标准，其中最常见的是 PKCS#5 和 PKCS#7，它们的主要区别在于块大小的定义上： PKCS#5 中的块特指长度是 64 位（也就是 8 字节），而 PKCS#7 中的块没有特指某个长度，一般是 128 位（也就是 16 字节），可以说 PKCS#5 是 PKCS#7 的一个特例。</p>
+<p>了解了 AES 密钥和填充两个概念后，还需要了解一下模式的概念，不过鉴于实际使用 AES 的时候，多数时候采用的都是 CBC 模式，本文就不详细展开讨论此概念了，但是需要说明的是 CBC 模式中有一个 iv （初始化向量）的概念，乍一看上去它好像是另一个密钥，实际上它并不是 Key，可以把它理解成我们使用 md5 时的 salt，通过对不同的数据使用不同的 salt，可以避免遭遇彩虹表撞库之类的暴力破解，iv 的作用亦如此，重要的是保证其随机性，你可能担心如果 iv 是随机的，那么加密方不是要把 iv 传递给解密方才能正常解密么？是的，需要传递 iv，但这不是问题，切记 iv 不是 Key，可以被别人看到，重要的是保证其随机性，从而保证同一份数据多次加密得到的结果并不相同，更多说明参考：<a href="https://crypto.stackexchange.com/questions/3499/why-cant-the-iv-be-predictable-when-its-said-it-doesnt-need-to-be-a-secret" target="_blank" rel="noopener noreferrer">Why can&#8217;t the IV be predictable when its said it doesn&#8217;t need to be a secret?</a>。</p>
+<p>BTW：在<a href="https://qydev.weixin.qq.com/wiki/index.php?title=%E5%8A%A0%E8%A7%A3%E5%AF%86%E6%96%B9%E6%A1%88%E7%9A%84%E8%AF%A6%E7%BB%86%E8%AF%B4%E6%98%8E" target="_blank" rel="noopener noreferrer">腾讯微信公众平台加解密方案</a>中，iv 使用的是 Key 的前 16 位，是一个固定值，从 iv 的本意来看，这并不是一个好的选择，因为它没有保证随机性。</p>
+<p>下面我通过一个例子来加深一下大家学习的印象：OpenSSL 缺省会执行填充，那么它执行的是 PKCS#5 还是 PKCS#7 呢？我们不妨做个试验来验证一下：</p>
+<pre>shell&gt; echo -n a \
+    | openssl enc -e \
+        -aes-256-cbc \
+        -K 3132333435363738313233343536373831323334353637383132333435363738 \
+        -iv 31323334353637383132333435363738 \
+    | openssl enc -d \
+        -aes-256-cbc \
+        -K 3132333435363738313233343536373831323334353637383132333435363738 \
+        -iv 31323334353637383132333435363738 \
+        -nopad \
+    | xxd
+
+00000000: 610f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f 0f0f  a...............</pre>
+<p>通过把数据填充加密后但是在解密的时候不去掉填充（nopad），这样数填充了多少个字节就能确定答案，如上明文数据是「a」（0x61），填充数据是 15 个 0x0f，所以我们可知块大小是 16 个字节（不是 8 个字节，所以不是 PKCS#5），所以是 PKCS#7。</p>
+<p>最后需要说明的是，上面那些一大长串的东西是什么玩意？实际上这是因为 OpenSSL 在命令行上使用时，K 和 iv 传递的都是十六进制的字符串：</p>
+<pre>shell&gt; echo -n 12345678123456781234567812345678 | xxd -p
+3132333435363738313233343536373831323334353637383132333435363738
+
+shell&gt; echo -n 1234567812345678 | xxd -p
+31323334353637383132333435363738</pre>
+<p>也就是说，真正的 K 是「12345678123456781234567812345678」，32 个字节，也就是 256 位；真正的 iv 是「1234567812345678」，16 个字节，也就是 128 位，均符合 AES256 的标准要求。怎么样，看完本文，你理解了 AES 没有？</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/05/06/739/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>Golang之Context的迷思</title>
+		<link>https://blog.huoding.com/2019/04/15/730</link>
+					<comments>https://blog.huoding.com/2019/04/15/730#respond</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Mon, 15 Apr 2019 01:49:48 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Golang]]></category>
+		<guid isPermaLink="false">http://huoding.com/?p=730</guid>
+
+					<description><![CDATA[对我而言，Golang 中的 Context 一直是谜一样的存在，如果你还不了解 &#8230; <a href="https://blog.huoding.com/2019/04/15/730">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>对我而言，Golang 中的 <a href="https://blog.golang.org/context" target="_blank" rel="noopener noreferrer">Context</a> 一直是<a href="https://laike9m.com/blog/ling-ren-mi-huo-de-context,112/" target="_blank" rel="noopener noreferrer">谜</a>一样的存在，如果你还不了解它，建议阅读「<a href="https://deepzz.com/post/golang-context-package-notes.html" target="_blank" rel="noopener noreferrer">快速掌握 Golang context 包，简单示例</a>」，本文主要讨论一些我曾经的疑问。</p>
+<p><span id="more-730"></span></p>
+<h2>Context 到底是干什么的？</h2>
+<p>如果你从没接触过 Golang，那么按其它编程语言的经验来推测，多半会认为 Context 是用来读写一些请求级别的公共数据的，事实上 Context 也确实拥有这样的功能，我曾写过一篇文章「<a href="https://blog.huoding.com/2019/02/08/718" target="_blank" rel="noopener noreferrer">在Golang的HTTP请求中共享数据</a>」描述相关用法：</p>
+<ul>
+<li>Value(key interface{}) interface{}</li>
+<li>WithValue(parent Context, key, val interface{}) Context</li>
+</ul>
+<p>不过除此之外，Context 还有一个功能是控制 goroutine 的退出：</p>
+<ul>
+<li>func WithCancel(parent Context) (ctx Context, cancel CancelFunc)</li>
+<li>func WithDeadline(parent Context, d time.Time) (Context, CancelFunc)</li>
+<li>func WithTimeout(parent Context, timeout time.Duration) (Context, CancelFunc)</li>
+</ul>
+<p>把两个毫不相干的功能合并在同一个包里，无疑增加了使用者的困扰，Dave Cheney 曾经吐槽：「<a href="https://dave.cheney.net/2017/08/20/context-isnt-for-cancellation" target="_blank" rel="noopener noreferrer">Context isn’t for cancellation</a>」，按他的观点：Context 只应该用来读写一些请求级别的公共数据，而不应该用来控制 goroutine 的退出，况且用 Context 来控制 goroutine 的退出，在功能上并不完整（没有确认机制），原文：</p>
+<blockquote><p>Context‘s most important facility, broadcasting a cancellation signal, is incomplete as there is no way to wait for the signal to be acknowledged.</p></blockquote>
+<p>此外，<a href="https://faiface.github.io/" target="_blank" rel="noopener noreferrer">Michal Štrba</a> 的观点更为尖锐：「<a href="https://faiface.github.io/post/context-should-go-away-go2/" target="_blank" rel="noopener noreferrer">Context should go away for Go 2</a>」，用 Context 来读写一些请求级别的公共数据，本身就是一种拙劣的设计；而用 Context 来控制 goroutine 退出亦如此，正确的做法应该是在语言层面解决，不过关于这一点，只能寄希望于 Golang 2.0 能有所作为了。</p>
+<p>从目前社区的使用主流情况来看，<a href="https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html#zong-jie-context-value" target="_blank" rel="noopener noreferrer">基本上不推荐用 Context 来读写一些请求级别的公共数据，主要还是使用 Context 控制 goroutine 的退出</a>。</p>
+<h2>Context 一定是第一个参数么？</h2>
+<p>如果你用 Context 写过程序，那么多半看过文档上建议不要在 struct 里保存 Context，而应该显式的传递方法，并且作为方法的第一个参数：</p>
+<blockquote><p>Do not store Contexts inside a struct type; instead, pass a Context explicitly to each function that needs it. The Context should be the first parameter.</p></blockquote>
+<p>可是我们偏偏在标准库里就能看到一个反例 <a href="https://golang.org/pkg/net/http/#Request" target="_blank" rel="noopener noreferrer">http.Request</a>：</p>
+<pre>type Request struct {
+	// ...
+
+	// ctx is either the client or server context. It should only
+	// be modified via copying the whole Request using WithContext.
+	// It is unexported to prevent people from using Context wrong
+	// and mutating the contexts held by callers of the same request.
+	ctx context.Context
+}</pre>
+<p>一边说不要把 Context 放到 struct 里，另一方面却偏偏这么干，是不是自相矛盾？实际上，这是文档描述问题，按照惯用法，Context 应该作为方法的第一个参数，但是如果 struct 类型本身就是方法的参数的话，那么把 Context 放到 struct 里并无不妥之处，http.Request 就属于此类情况，关键在于只是传递 Context 不是存储 Context。</p>
+<p>顺便说一句，把 Context 作为方法的第一个参数真是丑爆了！引用「<a href="https://faiface.github.io/post/context-should-go-away-go2/" target="_blank" rel="noopener noreferrer">Context should go away for Go 2</a>」的话来说：「Context is like a virus」，你如果不相信可以看看标准库 <a href="https://golang.org/pkg/database/sql/" target="_blank" rel="noopener noreferrer">database/sql</a> 的 API 设计，我保证你想死的心都有了。</p>
+<h2>Context 控制 goroutine 的退出有什么好处？</h2>
+<p>我们知道 Context 是在 Golang 1.7 才成为标准库的，那么在此之前，人们是如何控制 goroutine 退出呢？下面举例看看如何退出多个 goroutines：</p>
+<pre>package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+func main() {
+	var wg sync.WaitGroup
+
+	do := make(chan int)
+	done := make(chan int)
+
+	for i := 0; i &lt; 10; i++ {
+		wg.Add(1)
+
+		go func(i int) {
+			defer wg.Done()
+
+			select {
+			case &lt;-do:
+				fmt.Printf("Work: %d\n", i)
+			case &lt;-done:
+				fmt.Printf("Quit: %d\n", i)
+			}
+		}(i)
+	}
+
+	close(done)
+
+	wg.Wait()
+}
+</pre>
+<p>注意代码里的 done，它用来关闭 goroutines，实际使用非常简单，只要调用 close 即可，所有的 goroutines 都会收到关闭的消息。是不是很简单，如此说来，那为什么还要用 Context 控制 goroutine 的退出呢，它有什么特别的好处？实际上这是因为 Context 实现了继承，可以完成更复杂的操作，虽然我们自己编码也能实现，但是通过使用 Context，可以让代码更标准化一些，下面引用「<a href="https://blog.lab99.org/post/golang-2017-10-27-video-how-to-correctly-use-package-context.html" target="_blank" rel="noopener noreferrer">如何正确使用 Context &#8211; Jack Lindamood</a>」中的例子来说明一下：</p>
+<pre>type userID string
+
+func tree() {
+	ctx1 := context.Background()
+	ctx2, _ := context.WithCancel(ctx1)
+	ctx3, _ := context.WithTimeout(ctx2, time.Second*5)
+	ctx4, _ := context.WithTimeout(ctx3, time.Second*3)
+	ctx5, _ := context.WithTimeout(ctx3, time.Second*6)
+	ctx6 := context.WithValue(ctx5, userID("UserID"), 123)
+
+	// ...
+}</pre>
+<p>如此构造了 Context 继承链：</p>
+<p><a href="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-1.png"><img class="alignnone size-full wp-image-731" src="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-1.png" alt="" width="2164" height="764" /></a></p>
+<p>当 3s 超时后，ctx4 会被触发：</p>
+<p><a href="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-2.png"><img class="alignnone size-full wp-image-732" src="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-2.png" alt="" width="2162" height="762" /></a></p>
+<p>当 5s 超时后，ctx3 会被触发，不急如此，其子节点 ctx5 和 ctx6 也会被触发，即便 ctx5 本身的超时时间还没到，但因为它的父节点已经被触发了，所以它也会被触发：</p>
+<p><a href="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-3.png"><img class="alignnone size-full wp-image-733" src="https://blog.huoding.com/wp-content/uploads/2019/04/context-chain-3.png" alt="" width="2164" height="762" /></a></p>
+<p>总体来说，Context 是一个实战派的产物，虽然谈不上优雅，但是它已经是社区里的事实标准。实际使用中，任何有可能「慢」的方法都应该考虑通过 Context 实现退出机制，以避免因为无法退出导致泄露问题，对于服务端编程而言，通常意味着你很多方法的第一个参数都会是 Context，虽然丑爆了，但在出现更好的解决方案之前，忍着！</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/04/15/730/feed</wfw:commentRss>
+			<slash:comments>0</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>如何优化Golang中重复的错误处理</title>
+		<link>https://blog.huoding.com/2019/04/11/728</link>
+					<comments>https://blog.huoding.com/2019/04/11/728#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Thu, 11 Apr 2019 02:11:38 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Golang]]></category>
+		<guid isPermaLink="false">http://huoding.com/?p=728</guid>
+
+					<description><![CDATA[Golang 错误处理最让人头疼的问题就是代码里充斥着「if err != ni &#8230; <a href="https://blog.huoding.com/2019/04/11/728">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>Golang 错误处理最让人头疼的问题就是代码里充斥着「if err != nil」，它们破坏了代码的可读性，本文收集了几个例子，让大家明白如何优化此类问题。</p>
+<p><span id="more-728"></span></p>
+<p>让我们看看 <a href="https://blog.golang.org/errors-are-values" target="_blank" rel="noopener noreferrer">Errors are values</a> 中提到的一个 io.Writer 例子：</p>
+<pre>_, err = fd.Write(p0[a:b])
+if err != nil {
+    return err
+}
+_, err = fd.Write(p1[c:d])
+if err != nil {
+    return err
+}
+_, err = fd.Write(p2[e:f])
+if err != nil {
+    return err
+}</pre>
+<p>如上代码乍一看无法直观的看出其本来的意图是什么，改进版：</p>
+<pre>type errWriter struct {
+	w   io.Writer
+	err error
+}
+
+func (ew *errWriter) write(buf []byte) {
+	if ew.err != nil {
+		return
+	}
+	_, ew.err = ew.w.Write(buf)
+}
+
+ew := &amp;errWriter{w: fd}
+ew.write(p0[a:b])
+ew.write(p1[c:d])
+ew.write(p2[e:f])
+if ew.err != nil {
+    return ew.err
+}</pre>
+<p>通过自定义类型 errWriter 来封装 io.Writer，并且封装了 error，新类型有一个 write 方法，不过其方法签名并没有返回 error，而是在方法内部判断一旦有问题就立刻返回，有了这些准备工作，我们就可以把原本穿插在业务逻辑中间的错误判断提出来放到最后来统一调用，从而在视觉上保证让人可以直观的看出代码本来的意图是什么。</p>
+<p>让我们再看看 <a href="https://dave.cheney.net/2019/01/27/eliminate-error-handling-by-eliminating-errors" target="_blank" rel="noopener noreferrer">Eliminate error handling by eliminating errors</a> 中提到的另一个 io.Writer 例子：</p>
+<pre>type Header struct {
+	Key, Value string
+}
+
+type Status struct {
+	Code   int
+	Reason string
+}
+
+func WriteResponse(w io.Writer, st Status, headers []Header, body io.Reader) error {
+	_, err := fmt.Fprintf(w, "HTTP/1.1 %d %s\r\n", st.Code, st.Reason)
+	if err != nil {
+		return err
+	}
+
+	for _, h := range headers {
+		_, err := fmt.Fprintf(w, "%s: %s\r\n", h.Key, h.Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err := fmt.Fprint(w, "\r\n"); err != nil {
+		return err
+	}
+
+	_, err = io.Copy(w, body)
+	return err
+}</pre>
+<p>第一感觉既然错误是 fmt.Fprint 和 io.Copy 返回的，是不是我们要重新封装一下它们？实际上真正的源头是它们的参数 io.Writer，因为直接调用 io.Writer 的 Writer 方法的话，方法签名中有返回值 error，所以每一步 fmt.Fprint 和 io.Copy 操作都不得不进行重复的错误处理，看上去是坏味道，改进版：</p>
+<pre>type errWriter struct {
+	io.Writer
+	err error
+}
+
+func (e *errWriter) Write(buf []byte) (int, error) {
+	if e.err != nil {
+		return 0, e.err
+	}
+
+	var n int
+	n, e.err = e.Writer.Write(buf)
+	return n, nil
+}
+
+func WriteResponse(w io.Writer, st Status, headers []Header, body io.Reader) error {
+	ew := &amp;errWriter{Writer: w}
+	fmt.Fprintf(ew, "HTTP/1.1 %d %s\r\n", st.Code, st.Reason)
+
+	for _, h := range headers {
+		fmt.Fprintf(ew, "%s: %s\r\n", h.Key, h.Value)
+	}
+
+	fmt.Fprint(ew, "\r\n")
+	io.Copy(ew, body)
+
+	return ew.err
+}</pre>
+<p>通过自定义类型 errWriter 来封装 io.Writer，并且封装了 error，同时重写了 Writer 方法，虽然方法签名中仍然有返回值 error，但是我们单独保存了一份 error，并且在方法内部判断一旦有问题就立刻返回，有了这些准备工作，新版的 WriteResponse 不再有重复的错误判断，只需要在最后检查一下 error 即可。</p>
+<p>类似的做法在 Golang 标准库中屡见不鲜，让我们继续看看 <a href="https://dave.cheney.net/2019/01/27/eliminate-error-handling-by-eliminating-errors" target="_blank" rel="noopener noreferrer">Eliminate error handling by eliminating errors</a> 中提到的一个关于 bufio.Reader 和 bufio.Scanner 的例子：</p>
+<pre>func CountLines(r io.Reader) (int, error) {
+	var (
+		br    = bufio.NewReader(r)
+		lines int
+		err   error
+	)
+
+	for {
+		_, err = br.ReadString('\n')
+		lines++
+		if err != nil {
+			break
+		}
+	}
+
+	if err != io.EOF {
+		return 0, err
+	}
+
+	return lines, nil
+}</pre>
+<p>我们构造一个 bufio.Reader，然后在一个循环中调用 ReadString 方法，如果读到文件结尾，那么 ReadString 会返回一个错误（io.EOF），为了判断此类情况，我们不得不在每次循环时判断「if err != nil」，看上去这是坏味道，改进版：</p>
+<pre>func CountLines(r io.Reader) (int, error) {
+	sc := bufio.NewScanner(r)
+	lines := 0
+
+	for sc.Scan() {
+		lines++
+	}
+
+	return lines, sc.Err()
+}</pre>
+<p>实际上，和 bufio.Reader 相比，bufio.Scanner 是一个更高阶的类型，换句话简单点来说的话，相当于是 bufio.Scanner 抽象了 bufio.Reader，通过把低阶的 bufio.Reader 换成高阶的 bufio.Scanner，循环中不再需要判断「if err != nil」，因为 Scan 方法签名不再返回 error，而是返回 bool，当在循环里读到了文件结尾的时候，循环直接结束，如此一来，我们就可以统一在最后调用 Err 方法来判断成功还是失败，看看 Scanner 的定义：</p>
+<pre>type Scanner struct {
+	r            io.Reader // The reader provided by the client.
+	split        SplitFunc // The function to split the tokens.
+	maxTokenSize int       // Maximum size of a token; modified by tests.
+	token        []byte    // Last token returned by split.
+	buf          []byte    // Buffer used as argument to split.
+	start        int       // First non-processed byte in buf.
+	end          int       // End of data in buf.
+	err          error     // Sticky error.
+	empties      int       // Count of successive empty tokens.
+	scanCalled   bool      // Scan has been called; buffer is in use.
+	done         bool      // Scan has finished.
+}</pre>
+<p>可见 Scanner 封装了 io.Reader，并且封装了 error，和我们之前讨论的做法一致。有一点说明一下，实际上查看 Scan 源代码的话，你会发现它不是通过 err 来判断是否结束的，而是通过 done 来判断是否结束，这是因为 Scan 只有遇到文件结束的错误才退出，其它错误会继续执行，当然，这只是具体的细节问题，不影响我们的结论。</p>
+<p>通过对以上几个例子的分析，我们可以得出优化重复错误处理的大概套路：通过创建新的类型来封装原本干脏活累活的旧类型，同时在新类型中封装 error，新旧类型的方法签名可以保持兼容，也可以不兼容，这个不是关键的，视客观情况而定，至于具体的逻辑实现，先判断有没有 error，如果有就直接退出，如果没有就继续执行，并且在执行过程中保存可能出现的 error 以便后面操作使用，最后通过统一调用新类型的 error 来完成错误处理。提醒一下，此方案的缺点是要到最后才能知道有没有错误，好在如此的控制粒度在多数时候并无大碍。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/04/11/728/feed</wfw:commentRss>
+			<slash:comments>4</slash:comments>
+		
+		
+			</item>
+		<item>
+		<title>To panic or not to panic</title>
+		<link>https://blog.huoding.com/2019/03/27/725</link>
+					<comments>https://blog.huoding.com/2019/03/27/725#comments</comments>
+		
+		<dc:creator><![CDATA[老王]]></dc:creator>
+		<pubDate>Wed, 27 Mar 2019 02:40:54 +0000</pubDate>
+				<category><![CDATA[Technical]]></category>
+		<category><![CDATA[Golang]]></category>
+		<guid isPermaLink="false">http://huoding.com/?p=725</guid>
+
+					<description><![CDATA[大家都知道 Golang 推荐的错误处理的方式是使用 error，这主要得益于  &#8230; <a href="https://blog.huoding.com/2019/03/27/725">继续阅读 <span class="meta-nav">&#8594;</span></a>]]></description>
+										<content:encoded><![CDATA[<p>大家都知道 Golang 推荐的错误处理的方式是使用 error，这主要得益于 Golang 方法可以返回多个值，我们可以很自然的用最后一个值来表示是否有错误，这一点是其它很多编程语言所不具备的，不过这多少让那些习惯了 exception 的程序员无所适从，虽然 Golang 没有 exception，但是实际上可以通过 panic/recover 来模拟出类似的效果，于是很多 Gopher 在错误处理的时候开始倾向于直接 panic。</p>
+<p><span id="more-725"></span></p>
+<p>为什么会有人喜欢使用 panic 来处理错误呢？我们以流行框架 Gin 为例来说明：</p>
+<pre>package main
+
+import (
+	"errors"
+	"log"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+func recovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		if err := c.Errors.Last(); err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+		}
+	}
+}
+
+func main() {
+	r := gin.Default()
+	r.Use(recovery())
+
+	r.GET("/", func(c *gin.Context) {
+		if c.Query("foo") != "" {
+			err := errors.New("foo error")
+
+			c.Error(err)
+			return
+		}
+
+		if c.Query("bar") != "" {
+			err := errors.New("bar error")
+
+			c.Error(err)
+			return
+		}
+
+		c.String(http.StatusOK, "test")
+	})
+
+	r.Run(":8080")
+}</pre>
+<p>在 Gin 的用法中，当出错的时候，应该先调用 c.Error 方法来设置 error，如果是在中间件里，那么应该调用 c.AbortWithError 方法，最后还要记得调用 return 返回，后续可以在中间件中通过判断 c.Errors 来决定如何渲染状态码和错误信息。很多人会觉得先 c.Error 再 return 的操作太麻烦，于是就出现了直接 panic 的做法：</p>
+<pre>package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+func recovery() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				c.String(http.StatusInternalServerError, fmt.Sprint(err))
+			}
+		}()
+
+		c.Next()
+	}
+}
+
+func main() {
+	r := gin.Default()
+	r.Use(recovery())
+
+	r.GET("/", func(c *gin.Context) {
+		if c.Query("foo") != "" {
+			panic("foo error")
+		}
+
+		if c.Query("bar") != "" {
+			panic("bar error")
+		}
+
+		c.String(http.StatusOK, "test")
+	})
+
+	r.Run(":8080")
+}
+</pre>
+<p>也就是说，当出错的时候，直接 panic 抛出异常，然后在中间件里通过 recover 里捕获异常，进而决定如何渲染错误信息，业务逻辑代码会更简洁明了。</p>
+<p>如此说来，在 Golang 错误处理的时候，到底是应该使用 error 还是 panic 呢？之所有会有这样的疑问，很大程度上是因为我们混淆了错误和异常的区别：一个例子，当操作一个文件但是文件却不存在的时候，应该使用 error 而不是 panic，因为文件不存在可能在很多情况下新建一个就可以了，此时有药可救；另一个例子，当除数是零的时候，应该使用 panic 而不是 error，因为除数为零在数学上无意义，此时无药可救。</p>
+<p>顺着这个思路，比如说在一个 MVC 架构的 Web 应用里，如果我们想在 controller 里报错，那么最终一般是展示一个定制化的错误页面，此时看上去属于无药可救的范畴，如此说来即便使用 panic <strong>似乎</strong>也无可厚非，不过如果是在 model 之类可复用的组件中报错的话，除非真的真的无药可救，否则应该尽可能使用 error，毕竟你不可能指望别人在复用组件的时候还搭配着 recover 兜底。</p>
+<p>此外，一旦在错误处理的时候滥用 panic，那么很可能会导致你忽略真正的 panic，比如当你的 Web 应用存在一个偶发崩溃问题的时候，而你却只是使用 panic/recover 渲染了一个错误页面，那么你很可能就错失这个问题了，当然，你可以在 recover 里记录日志信息，不过当你滥用 panic 的时候，即便记录日志信息，也会存在很多噪音，结局你很可能依然会错失真正有用的信息。问题的症结就在于混淆了错误和异常。</p>
+<p>实际上，针对此类问题，Gin 作者有过相关的论述：<a href="https://github.com/gin-gonic/gin/issues/342" target="_blank" rel="noopener noreferrer">Abort vs panic</a>，Golang 官方博客中的文章也值得多读几遍：<a href="https://blog.golang.org/error-handling-and-go" target="_blank" rel="noopener noreferrer">Error handling and Go</a>，<a href="https://blog.golang.org/errors-are-values" target="_blank" rel="noopener noreferrer">Errors are values</a>。</p>
+<p>综上所述，我们推荐 error 为主，panic 为辅。如果一定要 panic，最好是在 <a href="https://blog.lab99.org/post/golang-2017-09-21-video-practice-advice-for-go-library-authors.html#shi-me-shi-hou-panic" target="_blank" rel="noopener noreferrer">init</a> 的时候 panic，毕竟一运行就看到挂掉比较容易发现并处理，对待 panic，务必要克制，它就像罂粟花，看似绚烂多彩，却隐藏着罪恶的果实，合理使用的话，有其自身价值，但千万别上瘾。</p>
+]]></content:encoded>
+					
+					<wfw:commentRss>https://blog.huoding.com/2019/03/27/725/feed</wfw:commentRss>
+			<slash:comments>1</slash:comments>
+		
+		
+			</item>
+	</channel>
+</rss>

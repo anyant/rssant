@@ -1,0 +1,1347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>阮一峰的网络日志</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/" />
+    <link rel="self" type="application/atom+xml" href="http://www.ruanyifeng.com/blog/atom.xml" />
+    <id>tag:www.ruanyifeng.com,2010-04-11:/blog//1</id>
+    <updated>2020-04-11T02:40:15Z</updated>
+    <subtitle>Ruan YiFeng&apos;s Blog</subtitle>
+    <generator uri="http://www.sixapart.com/movabletype/">Movable Type 5.2.2</generator>
+
+<entry>
+    <title>科技爱好者周刊：第 102 期</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/2020/04/weekly-issue-102.html" />
+    <id>tag:www.ruanyifeng.com,2020:/blog//1.2169</id>
+
+    <published>2020-04-10T01:07:36Z</published>
+    <updated>2020-04-11T02:40:15Z</updated>
+
+    <summary>这里记录每周值得分享的科技内容，周五发布。...</summary>
+    <author>
+        <name>阮一峰</name>
+        <uri>http://www.ruanyifeng.com</uri>
+    </author>
+    
+        <category term="Weekly" scheme="http://www.sixapart.com/ns/types#category" />
+    
+    
+    <content type="html" xml:lang="en" xml:base="http://www.ruanyifeng.com/blog/">
+        <![CDATA[<p>这里记录每周值得分享的科技内容，周五发布。</p>
+]]>
+        <![CDATA[<p>本杂志开源（GitHub: <a href="https://github.com/ruanyf/weekly">ruanyf/weekly</a>），欢迎提交 issue，投稿或推荐你的项目。</p>
+
+<p>周刊讨论区的帖子<a href="https://github.com/ruanyf/weekly/issues/1148">《谁在招人？》</a>，提供大量就业信息，欢迎访问或发布工作/实习岗位。</p>
+
+<h2>封面</h2>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040505.jpg" alt="" title="" /></p>
+
+<p>3月26日，位于武汉的东风日产汽车厂复工，员工午餐保持距离。（法新社）</p>
+
+<h2>本周观点：工作热情从何而来？</h2>
+
+<p>BBC <a href="https://www.bbc.com/worklife/article/20200306-the-surprising-truth-about-finding-your-passion-at-work">报道</a>，一位新加坡心理学家发明了《工作热情测量表》，可以测量一个人对自己的工作有多大的热情。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040812.jpg" alt="" title="" /></p>
+
+<p>工作热情很重要， <strong>如果没有热情，干什么都不会出色。</strong> 特朗普就说过："没有热情，你就没有能量。没有能量，你什么都没有。"</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040813.jpg" alt="" title="" /></p>
+
+<p>工作热情有很多来源：经济收入、职业前景、社会荣誉......据说，《工作热情测量表》可以测量这些诱因，对你的刺激有多大。</p>
+
+<p>我有一个简单的方法，根本不需要什么心理测试，就能知道你最有工作热情的事情是什么。</p>
+
+<p><strong>你只需要问自己一个问题：即使没有报酬，你也会去干的工作是什么？</strong> 如果一种工作根本得不到报酬，你也愿意去做，这就是你最喜欢、最有热情的事情，千万要珍惜。</p>
+
+<p>JK.罗琳写《哈利波特》第一卷时，根本不知道能否出版，她就是有写的冲动，每天去咖啡馆的角落写到天黑。理查德·斯托曼是 GCC 和 Emacs 的作者，写完以后就把代码开源了，所有人都可以免费用，尽管那时他还没地方住，只能睡在办公室里面。</p>
+
+<p>他们的工作热情之高，已经不需要金钱激励了。我就是想去做，管它有没有报酬。 <strong>我们要的就是这样一种工作状态，热情不是来自外部的激励，而是来自内在的自我实现的需要，这比外部激励强大得多。</strong> 很多最优秀的作品，都是这样产生的。</p>
+
+<p>如果你有这样的工作，得不到一分钱，依然有强烈的冲动去做。那么恭喜你，已经找到了自己最有工作热情的事情。你根本不需要《工作热情测量表》，那张表测量出来的热情值，跟我们内心的追求比起来，都不值一提。在自己热情最高的领域，你做出优秀成果的可能性，将远大于那些需要测量表的领域。</p>
+
+<p>每个人心中都有一个火种，不要听任它熄灭，要找到它，点燃它。</p>
+
+<h2>Webpack 免费视频</h2>
+
+<p>本周的课程资料是来自"开课吧"的《深入理解 Webpack》。</p>
+
+<p>Webpack 这个软件库，几乎所有现在的大型前端项目都会用到，React 和 Vue 都需要它来打包模块。而且不止是前端项目，还有小程序、React Native、Electron 也用到它。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040905.jpg" alt="" title="" /></p>
+
+<p>我想大部分人都已经用过 Webpack，或者你的脚手架工具内置了。但是，很少有人愿意搞懂它，只是按照文档操作，毕竟它的配置比较多，也不好懂。这样的一个后果就是，遇到打包报错就束手无策了，不知如何排查。提高性能更是无从谈起。</p>
+
+<p>下面的这份免费视频会先讲述一个 Webpack 的打包流程，以及 AST （抽象语法树）的基础知识，并分析模块之间依赖图谱，最后再带大家动手自己实现一个简易的 Webpack。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040906.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <p>以上视频资料由<strong>开课吧</strong>独家提供。</p>
+
+<p>开课吧是行业首家集齐百度、滴滴、阿里、微软等 IT 大厂资源的泛互联网人新职业教育品牌，将互联网技术领域的一线实战项目根植于教学内容之中，助力学员的能力提升，并无缝衔接大厂用人需求。</p>
+</blockquote>
+
+<h2>资讯</h2>
+
+<p>1、<a href="https://www.sohu.com/a/385137145_161795">远程毕业典礼</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040803.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040804.jpg" alt="" title="" /></p>
+
+<p>疫情期间，位于日本东京的创业者商学院在一家酒店，举行了远程毕业典礼。学生不到现场，而是在家操作机器人。机器人的"面孔"是平板电脑，通过摄像头，实时显示毕业生的面孔。</p>
+
+<p>主持人宣布开始领取毕业证书，学生就远程操作机器人朝着主席台"走去"，从校长大前研一手里拿到毕业证书，工作人员鼓掌说："恭喜！"。校长将文凭放在机器人手中，然后合影留念。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040801.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://www.bbc.com/news/science-environment-52155008">鲸鲨的确切年龄</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040602.jpg" alt="" title="" /></p>
+
+<p>鲸鲨是地球上最大的鲨鱼，长约18m，平均重约20吨，身上有易于识别的白色斑点。澳大利亚科学家最近找到了一种方法，测量鲸鲨的确切年龄。</p>
+
+<p>20世纪40年代后期开始，美国、苏联等国进行了多次原子弹测试。这些核爆炸的一个副作用，就是使得大气层中的碳-14同位素含量翻倍了。地球上的所有生物都通过空气，吸收了这种碳-14。由于存在半衰期，这种同位素会随着时间而减少，因此生物年龄越大，体内能够找到的碳-14就越少。</p>
+
+<p>科学家通过分析死去的鲸鲨椎骨标本，发现这种动物的寿命非常长，可能高达100-150岁。</p>
+
+<p>3、<a href="https://www.northjersey.com/story/news/new-jersey/2020/04/04/coronavirus-nj-40-year-old-system-adds-delay-unemployment-checks/2944985001/">寻找 COBOL 程序员</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040514.jpg" alt="" title="" /></p>
+
+<p>纽约州州长在电视上，公开征集 COBOL 程序员。该州的失业保险系统，就是使用 COBOL 开发的，已经超过40年的历史。最近，美国失业人数激增（超过700万人），该系统不堪重负，反应速度极慢，每个操作要等很长时间，让人担心它随时会崩溃。</p>
+
+<p>COBOL 语言诞生于1970年代，当时有很多金融机构和政府部门使用这种语言，开发了很多关键系统。后来，COBOL 逐渐没落，懂得它的程序员越来越少。但是基于它的系统，由于风险和成本的关系，一直运行至今，始终没有升级。</p>
+
+<p>4、<a href="https://www.nytimes.com/2020/04/03/science/xenobots-robots-frogs-xenopus.html">人类设计的活体生命</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040507.jpg" alt="" title="" /></p>
+
+<p>美国科学家从青蛙胚胎（上图）里面提取细胞，然后根据计算机模型得到的结果，将这些细胞组合在一起，创造出世界第一种"可编程的生物"（下图）。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040508.jpg" alt="" title="" /></p>
+
+<p>这些生命形式没有性器官，也没有胃，脑或神经系统，只是一个由大约2000个活着的细胞组成的生命体。科学家将它们聚合在一起，成为活的生物。根据非洲爪蛙的名字 Xenopus laevis，它们被命名为 Xenobots，即青蛙细胞机器人。这些生命体以蛋黄为食，只能存活约一周。</p>
+
+<p>5、<a href="https://www.nytimes.com/interactive/2020/04/03/us/coronavirus-stay-home-rich-poor.html">隔离的贫富分化</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040506.jpg" alt="" title="" /></p>
+
+<p>《纽约时报》分析了智能手机的位置数据， 发现美国收入最高的地区和贫困地区，最近都出现了人们外出活动的下降。但是，高收入地区的活动减少出现得更早，并且程度更深。也就是说，穷人更少待在家里，外出更多。</p>
+
+<p>上图是活动下降的曲线图，蓝色是富裕地区，黄色是贫困地区。可以看到，蓝色比黄色早三天进入隔离，并且隔离程度更深。</p>
+
+<p>6、<strong>一句话消息</strong></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://swprs.org/a-swiss-doctor-on-covid-19/">意大利</a>的 COVID-19 死亡率非常高，但是全体人口的死亡率（包括各种死因）仍然很正常，甚至低于历年的平均水平。<br><br></li>
+<li><a href="https://twitter.com/DMOberhaus/status/1247607588319100936">美国宇航局</a>宣布，正在研究在月球背面的陨石坑，建设一个射电望远镜的可能性。由于陨石坑都非常巨大，这样的望远镜直径可能会超过5公里。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040808.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://spectrum.ieee.org/automaton/transportation/self-driving/robot-vehicles-make-contactless-deliveries-amid-coronavirus-quarantine">深圳一家创业公司</a>开始使用无人车，在园区内进行送货和喷洒消毒液。该车使用激光雷达进行道路识别，如果遇到无法判断的情况，就会传回控制中心，接受远程遥控。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040802.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040903.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://blog.cloudflare.com/moving-from-recaptcha-to-hcaptcha/">Cloudflare</a> 宣布。由于谷歌的 reCAPTCHA 服务开始收费，经过评估会切换到 hCAPTCHA 。令人不解的是，新的测试还是图片识别挑战，没有改成 Geetest 那种滑块挑战。我觉得，滑块明明对用户更友好。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040809.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040810.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.nytimes.com/2020/01/29/technology/facebook-privacy-lawsuit-earnings.html">Facebook</a> 同意支付5.5亿美元，赔偿伊利诺伊州用户。原因是 Facebook 未经该州数百万用户的许可，从他们的照片中收集面部数据。<br><br></li>
+<li><a href="https://news.ycombinator.com/item?id=22152680">美国餐饮业</a>2019年的总收入是8630亿美元，相比之下，全球软件业的总收入是4670亿美元。</li>
+</ul>
+</blockquote>
+
+<h2>文章</h2>
+
+<p>1、<a href="https://reperiendi.wordpress.com/2020/04/03/how-i-recovered-over-300k-of-bitcoin/">我如何破解比特币钱包的密码？</a>（英文）</p>
+
+<p>有人多年前购买了比特币，但是忘记了钱包的密码。理论上，这些比特币无法找回。他不甘心，找到了一个密码学家，愿意支付10万美元，破解钱包的密码。文章有一点难度，但是值得一读。</p>
+
+<p>2、<a href="https://rhodesmill.org/brandon/2009/commands-with-comma/">以逗号开头的自定义命令</a>（英文）</p>
+
+<p>作者提出，Linux 系统的自定义命令都以逗号开头。这样查询会非常方便，先输入逗号，然后按下 Tab 键，所有自定义命令就会显示。</p>
+
+<p>3、<a href="https://www.fastcompany.com/3004709/inside-netflixs-project-griffin-forgotten-history-roku-under-reed-hastings">Netflix 如何变成一家流媒体公司</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040904.jpg" alt="" title="" /></p>
+
+<p>Netflix 原来是一家 DVD 碟片的租借公司，用户在网站下单后，就把 DVD 寄到用户家里（上图）。本文介绍他们是怎么变成一家视频点播的流媒体公司，非常精彩的故事。</p>
+
+<p>4、<a href="https://miguelmota.com/blog/getting-started-with-wireguard/">如何使用 Wireguard？</a>（英文）</p>
+
+<p>Wireguard 最近进入了 Linux 内核，本文详细介绍它的安装使用步骤。</p>
+
+<p>5、<a href="https://blog.repl.it/clui">CLUI：命令行 UI</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030608.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030609.jpg" alt="" title="" /></p>
+
+<p>命令行界面CLI对新手不友好，必须看手册才会用。图形界面GUI不适合功能多的软件，而且效率低。</p>
+
+<p>有人就提出了一种将两者优点结合的界面 CLUI（命令行 UI）：命令行下显示图形提示框。</p>
+
+<p>6、<a href="https://ncona.com/2020/03/introduction-to-aws-cli/">AWS 如何添加用户</a>（英文）</p>
+
+<p>这篇文章教你入门亚马逊网络服务 AWS，最基本的一步，新增一个管理员用户。这里还有一篇<a href="https://devops.novalagung.com/en/aws-create-individual-iam-user.html">类似的文章</a>，介绍如何使用 IAM 服务新增 AWS 用户。</p>
+
+<p>7、<a href="https://advancedweb.hu/how-to-use-async-functions-with-array-foreach-in-javascript/">如何对 Array.forEach 使用 async 函数</a>（英文）</p>
+
+<p>JavaScript 语言中，如果要通过 Array.forEach() 方法，对数组的每个成员进行异步操作，使用 async 函数可能不会达到你的目的。本文介绍了如何使用 Array.reduce() 方法保证对每个成员进行继发操作。</p>
+
+<p>8、<a href="https://jasonformat.com/rome-javascript-toolchain/">Rome，一个新的 JavaScript 工具库</a>（英文）</p>
+
+<p>Babel 创始人的新作品，把 JS 的主要工具都包括在一个库里。不需要 webpack、eslint、prettier、babel ，它都提供了。</p>
+
+<p>它的核心思想是，把基于AST（抽象语法树）的所有功能都统一起来，不要每个工具自己做一次AST解析。</p>
+
+<h2>工具</h2>
+
+<p>1、<a href="https://www.microsoft.com/en-us/p/messenger/9wzdncrf0083#activetab=pivot:overviewtab">Messenger 桌面版</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040302.jpg" alt="" title="" /></p>
+
+<p>脸书宣布，为了适应激增的通话量，通信软件 Messenger 推出桌面版，提供免费的无限量多人视频聊天。上面是 Windows 版的下载链接，Mac 版下载在<a href="https://apps.apple.com/us/app/messenger/id1480068668">这里</a>。</p>
+
+<p>2、<a href="https://silentdown.com/">Slient Down</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040501.jpg" alt="" title="" /></p>
+
+<p>一个监控服务器是否在线的服务，非付费用户可以监控5台服务器，每5分钟检查一次。如果宕机，就会通过邮件或其他途径通知用户。</p>
+
+<p>3、<a href="https://www.glenn.delahoy.com/desktopinfo/">Desktop Info</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040502.jpg" alt="" title="" /></p>
+
+<p>一个 Windows 小工具，可以在桌面显示系统信息，内容可以定制。</p>
+
+<p>4、<a href="https://github.com/mifi/lossless-cut">lossless-cut</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040503.jpg" alt="" title="" /></p>
+
+<p>一个开源项目，为视频工具库 ffmpeg 开发一个图形界面 GUI。</p>
+
+<p>5、<a href="https://www.deepl.com/translator">DeepL</a></p>
+
+<p>一家创业公司推出的机器翻译引擎，据称比谷歌翻译得更好。（@<a href="https://github.com/ruanyf/weekly/issues/1169">ketra21</a> 投稿）</p>
+
+<p>6、<a href="https://github.com/plausible-insights/plausible">plausible</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040901.jpg" alt="" title="" /></p>
+
+<p>一个 Google Analytics 的开源替代品，可以自己架设网站访问统计。特点是轻量级，结构简单</p>
+
+<p>7、<a href="https://github.com/apioak/apioak/blob/master/README_CN.md">apioak</a></p>
+
+<p>一个开源的国产 API 网关，可以作为前后端之间的映射层。基于 OpenResty，性能好，功能强。（@<a href="https://github.com/ruanyf/weekly/issues/1173">shuaijinchao</a> 投稿）</p>
+
+<p>8、<a href="https://github.com/LuKks/like-mysql">like-mysql</a></p>
+
+<p>一个 Node.js 库，MySQL 数据库的 ORM 映射层，使用很简便，但是功能也比较少。</p>
+
+<p>9、<a href="https://github.com/evanw/esbuild/">esbuild</a></p>
+
+<p>一个用 Go 语言写的 JS 脚本打包工具，根据作者提供的数据，打包时间仅仅是 Webpack 的几十分之一。</p>
+
+<p>10、<a href="https://gist.github.com/tomhicks/6cb5e827723c4eaef638bf9f7686d2d8">plink-plonk.js</a></p>
+
+<p>作者提供一段 JS 代码，只要插在网页里面，可以让 DOM 变动发出声音。如果 DOM 有改变，你就会听到声音。</p>
+
+<h2>资源</h2>
+
+<p>1、<a href="https://www.pluralsight.com/">Pluralsight</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040301.jpg" alt="" title="" /></p>
+
+<p>Pluralsight 宣布四月份对用户免费，网站上面 7000 多门视频课都可以免费听。它家的 C# 课程很有名，最近 Python、JS、Java、Devops 课程也添加了不少。</p>
+
+<p>2、<a href="https://www.makermask.com/">3D 打印口罩</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040510.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040511.jpg" alt="" title="" /></p>
+
+<p>该网站提供一个开源的口罩方案，本质是一个带在脸上的空气过滤器，可以 3D 打印。过滤层采用空气过滤器的 HEPA 材料。</p>
+
+<p>3、<a href="http://vertlife.org/data/mammals/">哺乳动物树</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040601.jpg" alt="" title="" /></p>
+
+<p>一个数据可视化作品，根据5,911种动物的种属，将它们画成一棵倒金字塔型的树，可以连续放大查看。</p>
+
+<p>4、<a href="https://tf.wiki/">简单粗暴 TensorFlow 2</a></p>
+
+<p>这是一本简明的 TensorFlow 2 入门指导手册的中文版翻译，力图让具备一定机器学习及 Python 基础的开发者们快速上手 TensorFlow 2。（@<a href="https://github.com/ruanyf/weekly/issues/1164">ketra21</a> 投稿）</p>
+
+<p>5、<a href="https://www.dashengpan.com/">大圣盘</a></p>
+
+<p>一个百度网盘资源搜索引擎，由网络爬虫自动抓取。（@<a href="https://github.com/ruanyf/weekly/issues/1174">ketra21</a> 投稿）</p>
+
+<h2>图片</h2>
+
+<p>1、<a href="https://en.wikipedia.org/wiki/Baldwin_Street">世界最陡峭的街道</a></p>
+
+<p>2019年以前，新西兰但尼丁市的鲍德温街，是世界最陡的住宅区街道。它长350米，坡度为35度。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040603.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040604.jpg" alt="" title="" /></p>
+
+<p>2019年，英国威尔士有一条新的街道超过了它，坡度达到37.5度。 但尼丁市长称，会考虑将鲍德温街标牌文字，从世界上最陡峭的街道改为南半球最陡峭的街道。</p>
+
+<p>2、<a href="https://www.facebook.com/natgeomedia/posts/1571121353051484">什么是重力波？</a></p>
+
+<p>爱因斯坦在1916年提出"重力波"，在一百年后终于被侦测到。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040805.jpg" alt="" title="" /></p>
+
+<p>重力波的简单想像方式是，你有一张拉平的床单，床单上画着标准的方型格线。接着想像你放了一个重物在床单上，例如保龄球。保龄球的质量造成床单凹陷。</p>
+
+<p>当物体在床单上移动（想像一颗弹珠从一侧滚到另一侧），如果物体太靠近保龄球就会偏移。想像拿着保龄球在床单上上下移动，如果这样做的话，不难看见床单上往外传播的涟漪，这就是重力波。重力波的涟漪造成时间和空间扭曲。</p>
+
+<h2>文摘</h2>
+
+<p>1、<a href="https://tw.appledaily.com/property/20200223/JWWUCXVVLE5XNSUJE7A7LHBHMM/">我们不是一家人</a></p>
+
+<p>Netflix 公司的 CEO 海斯汀（Reed Hastings）2009年曾经发表过一份公开信，对于Netflix 强悍的工作文化有很多惊世骇俗的语句。其中最有名的一句话就是"我们不是一家人"（We Are Not Family）。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040504.jpg" alt="" title="" /></p>
+
+<p>根据 Glassdoor 统计，Netflix 资深工程师薪资平均比 Google 高60%。如果上Teamblind 搜寻一下，你可以看到 Netflix 有人年薪高达40万美元，甚至有50万的。年薪40万在美国，是跟总统一样的薪水。</p>
+
+<p>天下没有白高的薪水。Netflix 只要成功的人，而且要年复一年永远不停成功的人。Netflix雇人的价值观是：一个A咖比两个B咖便宜，所以他们只要A咖中的A咖。</p>
+
+<p>高报酬的背后就是高压。这家公司培养出一种非常特殊的雇佣兵文化，他们不要忠诚，只要能够作战的英雄。</p>
+
+<p>海斯汀开宗明义地说，家人有无限的爱与包容，家人必须一再容忍错误与失败。Netflix 不会把你当家人。这里的团队只有一个任务，那就是把每个人都推往不可能的极限。这里没有包容，做不到就会被取代。</p>
+
+<p>• 我们不提供寿司、葡萄酒。你是来作战，不是来开趴的。 <br />
+• 我们不看工作多努力或工时多长，我们只看战果。 <br />
+• 我们只要A咖，给的也是A咖的回报。 <br />
+• 如果你是B咖，即使是A咖的努力，我们还是会请你离开。 <br />
+• 我们不要忠诚，只要成功。 <br />
+• 如果你只想找一份安稳的工作，那请你现在就离开。 <br />
+• 我们要的是自发、自律的战将。我们不教你怎么作战，也没时间教你如何生存。 <br />
+• 公司没有流程和法则。我们抛弃所有的繁文缛节。繁文缛节只适合管理笨蛋用。 <br />
+• 我们不追踪工时，只追踪进度。 <br />
+• 出差、餐饮、及公务报销都不需要收据。要报多少自行决定。 <br />
+• 我们给你全部的自由，但你也必须背负全部的责任。 <br />
+• 我们付你无与伦比的报酬，不管盈亏都一样。报酬是看战果，不是看年资。 <br />
+• 如果你打算留下来，那只是为了成就和金钱，不需要其他任何理由。 <br />
+• 我们只告诉你目标，不会告诉你如何达成。 <br />
+• 我们只要超级英雄。</p>
+
+<p>2、<a href="https://science.howstuffworks.com/environmental/energy/strategic-petroleum-reserve1.htm">美国的石油储备</a></p>
+
+<p>自1977年以来，美国能源部在路易斯安那州和德克萨斯州沿海地区，收购了62个巨大的盐洞，用于储存原油。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040806.jpg" alt="" title="" /></p>
+
+<p>这些盐洞是在地下的盐层中钻井，然后注入淡水来溶解盐而形成的。矿业公司将溶解的盐抽回地面，此过程称为溶液开采，可产生尺寸非常精确的洞穴。平均每个洞穴可以放置1000万桶石油。</p>
+
+<p>这些地下洞穴用来储存石油，实际上是非常安全的。一方面，由于它们位于600米～1公里深的地下，那里极高的压力可防止形成裂缝，所以不会出现泄漏。此外，每个洞穴顶部和底部之间的自然温差会促使原油循环流动，从而保持其品质。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040807.jpg" alt="" title="" /></p>
+
+<p>如果要从一个洞穴中回收原油，只需泵水到它的底部。由于油会漂浮在水上，因此原油就会上升到地表。而且，由于这些洞穴靠近墨西哥湾，有现存的石油运输管道，也方便装入船中运走。</p>
+
+<p>目前，整个美国石油储备为7.27亿桶，按照2070万桶的能源需求，可以满足35天。如果储存增长达到10亿桶，将延长至48天。</p>
+
+<h2>言论与数字</h2>
+
+<p>1、</p>
+
+<p>我会购买华为作为下一部手机，以避免使用谷歌的服务。</p>
+
+<p>-- <a href="https://news.ycombinator.com/item?id=22778316">HN 读者</a></p>
+
+<p>2、</p>
+
+<p>对我来说，英语是比 C 或 Java 更难写的语言。</p>
+
+<p>-- <a href="http://journal.stuffwithstuff.com/2020/04/05/crafting-crafting-interpreters/">《解释器开发》的写作感受</a></p>
+
+<p>3、</p>
+
+<p>《牛津英语词典》从"A"编到"ant"花了10年，剩下的部分又花了60年才编完。</p>
+
+<p>-- <a href="https://www.abc.net.au/news/2020-04-09/history-of-the-oxford-english-dictionary/12010628">《牛津英语词典如何诞生》</a></p>
+
+<p>4、</p>
+
+<p>病毒的全球大流行，证明了国家之间的相互依存关系，希望这件事不会造成这种关系的终结。</p>
+
+<p>-- <a href="https://medium.com/@farainechikwiranechz/what-the-coronavirus-will-leave-on-us-8ea4d540005f">《冠状病毒将留给我们什么》</a></p>
+
+<p>5、</p>
+
+<p>我通过删除 WordPress 的 Mailchimp 插件中 20 KB 的 JavaScript 依赖关系，每月估计减少了59,000 公斤的二氧化碳排放量。</p>
+
+<p>-- <a href="https://dannyvankooten.com/website-carbon-emissions/">《互联网的二氧化碳排放量》</a></p>
+
+<p>6、</p>
+
+<p>我辍学当程序员的第一年，收入就比父亲职业生涯最高峰时只少了4,000美元。我的父母养育七个孩子的年收入，比我职业生涯初期的收入少，想到这一点我就很不舒服。</p>
+
+<p>这对我来说是重要的时刻，我意识到金钱提供了许多人可能从未经历过的机会：国际旅行、假期、以及我们可能不需要但肯定想要的其他东西。</p>
+
+<p>-- <a href="https://dragonquest64.blogspot.com/2020/02/having-fu-career.html">《足够金钱的好处》</a></p>
+
+<h2>回顾</h2>
+
+<p>去年的本周：<a href="http://www.ruanyifeng.com/blog/2019/04/weekly-issue-51.html">《周刊第 51 期》</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/201904/bg2019041201.jpg" alt="" title="" /></p>
+
+<h2>订阅</h2>
+
+<p>这个周刊每周五发布，同步更新在<a href="http://www.ruanyifeng.com/blog">阮一峰的网络日志</a>和<a href="http://weixin.sogou.com/weixin?query=%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97">微信公众号</a>。</p>
+
+<p>微信搜索"阮一峰的网络日志"或者扫描二维码，即可订阅。</p>
+
+<p><img src="http://www.ruanyifeng.com/blogimg/asset/2018/bg2018042311.jpg" alt="" title="" /></p>
+
+<p>（完）</p>
+]]>
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;border:1px solid #d3d3d3;margin:1em;background-color:#AAD2F0;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"><h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2020-04-10T09:07:36+08:00">2020年4月10日</abbr></li>
+
+</ul></div>]]>        
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;margin:1em;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"></div>]]>
+    </content>
+</entry>
+
+<entry>
+    <title>科技爱好者周刊：第 101 期</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/2020/04/weekly-issue-101.html" />
+    <id>tag:www.ruanyifeng.com,2020:/blog//1.2168</id>
+
+    <published>2020-04-03T01:06:10Z</published>
+    <updated>2020-04-09T07:19:54Z</updated>
+
+    <summary>这里记录每周值得分享的科技内容，周五发布。...</summary>
+    <author>
+        <name>阮一峰</name>
+        <uri>http://www.ruanyifeng.com</uri>
+    </author>
+    
+        <category term="Weekly" scheme="http://www.sixapart.com/ns/types#category" />
+    
+    
+    <content type="html" xml:lang="en" xml:base="http://www.ruanyifeng.com/blog/">
+        <![CDATA[<p>这里记录每周值得分享的科技内容，周五发布。</p>
+]]>
+        <![CDATA[<p>本杂志开源（GitHub: <a href="https://github.com/ruanyf/weekly">ruanyf/weekly</a>），欢迎提交 issue，投稿或推荐你的项目。</p>
+
+<p>周刊讨论区的帖子<a href="https://github.com/ruanyf/weekly/issues/1148">《谁在招人？》</a>，提供大量就业信息，欢迎访问或发布工作/实习岗位。</p>
+
+<h2>封面照片</h2>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032702.jpg" alt="" title="" /></p>
+
+<p>3月5日，米兰一位大学教授对着空教室远程讲课。以后，远程教育可能会成为常态，现场上课反而是少数的情况。（<a href="https://www.theatlantic.com/photo/2020/03/empty-spaces-due-coronavirus-fears/607666/">出处</a>）</p>
+
+<h2>本周观点：互联网不再稀缺</h2>
+
+<p>疫情期间，很多东西都是稀缺的：缺口罩、缺消毒液、缺呼吸机......但是，有一样东西是不缺的，那就是互联网。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040111.jpg" alt="" title="" /></p>
+
+<p>互联网相关的东西，好像没有出现过紧缺，随时都可以轻松使用。宽带不缺、流量不缺、App 不缺，云服务也不缺。一些视频会议软件，出现过资源紧张，但是服务器扩容以后，很快就解决了。</p>
+
+<p>仔细观察，你会发现，<strong>稀缺的都是实体商品，虚拟的互联网服务不仅不缺，实际上还很宽裕。</strong> </p>
+
+<p>这说明了什么？</p>
+
+<p>经过几十年的高速发展和庞大投资，互联网不再是稀缺商品，即使发生危机的情况下也不缺，实际上还处于过剩状态。</p>
+
+<p>我问大家一个问题，4G 通信已经很快了，为什么电信服务商还拼命发展 5G？我认为，原因是常规的电信数据服务（即互联网需求）已经接近饱和了， 4G 拉动不了需求了，服务商不得不用更快的网速去刺激消费，尤其希望高清电视能通过 5G 得到普及。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040112.jpg" alt="" title="" /></p>
+
+<p>（图片说明：每个人头上的云，现在不是太少了，而是太多了。）</p>
+
+<p>根据经济学原理，稀缺的东西才能卖出高价。如果互联网不再稀缺，这意味着什么？</p>
+
+<p>我认为，今后互联网服务的竞争将非常激烈，因为市场的增长速度已经大大放缓，没有任何一种网络服务是供不应求的。 <strong>线上的虚拟产业，到了最后将都是规模竞争，卖不出高价，真正可以卖出高价的是一些实体的东西。</strong></p>
+
+<h2>Vue3 快速深入全攻略</h2>
+
+<p>本周的课程是京程一灯的《Vue3 快速深入全攻略》。</p>
+
+<p>Vue.js 作为现在的前端主流框架之一，在国内有着广泛的应用，也是面试几乎肯定问到的内容。如果能够看懂它的源码，熟悉它的各种使用技巧，肯定会对你的面试有极大的助益。</p>
+
+<p>市场上的 Vue 教程非常多，基础课程占多数。如果你希望提高 Vue.js 水平，掌握更多的开发技能，可以看一下这个专题课 ----《 Vue3 快速深入全攻略》。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040108.jpg" alt="" title="" /></p>
+
+<p>它是 Vue 高级教程，从 Vue 2 &amp; Vue 3 核心 API 对比讲起，包括真实业务项目实战、核心源码分析，帮你全面理解 Vue 3 的实现原理，目标是帮助大家通过面试、拿到高薪。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040109.jpg" alt="" title="" /></p>
+
+<p>本课程由京程一灯的创始人袁志佳主讲。原价98元，微信扫码下面的二维码，加群后领取优惠券， <strong>1元即可报名</strong> ，名额只有100人，感兴趣的同学不要错过。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040110.jpg" alt="" title="" /></p>
+
+<h2>资讯</h2>
+
+<p>1、<a href="https://www.popsugartech.com/google-3d-animals-47354265">谷歌 3D 动物</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033103.jpg" alt="" title="" /></p>
+
+<p>动物园在疫情期间纷纷关闭，谷歌就推出了 3D 动物，让你可以在手机上游览动物园，观看 3D 动物。方法是在手机搜索动物名称，中文或英文都可以，目前一共支持<a href="https://9to5google.com/2020/03/28/google-3d-animals-list/">20多种动物</a>。然后，点击页面上的"View in 3D"，就可以观看动物的 3D 模型了。</p>
+
+<p>这些模型都会动，还可以用手机摄像头叠加在室内实景上，以 AR 显示，仿佛动物出现在你的家里。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033102.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://shop.zipgrow.com/">垂直农业架</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033108.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033109.jpg" alt="" title="" /></p>
+
+<p>加拿大一家创业公司开发了"垂直农业架"，这是一个像书报架一样的装置，可以用来种植农业物。它的供水和养料是由架子本身提供的，用户只要保证光照就可以了，非常适合城市的家庭种植。</p>
+
+<p>网上有不少已经购买的用户在抱怨，现在型号的水泵很容易堵塞，造成植物死亡。不过，这个概念还是很吸引人的，产品值得进一步改进。</p>
+
+<p>3、<a href="https://www.newscientist.com/article/2235427-earth-has-acquired-a-brand-new-moon-thats-about-the-size-of-a-car/">地球得到了一个迷你月亮</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030505.jpg" alt="" title="" /></p>
+
+<p>2020年2月19日，亚利桑那州天文台的科学家发现了一个昏暗的物体在天空中快速移动（上图的小白点）。接下来的几天，世界各地另外六个天文台的研究人员确认了这个天体，并计算了它的轨道，估计它已经在重力作用下，环绕地球大约三年。</p>
+
+<p>天文学家认为，它不是人造天体，而可能是一颗小行星在经过时被地球重力捕获。它的体积非常小，长度大概在1.9至3.5米之间，跟一辆汽车相当。它每47天围绕地球旋转一周，由于轨道的不规则，天文学家估计，它可能会在今年4月份逃脱地球的引力。</p>
+
+<p>4、<a href="https://mil.sina.cn/gjjq/2020-03-06/detail-iimxxstf6819761.d.html">锂电池潜艇</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030606.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030607.jpg" alt="" title="" /></p>
+
+<p>日本第一艘锂电池潜艇"凰龙"号，3月5日正式服役。这也是全世界第一艘锂电池的常规潜艇。</p>
+
+<p>常规潜艇在水下都用电池供电，因为柴油发电机耗费氧气。但是，铅酸电池重量大，储电量少，最多坚持几十个小时，就要浮上水面，用发电机充电。锂电池可以减轻重量，体积相同的情况下，储电量是铅酸电池的两倍，不仅使得潜艇可以在水下潜伏更久，也提高了航速，大幅增强作战能力。</p>
+
+<p>5、<a href="https://www.nytimes.com/2020/02/26/science/metal-plants-farm.html">植物冶炼</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030203.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030204.jpg" alt="" title="" /></p>
+
+<p>马来西亚和印尼的一些岛屿有丰富的镍矿，当地的植物也因此有很高的镍含量。最近，植物学家特地租用了一块土地，每隔6到12个月就收割一次，经过焚烧和净化，可以获得大约500磅的柠檬酸镍，价值数千美元。上图是提取镍含量非常高的树汁。</p>
+
+<p>植物学家认为，植物冶炼可以部分替代传统的采矿业，没有环境污染，节省能源，并能净化有毒土壤。以后，农民可以像生产椰子和咖啡那样生产金属。另外，这也是处理废弃矿山的一种可行方法。</p>
+
+<p>6、<strong>一句话消息</strong></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://padiracinnovation.org/News/2020/03/the-theory-of-infectious-origin-of-the-alzheimers-disease">阿尔茨海默氏病</a>（俗称"老年痴呆"）的起因并不确定，有人认为是遗传因素，也有人认为是大脑退化。最近发表的一些观察结果，提出它可能是传染病，起因是未知的细菌或病毒。<br><br></li>
+<li><a href="https://www.khanacademy.org/donate">可汗学院</a>是美国最大的免费在线学习网站。疫情期间，该网站的负载是平常的250%，因此向访问者请求捐助。<br><br></li>
+<li><a href="https://www.bloomberg.com/news/articles/2020-03-29/the-global-oil-market-is-broken-drowning-in-crude-nobody-needs">彭博社</a>报道，全世界的燃料需求急剧下降，导致现有的石油储存装置都已经快满了，新生产的石油将无处储存。目前，各方正在磋商，将超级邮轮作为临时的浮动油罐。<br><br></li>
+<li><a href="https://lithub.com/in-2019-more-americans-went-to-the-library-than-to-the-movies-yes-really/">盖洛普公司</a>（Gallup）一项调查表明，美国人去图书馆的次数多于去电影院。2019年，每个美国成年人平均去图书馆10.5次。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020012606.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.archaeology-world.com/scientists-find-that-tin-found-in-israel-from-3000-years-ago-comes-from-cornwall/">考古学家</a>在以色列发现的3000年前的锡锭，现在确定产自英国。这说明早在古希腊文明之前，英国的产品就能运到中东，这是非常惊人的。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020012409.jpg" alt="" title="" /></p>
+
+<h2>文章</h2>
+
+<p>1、<a href="https://spectrum.ieee.org/automaton/robotics/medical-robots/coronavirus-pandemic-call-to-action-robotics-community">杨广中教授谈医疗机器人</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032706.jpg" alt="" title="" /></p>
+
+<p>杨广中是上海交通大学医疗机器人研究院的院长。他从国外回国，现在隔离在上海的一家旅馆里。过去的一周中，他一直没离开房间，每天唯一的访客是一名酒店员工来测量体温，还有一个小型机器人，可以自动送饭。</p>
+
+<p>IEEE Spectrum 杂志对他进行了远程采访，访问他对医疗机器人行业发展的想法。下图是已经在武汉得到采用的紫外线消毒机器人，自动对病房进行紫外线照射消毒。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032707.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://aaronparecki.com/2020/03/24/4/tips-and-tools-for-remote-meetings-and-presentations">远程会议的设备建议</a>（英文）</p>
+
+<p>家中举行远程会议或者直播，需要做哪些准备工作？作者提供了一些建议，比如可以坐在衣橱中，让周围的衣服吸收回音。同时，他还可以给出了音频和视频设备的推荐，比如为了照亮脸部，可以购置一个 LED 面板灯，下图为效果对比。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032708.jpg" alt="" title="" /></p>
+
+<p>3、<a href="https://cjting.me/2020/03/13/rsa/">RSA 的原理与实现</a>（中文）</p>
+
+<p>本文用简单的语言和数学推导，介绍了公钥加密 RSA 的原理。（@<a href="https://github.com/ruanyf/weekly/issues/1156">cj1128</a> 投稿）</p>
+
+<p>4、<a href="https://eduardosasso.co/blog/working-in-silicon-valley/">我在硅谷的9年</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040101.jpg" alt="" title="" /></p>
+
+<p>2010年，作者从巴西来到美国，为硅谷一家创业公司工作。这家公司最终变成了 Trip.com，并被收购，他就套现离开了。这篇文章回顾了他九年来在美国的工作历程。</p>
+
+<p>5、<a href="https://www.florio.dev/20200328-letter-to-myself/">写给新软件工程师的一封信</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040114.jpg" alt="" title="" /></p>
+
+<p>作者给进入这个行业的新人，提供了几点建议（上图），我觉得说得相当好。新人对这些建议肯定没有很深的体会，但是工作几年以后，再回头看，你会觉得这才是正确的路。</p>
+
+<p>6、<a href="https://github.com/WICG/ua-client-hints/blob/master/README.md">User-Agent 新方案</a></p>
+
+<p>浏览器向服务器发请求的时候，都会带有一个<code>User-Agent</code>字段，表明客户端的一些软件信息。Chrome 浏览器打算冻结这个字段，本文介绍新方案的细节。</p>
+
+<p>7、<a href="https://www.ronaldsvilcins.com/2020/03/26/rss-feeds-for-your-github-releases-tags-and-activity/">GitHub 的官方 RSS Feed</a></p>
+
+<p>GitHub 官方有提供 RSS Feed，但没写在文档里面，这篇文章给出了地址。</p>
+
+<p>8、<a href="https://make.wordpress.org/core/2020/03/20/updating-the-coding-standards-for-modern-php/">WordPress 团队的 PHP 编码标准</a>（英文）</p>
+
+<p>WordPress 团队最近更新了他们的编码标准，为全面升级到 PHP 7.x 版本做准备。</p>
+
+<p>9、<a href="https://blog.rampatra.com/how-to-know-whether-a-user-is-using-an-adblocker">如何检测用户是否使用了 adblocker？</a>（英文）</p>
+
+<p>相当一部分用户安装了浏览器的广告拦截器 adblocker，这篇文章介绍如何检测出这些用户。</p>
+
+<p>10、<a href="https://www.monades.dev/notes-on-linear-transformations/">如何使用线性代数进行几何变形</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202002/bg2020022514.jpg" alt="" title="" /></p>
+
+<p>作者在网页上给出直观的、可以互动的演示，展示几何变形与线性代数之间的关系。</p>
+
+<h2>工具</h2>
+
+<p>1、<a href="https://github.com/DuanJiaNing/GoMailer">GoMailer</a></p>
+
+<p>一个轻量的电子邮件推送开源工具，可以与网站的用户反馈、留言等功能进行集成，将数据填入模板，投递到指定的邮箱。（@<a href="https://github.com/ruanyf/weekly/issues/1146">DuanJiaNing</a> 投稿）</p>
+
+<p>2、<a href="https://zarm.design">Zarm</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033001.jpg" alt="" title="" /></p>
+
+<p>一个 React 组件库，众安科技出品。特点是依赖少体积小（压缩后 60KB），扩展性好，样式命名采用了 BEM 规范。（@<a href="https://github.com/ruanyf/weekly/issues/1149">edison-hm</a> 投稿）</p>
+
+<p>3、<a href="https://github.com/xaecbd/KafkaCenter">KafkaCenter</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033002.jpg" alt="" title="" /></p>
+
+<p>一站式的 Kafka 集群管理和维护平台，代码开源，完善的权限设计，使用方便，无需精通 Kafka 就能管理集群。（@<a href="https://github.com/ruanyf/weekly/issues/1150">TrumanDu</a> 投稿）</p>
+
+<p>4、<a href="http://www.xaudiopro.com/">XAudioPro</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033003.jpg" alt="" title="" /></p>
+
+<p>在线音频实时剪辑转码网站。我个人本身是做音频开发出生的，对音频算法底层很熟悉，所以就诞生了创建这个网站的想法。</p>
+
+<p>专业的 Audition 软件主要面对很多专业人士，里面的操作比较复杂，对于普通的人来说要想完成一个简单的功能操作比较繁锁，所以这个网站兼顾了准专业性和傻瓜式的操作。（@<a href="https://github.com/ruanyf/weekly/issues/1153">luolongzhi</a> 投稿）</p>
+
+<p>5、<a href="https://mynoise.net/NoiseMachines/openOfficeNoiseGenerator.php">办公室噪音生成器</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040119.jpg" alt="" title="" /></p>
+
+<p>在家远程办公的时候，你会不会想起办公室嘈杂的工作环境，说话声、电话铃声、敲击键盘声、喝水声...... 这里有一个办公室噪音生成器，可以无限播放。</p>
+
+<p>6、<a href="https://github.com/hugegraph/hugegraph">HugeGraph</a></p>
+
+<p>百度安全团队研发的一款易用、高效、通用的开源图数据库系统， 具备完善的工具链组件，助力用户轻松构建基于图数据库之上的应用和产品。</p>
+
+<p>典型应用场景包括深度关系探索、关联分析、路径搜索、特征抽取、数据聚类、社区检测、 知识图谱等。（@<a href="https://github.com/ruanyf/weekly/issues/1158">Emmano2</a> 投稿）</p>
+
+<p>7、<a href="https://github.com/simplecto/screenshots">SimpleCTO  screenshot</a></p>
+
+<p>一个在线生成网站截图的工具，用户提交 URL，就能下载网页截图，代码开源。</p>
+
+<p>8、 <a href="https://apps.apple.com/us/app/swift-playgrounds/id1496833156?mt=12">Swift Playgrounds</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202002/bg2020021403.jpg" alt="" title="" /></p>
+
+<p>苹果公司官方的免费 Mac 桌面软件，通过游戏学习 Swift 语言。</p>
+
+<p>9、<a href="https://www.time.gov/">time.gov</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202002/bg2020020911.jpg" alt="" title="" /></p>
+
+<p>美国政府显示国内各时区的时间的网站。</p>
+
+<p>10、<a href="https://github.com/andreruffert/progressive-image-element">progressive-image-element</a></p>
+
+<p>一个 HTML 的自定义元素（custom element），可以懒加载网页图片。这个元素的代码非常简单，可以作为学习自定义元素的写法范例。</p>
+
+<h2>资源</h2>
+
+<p>1、<a href="https://quarantinestories.today/">隔离故事</a></p>
+
+<p>该网站让居家隔离的人们上传照片，展示他们从窗外看到了什么。下图是一个意大利米兰的用户上传的照片。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032703.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://learn.unity.com/">Unity 官方教程</a></p>
+
+<p>Unity 是一个游戏开发引擎，它的官方教程现在免费开放3个月，从零教你写一个 3D 游戏，教程质量相当高。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032704.jpg" alt="" title="" /></p>
+
+<p>3、<a href="https://observablehq.com/@d3/learn-d3">D3.js 教程</a></p>
+
+<p>D3.js 是功能强大、使用最广泛的 JavaScript 可视化图形库，这组九篇的系列文章是最新的入门教程。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032705.jpg" alt="" title="" /></p>
+
+<p>4、<a href="https://www.colorabl.es/all">Colorables</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033110.jpg" alt="" title="" /></p>
+
+<p>这个网站可以下载各种填色图片，打印以后让小朋友用蜡笔填色。</p>
+
+<p>5、<a href="https://open.spotify.com/user/1286544262/playlist/71mRGOhRHXZRSbQzouuFw7?si=wK9hoXHFQTm3RZELenxxOA">舒压歌单</a></p>
+
+<p>这是一个10首音乐的 Spotify 歌单，长度为一个小时，根据<a href="https://www.inc.com/melanie-curtin/neuroscience-says-listening-to-this-one-song-reduces-anxiety-by-up-to-65-percent.html">这篇文章</a>的说法，可以舒缓压力、减轻焦虑。如果时间不够，可以只听《Weightless》这一首。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040102.jpg" alt="" title="" /></p>
+
+<h2>图片</h2>
+
+<p>1、<a href="https://inhabitat.com/heineken-wobo-the-brick-that-holds-beer/">喜力砖</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033104.jpg" alt="" title="" /></p>
+
+<p>1963年，两位设计师看到啤酒瓶到处丢弃，引起环境问题，就提出能不能把酒瓶做成砖头的形状，喝完以后还能用于建筑。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033105.jpg" alt="" title="" /></p>
+
+<p>喜力公司采纳了这个建议，设计生产了一批砖头形状的啤酒瓶，被称为"喜力砖"。这种瓶子一共生产了10万个，再没有继续生产。</p>
+
+<p>目前，荷兰的喜力博物馆有一个用这种瓶子建成的小棚。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033106.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020033107.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://twitter.com/architecturehub/status/1243474118957305856">旧金山的街道</a></p>
+
+<p>旧金山的很多房子，都是沿着山坡建的。所以，你可以轻易拍出很多奇特的照片。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040116.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040117.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040118.jpg" alt="" title="" /></p>
+
+<h2>文摘</h2>
+
+<p>1、<a href="http://www.chinaqw.com/hqhr/2017/11-06/167300.shtml">中国的第一个口罩</a></p>
+
+<p>1879年，祖籍广州的伍连德出生于马来西亚北部的一个小岛。他年幼聪明，17岁获得了女皇奖学金，赴英国剑桥大学就读细菌学。1903年，24岁获得博士学位。</p>
+
+<p>1907年，伍连德受直隶总督袁世凯聘请，担任天津陆军军医学堂副监督（即副校长）。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040106.jpg" alt="" title="" /></p>
+
+<p>1910年，哈尔滨爆发了鼠疫。伍连德临危受命，担任了"东三省防疫全权总医官"。这个头衔听上去很大，实际上他手下只有两个人。</p>
+
+<p>抵达的第三天，为弄清疫情来源，伍连德决定冒险解剖尸体，进行了中国医生的第一例人体解剖。他最终判断疫情为"肺鼠疫"，是比普通鼠疫更严重的一种烈性传染病，通过人际呼吸飞沫传播。</p>
+
+<p>他开始组织疫区进行严格隔离。在他的隔离建议下，东北多条铁路、公路被切断，他还费了极大精力说服当时的人们同意焚烧尸体。</p>
+
+<p>为阻挡鼠疫的飞沫传播，他发明了一种用两层纱布制作的口罩，被称之为"伍氏口罩"。这种口罩制造简单，材料易获得，成本很低。这是口罩首次在中国出现，被报纸广泛报道。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040104.jpg" alt="" title="" /></p>
+
+<p>（图片说明：中国的第一批口罩"伍式口罩"。）</p>
+
+<p>在伍连德的努力下，不到4个月哈尔滨疫情就迅速被控制，死亡人数下降为0。接下来1919年东北霍乱、1932年上海霍乱防疫战中，伍连德也发挥了极其重要的领导作用。由于在鼠疫研究特别是发现旱獭在鼠疫传播中的作用，伍连德在1935年被诺贝尔医学奖提名为候选人。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040105.jpg" alt="" title="" /></p>
+
+<p>伍连德还专注于中国医学教育和发展。在伍连德主持下建成的北京中央医院，成为中国人建立的第一所现代医院，也就是今天的北京大学人民医院。1924年，伍连德在沈阳建成了东北陆军医院，这是当时中国规模最大、设备最好的医院。1926年，他创办了哈尔滨医学专科学校，为当地培养医学人才，这个学校就是哈尔滨医科大学的前身。他前前后后在中国主持兴办了20多所医院和医学院校，为中国培养了众多医学人才。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040103.jpg" alt="" title="" /></p>
+
+<p>（图片说明：哈尔滨伍连德纪念馆雕像）</p>
+
+<p>1937年，抗日战争爆发。伍连德在上海的房子被日军炸毁，他决定返回马来西亚居住。1960年，他在马来西亚逝世，享年82岁。</p>
+
+<p>2、<a href="https://blog.samaltman.com/h5n1">H5N1 的风险</a></p>
+
+<p>（说明：作者为风险投资家，本文写于2013年。）</p>
+
+<p>我对生物技术的未来，感到非常担忧。这种技术具有令人难以置信的潜力，可以改善我们的生活，甚至可能比计算机更重要，但也有很多不利的方面。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040107.jpg" alt="" title="" /> </p>
+
+<p>2011年，一些研究人员想出了如何重新设计 H5N1（禽流感病毒），使其同时发生五个突变。这五个突变共同使该病毒既易于传播又具有致命性。这五个突变都可能自然发生，但不太可能同时发生，除非人工干预。</p>
+
+<p>现在，我们有了在实验室中创建病毒的工具。当某人制造出一种极易传播，死亡率超过50％，潜伏期为几周的病毒时，会发生什么？</p>
+
+<p>这样的事情会由一个坏蛋干出来，而世界却没有时间做准备，可能在几个月内消灭一半以上的人口。被操纵的生物技术可能会有效地终结世界。</p>
+
+<p>世界各国非常不愿意采取协调行动。原子弹只在一个地点造成严重后果，但病毒不同，只需要释放出来一个，就可能对全球造成严重后果，而给我们的时间却很少。浓缩铀需要巨大的政府投入的资源，而生物技术的开发已经可以由私人公司完成。</p>
+
+<p>我们应该高度重视，在主动防御生物攻击方面投入大量精力。 </p>
+
+<p>当我们首次能够在车库中创建软件程序时，它改变了世界。当我们开始能够在车库中进行生物工程时，可能会比计算机革命更快地引发变化。 </p>
+
+<h2>言论与数字</h2>
+
+<p>1、</p>
+
+<p>去年成功套现/卖掉的创业公司，都值得祝贺。</p>
+
+<p>-- <a href="https://twitter.com/hunterwalk/status/1242573287734951936">Twitter 用户</a></p>
+
+<p>2、</p>
+
+<p>战争时，你要坚定不移；失败时，你要绝不屈服；胜利时，你要宽容大度；和平时，你要满怀善意。（In war, resolution; in defeat, defiance; in victory, magnanimity; in peace, goodwill.）</p>
+
+<p>-- <a href="https://www.goodreads.com/quotes/261261-in-war-resolution-in-defeat-defiance-in-victory-magnanimity-in">邱吉尔《第二次世界大战回忆录》</a></p>
+
+<p>3、</p>
+
+<p>一个人的人际关系，能有多大？</p>
+
+<p>英国人类学家鲁宾·邓巴提出，一个人能够记住其他人是谁、并且能保持与那些人之间的关系，这样的人数在100～250之间，通常使用的值是150。这被称为邓巴数。</p>
+
+<p>-- <a href="https://en.wikipedia.org/wiki/Dunbar%27s_number">维基百科</a></p>
+
+<p>4、</p>
+
+<p>浅水是喧哗的，深水是沉默的。（Shallow water is roaring, deep water is silent.）</p>
+
+<p>-- 雪莱</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202004/bg2020040113.jpg" alt="" title="" /></p>
+
+<p>5、</p>
+
+<p>呼吸机的制造难度在于，要保持一个狭窄的压力范围。压力不能太小，必须可以让氧气进入肺泡，但又不能太大而使肺破裂。</p>
+
+<p>-- <a href="https://news.ycombinator.com/item?id=22721871">HN 读者</a></p>
+
+<p>6、</p>
+
+<p>如果你为一家公司打工，要做的就是准时上班，尽力满足公司对你最低的期望，8小时工作下班后，回家与家人共度美好时光。这样的话，当公司解雇你的时候，你就没有什么可哭的了。你总能找到一份工作，但无法找回为实现别人的梦想而付出的你的时间。</p>
+
+<p>-- <a href="https://news.ycombinator.com/item?id=22746433">HN 读者</a></p>
+
+<h2>回顾</h2>
+
+<p>去年的本周：<a href="http://www.ruanyifeng.com/blog/2019/04/weekly-issue-50.html">《周刊第 50 期》</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/201904/bg2019040501.jpg" alt="" title="" /></p>
+
+<h2>订阅</h2>
+
+<p>这个周刊每周五发布，同步更新在<a href="http://www.ruanyifeng.com/blog">阮一峰的网络日志</a>和<a href="http://weixin.sogou.com/weixin?query=%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97">微信公众号</a>。</p>
+
+<p>微信搜索"阮一峰的网络日志"或者扫描二维码，即可订阅。</p>
+
+<p><img src="http://www.ruanyifeng.com/blogimg/asset/2018/bg2018042311.jpg" alt="" title="" /></p>
+
+<p>（完）</p>
+]]>
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;border:1px solid #d3d3d3;margin:1em;background-color:#AAD2F0;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"><h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2020-04-03T09:06:10+08:00">2020年4月 3日</abbr></li>
+
+</ul></div>]]>        
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;margin:1em;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"></div>]]>
+    </content>
+</entry>
+
+<entry>
+    <title>科技爱好者周刊：第 100 期</title>
+    <link rel="alternate" type="text/html" href="http://www.ruanyifeng.com/blog/2020/03/weekly-issue-100.html" />
+    <id>tag:www.ruanyifeng.com,2020:/blog//1.2167</id>
+
+    <published>2020-03-27T01:29:19Z</published>
+    <updated>2020-04-09T13:40:07Z</updated>
+
+    <summary>这里记录每周值得分享的科技内容，周五发布。...</summary>
+    <author>
+        <name>阮一峰</name>
+        <uri>http://www.ruanyifeng.com</uri>
+    </author>
+    
+        <category term="Weekly" scheme="http://www.sixapart.com/ns/types#category" />
+    
+    
+    <content type="html" xml:lang="en" xml:base="http://www.ruanyifeng.com/blog/">
+        <![CDATA[<p>这里记录每周值得分享的科技内容，周五发布。</p>
+]]>
+        <![CDATA[<p>本杂志开源（GitHub: <a href="https://github.com/ruanyf/weekly">ruanyf/weekly</a>），欢迎提交 issue，投稿或推荐你的项目。</p>
+
+<p>周刊讨论区的帖子<a href="https://github.com/ruanyf/weekly/issues/1148">《谁在招人？》</a>，提供大量就业信息，欢迎访问或发布工作/实习岗位。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032205.jpg" alt="" title="" /></p>
+
+<p>封面图：上周五（3月20日）下午，通往洛杉矶市中心的110高速公路几乎完全空了，平时周末都是塞车的。（<a href="https://www.nytimes.com/interactive/2020/03/22/climate/coronavirus-usa-traffic.html">美联社</a>）</p>
+
+<h2>刊首语：零利率时代</h2>
+
+<p>美国最近将基准利率<a href="https://finance.sina.com.cn/money/bond/market/2020-03-26/doc-iimxyqwa3220083.shtml">降到了0%</a>。我觉得，大家对这件事不太关注，觉得跟自己没关系，或者觉得这是临时措施。</p>
+
+<p>事实恰恰相反。我觉得，这是最重要的几个长期经济迹象之一，对每个人都会产生影响，而且比疫情本身的影响更深远持久。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032602.jpg" alt="" title="" /></p>
+
+<p><strong>它说明了一件事，高利率的时代已经永远地结束了。</strong> 美国的利率降到了零，中国的利率也在不断下降，欧洲甚至在去年就已经是负利率了。这绝不是暂时的，我们将会长期面对低利率。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032601.jpg" alt="" title="" /></p>
+
+<p>（图片说明：过去30年的中国银行间贷款利率变化。）</p>
+
+<p>利率是资金的成本。利率低就说明资金便宜，你可以用非常低的价格借到钱。反过来，它也反映了社会的平均利润率。如果各种项目的利润率很高，而利率又很低，就会有更多的人去借钱，从而促使利率回升。</p>
+
+<p><strong>利率一降再降，恰恰说明了社会的平均利润率在不断下降。</strong> 通俗地说，就是可以赚钱的好项目，越来越难找了。</p>
+
+<p>下面就是这件事对每个人的影响： <strong>高回报项目的消失、利率的下降、经济增长的放缓，使得你很难有办法攒钱了。</strong> 你好不容易积攒了一点工资，却发现根本找不到高回报的投资途径，不管是银行存款、证券投资、项目投资，回报率都很低。</p>
+
+<p>由于投资回报很低，大部分人的财富只能主要依靠工资积累，一有大的消费，或者生活变故，那点钱顿时就会化为乌有。所以对于年轻人来说，想要生活自立，就必须尽早开始工作，获取工资。越晚工作，经济处境就会越困难，因为你找不到快速积累资金的方法，年龄在增长，但是资产却增长很慢。</p>
+
+<p>回到<a href="http://www.ruanyifeng.com/blog/2020/03/weekly-issue-99.html">上一期话题</a>，应不应该读研？我认为，如果等到24岁才研究生毕业，去就业市场找人生第一份工作，就真的有点太晚了。至少在读研期间，就要想办法去挣钱。</p>
+
+<h2>前端培训课程</h2>
+
+<p>本周的培训推介，是来自"职坐标"的前端和小程序课程。</p>
+
+<p>现在，国内的互联网公司陆续正常上班了，接下来的招聘和面试高峰，估计将出现在5、6月份。想要转行前端或者提升自己的同学，可以抓住眼下这一两个月，进行针对性的学习和准备。</p>
+
+<p>"职坐标"是腾讯课堂里面唯一一家双认证（"严选课程"认证和"金课堂"认证）的前端培训机构，有着良好的培训记录和平台的质量监控。</p>
+
+<p>他们给周刊的读者提供了一门前端免费教学视频 <strong>《前端全栈程序员：小白165天逆袭成为Web工程师》</strong>，教你学习全栈，提升互联网开发能力，增进就业的竞争力，讲解内容覆盖了前端开发所需的关键技术和技能。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032506.jpg" alt="" title="" /></p>
+
+<p>对于移动端的微信小程序和项目实战感兴趣的同学，可以关注下面两门课程《微信小程序》和《Vue.js 大型项目实战》。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032507.jpg" alt="" title="" /></p>
+
+<p>上面这两门课程原价分别是68元和29.9元，<strong>现在只要1元！</strong></p>
+
+<p>微信扫描下方二维码，加入职坐标 Web 前端学习群，回复"小程序"就可获得1元体验券，并赠送前端学习资料，名额只有129个，感兴趣的同学抓紧时间。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032508.jpg" alt="" title="" /></p>
+
+<h2>资讯</h2>
+
+<p>1、<a href="https://www.isinnova.it/easy-covid19-eng/">自制呼吸面罩</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032201.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032202.jpg" alt="" title="" /></p>
+
+<p>意大利的一个发明家团体，为了解决呼吸机不足的问题，提出可以将迪卡侬的浮潜面罩，改造成呼吸面罩。所需要的步骤仅仅是一个 3D 打印的氧气阀门，然后将氧气接入就可以了。</p>
+
+<p>为了防止出现纠纷，他们将这个发明申请了专利，然后承诺所有人都可以免费使用，并将 3D 打印源文件发布到网上。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032204.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://www.pnas.org/content/117/10/5088">液态金属</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032206.jpg" alt="" title="" /></p>
+
+<p>1992年的电影《终结者2》中，一个机器人杀手变形为液态金属，令观众印象深刻。科学家也对室温下能够导热和导电的液体，抱有浓厚的兴趣。汞虽然是液态的，但是对人体有毒。目前对液态金属的研究都集中在镓上，镓是无毒的，温度达到30°C就会熔化，更难得的是，镓合金的熔化温度更低，而且没有蒸气不会被吸入。</p>
+
+<p>最近，中国研究团队已经证实，通过磁场可以控制镓-铟-锡合金，达到电影《终结者2》里面的液态金属受控聚合的效果。当一滴镓铟合金放在强碱溶液中时，施加电压会导致在该液滴从球形变成雪花状的分形图案（下图）。科学家认为这种行为有突破性的应用前景。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032207.jpg" alt="" title="" /></p>
+
+<p>3、<a href="https://mondaynote.com/arm-ed-mac-we-have-an-answer-545a20419a46">iPad Pro 的新 CPU</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032307.jpg" alt="" title="" /></p>
+
+<p>苹果公司上周发布的 iPad Pro 支持触摸板和鼠标。国外评论认为，这实际上是苹果在尝试 ARM CPU 的笔记本电脑。如果成功，下一步就要将 MacOS 从 x86 CPU 移植到 ARM CPU。</p>
+
+<p>苹果自己可以生产 ARM CPU，而 x86 CPU 都需要从 Intel 购买。更换 CPU 的主要好处是，ARM CPU 比较节能，电池可以使用更长时间。而且更换后，手机和笔记本的操作系统就可以统一了，理论上手机 App 就可以直接在笔记本运行。目前，主要指标是看 Xcode 何时能移植到 iPad Pro，现在还不行。</p>
+
+<p>4、<a href="https://www.formula1.com/en/latest/article.formula-1-launches-virtual-grand-prix-series-to-replace-postponed-races.1znLAbPzBbCQPj1IDMeiOi.html">虚拟的一级方程式大奖赛</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032101.jpg" alt="" title="" /></p>
+
+<p>篮球迷和足球迷都还不知道，联赛何时能够恢复，但是赛车迷已经可以看到线上虚拟比赛了。一级方程式赛车组委会宣布，从3月22日开始每周末将在网上直播虚拟的一级方程式大奖赛，参加者都是实际的赛车手，即车手在网上进行虚拟的赛车比赛。</p>
+
+<p>上周日的 Twitch 直播，反响很热烈，两个小时吸引了7万多名观看者，最高时同时在线有23,000多个观众。比赛采用的是 PC 游戏 F1 2019 ，赛道长度是实际的50％，共28圈。雷诺 F1 车队的中国试车手周冠宇赢得了冠军。<a href="https://www.nascar.com/video/franchise/up-to-speed/denny-hamlin-beats-dale-earnhardt-jr-final-corner-for-virtual-homestead-win/">NASCAR 网站</a>提供比赛精彩片段的录像。</p>
+
+<p>5、<a href="https://www.flyertalk.com/articles/private-lie-flat-seats-for-every-economy-passenger.html">双层飞机座椅</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030101.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030102.jpg" alt="" title="" /></p>
+
+<p>飞机的经济舱总是很不舒服，拥挤而且无法伸直腿。美国一家创业公司提出了双层座椅的设计，可以提供更大的空间，每位乘客都有一个小隔间，甚至可以躺下来。</p>
+
+<p>发明者说，这种座椅不会多占空间，可以容纳当今宽体客舱中相同数量的座位，因此不会影响航空公司的盈利。但是，上层的乘客需要从梯子爬上去，具体介绍可以看下面这段<a href="https://v.qq.com/x/page/p30741u3pzn.html">30秒的视频</a>。</p>
+
+<iframe frameborder="0" src="https://v.qq.com/txp/iframe/player.html?vid=p30741u3pzn" allowFullScreen="true" width="600px" height="400px"></iframe>
+
+<p>6、<strong>一句话消息</strong></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.bbc.com/news/technology-51968302">Netflix</a> 在欧洲降低流媒体服务的比特率，为期30天，预计可以减少带宽消耗25%。目的是减轻网络服务商的压力，让出更多的带宽为居家办公服务。<a href="https://www.bloomberg.com/news/articles/2020-03-24/youtube-to-limit-video-quality-around-the-world-for-a-month">Youtube</a> 也做出了类似变动。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032103.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.nature.com/articles/s41591-020-0820-9">权威的《Nature Medicine》杂志</a>发表美国科学家的论文，几乎是用完全肯定的语气，断定 Covid-19 病毒出于自然进化，而不是人工产物。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032003.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://blog.fontawesome.com/covid-19-awareness-icons/">图标库 FontAwesome</a> 发布最新版本，添加了病毒、医疗方面的许多新图标，用于制作标牌、报告、站点、应用程序，可以免费使用。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032504.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032505.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.chinanews.com/it/shipin/cns-d/2020/03-03/news849814.shtml">国内公司</a>推出"发热头盔"，可以使用红外摄像头查看前方5米范围内的人员，自动找出体温超过37.3摄氏度的发热人员。但是，它应该很耗电，所以重量不会轻，戴在头上可能很累。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030605.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030604.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.theguardian.com/environment/2020/mar/01/dramatic-fall-in-china-pollution-levels-partly-related-to-coronavirus">美国宇航局</a>卫星照片发现，中国的环境污染（二氧化氮超标）在二月份大幅下降。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030201.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020030202.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="http://m.yunnan.cn/system/2020/03/17/030619215.shtml">武汉大学</a>的樱花很有名，但是今年不对外开放。学校使用5G直播车，开启"云赏樱"，每天上午10时至下午16时，通过网络直播校园樱花实景。</li>
+</ul>
+</blockquote>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020031921.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020031922.jpg" alt="" title="" /></p>
+
+<blockquote>
+  <ul>
+<li><a href="https://www.cnbeta.com/articles/tech/958081.htm">新加坡政府</a>发布了一个手机 App，使用蓝牙通信，记录在周围出现的其他手机。目的是一旦某人确诊，可以找出他接触过的人。虽然这个想法非常好，但是 App 目前是自愿使用，所以不一定能取得满意的效果。</li>
+</ul>
+</blockquote>
+
+<h2>文章</h2>
+
+<p>1、<a href="https://cn.engadget.com/cn-2020-03-18-playstation-5-vs-the-xbox-series-x.html">PlayStation 5 vs Xbox Series X 硬件比较</a>（中文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032001.jpg" alt="" title="" /></p>
+
+<p>今年就要发布的两大游戏机 PlayStation 5 和 Xbox Series X，硬件基本相同。如果你想同时玩这两个平台的独占游戏，就不得不同样的硬件买两套。索尼和微软真的可以考虑走 Steam 的模式，只出售主机操作系统，把硬件改成开放平台，让第三方厂商去做，反正现在硬件都是亏的。</p>
+
+<p>2、<a href="https://mp.weixin.qq.com/s/LrGG4PUgvZw5KzsJCIhKhQ">《人类简史》作者赫拉利谈流行病</a>（中文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032002.jpg" alt="" title="" /></p>
+
+<p>面对2月以来新冠肺炎疫情在全球范围内的快速蔓延，赫拉利撰写了这篇文章，在《三联生活周刊》独家中文刊发。</p>
+
+<p>他的核心观点是，关闭国界不是阻止病毒传播的好办法，人类应该加强合作，而不是互相指责。对病毒的最佳防御不是隔离，而是信息。另外，他在《金融时报》发表的长文<a href="http://www.ruanyifeng.com/blog/2020/03/the-world-after-coronavirus.html">《冠状病毒之后的世界》</a>也可以参考。</p>
+
+<p>3、<a href="https://blog.dgraph.io/post/dgraph-calendar-versioning/">日历版本的实施方案</a>（英文）</p>
+
+<p>图数据库软件 Dgraph 决定从语义版本切换到日历版本<code>YY.0M.PatchNumber</code>，本文介绍 Dgraph 的实施方案。</p>
+
+<p>4、<a href="https://jlelse.blog/dev/speech-synthesis/">我如何使用 Speech Synthesis API 自动生成语音</a>（英文）</p>
+
+<p>作者给出了一段简短的代码，使用 Speech Synthesis API 进行语音生成，让浏览器自己读出博客内容。</p>
+
+<p>5、<a href="https://www.popularmechanics.com/technology/g24668233/best-inventions/">过去66年的66项最佳年度发明</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032309.jpg" alt="" title="" /></p>
+
+<p>这篇文章展示了从1954年开始，每一年的年度最佳发明，比如1954年是微波炉，1955年是脊髓灰质炎疫苗，1956年是计算机硬盘，2019年是世界最大的电动车 eDumper（上图）。</p>
+
+<p>6、<a href="https://medium.com/sausheong/build-a-thermal-camera-with-raspberry-pi-and-go-8f70451ad6a0">使用树莓派自制热像仪</a>（英文）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202002/bg2020022513.jpg" alt="" title="" /></p>
+
+<p>作者介绍自己如何使用树莓派，制造了一个便宜的热像仪，可以感知人群中体温偏高的人。</p>
+
+<p>7、<a href="https://aleksandrhovhannisyan.github.io/blog/dev/creating-a-personal-website-with-jekyll-and-github-pages-a-comprehensive-guide/">使用 Jekyll 和 GitHub Pages 创建个人网站</a>（英文）</p>
+
+<p>一篇非常详细的操作指南，如何使用 Jekyll 建立一个静态网站，并发布到 GitHub Pages。</p>
+
+<p>8、<a href="https://cohan.dev/defeating-form-spam-bots/">击败垃圾留言机器人</a>（英文）</p>
+
+<p>作者介绍一个小技巧，防止机器人通过网页表单，提交垃圾留言。方法是为表单元素<code>&lt;form&gt;</code>加上一个<code>data-action</code>属性，真正的提交地址放在这个属性里面。</p>
+
+<p>9、<a href="https://rhsfinancial.com/2020/02/12/future-fossil-fuels-collapse/">化石燃料的未来</a>（英文）</p>
+
+<p>这是一篇投资咨询公司写的能源价格分析，文章比较长，但是值得一读。作者认为，随着绿色能源价格不断降低，化石燃料（石油、煤、天然气）将进入"永久的熊市"。</p>
+
+<p>下图是过去三年，能源股票的价格变化。蓝线是 SP500 指数，上涨了40%；绿色是太阳能股，上涨了80%；橙线是石油天然气，红色是煤炭，都是下跌的。也就是说，化石能源的股票走势都很糟糕。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202002/bg2020021604.jpg" alt="" title="" /></p>
+
+<p>10、<a href="https://www.brandonsmith.ninja/blog/three-types-of-data">三种数据类型</a>（英文）</p>
+
+<p>作者认为，软件的数据分为三种：常量（不可变，也不可替换）、状态（可变可替换）和缓存（不可变，但可替换）。</p>
+
+<h2>工具</h2>
+
+<p>1、<a href="https://github.com/kherrick/pwgen/">pwgen</a></p>
+
+<p>一个 WASM 模块，用来生成随机密码，可以在命令行使用，也可以作为自定义元素插入网页。</p>
+
+<p>2、<a href="https://excalidraw.com/">Excalidraw</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032106.jpg" alt="" title="" /></p>
+
+<p>一个非常简单易用的白板绘图开源工具。</p>
+
+<p>3、<a href="https://screen.so/">Screen.so</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032306.jpg" alt="" title="" /></p>
+
+<p>一个基于 Web 的视频会议软件，可以共享白板和视频，并且能够合作编程。</p>
+
+<p>4、<a href="https://github.com/maxboeck/emergency-site">紧急状况模板</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032308.jpg" alt="" title="" /></p>
+
+<p>有时候，网站会突然无法访问，这时就需要提供一个临时的应急网址。这里有提供一个网站紧急状况的网页模板。</p>
+
+<p>5、<a href="https://github.com/2234839/web-font">字体裁剪工具</a></p>
+
+<p>中文的字体文件都非常大，网页全部加载不现实。这个工具可以从字体里面，选取网页需要的字符，生成新的字体文件。（@<a href="https://github.com/ruanyf/weekly/issues/1136">2234839</a> 投稿）</p>
+
+<p>6、<a href="https://github.com/JavaCS3/xterm-player">xterm-player</a></p>
+
+<p>一个基于 Web 的命令行终端录制回放工具，解决了分享命令操作时，无法拷贝文字以及视频体积较大的问题。（@<a href="https://github.com/ruanyf/weekly/issues/1138">JavaCS3</a> 投稿）</p>
+
+<p>7、<a href="https://turingpi.com/">图灵派</a>（Turing Pi）</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032501.jpg" alt="" title="" /></p>
+
+<p>图灵派是树莓派的一个集群板，好比机房里面的一个机架，可以用来自己架设 Kubernetes 集群。</p>
+
+<p>8、<a href="https://github.com/scriptiot/evm">EVM</a></p>
+
+<p>一个国产的针对物联网的超轻量虚拟机，本质上是一款通用、精简的嵌入式虚拟机，由语法解析前端框架和字节码运行后端构成，可运行在资源受限制的单片机上。（@<a href="https://github.com/ruanyf/weekly/issues/1143">scriptiot-dev</a> 投稿）</p>
+
+<p>9、<a href="https://github.com/anye931123/react-visual-editor">react-visual-editor</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032603.jpg" alt="" title="" /></p>
+
+<p>React 的组件可视化拖拽页面编辑与代码生成工具，让不会 React 技术栈的人员可以通过拖拽生成页面。（@<a href="https://github.com/ruanyf/weekly/issues/1145">anye931123</a> 投稿）</p>
+
+<p>10、<a href="https://dino.im/">dino</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020013002.jpg" alt="" title="" /></p>
+
+<p>一个支持 XMPP 协议的聊天客户端。</p>
+
+<h2>资源</h2>
+
+<p>1、<a href="https://github.com/luruke/browser-2020/blob/master/README.md">浏览器在 2020 年可以干什么？</a></p>
+
+<p>这个仓库收集各种新兴的浏览器 API，展示浏览器具备的能力。如果你想追踪 Web App 开发的前沿，可以关注它。上图是浏览器的画中画 API。</p>
+
+<p>2、<a href="https://github.com/ruanyf/weekly/issues/1139">ActivityPub 协议的开源软件</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032301.jpg" alt="" title="" /></p>
+
+<p>ActivityPub 是一种去中心化的内容聚合协议，可以让其他用户远程订阅你的内容。它很像升级版的 RSS，但是支持远程推送。这里是 ActivityPub 协议<a href="https://github.com/WebOfTrustInfo/rwot5-boston/blob/master/topics-and-advance-readings/activitypub-decentralized-distributed.md">技术细节的介绍</a>。</p>
+
+<p>下面是目前支持 ActivityPub 协议的开源软件，可以自己架设服务。</p>
+
+<blockquote>
+  <ul>
+<li>微博（Twitter 的替代品）：<a href="https://mastodon.social/">Mastodon</a>，<a href="https://pleroma.social/">Pleroma</a></li>
+<li>照片分享（Instagram 的替代品）：<a href="https://pixelfed.social/">Pixelfed</a></li>
+<li>视频分享（Youtube 的替代品）：<a href="https://joinpeertube.org/">Peertube</a></li>
+<li>博客（Facebook 的替代品）：<a href="https://writefreely.org/">WriteFreely</a>，<a href="https://wordpress.org/plugins/activitypub/">WordPress + ActivityPub 插件</a>，<a href="https://joinplu.me/">Plume</a></li>
+<li>聊天（Slack 的替代品）：<a href="https://mattermost.com/">Mattermost</a>，<a href="https://matrix.org/">Matrix</a></li>
+<li>音乐分享（Spotify 的替代品）：<a href="https://funkwhale.audio/">Funkwhale</a></li>
+</ul>
+</blockquote>
+
+<p>3、<a href="https://web.stanford.edu/class/cs253/">CS 253：Web 安全</a></p>
+
+<p>斯坦福大学的 Web 攻击课程，里面有资料下载，介绍各种攻击手段的基础知识，比如代码注入、网络钓鱼、网络指纹等等。</p>
+
+<p>4、<a href="https://i-book.in">基于 IPFS 的电子书搜索引擎</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032310.jpg" alt="" title="" /></p>
+
+<p>网友上传至 IPFS 网络的电子书索引，目前收入量约5万。使用Flask + Elasticsearch + Nginx 构建，已在 <a href="https://github.com/SaltyLeo/i-book.in">GitHub</a> 部分开源。（@<a href="https://github.com/ruanyf/weekly/issues/1134">SaltyLeo</a> 投稿）</p>
+
+<p>5、<a href="https://github.com/kon9chunkit/GitHub-Chinese-Top-Charts">GitHub 中文项目排行榜</a></p>
+
+<p>这个仓库收集 GitHub 上面国人的中文项目的 Star 排行。（@<a href="https://github.com/ruanyf/weekly/issues/1135">9527q</a> 投稿）</p>
+
+<h2>图片</h2>
+
+<p>1、<a href="https://www.spomenikdatabase.org/photo-directory">Spomeniks</a></p>
+
+<p>该网站收集东欧共产主义时期各种奇特形状的纪念碑。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032302.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032303.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032304.jpg" alt="" title="" /></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032305.jpg" alt="" title="" /></p>
+
+<p>2、<a href="https://en.wikipedia.org/wiki/Rundetaarn">圆塔</a></p>
+
+<p>丹麦首都哥本哈根的市中心，耸立着一座七层的塔楼，高35米。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020012601.jpg" alt="" title="" /></p>
+
+<p>这是始建于1642年的天文馆，那一年伽利略去世，日心说开始占据主流，天文学研究出现了大爆发。国王决定建造一座专门的天文台。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020012602.jpg" alt="" title="" /></p>
+
+<p>这座楼最大的特点，就是内部没有一级台阶，都是螺旋式上升的砖道。这是为了方便推车将沉重的天文仪器运到塔楼的顶部。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202001/bg2020012603.jpg" alt="" title="" /></p>
+
+<h2>文摘</h2>
+
+<p>1、<a href="https://threadreaderapp.com/thread/1240498037958545410.html">为什么没有冠状病毒疫苗？</a></p>
+
+<p>Covid-19 出现之前，常见的冠状病毒有4种，对于大多数人来说，它们仅仅引起轻度感冒。这些病毒会激发人体的免疫反应，使得人体自然康复。康复以后，体内会产生抗体，使你受到大约一年或更长时间的保护，但是抗体最终会消失。 </p>
+
+<p>也就是说，人类可以被同一种病毒再次感染，所以需要注射疫苗。但是，实际上并没有针对这4种冠状病毒的疫苗。为什么我们不开发冠状病毒疫苗呢？</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032604.jpg" alt="" title="" /></p>
+
+<p>原因一。大多数感冒是由其他病毒引起的，比如鼻病毒、RSV、副流感病毒等等。4种冠状病毒只会导致大约20％的感冒。由于每一种病毒都需要不同的疫苗，所以冠状病毒疫苗实际上需要4种。但是，即使你全部使用4种疫苗，也只能抵御 20％的感冒。</p>
+
+<p>原因二。证明疫苗有效的临床试验，非常困难而且昂贵。即使疫苗将冠状病毒导致的感冒风险降低了75％，也仅将整体的感冒风险降低了15％。设计一个大型实验，证明15％的减少是可能的，但会非常贵。而且，一个成年人每年得2次～4次感冒，减少15％意味着每年甚至不会少感冒1次，这听起来并不吸引人。</p>
+
+<p>原因三。人们真正想要的，不是冠状病毒的感冒疫苗，而是一种万能的感冒疫苗，可以抵御尽可能多的感冒病毒，但是科学家至今也不知道30％的感冒是什么原因导致的。这意味着，疫苗必须具有多种成分（抗原）才能有效，所有的成分都需要单独的开发和研究，所以感冒疫苗不是一种单一的产品，而是一种复合产品。 </p>
+
+<p>原因四。大多数人对感冒并不重视，因为绝大部分感冒不会出现严重后果，所以人们不太愿意出钱注射感冒疫苗。感冒疫苗的市场前景并不好，葛兰素史克曾经开发过一种感冒疫苗，几年后就退出了市场。投资人不愿意支持会商业失败的药物，所以一直以来感冒疫苗得不到足够的资金支持。</p>
+
+<p>但是，Covid-19 疫苗不一样，它仅针对一种病毒，而不是十几种不同的病毒，所以试验会非常简单。而且，它的传染力强，对于老年人后果严重，保险公司和政府会愿意为它付款。</p>
+
+<p>2、<a href="https://sparkonit.com/2014/12/09/takes-6-liters-water-kill-person/">为什么你不能一次喝太多的水？</a></p>
+
+<p>你知道吗，喝水也会喝死人。</p>
+
+<p>一个体重75公斤的人，一口气喝6升水，就会有死亡的危险。原因跟血液中钠的含量有关。</p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/202003/bg2020032605.jpg" alt="" title="" /></p>
+
+<p>钠元素是人体最重要的化学元素之一，具有许多重要功能，例如调节血压和帮助传导神经冲动。但是，钠最重要的功能可能就是维持体内的体液平衡。</p>
+
+<p>如果一次性喝太多水，血液中的水含量就会增加，使得血液中的电解质（尤其是钠）被稀释。血液中钠浓度过低的这种情况，称为低钠血症，严重者可出现水中毒，症状包括头痛、疲劳、恶心、呕吐、小便频繁、血压升高、复视和精神错乱。</p>
+
+<p>根据《科学美国人》的报道，美国发生过几起喝水过多、导致死亡的案件。比如，一名28岁的加利福尼亚妇女在参加一个比赛时，三个小时内喝掉六升水，出现呕吐、头痛欲裂，回家后死于所谓的水醉。2005年《新英格兰医学杂志》进行的一项研究发现，近六分之一的马拉松运动员会出现某种程度的低钠血症，原因可能就是饮水过多而导致血液稀释。</p>
+
+<p>肾脏负责从血液中过滤出水和其他溶质，人体多余的水会流到膀胱，形成尿液。但是，在水中毒的情况下（即喝太多的水超过了身体需要量时），肾脏将无法正常工作。</p>
+
+<p>肾脏每天可以排泄约20至28升水，但每小时不超过0.8至1.0升。因此，当一个人在短时间内喝过多的水时（例如，一小时内喝3至4升水），肾脏将无法足够快地将水过滤掉，血液将变得充满水。结果，过量的水稀释了血液中的钠含量并进入细胞，导致其肿胀。</p>
+
+<p>一旦脑细胞发生肿胀，可能会危及生命。因为大脑被限制在头骨内，由于没有扩大或肿胀的空间，过多的液体积聚会导致脑水肿（或肿胀）甚至死亡。</p>
+
+<p>因此，如果要避免低钠血症的症状，每小时就不要喝超过0.8到1.0升的水。超过这个量的水对身体来说就太多了，并且可能给肾脏造成伤害。</p>
+
+<h2>言论</h2>
+
+<p>1、</p>
+
+<p>咖啡的兴起与资本主义有千丝万缕的联系。资本主义兴起之前，体力劳动主要依靠酒精刺激体力的兴奋。但是当工作涉及机器和数字时，酒精就成为一个问题，而咖啡比酒精更安全，可以提高精神的兴奋。</p>
+
+<p>-- <a href="https://www.theatlantic.com/magazine/archive/2020/04/michael-pollan-coffee/606805/">《咖啡如何占领世界的黑暗历史》</a></p>
+
+<p>2、</p>
+
+<p>病毒可能有数百万、甚至数万亿种，但是迄今人类只命名了6,828种病毒，已知其中250种会感染人体。</p>
+
+<p>-- <a href="https://www.nytimes.com/2020/03/24/science/viruses-coranavirus-biology.html">《纽约时报》</a></p>
+
+<p>3、</p>
+
+<p>影响编程效率最大的因素，不是使用何种编程语言，而是昨晚你的睡眠是否充足。</p>
+
+<p>-- <a href="https://blog.wesleyac.com/posts/engineering-beliefs">《我的软件工程信念》</a></p>
+
+<p>4、</p>
+
+<p>几乎所有的战争原则，都可以总结为一个词"集中"，或者扩展成一句话"集中力量攻击敌人的弱点"。</p>
+
+<p>-- 李德·哈特《战略论：间接路线》</p>
+
+<p>5、</p>
+
+<p>我并不是说欧盟是完美的，但每个人类机构都有缺陷。改进现状的方法不是发脾气大吼一声，甩门而去。</p>
+
+<p>-- <a href="http://martin.kleppmann.com/2020/01/31/brief-brexit-lament.html">一个英国人</a>评论英国脱欧</p>
+
+<p>6、</p>
+
+<p>手机操作系统不愿意全力支持 Web App ，是故意的。因为他们要通过应用商店赚钱，让应用只能通过应用商店安装，就可以保证获得庞大的收入。</p>
+
+<p>-- <a href="https://news.ycombinator.com/item?id=22185250">HN 读者</a></p>
+
+<h2>回顾</h2>
+
+<p>去年的本周：<a href="http://www.ruanyifeng.com/blog/2019/03/weekly-issue-49.html">《周刊第 49 期》</a></p>
+
+<p><img src="https://www.wangbase.com/blogimg/asset/201903/bg2019032901.jpg" alt="" title="" /></p>
+
+<h2>订阅</h2>
+
+<p>这个周刊每周五发布，同步更新在<a href="http://www.ruanyifeng.com/blog">阮一峰的网络日志</a>和<a href="http://weixin.sogou.com/weixin?query=%E9%98%AE%E4%B8%80%E5%B3%B0%E7%9A%84%E7%BD%91%E7%BB%9C%E6%97%A5%E5%BF%97">微信公众号</a>。</p>
+
+<p>微信搜索"阮一峰的网络日志"或者扫描二维码，即可订阅。</p>
+
+<p><img src="http://www.ruanyifeng.com/blogimg/asset/2018/bg2018042311.jpg" alt="" title="" /></p>
+
+<p>（完）</p>
+]]>
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;border:1px solid #d3d3d3;margin:1em;background-color:#AAD2F0;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"><h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2020-03-27T09:29:19+08:00">2020年3月27日</abbr></li>
+
+</ul></div>]]>        
+        <![CDATA[<div style="color:#556677;line-height:160%;padding:0.3em 0.5em;margin:1em;-moz-border-radius: 10px;-webkit-border-radius:10px;border-radius: 10px;"></div>]]>
+    </content>
+</entry>
+
+</feed>

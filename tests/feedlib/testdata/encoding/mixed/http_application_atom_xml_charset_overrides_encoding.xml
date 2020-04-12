@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="gbk"?>
+<!--
+Header:      Content-type: application/atom+xml; charset='us-ascii'
+Description: application/atom+xml + charset overrides encoding
+Expect:      not bozo and encoding == 'us-ascii'
+-->
+<feed version="0.3" xmlns="http://purl.org/atom/ns#">
+<title>《11月的蕭邦》是台灣歌手周杰倫發行第六張國語專輯</title>
+</feed>

@@ -31,6 +31,8 @@ certifi==2019.11.28
 chardet==3.0.4
 cchardet==2.1.6
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
+atoma==0.0.17
+python-dateutil==2.8.1
 lxml==4.3.3
 bs4==0.0.1
 beautifulsoup4==4.8.2
@@ -71,7 +73,7 @@ packaging==19.2
 # test
 pytest==5.4.1
 pytest-cov==2.8.1
-pytest-asyncio==0.10.0
+pytest-httpserver==0.3.4
 flake8==3.7.9
 pycodestyle==2.5.0
 coverage==4.5.4

@@ -1,17 +1,15 @@
 import re
-import enum
 import socket
 import ssl
 import ipaddress
 import logging
-import typing
 from urllib.parse import urlparse
 from http import HTTPStatus
 
 import requests
 
-from rssant_config import CONFIG
-from rssant_common.helper import resolve_response_encoding
+from .response import FeedResponse, FeedResponseStatus
+from .response_builder import FeedResponseBuilder
 
 
 LOG = logging.getLogger(__name__)
@@ -30,72 +28,9 @@ DEFAULT_USER_AGENT = (
 )
 
 
-class FeedResponseStatus(enum.Enum):
-    # http://docs.python-requests.org/en/master/_modules/requests/exceptions/
-    UNKNOWN_ERROR = -100
-    CONNECTION_ERROR = -200
-    PROXY_ERROR = -300
-    RSS_PROXY_ERROR = -301
-    RESPONSE_ERROR = -400
-    DNS_ERROR = -201
-    PRIVATE_ADDRESS_ERROR = -202
-    CONNECTION_TIMEOUT = -203
-    SSL_ERROR = -204
-    READ_TIMEOUT = -205
-    CONNECTION_RESET = -206
-    TOO_MANY_REDIRECT_ERROR = -401
-    CHUNKED_ENCODING_ERROR = -402
-    CONTENT_DECODING_ERROR = -403
-    CONTENT_TOO_LARGE_ERROR = -404
-    REFERER_DENY = -405  # 严格防盗链，必须服务端才能绕过
-    REFERER_NOT_ALLOWED = -406  # 普通防盗链，不带Referer头可绕过
-    CONTENT_TYPE_NOT_SUPPORT_ERROR = -407  # 非文本/HTML响应
-
-    @classmethod
-    def name_of(cls, value):
-        """
-        >>> FeedResponseStatus.name_of(200)
-        'OK'
-        >>> FeedResponseStatus.name_of(-200)
-        'RSSANT_CONNECTION_ERROR'
-        >>> FeedResponseStatus.name_of(-999)
-        'RSSANT_E999'
-        """
-        if value > 0:
-            try:
-                return HTTPStatus(value).name
-            except ValueError:
-                # eg: http://huanggua.sinaapp.com/
-                # ValueError: 600 is not a valid HTTPStatus
-                return f'HTTP_{value}'
-        else:
-            try:
-                return 'RSSANT_' + FeedResponseStatus(value).name
-            except ValueError:
-                return f'RSSANT_E{abs(value)}'
-
-    @classmethod
-    def is_need_proxy(cls, value):
-        return value in _NEED_PROXY_STATUS_SET
-
-
-_NEED_PROXY_STATUS_SET = {x.value for x in [
-    FeedResponseStatus.CONNECTION_ERROR,
-    FeedResponseStatus.DNS_ERROR,
-    FeedResponseStatus.CONNECTION_TIMEOUT,
-    FeedResponseStatus.READ_TIMEOUT,
-    FeedResponseStatus.CONNECTION_RESET,
-    FeedResponseStatus.PRIVATE_ADDRESS_ERROR,
-]}
-
-
 class FeedReaderError(Exception):
     """FeedReaderError"""
     status = None
-
-    def __init__(self, *args, response=None, **kwargs):
-        self.response = response
-        super().__init__(*args, **kwargs)
 
 
 class PrivateAddressError(FeedReaderError):
@@ -119,7 +54,7 @@ class RSSProxyError(FeedReaderError):
 
 
 RE_WEBPAGE_CONTENT_TYPE = re.compile(
-    r'(text/html|application/xml|text/xml|application/json|'
+    r'(text/html|application/xml|text/xml|text/plain|application/json|'
     r'application/.*xml|application/.*json|text/.*xml)', re.I)
 
 
@@ -138,6 +73,10 @@ def is_webpage(content_type):
         return True
     content_type = content_type.split(';', maxsplit=1)[0].strip()
     return bool(RE_WEBPAGE_CONTENT_TYPE.fullmatch(content_type))
+
+
+def is_ok_status(status):
+    return status and 200 <= status <= 299
 
 
 class FeedReader:
@@ -182,7 +121,7 @@ class FeedReader:
 
     def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""
-        if CONFIG.allow_private_address:
+        if self.allow_private_address:
             return
         hostname = urlparse(url).hostname
         for ip in self._resolve_hostname(hostname):
@@ -193,30 +132,36 @@ class FeedReader:
     def check_content_type(self, response):
         if self.allow_non_webpage:
             return
-        if not (200 <= response.status_code <= 299):
+        if not is_ok_status(response.status_code):
             return
         content_type = response.headers.get('content-type')
         if not is_webpage(content_type):
             raise ContentTypeNotSupportError(
-                f'content-type {content_type} not support', response=response)
+                f'content-type {content_type!r} not support')
 
     def _read_content(self, response: requests.Response):
         content_length = response.headers.get('Content-Length')
         if content_length:
             content_length = int(content_length)
             if content_length > self.max_content_length:
-                msg = 'Content length {} larger than limit {}'.format(
+                msg = 'content length {} larger than limit {}'.format(
                     content_length, self.max_content_length)
-                raise ContentTooLargeError(msg, response=response)
+                raise ContentTooLargeError(msg)
         content_length = 0
         content = bytearray()
         for data in response.iter_content(chunk_size=64 * 1024):
             content_length += len(data)
             if content_length > self.max_content_length:
-                msg = 'Content length larger than limit {}'.format(self.max_content_length)
-                raise ContentTooLargeError(msg, response=response)
+                msg = 'content length larger than limit {}'.format(
+                    self.max_content_length)
+                raise ContentTooLargeError(msg)
             content.extend(data)
-        response._content = bytes(content)
+        return content
+
+    def _decode_content(self, content: bytes):
+        if not content:
+            return ''
+        return content.decode('utf-8', errors='ignore')
 
     def _prepare_headers(self, etag=None, last_modified=None):
         headers = {'User-Agent': self.user_agent}
@@ -226,30 +171,33 @@ class FeedReader:
             headers["If-Modified-Since"] = last_modified
         return headers
 
-    def _send_request(self, request):
+    def _send_request(self, request, ignore_content):
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
         response = self.session.send(request, timeout=(6.5, self.request_timeout), stream=True)
         try:
-            response.raise_for_status()
+            if not is_ok_status(response.status_code):
+                content = self._read_content(response)
+                return response, content
             self.check_content_type(response)
-            self._read_content(response)
-            resolve_response_encoding(response)
+            content = None
+            if not ignore_content:
+                content = self._read_content(response)
         finally:
             # Fix: Requests memory leak
             # https://github.com/psf/requests/issues/4601
             response.close()
-        return response
+        return response, content
 
-    def _read(self, url, etag=None, last_modified=None):
+    def _read(self, url, etag=None, last_modified=None, ignore_content=False):
         headers = self._prepare_headers(etag=etag, last_modified=last_modified)
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
         if not self.allow_private_address:
             self.check_private_address(prepared.url)
-        response = self._send_request(prepared)
-        return response
+        response, content = self._send_request(prepared, ignore_content=ignore_content)
+        return response.headers, content, response.url, response.status_code
 
-    def _read_by_proxy(self, url, etag=None, last_modified=None):
+    def _read_by_proxy(self, url, etag=None, last_modified=None, ignore_content=False):
         if not self.has_rss_proxy:
             raise ValueError("rss_proxy_url not provided")
         headers = self._prepare_headers(etag=etag, last_modified=last_modified)
@@ -260,30 +208,26 @@ class FeedReader:
         )
         req = requests.Request('POST', self.rss_proxy_url, json=data)
         prepared = self.session.prepare_request(req)
-        try:
-            response = self._send_request(prepared)
-        except requests.HTTPError as ex:
-            response.url = url
-            status = ex.response.status_code
-            message = ex.response.text
-            LOG.error("rss-proxy error status=%s message=%s", status, message)
-            raise RSSProxyError(status, message, response=ex.response) from ex
-        response.url = url
+        response, content = self._send_request(prepared, ignore_content=ignore_content)
+        if not is_ok_status(response.status_code):
+            message = 'status={} body={!r}'.format(
+                response.status_code, self._decode_content(content))
+            raise RSSProxyError(message)
         proxy_status = response.headers.get('x-rss-proxy-status', None)
-        if proxy_status.upper() == 'ERROR':
-            message = response.text
-            raise RSSProxyError(proxy_status, message, response=response)
-        response.status_code = int(proxy_status)
-        response.raise_for_status()
-        return response
+        if proxy_status and proxy_status.upper() == 'ERROR':
+            message = 'status={} body={!r}'.format(
+                response.status_code, self._decode_content(content))
+            raise RSSProxyError(message)
+        proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
+        return response.headers, content, url, proxy_status
 
-    def read(self, *args, use_proxy=False, **kwargs) -> typing.Tuple[int, requests.Response]:
-        response = None
+    def read(self, url, *args, use_proxy=False, **kwargs) -> FeedResponse:
+        headers = content = None
         try:
             if use_proxy:
-                response = self._read_by_proxy(*args, **kwargs)
+                headers, content, url, status = self._read_by_proxy(url, *args, **kwargs)
             else:
-                response = self._read(*args, **kwargs)
+                headers, content, url, status = self._read(url, *args, **kwargs)
         except socket.gaierror:
             status = FeedResponseStatus.DNS_ERROR.value
         except requests.exceptions.ReadTimeout:
@@ -302,21 +246,22 @@ class FeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except requests.exceptions.ContentDecodingError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
+        except UnicodeDecodeError:
+            status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
         except FeedReaderError as ex:
             status = ex.status
-            response = ex.response
-        except requests.HTTPError as ex:
-            response = ex.response
-            status = response.status_code
-        except requests.RequestException as ex:
-            response = ex.response
-            if response is not None:
-                status = response.status_code
+            LOG.warning(type(ex).__name__ + " url=%s %s", url, ex)
+        except (requests.HTTPError, requests.RequestException) as ex:
+            if ex.response is not None:
+                status = ex.response.status_code
             else:
                 status = FeedResponseStatus.UNKNOWN_ERROR.value
-        else:
-            status = response.status_code
-        return status, response
+        builder = FeedResponseBuilder(use_proxy=use_proxy)
+        builder.url(url)
+        builder.status(status)
+        builder.content(content)
+        builder.headers(headers)
+        return builder.build()
 
     def __enter__(self):
         return self

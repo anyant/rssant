@@ -58,3 +58,28 @@ def test_normalize_url():
     for url, expect in cases:
         norm = normlize_url(url)
         assert norm == expect, f'url={url!r} normlize={norm!r} expect={expect!r}'
+
+
+def test_normalize_base_url():
+    base_url = 'http://blog.example.com/feed.xml'
+    url = '/post/123.html'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/post/123.html'
+    url = 'post/123.html'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/post/123.html'
+    url = '/'
+    r = normlize_url(url, base_url=base_url)
+    assert r == 'http://blog.example.com/'
+
+
+def test_normalize_quote():
+    base = 'http://blog.example.com'
+    base_url = 'http://blog.example.com/feed.xml'
+    path_s = [
+        '/post/2019-01-10-%E5%AF%BB%E6%89%BE-sourcetree-%E6%9B%BF%E4%BB%A3%E5%93%81/',
+        '/notes/%E8%9A%81%E9%98%85%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E8%AE%B0%E5%BD%95',
+    ]
+    for p in path_s:
+        r = normlize_url(p, base_url=base_url)
+        assert r == base + p

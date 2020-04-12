@@ -1,0 +1,29 @@
+{
+  "version": "https://jsonfeed.org/version/1", 
+  "title": "JSON Feed", 
+  "description": "\u7c7b\u4f3c RSS \u7684\u7ad9\u70b9\u5185\u5bb9\u4fe1\u606f\u6d41 JSON \u683c\u5f0f\u3002\u8fd9\u91cc\u8ba8\u8bba JSON Feed \u7684\u5b9e\u73b0\u53ca\u9605\u8bfb\u5668\u652f\u6301\u3002", 
+  "home_page_url": "https://www.v2ex.com/go/jsonfeed", 
+  "feed_url": "https://www.v2ex.com/feed/jsonfeed.json", 
+  "icon": "https://cdn.v2ex.com/navatar/db57/6a7d/1054_large.png?m=1567059308", 
+  "favicon": "https://cdn.v2ex.com/navatar/db57/6a7d/1054_normal.png?m=1567059308", 
+  "items": [
+    {
+      "id": "",
+      "title": "",
+      "date_published": "2020-01-31T15:05:16+00:00", 
+      "content_html": "2020-01-31"
+    },
+    {
+      "author": {
+        "url": "https://www.v2ex.com/member/DEVN", 
+        "name": "DEVN", 
+        "avatar": "https://cdn.v2ex.com/avatar/6fc1/cc76/467193_large.png?m=1583239760"
+      }, 
+      "url": "https://www.v2ex.com/t/641290", 
+      "title": "\u4ec0\u4e48\u63d2\u4ef6\u53ef\u4ee5\u505a\u5230 JSON \u683c\u5f0f\u5316/\u538b\u7f29/\u8fd8\u539f/\u8f6c 2JZ \u7684\uff1f", 
+      "id": "https://www.v2ex.com/t/641290", 
+      "date_published": "2020-01-31T15:05:16+00:00", 
+      "content_html": ""
+    }
+  ]
+}

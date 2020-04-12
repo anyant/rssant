@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+<title>JSON Feed</title>
+<subtitle>way to explore</subtitle>
+
+<icon>https:https://cdn.v2ex.com/navatar/db57/6a7d/1054_normal.png?m=1567059308</icon>
+
+
+<logo>https:https://cdn.v2ex.com/navatar/db57/6a7d/1054_large.png?m=1567059308</logo>
+
+<link rel="alternate" type="text/html" href="https://www.v2ex.com/" />
+<link rel="self" type="application/atom+xml" href="https://www.v2ex.com/feed/jsonfeed.xml" />
+<id>https://www.v2ex.com/</id>
+
+<updated>2020-01-31T11:05:16Z</updated>
+
+<rights>Copyright © 2010-2018, V2EX</rights>
+<entry>
+	<title>什么插件可以做到 JSON 格式化/压缩/还原/转 2JZ 的？</title>
+	<link rel="alternate" type="text/html" href="https://www.v2ex.com/t/641290#reply0" />
+	<id>tag:www.v2ex.com,2020-01-31:/t/641290</id>
+	<published>2020-01-31T15:05:16Z</published>
+	<updated>2020-01-31T11:05:16Z</updated>
+	<author>
+		<name>DEVN</name>
+		<uri>https://www.v2ex.com/member/DEVN</uri>
+	</author>
+	<content type="html" xml:base="https://www.v2ex.com/" xml:lang="en"><![CDATA[
+	
+	]]></content>
+</entry>
+</feed>

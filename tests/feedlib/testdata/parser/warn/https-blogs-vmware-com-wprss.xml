@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+        <rss version="2.0"
+            xmlns:content="http://purl.org/rss/1.0/modules/content/"
+            xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/"
+            xmlns:atom="http://www.w3.org/2005/Atom"
+            xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+            xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+            xmlns:media="http://search.yahoo.com/mrss/" >
+            <channel>
+                <title>Latest imported feed items on VMware Blogs</title>
+                <description></description>
+                <link>https://blogs.vmware.com</link>
+                <atom:link href="blogs.vmware.com/wprss" rel="self" type="application/rss+xml" />
+                 
+                <item>
+                        <title><![CDATA[VMware vSphere 7 Editions]]></title>
+                        <link>https://blogs.virtualmaestro.in/2020/04/vmware-vsphere-7-editions.html</link>
+                        <guid isPermaLink="true">https://blogs.virtualmaestro.in/2020/04/vmware-vsphere-7-editions.html</guid>
+                        <pubDate>Mon, 06 Apr 2020 12:09:00 -0700</pubDate>
+                        <description><![CDATA[<div dir="ltr" trbidi="on"><span>With recent release of VMware vSphere version 7.0, we have lots of new features like Identity federation with ADFS, vSphere trust authority and so on.   </span><br><br><span>This post is to provide the information on how to access details about vSphere editions, ROBO Editions and Essential kits and their features respectively. </span><br><span><br></span><span><b>For your virtual infrastructure and cloud platform.</b></span><ul><li><b><span>Standard: </span></b></li></ul><span>Server Consolidation and Business Continuity</span><ul><li><b><span>Enterprise Plus: </span></b></li></ul><span>Resource Management, Simplified Lifecycle Management, Intrinsic Security, Resiliency and Performance for Enhanced Applications</span><ul><li><b><span>VMware Cloud Foundation:</span></b></li></ul><span>Run Modern Applications on vSphere 7 with Kubernetes</span><div><span><br></span></div><div><span>For more details on comparisons, check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-comparevsphereeditions-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-comparevsphereeditions-uslet.pdf</a></span><div><span><br></span></div><span><b>For Remote Office/Branch Office (ROBO) sites.</b></span><ul><li><b><span>ROBO Standard: </span></b></li></ul><span>Business Continuity and Backup Features</span><ul><li><b><span>ROBO Advanced: </span></b></li></ul><span>Standardization of Host Configurations</span><ul><li><b><span>ROBO Enterprise: </span></b></li></ul><span>Data Security Through Encryption</span></div><div><span><br></span></div><div><span>for more details on comparison, check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vsphererobo-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vsphererobo-uslet.pdf</a></span><div><span><br></span></div><div><b><span>Essential kits:</span></b></div><div><span><br>VMware vSphere Essentials Kits are for small businesses. For more details, do check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherecomparekits-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherecomparekits-uslet.pdf</a></span></div><span><ul><li><b>vSphere Essentials Kit:</b></li></ul></span><div><div><span>Server virtualization and consolidation with centralized management</span></div><div><ul><li><b>vSphere Essentials plus Kit:</b></li></ul></div></div><span>Server virtualization and consolidation plus business continuity</span></div><div><br></div><div><span><b>vSphere Scale Out:</b></span></div><div><span><br></span></div><span>Server virtualization for big data and HPC workloads.</span><div><span><br></span></div><div><span>more information available at,</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherescaleout-uslet-web.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherescaleout-uslet-web.pdf</a></span></div></div>]]></description>
+                        <content:encoded><![CDATA[<div dir="ltr" trbidi="on"><span>With recent release of VMware vSphere version 7.0, we have lots of new features like Identity federation with ADFS, vSphere trust authority and so on.   </span><br><br><span>This post is to provide the information on how to access details about vSphere editions, ROBO Editions and Essential kits and their features respectively. </span><br><span><br></span><span><b>For your virtual infrastructure and cloud platform.</b></span><ul><li><b><span>Standard: </span></b></li></ul><span>Server Consolidation and Business Continuity</span><ul><li><b><span>Enterprise Plus: </span></b></li></ul><span>Resource Management, Simplified Lifecycle Management, Intrinsic Security, Resiliency and Performance for Enhanced Applications</span><ul><li><b><span>VMware Cloud Foundation:</span></b></li></ul><span>Run Modern Applications on vSphere 7 with Kubernetes</span><div><span><br></span></div><div><span>For more details on comparisons, check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-comparevsphereeditions-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-comparevsphereeditions-uslet.pdf</a></span><div><span><br></span></div><span><b>For Remote Office/Branch Office (ROBO) sites.</b></span><ul><li><b><span>ROBO Standard: </span></b></li></ul><span>Business Continuity and Backup Features</span><ul><li><b><span>ROBO Advanced: </span></b></li></ul><span>Standardization of Host Configurations</span><ul><li><b><span>ROBO Enterprise: </span></b></li></ul><span>Data Security Through Encryption</span></div><div><span><br></span></div><div><span>for more details on comparison, check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vsphererobo-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vsphererobo-uslet.pdf</a></span><div><span><br></span></div><div><b><span>Essential kits:</span></b></div><div><span><br>VMware vSphere Essentials Kits are for small businesses. For more details, do check below link.</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherecomparekits-uslet.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherecomparekits-uslet.pdf</a></span></div><span><ul><li><b>vSphere Essentials Kit:</b></li></ul></span><div><div><span>Server virtualization and consolidation with centralized management</span></div><div><ul><li><b>vSphere Essentials plus Kit:</b></li></ul></div></div><span>Server virtualization and consolidation plus business continuity</span></div><div><br></div><div><span><b>vSphere Scale Out:</b></span></div><div><span><br></span></div><span>Server virtualization for big data and HPC workloads.</span><div><span><br></span></div><div><span>more information available at,</span></div><div><span><br></span></div><div><span><a href="https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherescaleout-uslet-web.pdf">https://www.vmware.com/content/dam/digitalmarketing/vmware/en/pdf/vsphere/vmw-flyr-vspherescaleout-uslet-web.pdf</a></span></div></div>]]></content:encoded>
+                        <source url="http://blogs.virtualmaestro.in/feeds/posts/default">http://blogs.virtualmaestro.in</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSphere 7 – Demo Upgrade from VCSA 6.5 with Ext PSC to 7.0 &#124; New Features – Update Planner &#124; vCenter Profile &#124; Template Versioning etc.]]></title>
+                        <link>http://techietech.org/vsphere-7-demo-upgrade-from-vcsa-6-5-with-ext-psc-to-7-0-new-features-update-planner-vcenter-profile-template-versioning-etc/</link>
+                        <guid isPermaLink="true">http://techietech.org/vsphere-7-demo-upgrade-from-vcsa-6-5-with-ext-psc-to-7-0-new-features-update-planner-vcenter-profile-template-versioning-etc/</guid>
+                        <pubDate>Mon, 06 Apr 2020 11:59:12 -0700</pubDate>
+                        <description><![CDATA[YouTube Video Link: https://www.youtube.com/watch?v=EAWbYCuCzKU New Features in one liner: DRS Enhancement – More focused on VM workload requirement than the cluster. vMotion Enhancement – Reduced Stun Time / Switch-Over phase enhancement. Update Manager is Lifecycle Manager & Update Planner to plan the upgrade. vCenter Profiles (API Driven) – To List / Export / Import / […]]]></description>
+                        <content:encoded><![CDATA[YouTube Video Link: https://www.youtube.com/watch?v=EAWbYCuCzKU New Features in one liner: DRS Enhancement – More focused on VM workload requirement than the cluster. vMotion Enhancement – Reduced Stun Time / Switch-Over phase enhancement. Update Manager is Lifecycle Manager & Update Planner to plan the upgrade. vCenter Profiles (API Driven) – To List / Export / Import / […]]]></content:encoded>
+                        <source url="http://techietech.org/feed/">techietech.org/</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSphere 7 – Demo Upgrade from VCSA 6.5 with Ext PSC to 7.0 &#124; New Features – Update Planner &#124; vCenter Profile &#124; Template Versioning etc.]]></title>
+                        <link>http://techietech.org/vsphere-7-demo-upgrade-from-vcsa-6-5-with-ext-psc-to-7-0-new-features-update-planner-vcenter-profile-template-versioning-etc/</link>
+                        <guid isPermaLink="true">http://techietech.org/vsphere-7-demo-upgrade-from-vcsa-6-5-with-ext-psc-to-7-0-new-features-update-planner-vcenter-profile-template-versioning-etc/</guid>
+                        <pubDate>Mon, 06 Apr 2020 11:59:12 -0700</pubDate>
+                        <description><![CDATA[YouTube Video Link: https://www.youtube.com/watch?v=EAWbYCuCzKU New Features in one liner: DRS Enhancement – More focused on VM workload requirement than the cluster. vMotion Enhancement – Reduced Stun Time / Switch-Over phase enhancement. Update Manager is Lifecycle Manager & Update Planner to plan the upgrade. vCenter Profiles (API Driven) – To List / Export / Import / […]]]></description>
+                        <content:encoded><![CDATA[YouTube Video Link: https://www.youtube.com/watch?v=EAWbYCuCzKU New Features in one liner: DRS Enhancement – More focused on VM workload requirement than the cluster. vMotion Enhancement – Reduced Stun Time / Switch-Over phase enhancement. Update Manager is Lifecycle Manager & Update Planner to plan the upgrade. vCenter Profiles (API Driven) – To List / Export / Import / […]]]></content:encoded>
+                        <source url="http://techietech.org/feed/">http://techietech.org/</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vCenter Server 7.0 Installation !!]]></title>
+                        <link>https://www.stephenhackers.co.uk/vcenter-server-7-0-installation/</link>
+                        <guid isPermaLink="true">https://www.stephenhackers.co.uk/vcenter-server-7-0-installation/</guid>
+                        <pubDate>Mon, 06 Apr 2020 11:08:56 -0700</pubDate>
+                        <description><![CDATA[vCenter Server 7.0 Installation vCenter Server 7.0 Installation !! VMware vSphere 7.0 has been announced by VMware and available from 02 April 2020. There are so many new features introduced on this new vCenter server version 7.0. VMware Social Media Advocacy]]></description>
+                        <content:encoded><![CDATA[vCenter Server 7.0 Installation vCenter Server 7.0 Installation !! VMware vSphere 7.0 has been announced by VMware and available from 02 April 2020. There are so many new features introduced on this new vCenter server version 7.0. VMware Social Media Advocacy]]></content:encoded>
+                        <source url="https://www.stephenhackers.co.uk/feed/">https://www.stephenhackers.co.uk/</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[How to install Next Generation ESXi 7.0 version !!]]></title>
+                        <link>https://www.stephenhackers.co.uk/how-to-install-next-generation-esxi-7-0-version/</link>
+                        <guid isPermaLink="true">https://www.stephenhackers.co.uk/how-to-install-next-generation-esxi-7-0-version/</guid>
+                        <pubDate>Mon, 06 Apr 2020 11:08:32 -0700</pubDate>
+                        <description><![CDATA[How to install Next Generation ESXi 7.0 version. How to install Next Generation ESXi 7.0 version !! All the VMware professionals are exciting for the new generation of vSphere 7 announcement and General Availability starting from April 02. There are lots of great enhancement done on this vSphere 7 version especially the inbuilt Kubernetes availability]]></description>
+                        <content:encoded><![CDATA[How to install Next Generation ESXi 7.0 version. How to install Next Generation ESXi 7.0 version !! All the VMware professionals are exciting for the new generation of vSphere 7 announcement and General Availability starting from April 02. There are lots of great enhancement done on this vSphere 7 version especially the inbuilt Kubernetes availability]]></content:encoded>
+                        <source url="https://www.stephenhackers.co.uk/feed/">https://www.stephenhackers.co.uk/</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSAN File Services with vCloud Director]]></title>
+                        <link>https://fojta.wordpress.com/2020/04/06/vsan-file-services-with-vcloud-director/</link>
+                        <guid isPermaLink="true">https://fojta.wordpress.com/2020/04/06/vsan-file-services-with-vcloud-director/</guid>
+                        <pubDate>Mon, 06 Apr 2020 10:56:15 -0700</pubDate>
+                        <description><![CDATA[vSphere 7 is now generally available and with it came also new vSAN update that introduces vSAN File Service. Cormac Hogan has good overview of the feature on his blog so definitely head there first to understand what it is. I want to dive into the possibility of using vSAN File Service NFS in vCloud … <a href="https://fojta.wordpress.com/2020/04/06/vsan-file-services-with-vcloud-director/">Continue reading <span>vSAN File Services with vCloud Director</span> <span>→</span></a>]]></description>
+                        <content:encoded><![CDATA[vSphere 7 is now generally available and with it came also new vSAN update that introduces vSAN File Service. Cormac Hogan has good overview of the feature on his blog so definitely head there first to understand what it is. I want to dive into the possibility of using vSAN File Service NFS in vCloud … <a href="https://fojta.wordpress.com/2020/04/06/vsan-file-services-with-vcloud-director/">Continue reading <span>vSAN File Services with vCloud Director</span> <span>→</span></a>]]></content:encoded>
+                        <source url="https://fojta.wordpress.com/feed/">https://fojta.wordpress.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[VMware: Actualizar nuestro VCSA a la última versión – VMware vCenter Server 7.0]]></title>
+                        <link>https://www.jorgedelacruz.es/2020/04/06/vmware-actualizar-nuestro-vcsa-a-la-ultima-version-vmware-vcenter-server-7-0/</link>
+                        <guid isPermaLink="true">https://www.jorgedelacruz.es/2020/04/06/vmware-actualizar-nuestro-vcsa-a-la-ultima-version-vmware-vcenter-server-7-0/</guid>
+                        <pubDate>Mon, 06 Apr 2020 07:15:23 -0700</pubDate>
+                        <description><![CDATA[<p>Saludos amigos, VMware ha lanzado el esperado vSphere 7, del que ya os conté muchas novedades aquí.  Que además de contener como siempre muchas actualizaciones…</p>
+<p>The post <a rel="nofollow" href="https://www.jorgedelacruz.es/2020/04/06/vmware-actualizar-nuestro-vcsa-a-la-ultima-version-vmware-vcenter-server-7-0/">VMware: Actualizar nuestro VCSA a la última versión – VMware vCenter Server 7.0</a> appeared first on <a rel="nofollow" href="https://www.jorgedelacruz.es/">El Blog de Jorge de la Cruz</a>.</p>]]></description>
+                        <content:encoded><![CDATA[<p>Saludos amigos, VMware ha lanzado el esperado vSphere 7, del que ya os conté muchas novedades aquí.  Que además de contener como siempre muchas actualizaciones…</p>
+<p>The post <a rel="nofollow" href="https://www.jorgedelacruz.es/2020/04/06/vmware-actualizar-nuestro-vcsa-a-la-ultima-version-vmware-vcenter-server-7-0/">VMware: Actualizar nuestro VCSA a la última versión – VMware vCenter Server 7.0</a> appeared first on <a rel="nofollow" href="https://www.jorgedelacruz.es/">El Blog de Jorge de la Cruz</a>.</p>]]></content:encoded>
+                        <source url="https://www.jorgedelacruz.es/feed/">https://jorgedelacruz.es</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[VMware vSAN Kurulum ve Konfigürasyonu]]></title>
+                        <link>https://www.isleyen.net/vmware-vsan-kurulum-ve-konfigurasyonu/</link>
+                        <guid isPermaLink="true">https://www.isleyen.net/vmware-vsan-kurulum-ve-konfigurasyonu/</guid>
+                        <pubDate>Mon, 06 Apr 2020 07:12:20 -0700</pubDate>
+                        <description><![CDATA[Bu makalede, VMware vSAN 6.7 kurulum ve konfigürasyon adımları, detaylı şekilde anlatılmaktadır.]]></description>
+                        <content:encoded><![CDATA[Bu makalede, VMware vSAN 6.7 kurulum ve konfigürasyon adımları, detaylı şekilde anlatılmaktadır.]]></content:encoded>
+                        <source url="https://www.isleyen.net/sitemap.rss">https://www.isleyen.net</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSAN 7 Yayında]]></title>
+                        <link>http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</link>
+                        <guid isPermaLink="true">http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:41:34 -0700</pubDate>
+                        <description><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></description>
+                        <content:encoded><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></content:encoded>
+                        <source url="http://www.ksugle.com/feed/">http://www.ksugle.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSAN 7 Yayında]]></title>
+                        <link>http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</link>
+                        <guid isPermaLink="true">http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:41:34 -0700</pubDate>
+                        <description><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></description>
+                        <content:encoded><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></content:encoded>
+                        <source url="http://www.ksugle.com/feed/">ksugle.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[vSAN 7 Yayında]]></title>
+                        <link>http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</link>
+                        <guid isPermaLink="true">http://www.ksugle.com/vsan-7-yayinda/?utm_source=rss&utm_medium=rss&utm_campaign=vsan-7-yayinda</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:41:34 -0700</pubDate>
+                        <description><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></description>
+                        <content:encoded><![CDATA[<p>Uzunca bir aradan sonra Merhaba, Umarım herkes iyidir malumunuz hayat koşturmacası içerisinde yeni makaleler için hands on olmaktan bir sürededir uzak kaldım.Dünya gibi ülkemizide saran corona virüsü sebebiyle evden çalışmaya geçtiğimiz bu günlerde zaman buldukça tekrardan yazmaya çalışıcam.  Geçtiğimiz günlerde genel kullanıma açılan vSAN 7, veri merkezi modernizasyonunda geliştirdiği özellikleriyle süreçleri hızlandırma ve üç yeni özelliğe sahip yeni versiyonuyla yayınlandı. Bu yeni üç özellik: daha basit yaşam döngüsü yönetimi, yeni dosya hizmetleri ve gelişmiş bulut yerel depolama. vSphere Yaşam Döngüsü Yöneticisi Bildiğiniz gibi uzun yıllardır VMware’in yaşam döngüsünü yöneten VUM ( VMware Update Manager) adında bir tool kullanıyorduk. Versiyon 7.0 […]</p>
+<p><a rel="nofollow" href="http://www.ksugle.com/vsan-7-yayinda/">vSAN 7 Yayında</a> yazısı ilk önce <a rel="nofollow" href="http://www.ksugle.com/">IT Logs - Kerem ŞUĞLE</a> üzerinde ortaya çıktı.</p>]]></content:encoded>
+                        <source url="http://www.ksugle.com/feed/">http://www.ksugle.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Podcast Novedades vSphere 7, vSAN 7 y Cloud Foundation 4]]></title>
+                        <link>https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</link>
+                        <guid isPermaLink="true">https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:27:46 -0700</pubDate>
+                        <description><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></description>
+                        <content:encoded><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></content:encoded>
+                        <source url="http://federicocinalli.com/blog?format=feed">http://federicocinalli.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Podcast Novedades vSphere 7, vSAN 7 y Cloud Foundation 4]]></title>
+                        <link>https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</link>
+                        <guid isPermaLink="true">https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:27:46 -0700</pubDate>
+                        <description><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></description>
+                        <content:encoded><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></content:encoded>
+                        <source url="http://federicocinalli.com/blog?format=feed">federicocinalli.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Podcast Novedades vSphere 7, vSAN 7 y Cloud Foundation 4]]></title>
+                        <link>https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</link>
+                        <guid isPermaLink="true">https://federicocinalli.com/blog/item/252-podcast-novedades-vsphere-7-vsan-7-y-cloud-foundation-4</guid>
+                        <pubDate>Mon, 06 Apr 2020 06:27:46 -0700</pubDate>
+                        <description><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></description>
+                        <content:encoded><![CDATA[<div><p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/PortBlogvSphere7Tanzu.png" alt="Novedades vSphere 7 y Tanzu"></p>
+<p> </p>
+<p>vSphere 7 es GA desde el pasado 2 de Abril y estamos hablando de una de las actualizaciones más importantes en la historia de VMware. <br>Esta actualización consolida la modernización de la Infraestructura de Virtualización para dar soporte a una plataforma común para Aplicaciones tradicionales y Cloud Native Apps.</p>
+<p>vSphere 7 viene de la mano con vSAN 7 y Cloud Foundation 4. En el caso de vSAN 7 se incorpora una funcionalidad clave que ofrece almacenamiento nativo para Kubernetes ofrecido de forma nativa en el hipervisor, además de múltiples mejoras que se comentan en el Podcast.</p>
+<p> </p>
+<p><img src="https://federicocinalli.com/images/M_images/2020/VCF-with-Tanzu-Marketecturev1.png" alt="Cloud Foundation 4"></p>
+<p> </p>
+<p>Cloud Foundation 4 representa la plataforma completa para Infraestructuras On-Premises, de Cloud Pública y también Híbrida siendo ésta Multi-Cloud y soportando ahora Kubernetes de forma nativa en el Hipervisor con la gestión de Tanzu.</p>
+<p>#UnPodcastParaTI</p>
+<p> </p>
+<p> </p></div>]]></content:encoded>
+                        <source url="http://federicocinalli.com/blog?format=feed">http://federicocinalli.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2]]></title>
+                        <link>http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</guid>
+                        <pubDate>Mon, 06 Apr 2020 05:27:41 -0700</pubDate>
+                        <description><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></description>
+                        <content:encoded><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/vmwarearena">vmwarearena.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2]]></title>
+                        <link>http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</guid>
+                        <pubDate>Mon, 06 Apr 2020 05:27:41 -0700</pubDate>
+                        <description><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></description>
+                        <content:encoded><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/vmwarearena">http://www.vmwarearena.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2]]></title>
+                        <link>http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/vmwarearena/~3/SLD0bVBYe7o/</guid>
+                        <pubDate>Mon, 06 Apr 2020 05:27:41 -0700</pubDate>
+                        <description><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></description>
+                        <content:encoded><![CDATA[<p>By default, NSX-T appliances have only two built-in users: admin and audit. In the larger organization, we need Role-based access control to access any application. The same applies to NSX-T as well. We can integrate NSX-T with VMware Identity Manager (vIDM) and configure role-based access control (RBAC) for users that vIDM manages. With VMware Identity […]</p>
+<p>The post <a rel="nofollow" href="http://www.vmwarearena.com/add-active-directory-server-to-vidm/">Add Active Directory Server to VIDM – Integrate NSX-T with VIDM Part 2</a> appeared first on <a rel="nofollow" href="http://www.vmwarearena.com/">VMware Arena</a>.</p>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/vmwarearena">http://www.vmwarearena.com</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Чего больше нет в VMware vSphere 7?]]></title>
+                        <link>http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</guid>
+                        <pubDate>Mon, 06 Apr 2020 01:43:35 -0700</pubDate>
+                        <description><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></description>
+                        <content:encoded><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/Vmguru">vmgu.ru</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Чего больше нет в VMware vSphere 7?]]></title>
+                        <link>http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</guid>
+                        <pubDate>Mon, 06 Apr 2020 01:43:35 -0700</pubDate>
+                        <description><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></description>
+                        <content:encoded><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/Vmguru">http://vmgu.ru</source>
+                         
+                </item>
+                 
+                <item>
+                        <title><![CDATA[Чего больше нет в VMware vSphere 7?]]></title>
+                        <link>http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</link>
+                        <guid isPermaLink="true">http://feedproxy.google.com/~r/Vmguru/~3/bI3CECUxuRc/vmware-vsphere-7-features-removal-and-deprecation</guid>
+                        <pubDate>Mon, 06 Apr 2020 01:43:35 -0700</pubDate>
+                        <description><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></description>
+                        <content:encoded><![CDATA[<p>Мы много писали о том, что нового появилось в обновленной платформе виртуализации <a href="https://www.vmgu.ru/news/vmware-vsphere-7-new-features">VMware vSphere 7</a>, которая недавно стала <a href="https://www.vmgu.ru/news/vmware-vsphere-7-general-availability">доступной для загрузки</a>. Сегодня мы поговорим о том, чего больше нет в vSphere, ведь многие администраторы привыкли использовать некоторые средства, поэтому, возможно, подождут с апгрейдом. Об этих запланированных изменениях <a href="https://www.vmgu.ru/news/vmware-vmworld-2017-products-deprecation">мы писали еще в 2017 году</a>.</p>
+<p><strong>1. Больше нет vSphere Web Client на базе Flash</strong></p>
+<p>Об этом говорили давно, долго задерживали снятие с производства тяжеловесного vSphere Web Client, но все откладывали из-за несоответствия функциональности клиенту нового поколения vSphere Client на базе технологии HTML5. Теперь в vSphere 7 этот переход окончательно завершен, и старого Web Client больше нет.</p>
+<p>Клиент на HTML5 включает в себя не только все старые рабочие процессы Web Client, но и давно получил новые возможности, такие как, например, упрощенная настройка механизма отказоустойчивости vCenter HA (VCHA) и функции обновлений vSphere Update Manager (VUM).</p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png"><img src="https://vmgu.ru/content_images/vmware-vsphere-client-fling-50.png" width="600"></a></p>
+<p><strong>2. Больше нет внешнего PSC (Platform Services Controller)</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vsphere-no-platform-sevices-controller-in-next-version">Как мы уже рассказывали</a>, Embedded PSC - это теперь единственно возможный вариант развертывания. Внешний PSC больше не поддерживается. Встроенный PSC имеет все необходимые сервисы для управления доменом vSphere SSO (подробнее описано в <a href="https://kb.vmware.com/s/article/60229">KB 60229</a>).</p>
+<p>С помощью утилиты <a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Converge Tool</a>, которая появилась в <a href="https://www.vmgu.ru/news/vmware-vcenter-server-67-update-1-new-features">vSphere 6.7 Update 1</a>, можно смигрировать внешний сервер Platform Services Controller (PSC) на простой в управлении embedded PSC, используя командный интерфейс vCenter Server CLI или графический клиент vSphere Client:</p>
+<p><img src="https://vmgu.ru/content_images/vmware-vcenter-7-upgrade-1.png" width="600"></p>
+<p><strong>3. Больше нет VMware vCenter for Windows</strong></p>
+<p><a href="https://www.vmgu.ru/news/vmware-vcenter-for-windows-migration-to-vcenter-server-appliance-67">Как мы уже писали</a>, vSphere 6.7 - это была последняя версия платформы, где для vCenter еще была версия под Windows. Теперь остался только виртуальный модуль vCenter Server Appliance (vCSA) на базе Photon OS. Многие привыкли к сервисам vCenter на базе Windows, теперь придется отвыкать.</p>
+<p>VMware рекомендует выполнить 2 основных шага для миграции с vCenter на vCSA:</p>
+<ul><li>Migration Assistant - консольная утилита, которую нужно выполнить до мастера миграции vCenter. Она выясняет соответствие требованиям к миграции и показывает дальнейшие шаги.</li>
+  <li>Migration Tool - это мастер миграции, который доступен из основного дистрибутива vCenter.</li>
+</ul><p><img src="https://vmgu.ru/content_images/vmware-vcenter-for-windows-migration-to-vcsa-import-3.png" width="600"></p>
+<p><strong>4. Больше нет Update Manager Plugin</strong></p>
+<p>На протяжении долгого времени это был плагин для vSphere Web Client. Теперь вместо продукта VMware Update Manager (VUM) в vSphere 7 есть более широкое по функциональности решение VMware Lifecycle Manager. </p>
+<p><a href="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png"><img src="https://vmgu.ru/content_images/vmware-vsan-7-new-features-2.png" width="600"></a></p>
+<p>Ранее администраторы vSphere использовали Update Manager (VUM) для обновлений платформы и драйверов, а утилиты от производителей серверов для обновления их микрокода (firmware). Теперь эти процессы объединяются в единый механизм под управлением vSphere Lifecycle Manager.</p>
+<p><strong>5. Больше нет VNC-сервера в ESXi</strong></p>
+<p>Ранее в ESXi был встроенный VNC-сервер, который был убран в последней версии VMware vSphere 7. Раньше можно было соединиться с консолью виртуальной машины с помощью VNC-клиента, добавив в конфигурацию параметр <code><strong>RemoteDisplay.vnc.enable</strong></code><strong></strong>.</p>
+<p>Теперь такой возможности больше нет (ей пользовались администраторы систем, не использующих средства VMware). Для соединения с консолью виртуальной машины используйте vSphere Client, хостовый клиент ESXi Host Client или средство VMware Remote Console.</p>
+<p><strong>6. Мелочи, которых или уже больше нет или их не рекомендуется использовать (не будет потом)</strong></p>
+<p>В эту категорию попали:</p>
+<ul><li>VMware vSphere 7.0 и протокол TLS Protocol (TLS 1.0 и 1.1 отключены по умолчанию).</li>
+  <li>Нет поддержки резервного копирования на уровне образов (Image-Based Backup) для сервера  vCenter.</li>
+  <li>Интерфейс VMKlinux API уже давно безнадежно устарел, вместо него используется <a href="http://www.virtuallyghetto.com/2013/10/esxi-55-introduces-new-native-device.html">архитектура нативных драйверов под vSphere</a>, начиная еще с <a href="http://www.vmgu.ru/news/vmware-vsphere-55-update-3">ESXi 5.5</a>. vmkLinux - это такая прослойка между VMkernel и Linux-драйверами, которая позволяла транслировать команды от ядра (так как VMkernel - это НЕ Linux) к драйверам и обратно. Но теперь нативных партнерских драйверов устройств для ESXi накопилось достаточно, и старая архитектура Linux-драйверов ушла в прошлое.  </li>
+  <li>Депрекация поддержки 32-bit Userworld. Ранее партнерам VMware была доступна возможность делать 32-битные драйверы, плагины и другие компоненты в VIB-пакетах. Теперь, начиная со следующих версий vSphere, такой возможности больше не будет.</li>
+  <li>Почти убрана поддержка Integrated Windows Authentication. В этой версии IWA еще работает, но в следующей версии уже не будет. Подробнее в <a href="https://kb.vmware.com/s/article/78506">KB 78506</a>.</li>
+  <li>Депрекация аутентификации DCUI Smart Card Authentication. Пользователям со смарт-картами рекомендовано использовать vCenter, PowerCLI или API-вызовы, ну либо логин и пароль по-старинке.</li>
+  <li> Депрекация Core Partition Profile для функциональности Host Profiles. Вместо разделов Coredump Partitions пользователям нужно использовать файлы Coredump Files.</li><br><a href="http://go.veeam.com/new-vm-backup-free-ru.html?ccode=vmgu"><img src="https://www.vmgu.ru/banners/280x130_vm15.png"></a><br><br><a href="http://www.securitycode.ru/products/vgate/?utm_source=google&utm_medium=banner&utm_campaign=%D0%9F%D0%B5%D1%80%D0%B5%D1%85%D0%BE%D0%B4%D1%8B%20%D1%81%20%D0%B1%D0%B0%D0%BD%D0%BD%D0%B5%D1%80%D0%B0%20%D0%BD%D0%B0%20vmgu.ru%2026.06.15"><img src="https://www.vmgu.ru/banners/banner_vmguru_vg15.png"></a></ul>]]></content:encoded>
+                        <source url="http://feeds.feedburner.com/Vmguru">http://vmgu.ru</source>
+                         
+                </item>
+                 
+            </channel>
+        </rss>
+        
