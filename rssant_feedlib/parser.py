@@ -5,7 +5,7 @@ from validr import Invalid, T, mark_index
 
 from rssant_common.validator import compiler
 
-from .raw_parser import RawFeedResult
+from .raw_parser import RawFeedResult, FeedParserError
 from .feed_checksum import FeedChecksum
 from rssant_api.helper import shorten
 from .processor import (
@@ -155,12 +155,15 @@ class FeedParser:
         )
 
     def _validate_result(self, result: FeedResult) -> FeedResult:
-        feed = validate_feed(result.feed)
         storys = []
-        for i, s in enumerate(result.storys):
-            with mark_index(i):
-                s = validate_story(s)
-                storys.append(s)
+        try:
+            feed = validate_feed(result.feed)
+            for i, s in enumerate(result.storys):
+                with mark_index(i):
+                    s = validate_story(s)
+                    storys.append(s)
+        except Invalid as ex:
+            raise FeedParserError(str(ex)) from ex
         return FeedResult(feed, storys, checksum=result.checksum)
 
     def _check_update_storys(self, storys: list):

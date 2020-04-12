@@ -241,7 +241,7 @@ class FeedFinder:
             msg = "the response content is not any feed type"
             self._log(msg)
             return None
-        raw_parser = RawFeedParser(validate=False)
+        raw_parser = RawFeedParser()
         try:
             result = raw_parser.parse(response)
         except FeedParserError as ex:

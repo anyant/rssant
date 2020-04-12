@@ -88,7 +88,7 @@ def validate_feed(feed):
             story = _validate_story(story)
         except Invalid as ex:
             story_info = story.get('link') or story.get('title') or story.get('link')
-            LOG.warning(f'{ex}, feed={feed_info}, story={story_info}')
+            LOG.error('%s, feed=%s, story=%s', ex, feed_info, story_info)
         else:
             storys.append(story)
     feed_data['storys'] = storys
@@ -129,7 +129,8 @@ def do_find_feed(
         found = finder.find()
     try:
         feed = _parse_found(found) if found else None
-    except Invalid as ex:
+    except (Invalid, FeedParserError) as ex:
+        LOG.error('invalid feed url=%r: %s', unquote(url), ex, exc_info=ex)
         message_handler(f'invalid feed: {ex}')
         feed = None
     ctx.tell('harbor_rss.save_feed_creation_result', dict(
@@ -165,16 +166,16 @@ def do_sync_feed(
     try:
         raw_result = RawFeedParser().parse(response)
     except FeedParserError as ex:
-        LOG.warning(f'failed parse feed#{feed_id} url={unquote(url)}: {ex}')
+        LOG.warning('failed parse feed#%s url=%r: %s', feed_id, unquote(url), ex)
         return
     if raw_result.warnings:
         warnings = '; '.join(raw_result.warnings)
-        LOG.warning(f'warning parse feed#{feed_id} url={unquote(url)}: {warnings}')
+        LOG.warning('warning parse feed#%s url=%r: %s', feed_id, unquote(url), warnings)
         return
     try:
         feed = _parse_found((response, raw_result))
-    except Invalid as ex:
-        LOG.warning(f'invalid feed#{feed_id} url={unquote(url)}: {ex}', exc_info=ex)
+    except (Invalid, FeedParserError) as ex:
+        LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
         return
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 

@@ -9,7 +9,7 @@ import atoma
 import feedparser
 from django.utils import timezone
 from dateutil.parser import parse as parse_datetime
-from validr import mark_index, T
+from validr import mark_index, T, Invalid
 
 from rssant_common.validator import compiler
 from .response import FeedResponse
@@ -269,12 +269,15 @@ class RawFeedParser:
         return result
 
     def _validate_result(self, result: RawFeedResult) -> RawFeedResult:
-        feed = validate_raw_feed(result.feed)
         storys = []
-        for i, s in enumerate(result.storys):
-            with mark_index(i):
-                s = validate_raw_story(s)
-                storys.append(s)
+        try:
+            feed = validate_raw_feed(result.feed)
+            for i, s in enumerate(result.storys):
+                with mark_index(i):
+                    s = validate_raw_story(s)
+                    storys.append(s)
+        except Invalid as ex:
+            raise FeedParserError(str(ex)) from ex
         return RawFeedResult(feed, storys, warnings=result.warnings)
 
     def _parse(self, response: FeedResponse) -> RawFeedResult:
