@@ -48,7 +48,25 @@ class FeedResponseStatus(enum.IntEnum):
 
     @classmethod
     def is_need_proxy(cls, value):
+        """
+        >>> FeedResponseStatus.is_need_proxy(FeedResponseStatus.CONNECTION_TIMEOUT)
+        True
+        >>> FeedResponseStatus.is_need_proxy(404)
+        False
+        """
         return value in _NEED_PROXY_STATUS_SET
+
+    @classmethod
+    def is_permanent_failure(cls, value):
+        """
+        >>> FeedResponseStatus.is_permanent_failure(FeedResponseStatus.CONNECTION_TIMEOUT)
+        True
+        >>> FeedResponseStatus.is_permanent_failure(FeedResponseStatus.RSS_PROXY_ERROR)
+        True
+        >>> FeedResponseStatus.is_permanent_failure(404)
+        False
+        """
+        return value < 0 and abs(value) // 100 in (2, 3)
 
 
 _NEED_PROXY_STATUS_SET = {x.value for x in [

@@ -196,6 +196,7 @@ class FeedFinder:
         self.reader = reader
         self._links = {start_url: ScoredLink(start_url, 1.0)}
         self._visited = set()
+        self._guessed = False
 
     @property
     def has_rss_proxy(self):
@@ -219,7 +220,7 @@ class FeedFinder:
     def _read(self, url, current_try, use_proxy=False):
         self._visited.add(url)
         res = self.reader.read(url, use_proxy=use_proxy)
-        if res.ok and current_try == 0 and res.history:
+        if res.ok and current_try == 0 and res.url != url:
             # 发生了重定向，重新设置start_url
             url = res.url
             self._log(f'resolve redirect, set start url to {unquote(url)}')
@@ -372,6 +373,13 @@ class FeedFinder:
             return self._pop_candidate()
         return ret
 
+    def _try_guess_links(self):
+        if not self._links and not self._guessed:
+            msg = f'guess some links from start_url'
+            self._log(msg)
+            self._guess_links()
+            self._guessed = True
+
     def find(self) -> Tuple[FeedResponse, FeedResult]:
         use_proxy = False
         current_try = 0
@@ -390,18 +398,16 @@ class FeedFinder:
                     res = self._read(url, current_try, use_proxy=True)
                     if res.status in (200, 404):
                         use_proxy = True
-            shoud_abort = res.status not in (200, 404)
+            shoud_abort = FeedResponseStatus.is_permanent_failure(res.status)
             if shoud_abort:
                 self._log('The url is unable to connect or likely not contain feed, abort!')
                 break
             if not res.ok or not res.content:
-                if current_try == 0 and not self._links:
-                    msg = f'{url} not contain links, will guess some links from it'
-                    self._log(msg)
-                    self._guess_links()
+                self._try_guess_links()
                 continue
             result = self._parse(res)
             if result is None:
+                self._try_guess_links()
                 continue
             num_storys = len(result.storys)
             version = result.feed['version']
@@ -442,18 +448,3 @@ def _main():
             if found:
                 response, result = found
                 print(f"Got: response={response} result={result}")
-
-
-if __name__ == "__main__":
-    logging.basicConfig(
-        format="%(levelname)1.1s %(asctime)s %(name)s:%(lineno)-4d %(message)s"
-    )
-    LOG.setLevel("DEBUG")
-    feeds = []
-    _main()
-    # from pyinstrument import Profiler
-    # profiler = Profiler()
-    # profiler.start()
-    # run(_main())
-    # profiler.stop()
-    # print(profiler.output_text(unicode=True, color=True))
