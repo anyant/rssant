@@ -1,6 +1,5 @@
 import logging
 import os
-import json
 
 import click
 import slugify
@@ -13,8 +12,8 @@ from .finder import FeedFinder
 from .raw_parser import RawFeedParser
 from .parser import FeedParser
 from .reader import FeedReader
-from .response import FeedResponse, FeedContentType
 from .feed_checksum import FeedChecksum
+from .response_file import FeedResponseFile
 
 
 LOG = logging.getLogger(__name__)
@@ -85,7 +84,8 @@ def _do_find(url, max_trys, allow_private_address, printer):
 
 def _do_parse(url: str, printer, allow_private_address, checksum, save_checksum):
     if not url.startswith('http://') and not url.startswith('https://'):
-        response = _read_local_response(url)
+        response_file = FeedResponseFile(url)
+        response = response_file.read()
         print('-> {}'.format(response))
     else:
         reader = FeedReader(allow_private_address=allow_private_address)
@@ -127,60 +127,10 @@ def _do_save(url, output_dir, allow_private_address):
     with reader:
         response = reader.read(url)
         print(f'-> {response}')
-        filename = slugify.slugify(url)
-        meta_filename = filename + '.feed.json'
-        if not response.ok or not response.content:
-            return
-        if response.feed_type.is_json:
-            filename += '.json'
-        elif response.feed_type.is_html:
-            filename += '.html'
-        elif response.feed_type.is_xml:
-            filename += '.xml'
-        else:
-            filename += '.txt'
-        meta = dict(
-            filename=filename,
-            url=response.url,
-            status=response.status,
-            encoding=response.encoding,
-            content_length=len(response.content),
-            feed_type=response.feed_type.value,
-            mime_type=response.mime_type,
-            use_proxy=response.use_proxy,
-            etag=response.etag,
-            last_modified=response.last_modified,
-        )
-        meta_filepath = _normalize_path(os.path.join(output_dir, meta_filename))
-        print(f'-> save {meta_filepath}')
-        with open(meta_filepath, 'w') as f:
-            f.write(pretty_format_json(meta))
-        os.makedirs(output_dir, exist_ok=True)
-        filepath = _normalize_path(os.path.join(output_dir, filename))
-        print(f'-> save {filepath}')
-        with open(filepath, 'wb') as f:
-            f.write(response.content)
-
-
-def _read_local_response(meta_filepath) -> FeedResponse:
-    with open(meta_filepath) as f:
-        meta = json.load(f)
-    filename = meta['filename']
-    filepath = os.path.join(os.path.dirname(meta_filepath), filename)
-    with open(filepath, 'rb') as f:
-        content = f.read()
-    response = FeedResponse(
-        url=meta['url'],
-        status=meta['status'],
-        content=content,
-        encoding=meta['encoding'],
-        feed_type=FeedContentType(meta['feed_type']),
-        mime_type=meta['mime_type'],
-        use_proxy=meta['use_proxy'],
-        etag=meta['etag'],
-        last_modified=meta['last_modified'],
-    )
-    return response
+        filename = os.path.join(output_dir, slugify.slugify(url))
+        response_file = FeedResponseFile(filename)
+        print(f'-> save {response_file.filepath}')
+        response_file.write(response)
 
 
 @cli.command()
