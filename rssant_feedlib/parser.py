@@ -136,7 +136,10 @@ class FeedParser:
         author_url = normlize_url(story['author_url'], base_url=base_url)
         author_avatar_url = normlize_url(story['author_avatar_url'], base_url=base_url)
         content = self._process_content(story['content'], link=base_url)
-        summary = story_html_clean(story['summary'])
+        if story['summary']:
+            summary = story_html_clean(story['summary'])
+        else:
+            summary = content
         summary = shorten(story_html_to_text(summary), width=300)
         has_mathjax = story_has_mathjax(content)
         return dict(
