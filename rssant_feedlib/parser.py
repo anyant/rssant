@@ -32,6 +32,7 @@ FeedSchema = T.dict(
 
 _MAX_CONTENT_LENGTH = 300 * 1024
 _MAX_SUMMARY_LENGTH = 300
+_MAX_STORYS = 300
 
 StorySchema = T.dict(
     ident=T.str.maxlen(200),
@@ -184,8 +185,26 @@ class FeedParser:
                 update_storys.append(story)
         return update_storys
 
+    @staticmethod
+    def _story_sort_key(story):
+        """
+        1. dt_published is None
+        2. dt_published is smaller
+        ...
+        3. dt_published is latest
+        """
+        dt = story['dt_published'] or story['dt_updated'] or None
+        return (bool(dt), dt, story['ident'])
+
+    def _limit_max_storys(self, storys: list) -> list:
+        if len(storys) <= _MAX_STORYS:
+            return storys
+        storys = list(sorted(storys, key=self._story_sort_key))
+        return storys[-_MAX_STORYS:]
+
     def parse(self, raw: RawFeedResult) -> FeedResult:
-        update_storys = self._check_update_storys(raw.storys)
+        update_storys = self._limit_max_storys(raw.storys)
+        update_storys = self._check_update_storys(update_storys)
         feed = self._parse_feed(raw.feed)
         feed_url = feed['url']
         storys = []

@@ -1,16 +1,20 @@
 import logging
 import os
+import json
+import datetime
 from pathlib import Path
 
 import pytest
 
 from rssant_feedlib import (
-    RawFeedParser, FeedParser, FeedParserError, FeedResponseBuilder,
+    RawFeedParser, FeedParser,
+    FeedParserError, FeedResponseBuilder,
 )
 from rssant_feedlib.raw_parser import _MAX_CONTENT_LENGTH as _RAW_MAX_CONTENT_LENGTH
 from rssant_feedlib.raw_parser import _MAX_SUMMARY_LENGTH as _RAW_MAX_SUMMARY_LENGTH
 from rssant_feedlib.parser import _MAX_CONTENT_LENGTH
 from rssant_feedlib.parser import _MAX_SUMMARY_LENGTH
+from rssant_feedlib.parser import _MAX_STORYS
 
 
 LOG = logging.getLogger(__name__)
@@ -173,6 +177,40 @@ def test_parse_large_content(template_name, content_length, summary_length):
     assert result and len(result.storys) == 1
     assert len(result.storys[0]['content']) <= _MAX_CONTENT_LENGTH
     assert len(result.storys[0]['summary']) <= _MAX_SUMMARY_LENGTH
+
+
+def test_parse_too_many_storys():
+    items = []
+    num_storys = 2000
+    base = datetime.datetime.now()
+    for i in range(num_storys):
+        if i < num_storys // 2:
+            date_published = None
+        else:
+            date_published = (base + datetime.timedelta(seconds=i)).isoformat()
+        items.append({
+            "id": f"{i}",
+            "content_html": f"content_{i}",
+            "summary": f"summary_{i}",
+            "url": f"https://example.org/post/{i}",
+            "date_published": date_published,
+        })
+    feed = {
+        "version": "https://jsonfeed.org/version/1",
+        "title": "Too many storys",
+        "home_page_url": "https://example.org/",
+        "feed_url": "https://example.org/feed.json",
+        "items": items
+    }
+    data = json.dumps(feed).encode('utf-8')
+    response = _create_builder(data).build()
+    raw_result = RawFeedParser().parse(response)
+    assert len(raw_result.storys) == num_storys
+    result = FeedParser().parse(raw_result)
+    assert len(result.storys) == _MAX_STORYS
+    expected = set(range(num_storys - _MAX_STORYS, num_storys))
+    story_ids = {int(x['ident']) for x in result.storys}
+    assert story_ids == expected
 
 
 def _collect_parser_cases():
