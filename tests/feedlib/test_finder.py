@@ -1,6 +1,7 @@
 import pytest
 from pytest_httpserver import HTTPServer
 
+from rssant_config import CONFIG
 from rssant_feedlib.finder import FeedFinder
 
 
@@ -103,7 +104,7 @@ def _setup_feed_server(httpserver: HTTPServer):
     httpserver.expect_request('/bad-feed.xml').respond_with_data(bad_feed_page)
 
 
-def _create_finder(start_url):
+def _create_finder(start_url, **kwargs):
     messages = []
 
     def message_handler(msg):
@@ -113,6 +114,7 @@ def _create_finder(start_url):
         start_url,
         message_handler=message_handler,
         allow_private_address=True,
+        **kwargs,
     )
     return finder, messages
 
@@ -156,13 +158,19 @@ real_urls = [
     "http://www.zreading.cn/ican/2010/03/feed-subscribe/",
     "http://www.ruanyifeng.com/blog/",
     "https://www.zhihu.com/question/19580096",
+    "https://www.reddit.com/r/Python",
+    "https://news.ycombinator.com/show",
 ]
 
 
 @pytest.mark.xfail(run=False, reason='depends on test network')
 @pytest.mark.parametrize('start_url', real_urls)
 def test_find_real(start_url: str):
-    finder, messages = _create_finder(start_url)
+    finder, messages = _create_finder(
+        start_url,
+        rss_proxy_url=CONFIG.rss_proxy_url,
+        rss_proxy_token=CONFIG.rss_proxy_token,
+    )
     with finder:
         found = finder.find()
         if found:

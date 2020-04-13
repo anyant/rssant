@@ -396,6 +396,7 @@ class FeedFinder:
     def find(self) -> Tuple[FeedResponse, FeedResult]:
         use_proxy = False
         current_try = 0
+        should_abort = FeedResponseStatus.is_permanent_failure
         while current_try < self.max_trys:
             current_try += 1
             url = self._pop_candidate()
@@ -409,10 +410,9 @@ class FeedFinder:
                     current_try += 1
                     self._log(f'#{current_try} try use proxy')
                     res = self._read(url, current_try, use_proxy=True)
-                    if res.status in (200, 404):
+                    if not should_abort(res.status):
                         use_proxy = True
-            shoud_abort = FeedResponseStatus.is_permanent_failure(res.status)
-            if shoud_abort:
+            if should_abort(res.status):
                 self._log('The url is unable to connect or likely not contain feed, abort!')
                 break
             if not res.ok or not res.content:
