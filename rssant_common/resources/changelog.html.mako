@@ -12,6 +12,25 @@
     </style>
     <style>
         ${ github_markdown_css }
+
+        /* Fix: font-weight: 600 not working in Android Chrome */
+        .markdown-body strong {
+            font-weight: bold;
+        }
+
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            font-weight: bold;
+        }
+
+        .markdown-body dl dt,
+        .markdown-body table th {
+            font-weight: bold;
+        }
     </style>
     <style>
         body {
