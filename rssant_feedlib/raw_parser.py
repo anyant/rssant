@@ -37,12 +37,16 @@ RawFeedSchema = T.dict(
 )
 
 
+_MAX_CONTENT_LENGTH = 1000 * 1024
+_MAX_SUMMARY_LENGTH = 10 * 1024
+
+
 RawStorySchema = T.dict(
     ident=T.str,
     title=T.str,
     url=T.str.optional,
-    content=T.str.optional,
-    summary=T.str.optional,
+    content=T.str.maxlen(_MAX_CONTENT_LENGTH).optional,
+    summary=T.str.maxlen(_MAX_SUMMARY_LENGTH).optional,
     image_url=T.str.optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
@@ -171,14 +175,34 @@ class RawFeedParser:
             return None
         return value
 
+    def _normalize_story_content(self, content, story_key):
+        if content and len(content) > _MAX_CONTENT_LENGTH:
+            msg = 'story %r content length=%s too large, will truncate it'
+            LOG.warning(msg, len(content), story_key)
+            content = content[:_MAX_CONTENT_LENGTH]
+        return content or ''
+
+    def _normalize_story_summary(self, summary, story_key):
+        if summary and len(summary) > _MAX_SUMMARY_LENGTH:
+            msg = 'story %r summary length=%s too large, will discard it'
+            LOG.warning(msg, len(summary), story_key)
+            summary = ''
+        return summary or ''
+
+    def _normalize_story_content_summary(self, story: dict) -> dict:
+        _story_key = story['url'] or story['unique_id']
+        content = story['content']
+        summary = story['summary']
+        if content == summary:
+            summary = ''
+        content = self._normalize_story_content(content, _story_key)
+        summary = self._normalize_story_summary(summary, _story_key)
+        story['content'] = content
+        story['summary'] = summary
+        return story
+
     def _extract_story(self, item):
         story = {}
-        content = self._get_story_content(item)
-        summary = item.get("summary")
-        if summary == content:
-            summary = None
-        story['content'] = content or ''
-        story['summary'] = summary or ''
         url = item.get("link")
         title = item.get("title")
         unique_id = item.get('id') or url or title
@@ -187,10 +211,13 @@ class RawFeedParser:
         story['ident'] = unique_id
         story['url'] = url
         story['title'] = title or unique_id
+        story['content'] = self._get_story_content(item)
+        story['summary'] = item.get("summary")
         story['image_url'] = self._get_story_image_url(item)
         story['dt_published'] = self._get_date(item, 'published_parsed')
         story['dt_updated'] = self._get_date(item, 'updated_parsed')
         story.update(self._get_author_info(item))
+        story = self._normalize_story_content_summary(story)
         return story
 
     def _get_date(self, item, name):
@@ -262,6 +289,7 @@ class RawFeedParser:
                 dt_updated=item.date_modified,
                 **self._get_json_feed_author(item.author),
             )
+            story = self._normalize_story_content_summary(story)
             storys.append(story)
         if (not storys) and warnings:
             raise FeedParserError('; '.join(warnings))

@@ -30,13 +30,15 @@ FeedSchema = T.dict(
     author_avatar_url=T.url.invalid_to_default.optional,
 )
 
+_MAX_CONTENT_LENGTH = 300 * 1024
+_MAX_SUMMARY_LENGTH = 300
 
 StorySchema = T.dict(
     ident=T.str.maxlen(200),
     title=T.str.maxlen(200),
     url=T.url.optional,
-    content=T.str.optional,
-    summary=T.str.maxlen(300).optional,
+    content=T.str.maxlen(_MAX_CONTENT_LENGTH).optional,
+    summary=T.str.maxlen(_MAX_SUMMARY_LENGTH).optional,
     has_mathjax=T.bool.optional,
     image_url=T.url.invalid_to_default.optional,
     dt_published=T.datetime.object.optional,
@@ -115,11 +117,15 @@ class FeedParser:
 
     def _process_content(self, content, link):
         content = story_html_clean(content)
-        if len(content) >= 1024 * 1024:
-            msg = 'too large story link=%r content length=%s, will only save plain text!'
+        content = process_story_links(content, link)
+        if len(content) > _MAX_CONTENT_LENGTH:
+            msg = 'story link=%r content length=%s too large, will only save plain text'
             LOG.warning(msg, link, len(content))
             content = story_html_to_text(content)
-        content = process_story_links(content, link)
+        if len(content) > _MAX_CONTENT_LENGTH:
+            msg = 'story link=%r content length=%s still too large, will truncate it'
+            LOG.warning(msg, link, len(content))
+            content = content[:_MAX_CONTENT_LENGTH]
         return content
 
     def _parse_story(self, story: dict, feed_url: str):
@@ -140,7 +146,7 @@ class FeedParser:
             summary = story_html_clean(story['summary'])
         else:
             summary = content
-        summary = shorten(story_html_to_text(summary), width=300)
+        summary = shorten(story_html_to_text(summary), width=_MAX_SUMMARY_LENGTH)
         has_mathjax = story_has_mathjax(content)
         return dict(
             ident=ident,
