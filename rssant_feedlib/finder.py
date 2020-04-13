@@ -3,6 +3,7 @@ from typing import Tuple
 from urllib.parse import urlsplit, urlunsplit, unquote, urljoin
 
 from bs4 import BeautifulSoup
+from validr import Invalid
 
 from rssant_common.helper import coerce_url
 
@@ -10,6 +11,7 @@ from .raw_parser import RawFeedParser, FeedParserError
 from .parser import FeedParser, FeedResult
 from .reader import FeedReader
 from .response import FeedResponse, FeedResponseStatus
+from .processor import validate_url
 
 
 LOG = logging.getLogger(__name__)
@@ -181,6 +183,10 @@ class FeedFinder:
         rss_proxy_token=None,
     ):
         start_url = coerce_url(start_url)
+        try:
+            start_url = validate_url(start_url)
+        except Invalid:
+            raise ValueError(f"invalid start_url {start_url!r}")
         self._set_start_url(start_url)
         self.message_handler = message_handler
         self.max_trys = max_trys
@@ -210,8 +216,7 @@ class FeedFinder:
 
     def _set_start_url(self, url):
         scheme, netloc, path, query, fragment = urlsplit(url)
-        if not scheme or not netloc:
-            raise ValueError(f"invalid start_url {url!r}")
+        assert scheme and netloc, f"invalid start_url {url!r}"
         self.start_url = url
         self.scheme = scheme
         self.netloc = netloc
@@ -222,9 +227,13 @@ class FeedFinder:
         res = self.reader.read(url, use_proxy=use_proxy)
         if res.ok and current_try == 0 and res.url != url:
             # 发生了重定向，重新设置start_url
-            url = res.url
-            self._log(f'resolve redirect, set start url to {unquote(url)}')
-            self._set_start_url(url)
+            try:
+                url = validate_url(res.url)
+            except Invalid:
+                self._log(f'invalid redirect url {unquote(res.url)}')
+            else:
+                self._log(f'resolve redirect, set start url to {unquote(url)}')
+                self._set_start_url(url)
         if not res.ok:
             error_name = FeedResponseStatus.name_of(res.status)
             msg = '{} {} when request {!r}'.format(res.status, error_name, url)
@@ -321,6 +330,10 @@ class FeedFinder:
             if lower_path.endswith(key):
                 return None
         url = urlunsplit((scheme, netloc, path, query, None))
+        try:
+            validate_url(url)
+        except Invalid:
+            return None
         return self._score_link(url, lower_path, link_rel, link_type)
 
     def _score_link(self, url, path, link_rel, link_type):
