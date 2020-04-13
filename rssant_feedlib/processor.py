@@ -354,9 +354,9 @@ def process_story_links(content, story_link):
 
 def story_readability(content):
     """
-    >>> content = '<p>hello world</p>'
+    >>> content = '<p>hello <b>world</b><br/>你好<i>世界</i></p>'
     >>> print(story_readability(content))
-    <body id="readabilityBody"><p>hello world</p></body>
+    <body id="readabilityBody"><p>hello <b>world</b><br/>你好<i>世界</i></p></body>
     """
     if (not content) or (not content.strip()):
         return ""
@@ -473,7 +473,7 @@ def story_html_clean(content):
     ... <pre stype="xxx">
     ...
     ... hello world</pre>
-    ... <p>happy day</p>
+    ... <p><b>happy</b> day<br>你好<i>世界</i></p>
     ... </body></html>
     ... '''
     >>> print(story_html_clean(content))
@@ -481,7 +481,7 @@ def story_html_clean(content):
     <pre>
     <BLANKLINE>
     hello world</pre>
-    <p>happy day</p>
+    <p><b>happy</b> day<br>你好<i>世界</i></p>
     </div>
     >>> content = '''
     ... <?xml version="1.0" encoding="utf-8"?>
