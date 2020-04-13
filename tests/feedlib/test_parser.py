@@ -74,6 +74,18 @@ def test_raw_parse_bad_encoding():
     assert ex
 
 
+def test_parse_story_no_summary():
+    filename = 'well/v2ex-no-summary.xml'
+    response = _read_response(_data_dir, filename)
+    raw_result = RawFeedParser().parse(response)
+    assert raw_result.storys
+    assert not raw_result.storys[0]['summary']
+    result = FeedParser().parse(raw_result)
+    assert result.storys
+    assert len(raw_result.storys) == len(result.storys)
+    assert result.storys[0]['summary']
+
+
 def _collect_parser_cases():
     cases = []
     for base_dir in ['well', 'warn']:
