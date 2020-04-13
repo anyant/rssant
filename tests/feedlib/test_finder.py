@@ -76,9 +76,23 @@ http://graphemica.com/unicode/characters/page/13</a>
 """
 
 
+invalid_url_page = """
+<HTML>
+<HEAD><TITLE>404 Not Found</TITLE></HEAD>
+<BODY BGCOLOR="#cc9999" TEXT="#000000" LINK="#2020ff" VLINK="#4040cc">
+<H4>404 Not Found</H4>
+File not found.
+<HR>
+<ADDRESS><A HREF="http://...">The Super Encoder & Transcoder.</A></ADDRESS>
+</BODY>
+</HTML>
+"""
+
+
 def _setup_feed_server(httpserver: HTTPServer):
     httpserver.expect_request('/').respond_with_data(home_page)
     httpserver.expect_request('/404').respond_with_data('Not Found', status=404)
+    httpserver.expect_request('/invalid-url').respond_with_data(invalid_url_page)
     headers = {'Location': '/302'}
     httpserver.expect_request('/302').respond_with_data(
         '302 Redirect', status=302, headers=headers)
@@ -106,6 +120,7 @@ def _create_finder(start_url):
 @pytest.mark.parametrize('start_path', [
     '/',
     '/404',
+    '/invalid-url',
     '/302',
     '/go/home',
     '/bad-feed.xml',
