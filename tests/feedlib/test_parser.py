@@ -87,16 +87,40 @@ def test_raw_parse_bad_encoding():
     assert ex
 
 
-def test_parse_story_no_summary():
-    filename = 'well/v2ex-no-summary.xml'
+def test_parse_story_no_id_no_summary_no_url():
+    # total 3 storys
+    # skip the no id story
+    # story#0 no content no summary, no url
+    # story#1 has content no summary, no url but id is valid url
+    filename = 'well/v2ex-no-id-no-summary-no-url.xml'
     response = _read_response(_data_dir, filename)
+
     raw_result = RawFeedParser().parse(response)
     assert raw_result.storys
+    # assert skip the no id story
+    assert len(raw_result.storys) == 2
+    # assert no summary
     assert not raw_result.storys[0]['summary']
+    assert not raw_result.storys[1]['summary']
+    # assert content
+    assert not raw_result.storys[0]['content']
+    assert raw_result.storys[1]['content']
+    # assert pick id as url, discard the invalid one
+    assert not raw_result.storys[0]['url']
+    assert raw_result.storys[1]['url']
+
     result = FeedParser().parse(raw_result)
     assert result.storys
     assert len(raw_result.storys) == len(result.storys)
-    assert result.storys[0]['summary']
+    # assert content
+    assert not result.storys[0]['content']
+    assert result.storys[1]['content']
+    # assert extract summary from content
+    assert not result.storys[0]['summary']
+    assert result.storys[1]['summary']
+    # assert pick id as url, discard the invalid one
+    assert not result.storys[0]['url']
+    assert result.storys[1]['url']
 
 
 large_json_feed = """

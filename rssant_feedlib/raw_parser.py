@@ -190,7 +190,7 @@ class RawFeedParser:
         return summary or ''
 
     def _normalize_story_content_summary(self, story: dict) -> dict:
-        _story_key = story['url'] or story['unique_id']
+        _story_key = story['url'] or story['ident']
         content = story['content']
         summary = story['summary']
         if content == summary:
