@@ -92,7 +92,7 @@ def test_parse_story_no_id_no_summary_no_url():
     # skip the no id story
     # story#0 no content no summary, no url
     # story#1 has content no summary, no url but id is valid url
-    filename = 'well/v2ex-no-id-no-summary-no-url.xml'
+    filename = 'warn/v2ex-no-id-no-summary-no-url.xml'
     response = _read_response(_data_dir, filename)
 
     raw_result = RawFeedParser().parse(response)
