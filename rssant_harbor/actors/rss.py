@@ -232,8 +232,16 @@ def is_rssant_changelog(url: str):
     """
     >>> is_rssant_changelog('http://localhost:6789/changelog?version=1.0.0')
     True
+    >>> is_rssant_changelog('https://rss.anyant.com/changelog.atom')
+    True
+    >>> is_rssant_changelog('https://rss.qa.anyant.com/changelog.atom')
+    True
+    >>> is_rssant_changelog('https://www.anyant.com/')
+    False
     """
-    return url.startswith(CONFIG.root_url) and 'changelog' in url
+    is_rssant = 'rss' in url and 'anyant.com' in url
+    is_local_rssant = url.startswith(CONFIG.root_url)
+    return (is_rssant or is_local_rssant) and 'changelog' in url
 
 
 def _is_feed_need_fetch_storys(feed, modified_storys):
