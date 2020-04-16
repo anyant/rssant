@@ -21,6 +21,7 @@ from rssant_feedlib.processor import (
     process_story_links
 )
 from rssant_feedlib.blacklist import compile_url_blacklist
+from rssant_feedlib.fulltext import is_fulltext_content, split_sentences
 
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
@@ -30,6 +31,11 @@ from rssant_config import CONFIG
 
 
 LOG = logging.getLogger(__name__)
+
+
+_MAX_STORY_HTML_LENGTH = 5 * 1000 * 1024
+_MAX_STORY_CONTENT_LENGTH = 1000 * 1024
+_MAX_STORY_SUMMARY_LENGTH = 300
 
 
 REFERER_DENY_LIST = """
@@ -186,6 +192,7 @@ async def do_fetch_story(
     story_id: T.int,
     url: T.url,
     use_proxy: T.bool.default(False),
+    num_sub_sentences: T.int.optional,
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
     options = _get_proxy_options()
@@ -207,16 +214,17 @@ async def do_fetch_story(
     except UnicodeDecodeError as ex:
         LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
         content = response.content.decode(response.encoding, errors='ignore')
-    if len(content) >= 1024 * 1024:
+    if len(content) >= _MAX_STORY_HTML_LENGTH:
         content = story_html_clean(content)
-        if len(content) >= 1024 * 1024:
+        if len(content) >= _MAX_STORY_HTML_LENGTH:
             msg = 'too large story#%s size=%s url=%r'
             LOG.warning(msg, story_id, len(content), url)
-            content = story_html_to_text(content)[:1024 * 1024]
+            content = story_html_to_text(content)[:_MAX_STORY_HTML_LENGTH]
     await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
         text=content,
+        num_sub_sentences=num_sub_sentences,
     ))
 
 
@@ -225,7 +233,8 @@ def do_process_story_webpage(
     ctx: ActorContext,
     story_id: T.int,
     url: T.url,
-    text: T.str.maxlen(5 * 1024 * 1024),
+    text: T.str.maxlen(_MAX_STORY_HTML_LENGTH),
+    num_sub_sentences: T.int.optional,
 ):
     # https://github.com/dragnet-org/dragnet
     # https://github.com/misja/python-boilerpipe
@@ -239,7 +248,19 @@ def do_process_story_webpage(
     text = story_html_clean(text)
     content = story_readability(text)
     content = process_story_links(content, url)
-    summary = shorten(story_html_to_text(content), width=300)
+    if len(content) > _MAX_STORY_CONTENT_LENGTH:
+        msg = 'too large story#%s size=%s url=%r, will only save plain text'
+        LOG.warning(msg, story_id, len(content), url)
+        content = shorten(story_html_to_text(content), width=_MAX_STORY_CONTENT_LENGTH)
+    # 如果取回的内容比RSS内容更短，就不是正确的全文
+    if num_sub_sentences is not None:
+        if not is_fulltext_content(content):
+            num_sentences = len(split_sentences(story_html_to_text(content)))
+            if num_sentences <= num_sub_sentences:
+                msg = 'fetched story#%s url=%s num_sentences=%s less than num_sub_sentences=%s'
+                LOG.info(msg, story_id, url, num_sentences, num_sub_sentences)
+                return
+    summary = shorten(story_html_to_text(content), width=_MAX_STORY_SUMMARY_LENGTH)
     if not summary:
         return
     ctx.hope('harbor_rss.update_story', dict(

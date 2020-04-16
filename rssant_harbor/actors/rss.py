@@ -12,6 +12,7 @@ from actorlib import actor, ActorContext
 from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
+from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_content
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
@@ -196,36 +197,17 @@ def do_update_feed(
     for story in modified_storys:
         if not story.link:
             continue
-        if need_fetch_story and (not is_fulltext_story(story)):
+        if need_fetch_story and (not is_fulltext_content(story.content)):
+            text = processor.story_html_to_text(story.content)
+            num_sub_sentences = len(split_sentences(text))
             ctx.tell('worker_rss.fetch_story', dict(
                 url=story.link,
                 use_proxy=feed.use_proxy,
-                story_id=str(story.id)
+                story_id=str(story.id),
+                num_sub_sentences=num_sub_sentences,
             ))
         else:
             _detect_story_images(ctx, story)
-
-
-def is_fulltext_story(story):
-    """
-    detect whether the full content is already in rss feed.
-
-    see also: https://github.com/pictuga/morss/issues/27
-    """
-    if not story.content:
-        return False
-    if len(story.content) >= 2000:
-        return True
-    link_count = processor.story_link_count(story.content)
-    if link_count >= 2:
-        return True
-    url_count = processor.story_url_count(story.content)
-    if url_count >= 3:
-        return True
-    image_count = processor.story_image_count(story.content)
-    if image_count >= 1:
-        return True
-    return False
 
 
 def is_rssant_changelog(url: str):
@@ -255,10 +237,6 @@ def _is_feed_need_fetch_storys(feed, modified_storys):
             return False
     # eg: news, forum, bbs, daily reports
     if feed.dryness is not None and feed.dryness < 500:
-        return False
-    has_storys = feed.total_storys is not None \
-        and feed.total_storys > len(modified_storys)
-    if has_storys and len(modified_storys) > 100:
         return False
     return True
 
@@ -325,8 +303,16 @@ def do_update_story(
     has_mathjax: T.bool.optional,
     url: T.url,
 ):
+    story = Story.objects.get(pk=story_id)
+    if not is_fulltext_content(content):
+        story_text = processor.story_html_to_text(story.content)
+        text = processor.story_html_to_text(content)
+        if not is_summary(story_text, text):
+            msg = 'fetched story#%s url=%r is not fulltext of feed story content'
+            LOG.info(msg, story_id, url)
+            return
     with transaction.atomic():
-        story = Story.objects.get(pk=story_id)
+        story.refresh_from_db()
         story.link = url
         story.content = content
         story.summary = summary

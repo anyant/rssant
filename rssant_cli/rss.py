@@ -5,6 +5,7 @@ import tqdm
 import click
 from django.utils import timezone
 from django.db import transaction, connection
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 
 import rssant_common.django_setup  # noqa:F401
@@ -332,6 +333,26 @@ def update_feed_use_proxy():
                 feed.refresh_from_db()
                 feed.use_proxy = True
                 feed.save()
+
+
+@main.command()
+@click.argument('key')
+def delete_feed(key):
+    try:
+        key = int(key)
+    except ValueError:
+        pass  # ignore
+    if isinstance(key, int):
+        feed = Feed.get_by_pk(key)
+    else:
+        feed = Feed.objects.filter(
+            Q(url__contains=key) | Q(title__contains=key)
+        ).first()
+    if not feed:
+        print(f'not found feed like {key}')
+        return
+    if click.confirm(f'delete {feed} ?'):
+        feed.delete()
 
 
 if __name__ == "__main__":
