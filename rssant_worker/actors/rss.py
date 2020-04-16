@@ -166,8 +166,10 @@ def do_sync_feed(
         need_proxy = FeedResponseStatus.is_need_proxy(response.status)
         if (not use_proxy) and reader.has_rss_proxy and need_proxy:
             LOG.info(f'try use proxy read feed#{feed_id} url={unquote(url)}')
-            response = reader.read(url, **params, use_proxy=True)
-            LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
+            proxy_response = reader.read(url, **params, use_proxy=True)
+            LOG.info(f'proxy read feed#{feed_id} url={unquote(url)} status={proxy_response.status}')
+            if proxy_response.ok:
+                response = proxy_response
     if (not response.ok) or (not response.content):
         return
     new_hash = compute_hash_base64(response.content)
