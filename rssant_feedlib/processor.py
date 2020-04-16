@@ -506,6 +506,34 @@ def story_html_clean(content):
     return content
 
 
+RE_HTML_REDIRECT = re.compile(r"<meta[^>]*http-equiv=['\"]?refresh['\"]?([^>]*)>", re.I)
+RE_HTML_REDIRECT_URL = re.compile(r"url=['\"]?([^'\"]+)['\"]?", re.I)
+
+
+def get_html_redirect_url(html: str, base_url: str = None) -> str:
+    """
+    Resolve HTML meta refresh client-side redirect
+
+    https://www.w3.org/TR/WCAG20-TECHS/H76.html
+    Example:
+        <meta http-equiv="refresh" content="0;URL='http://example.com/'"/>
+    """
+    if not html or len(html) > 2048:
+        return None
+    match = RE_HTML_REDIRECT.search(html)
+    if not match:
+        return None
+    match = RE_HTML_REDIRECT_URL.search(match.group(1))
+    if not match:
+        return None
+    url = normalize_url(match.group(1).strip(), base_url=base_url)
+    try:
+        url = validate_url(url)
+    except Invalid:
+        url = None
+    return url
+
+
 RE_V2EX = re.compile(r'^http(s)?://[a-zA-Z0-9_\.\-]*\.v2ex\.com', re.I)
 RE_HACKNEWS = re.compile(r'^http(s)?://news\.ycombinator\.com', re.I)
 RE_GITHUB = re.compile(r'^http(s)?://github\.com', re.I)

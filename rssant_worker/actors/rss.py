@@ -18,7 +18,7 @@ from rssant_feedlib import (
 )
 from rssant_feedlib.processor import (
     story_readability, story_html_to_text, story_html_clean,
-    process_story_links
+    process_story_links, get_html_redirect_url,
 )
 from rssant_feedlib.blacklist import compile_url_blacklist
 from rssant_feedlib.fulltext import is_fulltext_content, split_sentences
@@ -186,6 +186,27 @@ def do_sync_feed(
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
 
 
+async def _fetch_story(reader, story_id, url, use_proxy):
+    for i in range(2):
+        response = await reader.read(url, use_proxy=use_proxy)
+        if response and response.url:
+            url = str(response.url)
+        LOG.info(f'fetch story#{story_id} url={unquote(url)} status={response.status} finished')
+        if not (response and response.ok and response.content):
+            return None
+        try:
+            content = response.content.decode(response.encoding)
+        except UnicodeDecodeError as ex:
+            LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
+            content = response.content.decode(response.encoding, errors='ignore')
+        html_redirect = get_html_redirect_url(content)
+        if (not html_redirect) or html_redirect == url:
+            return url, content
+        LOG.info('story#%s resolve html redirect to %r', story_id, html_redirect)
+        url = html_redirect
+    return url, content
+
+
 @actor('worker_rss.fetch_story')
 async def do_fetch_story(
     ctx: ActorContext,
@@ -199,21 +220,10 @@ async def do_fetch_story(
     options.update(allow_private_address=CONFIG.allow_private_address)
     async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_rss_proxy
-        response = await reader.read(url, use_proxy=use_proxy)
-    if response and response.url:
-        url = str(response.url)
-    LOG.info(f'fetch story#{story_id} url={unquote(url)} status={response.status} finished')
-    if not (response and response.ok):
+        url_content = await _fetch_story(reader, story_id, url, use_proxy=use_proxy)
+    if not url_content:
         return
-    if not response.content:
-        msg = 'story#%s url=%s response text is empty!'
-        LOG.error(msg, story_id, unquote(url))
-        return
-    try:
-        content = response.content.decode(response.encoding)
-    except UnicodeDecodeError as ex:
-        LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
-        content = response.content.decode(response.encoding, errors='ignore')
+    url, content = url_content
     if len(content) >= _MAX_STORY_HTML_LENGTH:
         content = story_html_clean(content)
         if len(content) >= _MAX_STORY_HTML_LENGTH:

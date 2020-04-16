@@ -1,13 +1,19 @@
 from pathlib import Path
+
+import pytest
+
 from rssant_feedlib.processor import (
     story_readability,
     normalize_url,
     validate_url,
+    get_html_redirect_url,
 )
+
+_data_dir = Path(__file__).parent.parent / 'testdata/processor'
 
 
 def _read_text(filename):
-    filepath = Path(__file__).parent / filename
+    filepath = _data_dir / filename
     return filepath.read_text()
 
 
@@ -83,3 +89,16 @@ def test_normalize_quote():
     for p in path_s:
         r = normalize_url(p, base_url=base_url)
         assert r == base + p
+
+
+@pytest.mark.parametrize('filename', [
+    'html_redirect/test_html_redirect_1.html',
+    'html_redirect/test_html_redirect_2.html',
+    'html_redirect/test_html_redirect_3.html',
+])
+def test_get_html_redirect_url(filename):
+    base_url = 'https://blog.example.com'
+    expect = 'https://blog.example.com/html-redirect/'
+    html = _read_text(filename)
+    got = get_html_redirect_url(html, base_url=base_url)
+    assert got == expect
