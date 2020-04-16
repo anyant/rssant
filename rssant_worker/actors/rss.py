@@ -212,7 +212,7 @@ async def do_fetch_story(
         if len(content) >= 1024 * 1024:
             msg = 'too large story#%s size=%s url=%r'
             LOG.warning(msg, story_id, len(content), url)
-            content = story_html_to_text(content)
+            content = story_html_to_text(content)[:1024 * 1024]
     await ctx.hope('worker_rss.process_story_webpage', dict(
         story_id=story_id,
         url=url,
@@ -236,6 +236,7 @@ def do_process_story_webpage(
     text = text.strip()
     if not text:
         return
+    text = story_html_clean(text)
     content = story_readability(text)
     content = process_story_links(content, url)
     summary = shorten(story_html_to_text(content), width=300)

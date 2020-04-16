@@ -258,7 +258,7 @@ def _is_feed_need_fetch_storys(feed, modified_storys):
         return False
     has_storys = feed.total_storys is not None \
         and feed.total_storys > len(modified_storys)
-    if has_storys and len(modified_storys) > 10:
+    if has_storys and len(modified_storys) > 100:
         return False
     return True
 
