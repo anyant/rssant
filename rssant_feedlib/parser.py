@@ -10,7 +10,7 @@ from .feed_checksum import FeedChecksum
 from rssant_api.helper import shorten
 from .processor import (
     story_html_to_text, story_html_clean,
-    story_has_mathjax, process_story_links, normlize_url, validate_url,
+    story_has_mathjax, process_story_links, normalize_url, validate_url,
 )
 
 
@@ -97,12 +97,12 @@ class FeedParser:
     def _parse_feed(self, feed: dict):
         url = feed['url']
         title = story_html_to_text(feed['title'])[:200]
-        home_url = normlize_url(feed['home_url'], base_url=url)
-        icon_url = normlize_url(feed['icon_url'], base_url=url)
+        home_url = normalize_url(feed['home_url'], base_url=url)
+        icon_url = normalize_url(feed['icon_url'], base_url=url)
         description = story_html_to_text(feed['description'])[:300]
         author_name = story_html_to_text(feed['author_name'])[:100]
-        author_url = normlize_url(feed['author_url'], base_url=url)
-        author_avatar_url = normlize_url(feed['author_avatar_url'], base_url=url)
+        author_url = normalize_url(feed['author_url'], base_url=url)
+        author_avatar_url = normalize_url(feed['author_avatar_url'], base_url=url)
         return dict(
             version=feed['version'],
             title=title,
@@ -132,16 +132,16 @@ class FeedParser:
     def _parse_story(self, story: dict, feed_url: str):
         ident = story['ident'][:200]
         title = story_html_to_text(story['title'])[:200]
-        url = normlize_url(story['url'] or story['ident'], base_url=feed_url)
+        url = normalize_url(story['url'] or story['ident'], base_url=feed_url)
         try:
             valid_url = validate_url(url)
         except Invalid:
             valid_url = None
         base_url = valid_url or feed_url
-        image_url = normlize_url(story['image_url'], base_url=base_url)
+        image_url = normalize_url(story['image_url'], base_url=base_url)
         author_name = story_html_to_text(story['author_name'])[:100]
-        author_url = normlize_url(story['author_url'], base_url=base_url)
-        author_avatar_url = normlize_url(story['author_avatar_url'], base_url=base_url)
+        author_url = normalize_url(story['author_url'], base_url=base_url)
+        author_avatar_url = normalize_url(story['author_avatar_url'], base_url=base_url)
         content = self._process_content(story['content'], link=base_url)
         if story['summary']:
             summary = story_html_clean(story['summary'])

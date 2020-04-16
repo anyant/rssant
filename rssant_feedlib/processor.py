@@ -156,7 +156,7 @@ xyz
 RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/$]'.format('|'.join(TOP_DOMAINS)))
 
 
-def normlize_url(url: str, base_url: str = None):
+def normalize_url(url: str, base_url: str = None):
     """
     Normalize URL
 

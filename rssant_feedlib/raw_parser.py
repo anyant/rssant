@@ -147,7 +147,7 @@ class RawFeedParser:
             content = item.get("summary")
         return content or ''
 
-    def _normlize_date(self, value) -> datetime.datetime:
+    def _normalize_date(self, value) -> datetime.datetime:
         if not value:
             return None
         try:
@@ -164,7 +164,7 @@ class RawFeedParser:
                 if value is None:
                     return None
         except Exception as ex:
-            LOG.warning('normlize date failed, value=%r: %s', value, ex)
+            LOG.warning('normalize date failed, value=%r: %s', value, ex)
             return None
         if not timezone.is_aware(value):
             value = timezone.make_aware(value, timezone=UTC)
@@ -229,7 +229,7 @@ class RawFeedParser:
         """
         if name not in item:
             return None
-        return self._normlize_date(item.get(name))
+        return self._normalize_date(item.get(name))
 
     def _get_json_feed_author(self, author):
         name = url = avatar = None
