@@ -156,13 +156,19 @@ def do_sync_feed(
     etag: T.str.optional,
     last_modified: T.str.optional,
 ):
-    params = dict(etag=etag, last_modified=last_modified, use_proxy=use_proxy)
+    params = dict(etag=etag, last_modified=last_modified)
     options = _get_proxy_options()
     options.update(allow_private_address=CONFIG.allow_private_address)
     with FeedReader(**options) as reader:
-        response = reader.read(url, **params)
-    LOG.info(f'read feed#{feed_id} url={unquote(url)} response.status={response.status}')
-    if response.status != 200 or not response.content:
+        use_proxy = reader.has_rss_proxy and use_proxy
+        response = reader.read(url, **params, use_proxy=use_proxy)
+        LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
+        need_proxy = FeedResponseStatus.is_need_proxy(response.status)
+        if (not use_proxy) and reader.has_rss_proxy and need_proxy:
+            LOG.info(f'try use proxy read feed#{feed_id} url={unquote(url)}')
+            response = reader.read(url, **params, use_proxy=True)
+            LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
+    if (not response.ok) or (not response.content):
         return
     new_hash = compute_hash_base64(response.content)
     if new_hash == content_hash_base64:
