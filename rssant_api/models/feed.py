@@ -107,6 +107,8 @@ class Feed(Model, ContentHashMixin):
         **optional, default=1, help_text="freeze level, 1: normal, N: slow down N times")
     use_proxy = models.BooleanField(
         **optional, default=False, help_text="use proxy or not")
+    checksum_data = models.BinaryField(
+        **optional, max_length=4096, help_text="feed checksum data")
     # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
@@ -210,7 +212,8 @@ class Feed(Model, ContentHashMixin):
             timeout_seconds = 3 * outdate_seconds
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
         sql_check = """
-        SELECT id, url, use_proxy FROM rssant_api_feed AS feed
+        SELECT id, url, etag, last_modified, use_proxy, checksum_data
+        FROM rssant_api_feed AS feed
         WHERE
             (
                 dt_checked IS NULL
@@ -242,10 +245,11 @@ class Feed(Model, ContentHashMixin):
         ]
         feeds = []
         now = timezone.now()
+        columns = ['feed_id', 'url', 'etag', 'last_modified', 'use_proxy', 'checksum_data']
         with connection.cursor() as cursor:
             cursor.execute(sql_check, params)
-            for feed_id, url, use_proxy in cursor.fetchall():
-                feeds.append(dict(feed_id=feed_id, url=url, use_proxy=use_proxy))
+            for row in cursor.fetchall():
+                feeds.append(dict(zip(columns, row)))
             feed_ids = [x['feed_id'] for x in feeds]
             cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
         return feeds

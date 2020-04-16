@@ -13,7 +13,7 @@ from actorlib import actor, ActorContext
 from rssant_feedlib import AsyncFeedReader, FeedResponseStatus
 from rssant_feedlib import (
     FeedFinder, FeedReader,
-    FeedParser, RawFeedParser,
+    FeedParser, RawFeedParser, FeedChecksum,
     RawFeedResult, FeedResponse, FeedParserError,
 )
 from rssant_feedlib.processor import (
@@ -74,6 +74,7 @@ FeedSchema = T.dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
+    checksum_data=T.bytes.maxlen(4096).optional,
     storys=T.list,
 )
 
@@ -152,6 +153,7 @@ def do_sync_feed(
     feed_id: T.int,
     url: T.url,
     use_proxy: T.bool.default(False),
+    checksum_data: T.bytes.maxlen(4096).optional,
     content_hash_base64: T.str.optional,
     etag: T.str.optional,
     last_modified: T.str.optional,
@@ -185,9 +187,8 @@ def do_sync_feed(
     if raw_result.warnings:
         warnings = '; '.join(raw_result.warnings)
         LOG.warning('warning parse feed#%s url=%r: %s', feed_id, unquote(url), warnings)
-        return
     try:
-        feed = _parse_found((response, raw_result))
+        feed = _parse_found((response, raw_result), checksum_data=checksum_data)
     except (Invalid, FeedParserError) as ex:
         LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
         return
@@ -338,7 +339,7 @@ async def do_detect_story_images(
     ))
 
 
-def _parse_found(found):
+def _parse_found(found, checksum_data=None):
     response: FeedResponse
     raw_result: RawFeedResult
     response, raw_result = found
@@ -355,8 +356,15 @@ def _parse_found(found):
     del found, response  # release memory in advance
 
     # parse feed and storys
-    result = FeedParser().parse(raw_result)
+    checksum = None
+    if checksum_data:
+        checksum = FeedChecksum.load(checksum_data)
+    result = FeedParser(checksum=checksum).parse(raw_result)
+    checksum_data = result.checksum.dump(limit=300)
+    num_raw_storys = len(raw_result.storys)
     del raw_result  # release memory in advance
+    msg = "feed url=%r storys=%s changed_storys=%s"
+    LOG.info(msg, feed.url, num_raw_storys, len(result.storys))
 
     feed.title = result.feed['title']
     feed.link = result.feed['home_url']
@@ -366,6 +374,7 @@ def _parse_found(found):
     feed.dt_updated = result.feed['dt_updated']
     feed.version = result.feed['version']
     feed.storys = _get_storys(result.storys)
+    feed.checksum_data = checksum_data
     del result  # release memory in advance
 
     return validate_feed(feed)

@@ -155,6 +155,20 @@ def str_validator(compiler, schema):
     return validate
 
 
+@validator(accept=bytes, output=bytes)
+def bytes_validator(compiler, maxlen=None):
+
+    def validate(value):
+        if not isinstance(value, bytes):
+            raise Invalid('invalid bytes type')
+        if maxlen is not None:
+            if len(value) > maxlen:
+                raise Invalid('value must <= {}'.format(maxlen))
+        return value
+
+    return validate
+
+
 VALIDATORS = {
     'cursor': cursor_validator,
     'url': url_validator,
@@ -163,6 +177,7 @@ VALIDATORS = {
     'story_unionid': create_unionid_validator(StoryUnionId),
     'detail': detail_validator,
     'str': str_validator,
+    'bytes': bytes_validator,
 }
 
 

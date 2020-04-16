@@ -58,6 +58,7 @@ FeedSchemaFields = dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
+    checksum_data=T.bytes.maxlen(4096).optional,
 )
 
 FeedOutputSchemaFields = FeedSchemaFields.copy()
@@ -397,7 +398,10 @@ def do_check_feed(ctx: ActorContext):
         ctx.hope('worker_rss.sync_feed', dict(
             feed_id=feed['feed_id'],
             url=feed['url'],
+            etag=feed['etag'],
+            last_modified=feed['last_modified'],
             use_proxy=feed['use_proxy'],
+            checksum_data=feed['checksum_data'],
         ), expire_at=expire_at)
 
 
