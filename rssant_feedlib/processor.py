@@ -364,6 +364,34 @@ def story_readability(content):
     return doc.summary(html_partial=True) or ""
 
 
+StoryAttach = namedtuple("StoryAttach", "iframe_url, audio_url")
+
+
+def _normalize_validate_url(url, base_url=None):
+    url = normalize_url(url, base_url=base_url)
+    if not url:
+        return None
+    try:
+        url = validate_url(url)
+    except Invalid:
+        url = None
+    return url
+
+
+def story_extract_attach(html, base_url=None) -> StoryAttach:
+    iframe_url = None
+    audio_url = None
+    dom = lxml_call(lxml.html.fromstring, html)
+    iframe_el = dom.find('.//iframe')
+    if iframe_el is not None:
+        iframe_url = _normalize_validate_url(iframe_el.get('src'), base_url=base_url)
+    audio_el = dom.find('.//audio')
+    if audio_el is not None:
+        audio_url = _normalize_validate_url(audio_el.get('src'), base_url=base_url)
+    attach = StoryAttach(iframe_url, audio_url)
+    return attach
+
+
 RE_BLANK_LINE = re.compile(r'(\n\s*)(\n\s*)+')
 
 lxml_html_parser = lxml.html.HTMLParser(
