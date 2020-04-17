@@ -474,7 +474,7 @@ def story_html_to_text(content, clean=True):
 RSSANT_HTML_SAFE_ATTRS = set(lxml_safe_attrs) | set(IMG_EXT_SRC_ATTRS)
 RSSANT_HTML_SAFE_ATTRS.update({'srcset'})
 
-lxml_story_html_cleaner = Cleaner(
+_html_cleaner_options = dict(
     scripts=True,
     javascript=True,
     comments=True,
@@ -483,7 +483,6 @@ lxml_story_html_cleaner = Cleaner(
     meta=True,
     page_structure=True,
     processing_instructions=True,
-    embedded=True,
     frames=True,
     forms=True,
     annoying_tags=True,
@@ -491,11 +490,39 @@ lxml_story_html_cleaner = Cleaner(
     safe_attrs=RSSANT_HTML_SAFE_ATTRS,
     add_nofollow=True,
     remove_tags=set(['body']),
-    kill_tags=set(['noscript']),
+    kill_tags=set(['noscript', 'iframe', 'embed']),
 )
 
 
-def story_html_clean(content):
+class FeedLooseHTMLCleaner(Cleaner):
+    """
+    https://lxml.de/api/lxml.html.clean.Cleaner-class.html
+    https://lxml.de/api/lxml.html.clean-pysrc.html#Cleaner.allow_embedded_url
+    """
+
+    def allow_embedded_url(self, el, url):
+        """
+        Decide whether a URL that was found in an element's attributes or text
+        if configured to be accepted or rejected.
+
+        :param el: an element.
+        :param url: a URL found on the element.
+        :return: true to accept the URL and false to reject it.
+        """
+        if self.whitelist_tags is not None and el.tag not in self.whitelist_tags:
+            return False
+        return True
+
+
+lxml_story_html_cleaner = Cleaner(**_html_cleaner_options)
+lxml_story_html_loose_cleaner = FeedLooseHTMLCleaner(
+    **_html_cleaner_options,
+    embedded=False,  # allow iframe
+    whitelist_tags=['iframe'],
+)
+
+
+def story_html_clean(content, loose=False):
     """
     >>> content = '''<html><head><style></style></head><body>
     ... <pre stype="xxx">
@@ -521,11 +548,21 @@ def story_html_clean(content):
     >>> # lxml can not parse below content, we handled the exception
     >>> content = '<!-- build time:Mon Mar 16 2020 19:23:52 GMT+0800 (GMT+08:00) --><!-- rebuild by neat -->'
     >>> assert story_html_clean(content)
+    >>> # loose cleaner allow iframe, not allow embed flash
+    >>> content = '<iframe src="https://example.com/123" width="650" height="477" border="0"></iframe>'
+    >>> story_html_clean(content)
+    '<div></div>'
+    >>> 'iframe' in story_html_clean(content, loose=True)
+    True
+    >>> content = '<embed src="https://example.com/movie.mp4">'
+    >>> story_html_clean(content, loose=True)
+    '<div></div>'
     """
     if (not content) or (not content.strip()):
         return ""
+    cleaner = lxml_story_html_loose_cleaner if loose else lxml_story_html_cleaner
     try:
-        content = lxml_call(lxml_story_html_cleaner.clean_html, content).strip()
+        content = lxml_call(cleaner.clean_html, content).strip()
     except LXMLError as ex:
         LOG.info(f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex)
         content = html_escape(content)

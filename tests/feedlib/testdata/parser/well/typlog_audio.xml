@@ -1,0 +1,252 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="/rss.xsl" type="text/xsl"?>
+<rss xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><generator>Typlog (https://typlog.com)</generator><title><![CDATA[ 捕蛇者说 ]]></title><link>http://pythonhunter.org/</link><description><![CDATA[ 《捕蛇者说》是一档以编程为主题的聊天节目。我们会聊聊编程、程序员和 Python。 ]]></description><language>zh</language><copyright><![CDATA[ (c) 2019 捕蛇者说 ]]></copyright><itunes:type>episodic</itunes:type><atom:link href="http://pythonhunter.org/episodes/feed.xml" rel="self" type="application/rss+xml"/><atom:link href="https://pubsubhubbub.appspot.com/" rel="hub"/><atom:link href="https://castro.fm/podcast/465b8ab9-4439-4ce9-ba48-98eeb1022011" title="Castro" rel="alternate" icon="castro" /><atom:link href="https://open.spotify.com/show/4qXfktuWS6Lin2AtMa62fc" title="Spotify" rel="alternate" icon="spotify" /><atom:link href="https://overcast.fm/itunes1460475182" title="Overcast" rel="alternate" icon="overcast" /><atom:link href="https://podcasts.google.com/?feed=aHR0cHM6Ly9weXRob25odW50ZXIub3JnL2VwaXNvZGVzL2ZlZWQueG1s" title="Google Podcast" rel="alternate" icon="google" /><atom:link href="https://podcasts.apple.com/cn/podcast/%E6%8D%95%E8%9B%87%E8%80%85%E8%AF%B4/id1471299491#episodeGuid=http%3A%2F%2Faudio.xmcdn.com%2Fgroup61%2FM03%2FC2%2FAB%2FwKgMZl01ldvg7hrHAcSSRIpnb4U993.m4a" title="中国区 Apple Podcast" rel="alternate" icon="podcast" /><atom:link href="https://podcasts.apple.com/us/podcast/%E6%8D%95%E8%9B%87%E8%80%85%E8%AF%B4/id1460475182" title="美国区 Apple Podcast" rel="alternate" icon="podcast" /><pubDate>Thu, 16 Apr 2020 01:13:07 +0000</pubDate><itunes:subtitle><![CDATA[ 编程、程序员、Python ]]></itunes:subtitle><itunes:author><![CDATA[ pythonhunter ]]></itunes:author><itunes:summary><![CDATA[ 《捕蛇者说》是一档以编程为主题的聊天节目。我们会聊聊编程、程序员和 Python。 ]]></itunes:summary><image><url>https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl</url><title><![CDATA[ 捕蛇者说 ]]></title><link>http://pythonhunter.org/</link></image><itunes:image href="https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl" /><itunes:owner><itunes:name><![CDATA[ pythonhunter ]]></itunes:name><itunes:email><![CDATA[ laixintaoo@gmail.com ]]></itunes:email></itunes:owner><itunes:explicit>no</itunes:explicit><itunes:category text="Technology"><itunes:category text="Podcasting"/></itunes:category>
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjEwMzQsInAiOjIsInUiOiIzMzk2Lm1wMyJ9.V4mpbFP3GwTS68YcTfLKb-0UqHs/pythonhunter/8428266432_783396.mp3" length="78203199" type="audio/mpeg"/><title><![CDATA[ Ep 07. Lisp 程序员眼中的 Python? ]]></title><guid>http://pythonhunter.org/episodes/7</guid><link>http://pythonhunter.org/episodes/7</link><itunes:author><![CDATA[ pythonhunter ]]></itunes:author><itunes:subtitle><![CDATA[ 本期我们请到了稀有的 Lisp 程序员 David，来和我们聊一聊函数式编程的一些概念，Common Lisp 的特点，如何入门函数式编程。 ]]></itunes:subtitle><itunes:duration>40:44</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8429027461_775801.png?x-oss-process=style/sl" /><description><![CDATA[ Hi！本期我们请到了稀有的 Lisp 程序员 David，来和我们聊一聊函数式编程的一些概念，Common Lisp 的特点，如何入门函数式编程。 本期音频由 laixintao 剪辑，第一次剪辑请大家包涵，如果音频有问题可以在评论或者 telegram 群提出。 本期嘉宾&amp;主持：David Twitter Blog laixintao Twitter Blog 内容提要：01:40 什么是知识图谱 04:00 Lisp 程序员是如何看 Python 的 13:00 函数式编程 20:00 函数式编程的类型推导 24:00 Debug 中的“时间机器” 27:00 Lazy Evaluation 31:00 Python 程序员如何入门 Lisp 37:00 推荐环节 本期提到的一些资料如下：R：Past and Future History pampy: Pattern Match for Python Monad Notion （David 之选🎉） 附：《给Lisp程序员的Python简介》 ]]></description><content:encoded><![CDATA[ <p>Hi！本期我们请到了稀有的 Lisp 程序员 David，来和我们聊一聊函数式编程的一些概念，Common Lisp 的特点，如何入门函数式编程。</p>
+<p>本期音频由 laixintao 剪辑，第一次剪辑请大家包涵，如果音频有问题可以在评论或者 <a href="https://t.me/joinchat/Dm8lIVjvCo9_-6YZYLycEw">telegram 群</a>提出。</p>
+<h2 class="md-block">本期嘉宾&amp;主持：</h2><div class="md-block list"><ol><li>David <a href="https://twitter.com/macdavid313">Twitter</a> <a href="http://macdavid313.xyz/">Blog</a></li>
+<li>laixintao <a href="https://twitter.com/laixintao">Twitter</a> <a href="https://www.kawabangga.com/">Blog</a></li>
+</ol></div>
+<h2 class="md-block">内容提要：</h2><div class="md-block list"><ol><li>01:40 什么是知识图谱</li>
+<li>04:00 Lisp 程序员是如何看 Python 的 </li>
+<li>13:00 函数式编程</li>
+<li>20:00 函数式编程的类型推导</li>
+<li>24:00 Debug 中的“时间机器”</li>
+<li>27:00 Lazy Evaluation</li>
+<li>31:00 Python 程序员如何入门 Lisp </li>
+<li>37:00 推荐环节</li>
+</ol></div>
+<h2 class="md-block">本期提到的一些资料如下：</h2><div class="md-block list"><ol><li><a href="https://www.stat.auckland.ac.nz/~ihaka/downloads/Interface98.pdf">R：Past and Future History</a></li>
+<li><a href="https://github.com/santinic/pampy">pampy</a>: Pattern Match for Python</li>
+<li><a href="https://wiki.haskell.org/Monad">Monad</a></li>
+<li><a href="https://play.google.com/store/apps/details?id=notion.id">Notion</a> （David 之选🎉）</li>
+<li>附：<a href="https://jineslong.appspot.com/python-lisp/">《给Lisp程序员的Python简介》</a></li>
+</ol></div>
+ ]]></content:encoded><itunes:summary><![CDATA[ <p>Hi！本期我们请到了稀有的 Lisp 程序员 David，来和我们聊一聊函数式编程的一些概念，Common Lisp 的特点，如何入门函数式编程。</p>
+<p>本期音频由 laixintao 剪辑，第一次剪辑请大家包涵，如果音频有问题可以在评论或者 <a href="https://t.me/joinchat/Dm8lIVjvCo9_-6YZYLycEw">telegram 群</a>提出。</p>
+<h2 class="md-block">本期嘉宾&amp;主持：</h2><div class="md-block list"><ol><li>David <a href="https://twitter.com/macdavid313">Twitter</a> <a href="http://macdavid313.xyz/">Blog</a></li>
+<li>laixintao <a href="https://twitter.com/laixintao">Twitter</a> <a href="https://www.kawabangga.com/">Blog</a></li>
+</ol></div>
+<h2 class="md-block">内容提要：</h2><div class="md-block list"><ol><li>01:40 什么是知识图谱</li>
+<li>04:00 Lisp 程序员是如何看 Python 的 </li>
+<li>13:00 函数式编程</li>
+<li>20:00 函数式编程的类型推导</li>
+<li>24:00 Debug 中的“时间机器”</li>
+<li>27:00 Lazy Evaluation</li>
+<li>31:00 Python 程序员如何入门 Lisp </li>
+<li>37:00 推荐环节</li>
+</ol></div>
+<h2 class="md-block">本期提到的一些资料如下：</h2><div class="md-block list"><ol><li><a href="https://www.stat.auckland.ac.nz/~ihaka/downloads/Interface98.pdf">R：Past and Future History</a></li>
+<li><a href="https://github.com/santinic/pampy">pampy</a>: Pattern Match for Python</li>
+<li><a href="https://wiki.haskell.org/Monad">Monad</a></li>
+<li><a href="https://play.google.com/store/apps/details?id=notion.id">Notion</a> （David 之选🎉）</li>
+<li>附：<a href="https://jineslong.appspot.com/python-lisp/">《给Lisp程序员的Python简介》</a></li>
+</ol></div>
+ ]]></itunes:summary><psc:chapters version="1.1" xmlns:psc="http://podlove.org/simple-chapters"><psc:chapter start="01:40" title="什么是知识图谱" /><psc:chapter start="04:00" title="Lisp 程序员是如何看 Python 的" /><psc:chapter start="13:00" title="函数式编程" /><psc:chapter start="20:00" title="函数式编程的类型推导" /><psc:chapter start="24:00" title="Debug 中的“时间机器”" /><psc:chapter start="27:00" title="Lazy Evaluation" /><psc:chapter start="31:00" title="Python 程序员如何入门 Lisp" /><psc:chapter start="37:00" title="推荐环节" /></psc:chapters><pubDate>Tue, 22 Oct 2019 08:42:23 +0000</pubDate></item>
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjEwMDEsInAiOjIsInUiOiI1ODQ5Lm1wMyJ9.2f56CrU_fdGHA9nD91V2Hu84qO4/pythonhunter/8431004503_425849.mp3" length="56166946" type="audio/mpeg"/><title><![CDATA[ [特别篇] PyCon 举办之前，我们在酒店的闲谈 ]]></title><guid>http://pythonhunter.org/episodes/sp01</guid><link>http://pythonhunter.org/episodes/sp01</link><itunes:author><![CDATA[ Python Hunter ]]></itunes:author><itunes:duration>58:30</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl" /><description><![CDATA[ 本期嘉宾： laike9m laixintao Adam Wen Manjusaka 明天就是 PyCon，四位主创实现了首次全员聚会。 听我们一起聊一聊，关于 PyCon 的期待与想法 ]]></description><content:encoded><![CDATA[ <p>本期嘉宾：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>明天就是 PyCon，四位主创实现了首次全员聚会。<br/>
+听我们一起聊一聊，关于 PyCon 的期待与想法  </p>
+ ]]></content:encoded><itunes:summary><![CDATA[ <p>本期嘉宾：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>明天就是 PyCon，四位主创实现了首次全员聚会。<br/>
+听我们一起聊一聊，关于 PyCon 的期待与想法  </p>
+ ]]></itunes:summary><pubDate>Fri, 20 Sep 2019 16:06:21 +0000</pubDate></item>
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjk5NiwicCI6MiwidSI6IjA3MjQubXAzIn0.49YG1ZNAbxcsDe5MTJWHuiqsjmg/pythonhunter/8431033559_490724.mp3" length="90928612" type="audio/mpeg"/><title><![CDATA[ Ep 06. 和 the5fire 来聊聊 Django ]]></title><guid>http://pythonhunter.org/episodes/6</guid><link>http://pythonhunter.org/episodes/6</link><itunes:author><![CDATA[ Python Hunter ]]></itunes:author><itunes:duration>1:34:43</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8431103509_696148.jpg?x-oss-process=style/sl" /><description><![CDATA[ print &quot;PyCon 2019 上海站即将开始，我们也会有一个专门的展位参与其中，期待与大家的相见&quot; 嘉宾: - the5fire - laike9m - laixintao 主持: - Adam Wen Django， 适合新手学习吗？ 适合实践开发吗？ 又有哪些优势呢？ 本期节目，我们将和 the5fire 来聊一聊 Django 的一些好处与特点，推荐一些 Django 的资料与插件，聊聊《Django企业开发实战》这本书。 欢迎大家收听本期节目，欢迎大家评论留言，我们将会从官网+知乎评论区抽出 5 位幸运听众送出《Django企业开发实战》 ]]></description><content:encoded><![CDATA[ <div class="highlight"><pre><span></span><span class="k">print</span> <span class="s2">&quot;PyCon 2019 上海站即将开始，我们也会有一个专门的展位参与其中，期待与大家的相见&quot;</span>
+</pre></div>
+<p>嘉宾:<br/>
+- <a href="https://www.the5fire.com/">the5fire</a><br/>
+- <a href="https://laike9m.com/">laike9m</a><br/>
+- <a href="https://www.kawabangga.com/">laixintao</a>   </p>
+<p>主持:<br/>
+- <a href="https://twitter.com/wenxiaobin">Adam Wen</a>   </p>
+<p>Django，<br/>
+适合新手学习吗？ 适合实践开发吗？ 又有哪些优势呢？<br/>
+本期节目，我们将和 the5fire 来聊一聊 Django 的一些好处与特点，推荐一些 Django 的资料与插件，聊聊《Django企业开发实战》这本书。  </p>
+<p>欢迎大家收听本期节目，欢迎大家评论留言，我们将会从官网+知乎评论区抽出 5 位幸运听众送出《Django企业开发实战》</p>
+ ]]></content:encoded><itunes:summary><![CDATA[ <div class="highlight"><pre><span></span><span class="k">print</span> <span class="s2">&quot;PyCon 2019 上海站即将开始，我们也会有一个专门的展位参与其中，期待与大家的相见&quot;</span>
+</pre></div>
+<p>嘉宾:<br/>
+- <a href="https://www.the5fire.com/">the5fire</a><br/>
+- <a href="https://laike9m.com/">laike9m</a><br/>
+- <a href="https://www.kawabangga.com/">laixintao</a>   </p>
+<p>主持:<br/>
+- <a href="https://twitter.com/wenxiaobin">Adam Wen</a>   </p>
+<p>Django，<br/>
+适合新手学习吗？ 适合实践开发吗？ 又有哪些优势呢？<br/>
+本期节目，我们将和 the5fire 来聊一聊 Django 的一些好处与特点，推荐一些 Django 的资料与插件，聊聊《Django企业开发实战》这本书。  </p>
+<p>欢迎大家收听本期节目，欢迎大家评论留言，我们将会从官网+知乎评论区抽出 5 位幸运听众送出《Django企业开发实战》</p>
+ ]]></itunes:summary><pubDate>Fri, 20 Sep 2019 08:14:17 +0000</pubDate></item>
+
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjY5OSwicCI6MiwidSI6IjM0NTgubXAzIn0.YsEMcnpevzMqoxAAUhjLgQPzZC4/pythonhunter/8434663698_43458.mp3" length="50858824" type="audio/mpeg"/><title><![CDATA[ Ep 05. 聊聊单元测试最佳实践和 PEP 572 ]]></title><guid>http://pythonhunter.org/episodes/5</guid><link>http://pythonhunter.org/episodes/5</link><itunes:author><![CDATA[ pythonhunter ]]></itunes:author><itunes:subtitle><![CDATA[ 本期我们借着 PyCon 的两个视频 《Mocking and Patching Pitfalls》和《PEP 572: The Walrus Operator》讨论了 Python 单元测试的最佳实践，以及语言中新功能的利与弊。 ]]></itunes:subtitle><itunes:duration>52:56</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl" /><description><![CDATA[ 本期主持： laike9m laixintao Adam Wen Manjusaka 时间点： 00:00:52 Mocking and Patching pitfalls 00:30:41 PEP 572 00:49:19 推荐环节 视频和链接第一个视频 《Edwin Jung - Mocking and Patching Pitfalls - PyCon 2019》httmock https://projectlombok.org/ https://site.mockito.org/ https://martinfowler.com/bliki/TestDouble.html factory_boy 第二个视频 《Dustin Ingram - PEP 572: The Walrus Operator - PyCon 2019》PEP 572 -- Assignment Expressions PEP 581 -- Using GitHub Issues for CPython Guido van Rossum resigns as Python leader Python elects a steering council PEP 570 -- Python Positional-Only Parameters Discussing PEP 572 推荐PyOxidizer YCM-Generator Kazoo ]]></description><content:encoded><![CDATA[ <p>本期主持：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>时间点：</p>
+<div class="md-block list"><ul><li>00:00:52 Mocking and Patching pitfalls</li>
+<li>00:30:41 PEP 572</li>
+<li>00:49:19 推荐环节</li>
+</ul></div>
+<h2 class="md-block">视频和链接</h2><h3 class="md-block">第一个视频 <a href="https://youtu.be/Ldlz4V-UCFw">《Edwin Jung - Mocking and Patching Pitfalls - PyCon 2019》</a></h3><div class="md-block list"><ul><li><a href="https://github.com/patrys/httmock">httmock</a></li>
+<li><a href="https://projectlombok.org/">https://projectlombok.org/</a></li>
+<li><a href="https://site.mockito.org/">https://site.mockito.org/</a></li>
+<li><a href="https://martinfowler.com/bliki/TestDouble.html">https://martinfowler.com/bliki/TestDouble.html</a></li>
+<li><a href="https://github.com/FactoryBoy/factory_boy">factory_boy</a></li>
+</ul></div>
+<h3 class="md-block">第二个视频 <a href="https://youtu.be/6uAvHOKofws">《Dustin Ingram - PEP 572: The Walrus Operator - PyCon 2019》</a></h3><div class="md-block list"><ul><li><a href="https://www.python.org/dev/peps/pep-0572/">PEP 572 -- Assignment Expressions</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0581/">PEP 581 -- Using GitHub Issues for CPython</a></li>
+<li><a href="https://lwn.net/Articles/759654/">Guido van Rossum resigns as Python leader</a></li>
+<li><a href="https://lwn.net/Articles/777997/">Python elects a steering council</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0570/">PEP 570 -- Python Positional-Only Parameters</a></li>
+<li><a href="https://lwn.net/Articles/749200/">Discussing PEP 572</a></li>
+</ul></div>
+<h3 class="md-block">推荐</h3><div class="md-block list"><ul><li><a href="https://github.com/indygreg/PyOxidizer">PyOxidizer</a></li>
+<li><a href="https://github.com/rdnetto/YCM-Generator">YCM-Generator</a></li>
+<li><a href="https://github.com/python-zk/kazoo">Kazoo</a></li>
+</ul></div>
+ ]]></content:encoded><itunes:summary><![CDATA[ <p>本期主持：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>时间点：</p>
+<div class="md-block list"><ul><li>00:00:52 Mocking and Patching pitfalls</li>
+<li>00:30:41 PEP 572</li>
+<li>00:49:19 推荐环节</li>
+</ul></div>
+<h2 class="md-block">视频和链接</h2><h3 class="md-block">第一个视频 <a href="https://youtu.be/Ldlz4V-UCFw">《Edwin Jung - Mocking and Patching Pitfalls - PyCon 2019》</a></h3><div class="md-block list"><ul><li><a href="https://github.com/patrys/httmock">httmock</a></li>
+<li><a href="https://projectlombok.org/">https://projectlombok.org/</a></li>
+<li><a href="https://site.mockito.org/">https://site.mockito.org/</a></li>
+<li><a href="https://martinfowler.com/bliki/TestDouble.html">https://martinfowler.com/bliki/TestDouble.html</a></li>
+<li><a href="https://github.com/FactoryBoy/factory_boy">factory_boy</a></li>
+</ul></div>
+<h3 class="md-block">第二个视频 <a href="https://youtu.be/6uAvHOKofws">《Dustin Ingram - PEP 572: The Walrus Operator - PyCon 2019》</a></h3><div class="md-block list"><ul><li><a href="https://www.python.org/dev/peps/pep-0572/">PEP 572 -- Assignment Expressions</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0581/">PEP 581 -- Using GitHub Issues for CPython</a></li>
+<li><a href="https://lwn.net/Articles/759654/">Guido van Rossum resigns as Python leader</a></li>
+<li><a href="https://lwn.net/Articles/777997/">Python elects a steering council</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0570/">PEP 570 -- Python Positional-Only Parameters</a></li>
+<li><a href="https://lwn.net/Articles/749200/">Discussing PEP 572</a></li>
+</ul></div>
+<h3 class="md-block">推荐</h3><div class="md-block list"><ul><li><a href="https://github.com/indygreg/PyOxidizer">PyOxidizer</a></li>
+<li><a href="https://github.com/rdnetto/YCM-Generator">YCM-Generator</a></li>
+<li><a href="https://github.com/python-zk/kazoo">Kazoo</a></li>
+</ul></div>
+ ]]></itunes:summary><psc:chapters version="1.1" xmlns:psc="http://podlove.org/simple-chapters"><psc:chapter start="00:00:52" title="Mocking and Patching pitfalls" /><psc:chapter start="00:30:41" title="PEP 572" /><psc:chapter start="00:49:19" title="推荐环节" /></psc:chapters><pubDate>Fri, 09 Aug 2019 07:39:27 +0000</pubDate></item>
+
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjY2MywicCI6MiwidSI6IjY3NjUubXAzIn0.qf0Zby37wo23iOW700tstaz--hA/pythonhunter/8436207079_8246765.mp3" length="58625382" type="audio/mpeg"/><title><![CDATA[ Ep 04. 主播带你逛 PyCon  ]]></title><guid>http://pythonhunter.org/episodes/4</guid><link>http://pythonhunter.org/episodes/4</link><itunes:author><![CDATA[ pythonhunter ]]></itunes:author><itunes:duration>1:01:04</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl" /><description><![CDATA[ 本期主创laike9m laixintao Adam Wen Manjusaka 本期提要00:01:30 什么是 PSF 00:06:50 PyCon 是什么 00:10:00 主创们参加 PyCon 的经历 00:18:20 laike9m 在 PyCon 2019 的经历 00:31:34 Manjusaka 与 laixintao 的组织经历 00:44:32 如何参与到 PyCon 的组织中来 00:59:18 下期预告 不是广告的广告PyCon2019 中国Python开发者大会 - 上海站已经开始售票啦 参与 PyCon China 2019，和主播们现场面基，还有机会获得捕蛇者说绝版 T恤！ 相关链接Python Software Foundation PyCon 2019 Mocking and Patching Pitfalls PEP 572: The Walrus Operator ]]></description><content:encoded><![CDATA[ <h2 class="md-block">本期主创</h2><div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a><br/></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a><br/></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a><br/></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a><br/></li>
+</ul></div>
+<h2 class="md-block">本期提要</h2><div class="md-block list"><ul><li>00:01:30  什么是 PSF</li>
+<li>00:06:50  PyCon 是什么</li>
+<li>00:10:00  主创们参加 PyCon 的经历</li>
+<li>00:18:20  <a href="https://laike9m.com/">laike9m</a> 在 PyCon 2019 的经历</li>
+<li>00:31:34  <a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a> 与 <a href="https://www.kawabangga.com/">laixintao</a> 的组织经历</li>
+<li>00:44:32  如何参与到 PyCon 的组织中来</li>
+<li>00:59:18  下期预告</li>
+</ul></div>
+<h2 class="md-block">不是广告的广告</h2><p><a href="https://www.bagevent.com/event/5293611">PyCon2019 中国Python开发者大会 - 上海站</a>已经开始售票啦<br/>
+参与 PyCon China 2019，和主播们现场面基，还有机会获得捕蛇者说绝版 T恤！</p>
+<h2 class="md-block">相关链接</h2><div class="md-block list"><ul><li><a href="https://www.python.org/psf/">Python Software Foundation</a></li>
+<li><a href="https://us.pycon.org/2019/about/">PyCon 2019</a></li>
+<li><a href="https://www.youtube.com/watch?v=Ldlz4V-UCFw">Mocking and Patching Pitfalls</a></li>
+<li><a href="https://www.youtube.com/watch?v=6uAvHOKofws">PEP 572: The Walrus Operator</a></li>
+</ul></div>
+ ]]></content:encoded><itunes:summary><![CDATA[ <h2 class="md-block">本期主创</h2><div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a><br/></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a><br/></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a><br/></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a><br/></li>
+</ul></div>
+<h2 class="md-block">本期提要</h2><div class="md-block list"><ul><li>00:01:30  什么是 PSF</li>
+<li>00:06:50  PyCon 是什么</li>
+<li>00:10:00  主创们参加 PyCon 的经历</li>
+<li>00:18:20  <a href="https://laike9m.com/">laike9m</a> 在 PyCon 2019 的经历</li>
+<li>00:31:34  <a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a> 与 <a href="https://www.kawabangga.com/">laixintao</a> 的组织经历</li>
+<li>00:44:32  如何参与到 PyCon 的组织中来</li>
+<li>00:59:18  下期预告</li>
+</ul></div>
+<h2 class="md-block">不是广告的广告</h2><p><a href="https://www.bagevent.com/event/5293611">PyCon2019 中国Python开发者大会 - 上海站</a>已经开始售票啦<br/>
+参与 PyCon China 2019，和主播们现场面基，还有机会获得捕蛇者说绝版 T恤！</p>
+<h2 class="md-block">相关链接</h2><div class="md-block list"><ul><li><a href="https://www.python.org/psf/">Python Software Foundation</a></li>
+<li><a href="https://us.pycon.org/2019/about/">PyCon 2019</a></li>
+<li><a href="https://www.youtube.com/watch?v=Ldlz4V-UCFw">Mocking and Patching Pitfalls</a></li>
+<li><a href="https://www.youtube.com/watch?v=6uAvHOKofws">PEP 572: The Walrus Operator</a></li>
+</ul></div>
+ ]]></itunes:summary><psc:chapters version="1.1" xmlns:psc="http://podlove.org/simple-chapters"><psc:chapter start="00:01:30" title="什么是 PSF" /><psc:chapter start="00:06:50" title="PyCon 是什么" /><psc:chapter start="00:10:00" title="主创们参加 PyCon 的经历" /><psc:chapter start="00:18:20" title="laike9m 在 PyCon 2019 的经历" href="https://laike9m.com/" /><psc:chapter start="00:31:34" title="Manjusaka 与 laixintao 的组织经历" /><psc:chapter start="00:44:32" title="如何参与到 PyCon 的组织中来" /><psc:chapter start="00:59:18" title="下期预告" /></psc:chapters><pubDate>Mon, 22 Jul 2019 11:10:57 +0000</pubDate></item>
+
+<item><enclosure url="https://chtbl.com/track/6AGABB/r.typlog.com/eyJzIjozNTIsImUiOjUxNSwicCI6MiwidSI6IjU1MDIubXAzIn0.TYDVFZE1P05UEVrZsfPMW5NbRZg/pythonhunter/8444774585_55502.mp3" length="44170890" type="audio/mpeg"/><title><![CDATA[ Ep 01. 新人到底需要什么 ]]></title><guid>http://pythonhunter.org/episodes/1</guid><link>http://pythonhunter.org/episodes/1</link><itunes:author><![CDATA[ pythonhunter ]]></itunes:author><itunes:subtitle><![CDATA[ 第一期节目，我们四位主创和大家聊聊编程初学者到底需要什么。我们每一期也会给大家推荐一些库和文章/视频。 ]]></itunes:subtitle><itunes:duration>1:32:01</itunes:duration><itunes:explicit>no</itunes:explicit><itunes:episodeType>full</itunes:episodeType><itunes:image href="https://i.typlog.com/pythonhunter/8444690454_041962.png?x-oss-process=style/sl" /><description><![CDATA[ 本期主持： laike9m laixintao Adam Wen Manjusaka 播客中提到的内容： Tech lead starlette Python’s super() considered super! huey apscheduler Python 3: ten years later - PyCon 2018 David Beazley - Python Concurrency From the Ground Up: LIVE! - PyCon 2015 pyflame 提问的智慧 XY问题 Python Logger pdb PyCharm Jupyter notebook Let me google that, let me google that for you 学习操作系统的知识，看哪本书好？ PHP黑系列之二：PHP 为什么函数命名是如此不一致？ Scheme The Little Schemer SICP CS 61A: Structure and Interpretation of Computer Programs ]]></description><content:encoded><![CDATA[ <p>本期主持：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>播客中提到的内容：</p>
+<div class="md-block list"><ul><li><a href="https://www.youtube.com/channel/UC4xKdmAXFh4ACyhpiQ_3qBw">Tech lead</a></li>
+<li><a href="https://github.com/encode/starlette">starlette</a></li>
+<li><a href="https://rhettinger.wordpress.com/2011/05/26/super-considered-super/">Python’s super() considered super!</a></li>
+<li><a href="https://github.com/coleifer/huey">huey</a></li>
+<li><a href="https://github.com/agronholm/apscheduler">apscheduler</a></li>
+<li><a href="https://www.youtube.com/watch?v=Aj3KMefwOqI">Python 3: ten years later - PyCon 2018</a></li>
+<li><a href="https://www.youtube.com/watch?v=MCs5OvhV9S4">David Beazley - Python Concurrency From the Ground Up: LIVE! - PyCon 2015</a></li>
+<li><a href="https://github.com/uber/pyflame">pyflame</a></li>
+<li><a href="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/master/README-zh_CN.md">提问的智慧</a></li>
+<li><a href="http://xyproblem.info/">XY问题</a></li>
+<li><a href="https://docs.python.org/3/library/logging.html">Python Logger</a></li>
+<li><a href="https://docs.python.org/3/library/pdb.html">pdb</a></li>
+<li><a href="https://www.jetbrains.com/pycharm/">PyCharm</a> </li>
+<li><a href="https://jupyter.org/">Jupyter notebook</a></li>
+<li><a href="http://www.letmegooglethat.com/">Let me google that</a>, <a href="https://lmgtfy.com/">let me google that for you</a></li>
+<li><a href="https://www.zhihu.com/question/27871198">学习操作系统的知识，看哪本书好？</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/27288770">PHP黑系列之二：PHP 为什么函数命名是如此不一致？</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Scheme_(programming_language)">Scheme</a></li>
+<li><a href="https://7chan.org/pr/src/The_Little_Schemer_4th_2.pdf">The Little Schemer</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Structure_and_Interpretation_of_Computer_Programs">SICP</a></li>
+<li><a href="https://cs61a.org/">CS 61A: Structure and Interpretation of Computer Programs</a></li>
+</ul></div>
+ ]]></content:encoded><itunes:summary><![CDATA[ <p>本期主持：</p>
+<div class="md-block list"><ul><li><a href="https://laike9m.com/">laike9m</a></li>
+<li><a href="https://www.kawabangga.com/">laixintao</a></li>
+<li><a href="https://twitter.com/wenxiaobin">Adam Wen</a></li>
+<li><a href="https://twitter.com/Manjusaka_Lee">Manjusaka</a></li>
+</ul></div>
+<p>播客中提到的内容：</p>
+<div class="md-block list"><ul><li><a href="https://www.youtube.com/channel/UC4xKdmAXFh4ACyhpiQ_3qBw">Tech lead</a></li>
+<li><a href="https://github.com/encode/starlette">starlette</a></li>
+<li><a href="https://rhettinger.wordpress.com/2011/05/26/super-considered-super/">Python’s super() considered super!</a></li>
+<li><a href="https://github.com/coleifer/huey">huey</a></li>
+<li><a href="https://github.com/agronholm/apscheduler">apscheduler</a></li>
+<li><a href="https://www.youtube.com/watch?v=Aj3KMefwOqI">Python 3: ten years later - PyCon 2018</a></li>
+<li><a href="https://www.youtube.com/watch?v=MCs5OvhV9S4">David Beazley - Python Concurrency From the Ground Up: LIVE! - PyCon 2015</a></li>
+<li><a href="https://github.com/uber/pyflame">pyflame</a></li>
+<li><a href="https://github.com/ryanhanwu/How-To-Ask-Questions-The-Smart-Way/blob/master/README-zh_CN.md">提问的智慧</a></li>
+<li><a href="http://xyproblem.info/">XY问题</a></li>
+<li><a href="https://docs.python.org/3/library/logging.html">Python Logger</a></li>
+<li><a href="https://docs.python.org/3/library/pdb.html">pdb</a></li>
+<li><a href="https://www.jetbrains.com/pycharm/">PyCharm</a> </li>
+<li><a href="https://jupyter.org/">Jupyter notebook</a></li>
+<li><a href="http://www.letmegooglethat.com/">Let me google that</a>, <a href="https://lmgtfy.com/">let me google that for you</a></li>
+<li><a href="https://www.zhihu.com/question/27871198">学习操作系统的知识，看哪本书好？</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/27288770">PHP黑系列之二：PHP 为什么函数命名是如此不一致？</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Scheme_(programming_language)">Scheme</a></li>
+<li><a href="https://7chan.org/pr/src/The_Little_Schemer_4th_2.pdf">The Little Schemer</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Structure_and_Interpretation_of_Computer_Programs">SICP</a></li>
+<li><a href="https://cs61a.org/">CS 61A: Structure and Interpretation of Computer Programs</a></li>
+</ul></div>
+ ]]></itunes:summary><pubDate>Sun, 14 Apr 2019 06:50:29 +0000</pubDate></item></channel></rss>

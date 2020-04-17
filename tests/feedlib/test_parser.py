@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import json
 import datetime
 from pathlib import Path
@@ -7,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from rssant_feedlib import (
-    RawFeedParser, FeedParser,
+    RawFeedParser, FeedParser, FeedResult,
     FeedParserError, FeedResponseBuilder,
 )
 from rssant_feedlib.raw_parser import _MAX_CONTENT_LENGTH as _RAW_MAX_CONTENT_LENGTH
@@ -257,3 +258,38 @@ def test_parser_and_checksum(filepath):
     assert result.feed
     assert result.storys
     assert result.checksum.size() == len(result.storys)
+
+
+def _parse_well_feed(filename) -> FeedResult:
+    response = _read_response(_data_dir / 'well', filename)
+    raw_result = RawFeedParser().parse(response)
+    assert raw_result.feed
+    assert raw_result.storys
+    assert not raw_result.warnings
+    result = FeedParser().parse(raw_result)
+    assert len(result.storys) == len(raw_result.storys)
+    return result
+
+
+def test_parser_iframe():
+    result = _parse_well_feed('bilibili_iframe.xml')
+    expect = r'https://player\.bilibili\.com/player\.html\?aid=\d+'
+    for story in result.storys:
+        assert story['iframe_url']
+        assert re.match(expect, story['iframe_url'])
+
+
+def test_parser_audio_typlog():
+    result = _parse_well_feed('typlog_audio.xml')
+    expect = r'https://chtbl\.com/track/6AGABB/r\.typlog\.com/.+\.mp3'
+    for story in result.storys:
+        assert story['audio_url']
+        assert re.match(expect, story['audio_url'])
+
+
+def test_parser_audio_jsonfeed():
+    result = _parse_well_feed('jsonfeed_audio.json')
+    expect = r'http://therecord\.co/downloads/.+\.m4a'
+    for story in result.storys:
+        assert story['audio_url']
+        assert re.match(expect, story['audio_url'])

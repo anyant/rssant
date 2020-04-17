@@ -9,7 +9,7 @@ from .raw_parser import RawFeedResult, FeedParserError
 from .feed_checksum import FeedChecksum
 from rssant_api.helper import shorten
 from .processor import (
-    story_html_to_text, story_html_clean,
+    story_html_to_text, story_html_clean, story_extract_attach,
     story_has_mathjax, process_story_links, normalize_url, validate_url,
 )
 
@@ -42,6 +42,8 @@ StorySchema = T.dict(
     summary=T.str.maxlen(_MAX_SUMMARY_LENGTH).optional,
     has_mathjax=T.bool.optional,
     image_url=T.url.invalid_to_default.optional,
+    iframe_url=T.url.invalid_to_default.optional,
+    audio_url=T.url.invalid_to_default.optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     author_name=T.str.maxlen(100).optional,
@@ -117,7 +119,7 @@ class FeedParser:
         )
 
     def _process_content(self, content, link):
-        content = story_html_clean(content)
+        content = story_html_clean(content, loose=True)
         content = process_story_links(content, link)
         if len(content) > _MAX_CONTENT_LENGTH:
             msg = 'story link=%r content length=%s too large, will only save plain text'
@@ -139,6 +141,7 @@ class FeedParser:
             valid_url = None
         base_url = valid_url or feed_url
         image_url = normalize_url(story['image_url'], base_url=base_url)
+        audio_url = normalize_url(story['audio_url'], base_url=base_url)
         author_name = story_html_to_text(story['author_name'])[:100]
         author_url = normalize_url(story['author_url'], base_url=base_url)
         author_avatar_url = normalize_url(story['author_avatar_url'], base_url=base_url)
@@ -147,7 +150,16 @@ class FeedParser:
             summary = story_html_clean(story['summary'])
         else:
             summary = content
-        summary = shorten(story_html_to_text(summary), width=_MAX_SUMMARY_LENGTH)
+        summary_full = story_html_to_text(summary)
+        iframe_url = None
+        # extract video iframe, eg: bilibili.com
+        is_short_story = summary_full is None or len(summary_full) < 2000
+        if is_short_story and content:
+            attach = story_extract_attach(content, base_url=base_url)
+            iframe_url = attach.iframe_url
+            if (not audio_url) and attach.audio_url:
+                audio_url = attach.audio_url
+        summary = shorten(summary_full, width=_MAX_SUMMARY_LENGTH)
         has_mathjax = story_has_mathjax(content)
         return dict(
             ident=ident,
@@ -157,6 +169,8 @@ class FeedParser:
             summary=summary,
             has_mathjax=has_mathjax,
             image_url=image_url,
+            iframe_url=iframe_url,
+            audio_url=audio_url,
             dt_published=story['dt_published'],
             dt_updated=story['dt_updated'],
             author_name=author_name,
