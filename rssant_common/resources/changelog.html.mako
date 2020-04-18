@@ -41,7 +41,7 @@
             box-sizing: border-box;
             min-height: 100vh;
             min-width: 300px;
-            max-width: 640px;
+            max-width: 720px;
             margin: 0 auto;
             padding: 16px;
             background: #fefefe;

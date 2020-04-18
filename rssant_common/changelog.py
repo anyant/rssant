@@ -40,7 +40,7 @@ class ChangeLog:
 
     @classmethod
     def from_text(cls, text: str) -> "ChangeLog":
-        extensions = ['extra', 'meta', 'nl2br']
+        extensions = ['extra', 'meta']
         md = Markdown(extensions=extensions)
         html = md.convert(text)
         meta = {}
