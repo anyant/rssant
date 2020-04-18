@@ -12,7 +12,7 @@ sentence_sep_s = [
     r'“', r'”', r'‘', r'’', r'【', r'】', r'《', r'》', r'（', r'）', r'〈', r'〉',
 ]
 
-RE_SENTENCE_SEP = re.compile(r'(?:\s*(?:{})\s*)+'.format('|'.join(sentence_sep_s)))
+RE_SENTENCE_SEP = re.compile(r'(?:[\s\d]*(?:{})[\s\d]*)+'.format('|'.join(sentence_sep_s)))
 
 
 def split_sentences(text: str) -> List[str]:

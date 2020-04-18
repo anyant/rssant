@@ -6,6 +6,7 @@ import time
 from io import BytesIO
 
 import atoma
+from atoma.json_feed import JSONFeedItem as RawJSONFeedItem
 import feedparser
 from django.utils import timezone
 from dateutil.parser import parse as parse_datetime
@@ -48,6 +49,7 @@ RawStorySchema = T.dict(
     content=T.str.maxlen(_MAX_CONTENT_LENGTH).optional,
     summary=T.str.maxlen(_MAX_SUMMARY_LENGTH).optional,
     image_url=T.str.optional,
+    audio_url=T.str.optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     author_name=T.str.optional,
@@ -124,14 +126,25 @@ class RawFeedParser:
             url = detail.get('href')
         return dict(author_name=name, author_url=url, author_avatar_url=avatar)
 
-    def _get_story_image_url(self, item) -> str:
+    def _get_story_enclosure_url(self, item, mime_type) -> str:
         if item.get('enclosures'):
             for e in item['enclosures']:
-                mime_type = e.get('type')
+                el_mime_type = e.get('type')
                 url = e.get('href')
-                if url and mime_type and 'image' in mime_type:
+                if url and el_mime_type and mime_type in el_mime_type:
                     return url
         return None
+
+    def _get_story_image_url(self, item) -> str:
+        image = item.get('image')
+        if image:
+            url = image.get('href')
+            if url:
+                return url
+        return self._get_story_enclosure_url(item, 'image')
+
+    def _get_story_audio_url(self, item) -> str:
+        return self._get_story_enclosure_url(item, 'audio')
 
     def _get_story_content(self, item) -> str:
         content = ''
@@ -214,6 +227,7 @@ class RawFeedParser:
         story['content'] = self._get_story_content(item)
         story['summary'] = item.get("summary")
         story['image_url'] = self._get_story_image_url(item)
+        story['audio_url'] = self._get_story_audio_url(item)
         story['dt_published'] = self._get_date(item, 'published_parsed')
         story['dt_updated'] = self._get_date(item, 'updated_parsed')
         story.update(self._get_author_info(item))
@@ -250,6 +264,36 @@ class RawFeedParser:
             raise FeedParserError("JSON parse error: {}".format(ex)) from ex
         return data
 
+    def _get_json_feed_story_audio_url(self, item: RawJSONFeedItem) -> str:
+        if not item.attachments:
+            return None
+        for x in item.attachments:
+            if x.url and x.mime_type and 'audio' in x.mime_type:
+                return x.url
+        return None
+
+    def _get_json_feed_story(self, item: RawJSONFeedItem):
+        ident = item.id_ or item.url or item.title
+        if not ident:
+            return None
+        content = item.content_html or item.content_text or item.summary or ''
+        summary = item.summary if item.summary != content else None
+        audio_url = self._get_json_feed_story_audio_url(item)
+        story = dict(
+            ident=ident,
+            url=item.url,
+            title=item.title or ident,
+            content=content,
+            summary=summary,
+            image_url=item.image or item.banner_image,
+            audio_url=audio_url,
+            dt_published=item.date_published,
+            dt_updated=item.date_modified,
+            **self._get_json_feed_author(item.author),
+        )
+        story = self._normalize_story_content_summary(story)
+        return story
+
     def _parse_json_feed(self, response: FeedResponse) -> RawFeedResult:
         data = self._load_json(response)
         if not isinstance(data, dict):
@@ -270,26 +314,11 @@ class RawFeedParser:
         )
         warnings = []
         storys = []
-        item: atoma.JSONFeedItem
         for i, item in enumerate(feed.items or []):
-            ident = item.id_ or item.url or item.title
-            if not ident:
+            story = self._get_json_feed_story(item)
+            if not story:
                 warnings.append(f"story#{i} no id, skip it")
                 continue
-            content = item.content_html or item.content_text or item.summary or ''
-            summary = item.summary if item.summary != content else None
-            story = dict(
-                ident=ident,
-                url=item.url,
-                title=item.title or ident,
-                content=content,
-                summary=summary,
-                image_url=item.image or item.banner_image,
-                dt_published=item.date_published,
-                dt_updated=item.date_modified,
-                **self._get_json_feed_author(item.author),
-            )
-            story = self._normalize_story_content_summary(story)
             storys.append(story)
         if (not storys) and warnings:
             raise FeedParserError('; '.join(warnings))

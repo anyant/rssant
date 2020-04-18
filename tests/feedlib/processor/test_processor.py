@@ -7,6 +7,7 @@ from rssant_feedlib.processor import (
     normalize_url,
     validate_url,
     get_html_redirect_url,
+    story_extract_attach,
 )
 
 _data_dir = Path(__file__).parent.parent / 'testdata/processor'
@@ -102,3 +103,17 @@ def test_get_html_redirect_url(filename):
     html = _read_text(filename)
     got = get_html_redirect_url(html, base_url=base_url)
     assert got == expect
+
+
+def test_story_extract_attach_iframe():
+    html = _read_text('test_iframe.html')
+    attach = story_extract_attach(html)
+    expect = 'https://player.bilibili.com/player.html?aid=75057811'
+    assert attach.iframe_url == expect
+
+
+def test_story_extract_attach_audio():
+    html = _read_text('test_audio.html')
+    attach = story_extract_attach(html)
+    expect = 'https://chtbl.com/track/r.typlog.com/pythonhunter/8417630310_189758.mp3'
+    assert attach.audio_url == expect

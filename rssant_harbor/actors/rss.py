@@ -30,6 +30,9 @@ StorySchemaFields = dict(
     content_hash_base64=T.str,
     author=T.str.optional,
     link=T.str.optional,
+    image_url=T.url.optional,
+    iframe_url=T.url.optional,
+    audio_url=T.url.optional,
     has_mathjax=T.bool.optional,
     dt_published=T.datetime.object.optional.invalid_to_default,
     dt_updated=T.datetime.object.optional,
@@ -198,7 +201,7 @@ def do_update_feed(
     for story in modified_storys:
         if not story.link:
             continue
-        if need_fetch_story and (not is_fulltext_content(story.content)):
+        if need_fetch_story and (not is_fulltext_story(story)):
             text = processor.story_html_to_text(story.content)
             num_sub_sentences = len(split_sentences(text))
             ctx.tell('worker_rss.fetch_story', dict(
@@ -209,6 +212,12 @@ def do_update_feed(
             ))
         else:
             _detect_story_images(ctx, story)
+
+
+def is_fulltext_story(story):
+    if story.iframe_url or story.audio_url:
+        return True
+    return is_fulltext_content(story.content)
 
 
 def is_rssant_changelog(url: str):
