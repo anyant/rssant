@@ -7,8 +7,7 @@ from validr import Invalid
 
 from rssant_common.helper import coerce_url
 
-from .raw_parser import RawFeedParser, FeedParserError
-from .parser import FeedParser, FeedResult
+from .raw_parser import RawFeedParser, FeedParserError, RawFeedResult
 from .reader import FeedReader
 from .response import FeedResponse, FeedResponseStatus
 from .processor import validate_url
@@ -240,7 +239,7 @@ class FeedFinder:
             self._log(msg)
         return res
 
-    def _parse(self, response: FeedResponse) -> FeedResult:
+    def _parse(self, response: FeedResponse) -> RawFeedResult:
         if response.feed_type.is_html:
             msg = "the response content is HTML, not XML feed"
             self._log(msg)
@@ -260,8 +259,6 @@ class FeedFinder:
             msg = f"warnings: {';'.join(result.warnings)}"
             self._log(msg)
             LOG.warning(msg)
-        parser = FeedParser()
-        result = parser.parse(result)
         return result
 
     def _parse_html(self, response):
@@ -393,7 +390,7 @@ class FeedFinder:
             self._guess_links()
             self._guessed = True
 
-    def find(self) -> Tuple[FeedResponse, FeedResult]:
+    def find(self) -> Tuple[FeedResponse, RawFeedResult]:
         use_proxy = False
         current_try = 0
         should_abort = FeedResponseStatus.is_permanent_failure

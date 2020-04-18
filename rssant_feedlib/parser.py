@@ -119,7 +119,15 @@ class FeedParser:
         )
 
     def _process_content(self, content, link):
+        # use loose=True to reserve iframe
         content = story_html_clean(content, loose=True)
+        # extract video iframe, eg: bilibili.com
+        attach = None
+        is_short_story = content and len(content) < 2000
+        if is_short_story:
+            attach = story_extract_attach(content, base_url=link)
+        # clean again, remove iframe from content
+        content = story_html_clean(content)
         content = process_story_links(content, link)
         if len(content) > _MAX_CONTENT_LENGTH:
             msg = 'story link=%r content length=%s too large, will only save plain text'
@@ -129,7 +137,7 @@ class FeedParser:
             msg = 'story link=%r content length=%s still too large, will truncate it'
             LOG.warning(msg, link, len(content))
             content = content[:_MAX_CONTENT_LENGTH]
-        return content
+        return content, attach
 
     def _parse_story(self, story: dict, feed_url: str):
         ident = story['ident'][:200]
@@ -145,21 +153,17 @@ class FeedParser:
         author_name = story_html_to_text(story['author_name'])[:100]
         author_url = normalize_url(story['author_url'], base_url=base_url)
         author_avatar_url = normalize_url(story['author_avatar_url'], base_url=base_url)
-        content = self._process_content(story['content'], link=base_url)
+        iframe_url = None
+        content, attach = self._process_content(story['content'], link=base_url)
+        if attach:
+            iframe_url = attach.iframe_url
+            if (not audio_url) and attach.audio_url:
+                audio_url = attach.audio_url
         if story['summary']:
             summary = story_html_clean(story['summary'])
         else:
             summary = content
-        summary_full = story_html_to_text(summary)
-        iframe_url = None
-        # extract video iframe, eg: bilibili.com
-        is_short_story = summary_full is None or len(summary_full) < 2000
-        if is_short_story and content:
-            attach = story_extract_attach(content, base_url=base_url)
-            iframe_url = attach.iframe_url
-            if (not audio_url) and attach.audio_url:
-                audio_url = attach.audio_url
-        summary = shorten(summary_full, width=_MAX_SUMMARY_LENGTH)
+        summary = shorten(story_html_to_text(summary), width=_MAX_SUMMARY_LENGTH)
         has_mathjax = story_has_mathjax(content)
         return dict(
             ident=ident,

@@ -22,6 +22,10 @@ StoryDetailSchema = T.detail.fields("""
     dt_watched
     dt_favorited
 """).extra_fields("""
+    author
+    image_url
+    audio_url
+    iframe_url
     dt_synced
     summary
     content
@@ -58,6 +62,12 @@ class Story(Model, ContentHashMixin):
     title = models.CharField(max_length=200, help_text="标题")
     link = models.TextField(help_text="文章链接")
     author = models.CharField(max_length=200, **optional, help_text='作者')
+    image_url = models.TextField(
+        **optional, help_text="图片链接")
+    audio_url = models.TextField(
+        **optional, help_text="播客音频链接")
+    iframe_url = models.TextField(
+        **optional, help_text="视频iframe链接")
     has_mathjax = models.BooleanField(
         **optional, default=False, help_text='has MathJax')
     is_user_marked = models.BooleanField(
@@ -115,6 +125,7 @@ class Story(Model, ContentHashMixin):
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
             story_objects = {}
+            # TODO: exclude content and summary fields
             q = Story.objects.filter(feed_id=feed_id, unique_id__in=unique_ids)
             for story in q.all():
                 story_objects[story.unique_id] = story
@@ -140,6 +151,9 @@ class Story(Model, ContentHashMixin):
                 story.title = data["title"]
                 story.link = data["link"]
                 story.author = data["author"]
+                story.image_url = data['image_url']
+                story.iframe_url = data['iframe_url']
+                story.audio_url = data['audio_url']
                 story.has_mathjax = data['has_mathjax']
                 # 发布时间只第一次赋值，不更新
                 if not story.dt_published:
@@ -363,6 +377,22 @@ class UnionStory:
     @property
     def link(self):
         return self._story.link
+
+    @property
+    def author(self):
+        return self._story.author
+
+    @property
+    def image_url(self):
+        return self._story.image_url
+
+    @property
+    def iframe_url(self):
+        return self._story.iframe_url
+
+    @property
+    def audio_url(self):
+        return self._story.audio_url
 
     @property
     def has_mathjax(self):
