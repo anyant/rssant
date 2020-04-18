@@ -125,8 +125,12 @@ class Story(Model, ContentHashMixin):
             offset = feed.total_storys
             unique_ids = [x['unique_id'] for x in storys]
             story_objects = {}
-            # TODO: exclude content and summary fields
-            q = Story.objects.filter(feed_id=feed_id, unique_id__in=unique_ids)
+            q = Story.objects\
+                .defer(
+                    'content', 'summary', 'title', 'author',
+                    'image_url', 'iframe_url', 'audio_url',
+                )\
+                .filter(feed_id=feed_id, unique_id__in=unique_ids)
             for story in q.all():
                 story_objects[story.unique_id] = story
             new_story_objects = []

@@ -514,7 +514,10 @@ class FeedLooseHTMLCleaner(Cleaner):
         return True
 
 
-lxml_story_html_cleaner = Cleaner(**_html_cleaner_options)
+lxml_story_html_cleaner = Cleaner(
+    **_html_cleaner_options,
+    embedded=True,
+)
 lxml_story_html_loose_cleaner = FeedLooseHTMLCleaner(
     **_html_cleaner_options,
     embedded=False,  # allow iframe
