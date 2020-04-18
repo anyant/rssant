@@ -62,6 +62,7 @@ FeedSchemaFields = dict(
     etag=T.str.optional,
     last_modified=T.str.optional,
     checksum_data=T.bytes.maxlen(4096).optional,
+    warnings=T.str.optional,
 )
 
 FeedOutputSchemaFields = FeedSchemaFields.copy()

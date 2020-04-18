@@ -20,8 +20,8 @@ if __name__ == '__main__':
     while True:
         try:
             execute_from_command_line(sys.argv)
-        except SyntaxError as ex:
-            print(f'* SyntaxError: {ex}')
+        except Exception as ex:
+            print(f'* {type(ex).__name__}: {ex}')
             time.sleep(3)
         else:
             break

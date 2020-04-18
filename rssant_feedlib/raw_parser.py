@@ -89,7 +89,7 @@ class RawFeedResult:
         return self._storys
 
     @property
-    def warnings(self) -> str:
+    def warnings(self) -> typing.List[str]:
         return self._warnings
 
 

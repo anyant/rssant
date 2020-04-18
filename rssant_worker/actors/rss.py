@@ -78,6 +78,7 @@ FeedSchema = T.dict(
     etag=T.str.optional,
     last_modified=T.str.optional,
     checksum_data=T.bytes.maxlen(4096).optional,
+    warnings=T.str.optional,
     storys=T.list,
 )
 
@@ -365,6 +366,9 @@ def _parse_found(found, checksum_data=None):
     result = FeedParser(checksum=checksum).parse(raw_result)
     checksum_data = result.checksum.dump(limit=300)
     num_raw_storys = len(raw_result.storys)
+    warnings = None
+    if raw_result.warnings:
+        warnings = '; '.join(raw_result.warnings)
     del raw_result  # release memory in advance
     msg = "feed url=%r storys=%s changed_storys=%s"
     LOG.info(msg, feed.url, num_raw_storys, len(result.storys))
@@ -378,6 +382,7 @@ def _parse_found(found, checksum_data=None):
     feed.version = result.feed['version']
     feed.storys = _get_storys(result.storys)
     feed.checksum_data = checksum_data
+    feed.warnings = warnings
     del result  # release memory in advance
 
     return validate_feed(feed)

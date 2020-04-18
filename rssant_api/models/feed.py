@@ -46,6 +46,7 @@ FeedDetailSchema = T.detail.fields("""
     dt_latest_story_published
 """).extra_fields("""
     description
+    warnings
     encoding
     etag
     last_modified
@@ -109,6 +110,8 @@ class Feed(Model, ContentHashMixin):
         **optional, default=False, help_text="use proxy or not")
     checksum_data = models.BinaryField(
         **optional, max_length=4096, help_text="feed checksum data")
+    warnings = models.TextField(
+        **optional, help_text="warning messages when processing the feed")
     # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
         **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
@@ -712,6 +715,10 @@ class UnionFeed:
     @property
     def description(self):
         return self._feed.description
+
+    @property
+    def warnings(self) -> str:
+        return self._feed.warnings
 
     @property
     def encoding(self):

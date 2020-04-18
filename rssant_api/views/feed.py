@@ -39,6 +39,7 @@ FeedSchema = T.dict(
     description=T.str.optional,
     version=T.str.optional,
     title=T.str.optional,
+    warnings=T.str.optional,
     num_unread_storys=T.int.optional,
     total_storys=T.int.optional,
     dt_updated=T.datetime.object.optional,
@@ -51,6 +52,8 @@ FeedSchema = T.dict(
     content_hash_base64=T.str.optional,
     story_offset=T.int.min(0).optional,
     dryness=T.int.min(0).max(1000).optional,
+    freeze_level=T.int.min(0).optional,
+    use_proxy=T.bool.optional,
     dt_first_story_published=T.datetime.object.optional.invalid_to_default,
     dt_latest_story_published=T.datetime.object.optional.invalid_to_default,
 ).slim
