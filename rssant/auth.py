@@ -2,9 +2,8 @@ import logging
 from urllib.parse import urljoin
 
 from django.urls import path, include
-
 from django.contrib.auth.models import User
-from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
+
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.models import EmailAddress
@@ -17,17 +16,21 @@ from rest_auth.registration.views import (
 
 from rssant_config import CONFIG
 from .email_template import EMAIL_CONFIRM_TEMPLATE
+from .allauth_providers.oauth2.client import RssantOAuth2Client
+from .allauth_providers.github.views import RssantGitHubOAuth2Adapter
 
 
 LOG = logging.getLogger(__name__)
 
 
 class GitHubLogin(SocialLoginView):
-    adapter_class = GitHubOAuth2Adapter
+    adapter_class = RssantGitHubOAuth2Adapter
+    client_class = RssantOAuth2Client
 
 
 class GitHubConnect(SocialConnectView):
-    adapter_class = GitHubOAuth2Adapter
+    adapter_class = RssantGitHubOAuth2Adapter
+    client_class = RssantOAuth2Client
 
 
 class RssantAccountAdapter(DefaultAccountAdapter):
@@ -65,6 +68,7 @@ class RssantSocialAccountAdapter(DefaultSocialAccountAdapter):
     """
 
     def _log_social_login(self, sociallogin: SocialLogin):
+        # TODO: remove emails from log message
         emails = []
         if sociallogin.email_addresses:
             email: EmailAddress

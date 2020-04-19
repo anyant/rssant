@@ -22,6 +22,7 @@ from rest_framework_swagger.views import get_swagger_view
 
 from . import views
 from . import auth
+from .allauth_providers.github import urls as github_urls
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
@@ -40,6 +41,8 @@ urlpatterns = [
     path('docs/v1/schema/', schema_view),
     path('docs/v1/swagger/', swagger_view),
     path('api/v1/accounts/profile/', views.accounts_profile),
+    # override allauth github views
+    path('api/v1/accounts/', include(github_urls)),
     path('api/v1/accounts/', include('allauth.urls')),
     path('api/v1/', include('rssant_api.urls')),
     path('api/v1/', include(auth.urlpaterns)),
