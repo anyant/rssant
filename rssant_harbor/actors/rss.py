@@ -421,15 +421,15 @@ def do_clean_feed_creation(ctx: ActorContext):
     # 删除所有入库时间超过24小时的订阅创建信息
     num_deleted = FeedCreation.delete_by_status(survival_seconds=24 * 60 * 60)
     LOG.info('delete {} old feed creations'.format(num_deleted))
-    # 重试 status=UPDATING 超过30分钟的订阅
+    # 重试 status=UPDATING 超过4小时的订阅
     feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
-        FeedStatus.UPDATING, survival_seconds=30 * 60)
+        FeedStatus.UPDATING, survival_seconds=4 * 60 * 60)
     num_retry_updating = len(feed_creation_id_urls)
     LOG.info('retry {} status=UPDATING feed creations'.format(num_retry_updating))
     _retry_feed_creations(ctx, feed_creation_id_urls)
-    # 重试 status=PENDING 超过60分钟的订阅
+    # 重试 status=PENDING 超过4小时的订阅
     feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
-        FeedStatus.PENDING, survival_seconds=60 * 60)
+        FeedStatus.PENDING, survival_seconds=4 * 60 * 60)
     num_retry_pending = len(feed_creation_id_urls)
     LOG.info('retry {} status=PENDING feed creations'.format(num_retry_pending))
     _retry_feed_creations(ctx, feed_creation_id_urls)
