@@ -159,7 +159,7 @@ def do_update_feed(
     ctx: ActorContext,
     feed_id: T.int,
     feed: FeedSchema,
-    is_refresh: T.bool.default(False).desc('Deprecated'),
+    is_refresh: T.bool.default(False),
 ):
     with transaction.atomic():
         feed_dict = feed
@@ -190,7 +190,7 @@ def do_update_feed(
                 # set dt_published to now - 30d to avoid these storys
                 # take over mushroom page, i.e. Story.query_recent_by_user
                 s['dt_published'] = now_sub_30d
-        modified_storys = Story.bulk_save_by_feed(feed.id, storys)
+        modified_storys = Story.bulk_save_by_feed(feed.id, storys, is_refresh=is_refresh)
         LOG.info(
             'feed#%s save storys total=%s num_modified=%s',
             feed.id, len(storys), len(modified_storys)

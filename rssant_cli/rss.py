@@ -1,4 +1,5 @@
 import logging
+import time
 from collections import defaultdict
 
 import tqdm
@@ -27,9 +28,25 @@ def main():
     """RSS Commands"""
 
 
+def _decode_feed_ids(option_feeds):
+    """
+    >>> _decode_feed_ids('123,456')
+    [123, 456]
+    """
+    return [int(x) for x in option_feeds.strip().split(',')]
+
+
+def _decode_union_feed_ids(option_feeds):
+    """
+    >>> _decode_union_feed_ids('014064,0140be')
+    [196, 366]
+    """
+    return [unionid.decode(x)[1] for x in option_feeds.strip().split(',')]
+
+
 def _get_feed_ids(option_feeds):
     if option_feeds:
-        feed_ids = option_feeds.strip().split(',')
+        feed_ids = _decode_feed_ids(option_feeds)
     else:
         feed_ids = [feed.id for feed in Feed.objects.only('id').all()]
     return feed_ids
@@ -353,6 +370,32 @@ def delete_feed(key):
         return
     if click.confirm(f'delete {feed} ?'):
         feed.delete()
+
+
+@main.command()
+@click.option('--feeds', help="feed ids, separate by ','")
+@click.option('--union-feeds', help="union feed ids, separate by ','")
+@click.option('--key', help="feed url or title keyword")
+def refresh_feed(feeds, union_feeds, key):
+    feed_objs = []
+    if feeds:
+        feed_ids = _decode_feed_ids(feeds)
+        feed_objs.extend([Feed.get_by_pk(x) for x in feed_ids])
+    if union_feeds:
+        feed_ids = _decode_union_feed_ids(union_feeds)
+        feed_objs.extend([Feed.get_by_pk(x) for x in feed_ids])
+    if key:
+        cond = Q(url__contains=key) | Q(title__contains=key)
+        feeds = list(Feed.objects.filter(cond).all())
+        feed_objs.extend(feeds)
+    expire_at = time.time() + 60 * 60
+    for feed in tqdm.tqdm(feed_objs, ncols=80, ascii=True):
+        scheduler.tell('worker_rss.sync_feed', dict(
+            feed_id=feed.id,
+            url=feed.url,
+            use_proxy=feed.use_proxy,
+            is_refresh=True,
+        ), expire_at=expire_at)
 
 
 if __name__ == "__main__":

@@ -161,8 +161,11 @@ def do_sync_feed(
     content_hash_base64: T.str.optional,
     etag: T.str.optional,
     last_modified: T.str.optional,
+    is_refresh: T.bool.default(False),
 ):
-    params = dict(etag=etag, last_modified=last_modified)
+    params = {}
+    if not is_refresh:
+        params = dict(etag=etag, last_modified=last_modified)
     options = _get_proxy_options()
     options.update(allow_private_address=CONFIG.allow_private_address)
     with FeedReader(**options) as reader:
@@ -179,7 +182,7 @@ def do_sync_feed(
     if (not response.ok) or (not response.content):
         return
     new_hash = compute_hash_base64(response.content)
-    if new_hash == content_hash_base64:
+    if (not is_refresh) and (new_hash == content_hash_base64):
         LOG.info(f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!')
         return
     LOG.info(f'parse feed#{feed_id} url={unquote(url)}')
@@ -192,11 +195,11 @@ def do_sync_feed(
         warnings = '; '.join(raw_result.warnings)
         LOG.warning('warning parse feed#%s url=%r: %s', feed_id, unquote(url), warnings)
     try:
-        feed = _parse_found((response, raw_result), checksum_data=checksum_data)
+        feed = _parse_found((response, raw_result), checksum_data=checksum_data, is_refresh=is_refresh)
     except (Invalid, FeedParserError) as ex:
         LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
         return
-    ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed))
+    ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh))
 
 
 async def _fetch_story(reader, story_id, url, use_proxy):
@@ -343,7 +346,7 @@ async def do_detect_story_images(
     ))
 
 
-def _parse_found(found, checksum_data=None):
+def _parse_found(found, checksum_data=None, is_refresh=False):
     response: FeedResponse
     raw_result: RawFeedResult
     response, raw_result = found
@@ -361,7 +364,7 @@ def _parse_found(found, checksum_data=None):
 
     # parse feed and storys
     checksum = None
-    if checksum_data:
+    if checksum_data and (not is_refresh):
         checksum = FeedChecksum.load(checksum_data)
     result = FeedParser(checksum=checksum).parse(raw_result)
     checksum_data = result.checksum.dump(limit=300)
