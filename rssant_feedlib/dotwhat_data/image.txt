@@ -1,0 +1,149 @@
+.BMP - Bitmap Image FileVery Common
+.DDS - DirectDraw Surface FileVery Common
+.DIB - Device Independent Bitmap GraphicVery Common
+.FW.PNG - Adobe Fireworks Portable Network Graphics FileVery Common
+.GIF - Graphics Interchange Format Image FileVery Common
+.ITC2 - iTunes Coverart 2Very Common
+.JPG - Joint Photographic Expert Group Image FileVery Common
+.PDF - Portable Document FormatVery Common
+.PNG - Portable Network GraphicsVery Common
+.PSD - Adobe Photoshop Image DocumentVery Common
+.AI - Adobe Illustrator Artwork fileCommon
+.ARW - Sony Digital Camera ImageCommon
+.CDR - CorelDraw Drawing FileCommon
+.CDT - Corel Draw templateCommon
+.CPL - Corel Color PaletteCommon
+.CPT - Corel Photo-Paint Image/DocumentCommon
+.DRW - Drawing FileCommon
+.DXB - AutoCAD Drawing Interchange Binary FileCommon
+.EPS - Encapsulated PostScript FileCommon
+.EXR - OpenEXR Raster Image FileCommon
+.FBX - Autodesk FBX Interchange Document FileCommon
+.FLM - Filmstrip FileCommon
+.FPF - IKEA Home Planner FileCommon
+.FXG - Flash XML GraphicsCommon
+.ITHMB - Apple iPod / iPhone Media FileCommon
+.JXR - JPEG XR ImageCommon
+.MDI - Microsoft Office Document Imaging FileCommon
+.MPF - Microsoft Media PackageCommon
+.PCD - Kodak Image FileCommon
+.PCT - Macintosh PICT DrawingCommon
+.PDN - Paint.NET ImageCommon
+.PPSX - Microsoft Office PowerPoint (2007+) ShowCommon
+.PS - PostScript FileCommon
+.PS - Postscript Formatted FileCommon
+.PSPIMAGE - Paint Shop Pro ImageCommon
+.PSQ - Postscript GraphicCommon
+.QXD - QuarkXpress Data FileCommon
+.RW2 - Panasonic RAW Image FileCommon
+.SDK - AutoSketch Drawing FileCommon
+.SVG - Scalable Vector Graphics FileCommon
+.SVGZ - Scalable Vector Graphics ZipCommon
+.TARGA - Raster Image FileCommon
+.TGA - Truevision TARGA Image FileCommon
+.TIF - Tagged Image File Format (TIFF) ImageCommon
+.TIFF - Tagged Image File Format (TIFF) ImageCommon
+.006 - Navigation Chart FileAverage
+.007 - Navigation Chart FileAverage
+.ABM - Photo AlbumAverage
+.ABR - Adobe Photoshop BrushAverage
+.BIL - Band Interleaved by Line ImageAverage
+.BLEND - Blender 3D Data FileAverage
+.BMC - Bitmap Cache FileAverage
+.CCX - Corel Photo House GraphicsAverage
+.CDX - Corel Draw Compressed DrawingAverage
+.CGM - Computer Graphics MetafileAverage
+.COMICDOC - Comic Life DocumentAverage
+.CPS - Corel Photo House Graphics ImageAverage
+.CR2 - Canon Raw Digital Image FileAverage
+.DAE - Digital Asset Exchange FileAverage
+.DESIGN - Microsoft Expression Design DrawingAverage
+.DRG - AllyCAD DrawingAverage
+.DRWDOT - Solidworks Drawing TemplateAverage
+.DT2 - Windows Live Messenger Emoticon ImageAverage
+.DWF - Autodesk Drawing Web Format FileAverage
+.EC3 - Epson Print CD Image FileAverage
+.EDP - Darkroom Professional Photo Border FileAverage
+.EMF - Windows Enhanced Metafile FormatAverage
+.EPSF - Adobe Encapsulated PostScript FormatAverage
+.EPSI - Adobe Encapsulated Postscript InterchangeAverage
+.FH11 - Adobe Freehand 11 DrawingAverage
+.FIT - Flexible Image Transport SystemAverage
+.FLIC - FLIC File formatAverage
+.GTX - Raster graphics (GTX Group IV)Average
+.IGES - Initial Graphics Exchange SpecificationAverage
+.IGR - SmartSketch Drawing Design fileAverage
+.INDD - Adobe InDesign documentAverage
+.JPEG - Joint Photographic Expert Group Image FileAverage
+.JPG2 - JPEG 2000 ImageAverage
+.JPS - Stereo Image image formatAverage
+.LDA - LaserData Image FormatAverage
+.LDM - VolumeViz Multi-Resolution Volume FileAverage
+.LET - Broderbund CreataCard Letterhead fileAverage
+.LVA - Logitech Video Effects AvatarAverage
+.LVF - Logitech Video EffectsAverage
+.MGX - Micrografx Designer Drawing Clip ArtAverage
+.MPO - Multi Picture Object FileAverage
+.NEU - Pro/Engineer Neutral FileAverage
+.OPD - OmniPage DocumentAverage
+.P21 - Express Step Data ModelAverage
+.PCX - PC Paintbrush Bitmap ImageAverage
+.PEF - A RAW Image FileAverage
+.PIC - Lotus PictureAverage
+.PIC - QuickTime PictureAverage
+.PICTCLIPPING - OS X Picture Clipping FileAverage
+.PL0 - 3D Home Architect Foundation Floor PlanAverage
+.PL2 - 3D Home Architect Second Level Floor PlanAverage
+.PSF - PhotoStudio GraphicAverage
+.PWD - Word documentAverage
+.PX - Pixel image formatAverage
+.QTIF - QuickTime ImageAverage
+.RLC - Scanner Graphics FileAverage
+.RLE - Run-Length Encoded BitmapAverage
+.SDR - SmartDraw DrawingAverage
+.SEC - Samsung TV Content LIbrary FileAverage
+.SIG - Broderbund Print Shop Sign FileAverage
+.SKP - Google SketchUp ModelAverage
+.SLDASM - SolidWorks 3D Assembly FileAverage
+.SLDDRW - Solidworks FileAverage
+.SLDPRT - SolidWorks 3D Object Part FileAverage
+.SNX - Second Nature ScreensaverAverage
+.TCW - TurboCAD Drawing FileAverage
+.UPX - Nova Photo Explosion Image Template FileAverage
+.UTX - Unreal Texture FileAverage
+.VFS - HP All-in-One Thumbnail FileAverage
+.VGA - IBM OS/2 VGA Bitmap ImageAverage
+.WEBP - Google Image FileAverage
+.WMF - Windows MetafileAverage
+.X_B - Parasolid Model PartAverage
+.X_T - Parasolid Model PartAverage
+.ZDL - DesignPro Label Design FileAverage
+.ZIF - Zoomorama Image FileAverage
+.ZPRF - ZBrush Model FileAverage
+.AEX - Greeting Card Factory Clip Art FileUncommon
+.BOB - BOB Bitmap ImageUncommon
+.CMX - Corel Presentation Exchange imageUncommon
+.EASM - eDrawings FileUncommon
+.ICL - Icon LibraryUncommon
+.ILM - Amiga IFF ImageUncommon
+.IMA - Photographic ImageUncommon
+.IME - IncrediMail EmoticonsUncommon
+.IMI - IncrediMail ImagesUncommon
+.IMS - IncrediMail SkinUncommon
+.NCR - NCR ImageUncommon
+.NTH - ImageMagick VisualMagick jbig fileUncommon
+.ORA - MyPaint Open Raster Drawing FileUncommon
+.PI2 - Portrait Innovations Picture FileUncommon
+.PMB - Polar Monitor Bitmap Image FileUncommon
+.PXR - Pixar Image FileUncommon
+.RIC - Lego Mindstorms NXT Image FileUncommon
+.SST - Satellite Geology ImageUncommon
+.TN - Tracor Northern Image FileUncommon
+.TPF - Game TextureUncommon
+.TPX - Nova Photo Explosion Image FileUncommon
+.WI - Corel Wavelet Compressed ImageUncommon
+.XIP - Hotbar Image Compression FormatUncommon
+.ALBM - HP Photo Printing Software AlbumRare
+.DWB - Coryphaeus Software Designers Workbench ImageRare
+.TRIF - Bitmap imageRare
+.TRX - Firmware Image

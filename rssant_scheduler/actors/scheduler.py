@@ -63,7 +63,7 @@ async def do_proxy_tell(
     tasks: T.list(T.dict(
         dst=T.str,
         content=T.dict.optional,
-    ))
+    )).maxlen(2000)
 ):
     for t in tasks:
         await ctx.tell(dst=t['dst'], content=t['content'], priority=10)

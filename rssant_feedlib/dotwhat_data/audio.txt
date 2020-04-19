@@ -1,0 +1,106 @@
+.AAC - Advanced Audio Coding FileVery Common
+.AIF - Audio Interchange FileVery Common
+.AIFF - Audio Interchange FileVery Common
+.IFF - Interchange File FormatVery Common
+.M3U - Media Playlist FileVery Common
+.M4A - MPEG-4 Audio LayerVery Common
+.MID - Musical Instrument Digital Interface (MIDI) Sound FileVery Common
+.MP3 - MP3 Audio FileVery Common
+.MPA - MPEG Audio StreamVery Common
+.OGA - Ogg Vorbis AudioVery Common
+.RA - RealMedia Streaming Audio FileVery Common
+.WAV - Waveform AudioVery Common
+.WMA - Windows Media Audio FileVery Common
+.AA - Audible Audio fileCommon
+.AA3 - ATRAC3 Audio FileCommon
+.AMR - Adaptive Multi-Rate file formatCommon
+.AMZ - Amazon MP3 Downloader Download FileCommon
+.APE - Monkeys Audio FileCommon
+.CAF - Core Audio FileCommon
+.CDA - CD Audio Track ShortcutCommon
+.CFA - Conformed Audio FileCommon
+.EMX - eMusic Download Manager Download file formatCommon
+.FLAC - Free Lossless Audio Codec FileCommon
+.GPX - Guitar Pro 6 Document file formatCommon
+.M3U8 - MP3 Playlist File (UTF-8)Common
+.M4R - MPEG-4 Ringtone file formatCommon
+.NCOR - Adobe Encore Project FileCommon
+.NKI - KONTAKT Instrument FileCommon
+.OGG - Ogg Vorbis Codec Compressed WAV FileCommon
+.PCAST - iTunes Podcast file formatCommon
+.PEK - Adobe Peak Waveform FileCommon
+.PLS - PlayList FileCommon
+.RNS - Reason Song FileCommon
+.SFA - Sound Forge Audio FileCommon
+.SMF - Standard Midi FileCommon
+.SND - Apple Sound Resource FileCommon
+.3GA - 3GPP Audio FileAverage
+.AAX - Audible Enhanced AudiobookAverage
+.AC3 - Dolby Digital Audio Codec 3 file formatAverage
+.ACD - Acid Project FileAverage
+.ACD-ZIP - Sony Acid Project File (Inc Embedded Data)Average
+.ACM - InterPlay ACM Audio file formatAverage
+.ACT - ADPCM Audio FileAverage
+.ADG - Ableton Device GroupAverage
+.ADTS - Audio Data Transport Stream file formatAverage
+.AFC - Mass Effect 2 Audio FileAverage
+.AL - ALAW Format SoundAverage
+.AU - Sun Audio File FormatAverage
+.BMW - BuzzPlay music with wavesAverage
+.CPR - Cubase Project FileAverage
+.DAC - DAC Sound FileAverage
+.DCF - DRM Content Format FileAverage
+.DCM - DCM Audio ModuleAverage
+.DSS - Digital Speech Standard FileAverage
+.DTS - Audio File FormatAverage
+.DTSHD - DTS-HD Master AudioAverage
+.ENC - Encore Musical NotationAverage
+.FL - Floating Sound FormatAverage
+.FLP - Fruity Loops Project FileAverage
+.FST - Studio State FileAverage
+.HMA - Sony Connect (SonicStage) Audio FileAverage
+.HTW - Hauptwerk Sound-fontAverage
+.IMY - Ringtone FileAverage
+.IVC - Intervoice Audio FileAverage
+.KAR - Karaoke MIDI FileAverage
+.KOE - AquesTone Vocal Synthesiser Syllable FileAverage
+.KPL - Kazaa Playlist FileAverage
+.MKA - Matroska Audio file formatAverage
+.MMF - Mobile Music FileAverage
+.MON - Wavelab Audio Montage FileAverage
+.MP2 - MPEG Audio StreamAverage
+.MSV - Sony Memory Stick Compressed Voice FileAverage
+.MUP - Music Publisher FileAverage
+.MXP4 - Musinaut AudioAverage
+.OMA - Sony OpenMG Audio FileAverage
+.OVE - Cakewalk Overture ScoreAverage
+.PLA - Playlist FileAverage
+.RFL - Reason ReFill Sound BankAverage
+.RX2 - REX2 Loop FileAverage
+.SA1 - Audio Encryption FileAverage
+.SBR - Spectral Band Replication Audio Sound FileAverage
+.SD2 - Sound Designer 2 Flattened File / Data ForkAverage
+.SZ - Winamp Classic Skin DownloadAverage
+.UL - Audio fileAverage
+.VMO - Siemens Mobile Phone Voice FileAverage
+.VOX - Dialogic Voice FileAverage
+.W64 - Wave64 FileAverage
+.WPROJ - Wwise ProjectAverage
+.WRK - CakeWalk Project fileAverage
+.ZGR - BeatCreator Loop FileAverage
+.APC - Cryo APC Audio file formatUncommon
+.DIG - Sound Designer Audio FileUncommon
+.IMW - IncrediMail MIDI/WAVUncommon
+.MINIUSF - Nintendo 64 Song FileUncommon
+.MZP - Mozart Percussion FileUncommon
+.NRT - Nokia RingToneUncommon
+.NWC - Noteworthy Composer Song FileUncommon
+.PROG - Cakewalk Sonar Beatscape Preset Program FileUncommon
+.RIF - Audio File in WAV formatUncommon
+.SGT - Microsoft DirectMusic Producer Segments FileUncommon
+.VAG - Sony PlayStation ADPCM Sound FileUncommon
+.VY1 - VY3 ETC - Audio Footage FileUncommon
+.SID - PlaySID C64 Sound Effects FileRare
+.TAP - Wave Sound or Action WaveRare
+.USM - Unsigned Sample Module data FarandoleRare
+.ZVR - SAFA Audio Recording File

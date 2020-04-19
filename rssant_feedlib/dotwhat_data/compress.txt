@@ -1,0 +1,70 @@
+.7Z - 7-Zip Compressed Archive FileVery Common
+.7ZIP - 7z Compressed Archive FileVery Common
+.BZ2 - Bzip2 UNIX Compressed FileVery Common
+.DEB - Debian Software Package FileVery Common
+.GZ - Compressed Archive FileVery Common
+.MZZ - Microsoft .NET Framework Installation Package FileVery Common
+.ODEX - Google Android Optimized Executable FileVery Common
+.PKG - Mac OS X Installer PackageVery Common
+.R0 - WinRAR Compressed ArchiveVery Common
+.RAR - WINRAR Archive FileVery Common
+.SIT - Stuffit Compressed Archive FileVery Common
+.XPI - FireFox Web-browser ExtensionVery Common
+.ZIP - Zipped Archive FileVery Common
+.ZIPX - Advanced ZIP FileVery Common
+.APK - Android Package FileCommon
+.BM_ - Compressed Bitmap (BMP) Image FileCommon
+.GCF - Steam Package FileCommon
+.GZIP - GZIP Compressed FileCommon
+.NAR - Nokia Lumia Smart Cam FileCommon
+.PTH - PlayStation PSP Theme FileCommon
+.R30 - Split Compressed Archive Part 30Common
+.SBU - Samsung Kies Phone Backup FileCommon
+.SIS - Software Installation Script - Nokia/Sony Ericsson/ MotorolaCommon
+.SISX - Symbian OS Installation File - Nokia/Sony Ericsson/ MotorolaCommon
+.SITX - StuffIt Compressed Archive FileCommon
+.TAF - Toshiba Compressed FileCommon
+.TAR - Unix ArchiveCommon
+.TAR.GZ - gzip Compressed TAR ArchiveCommon
+.002 - Part 2 of Split ArchiveAverage
+.ACE - WINACE Backup FileAverage
+.ALX - BlackBerry Application LoaderAverage
+.APP - Samsung Application FileAverage
+.ARC - ARC Archive / Compressed file (obsolete)Average
+.ARJ - Compressed Archive FileAverage
+.ATN - Photoshop Actions FileAverage
+.BZIP - BZIP Compressed ArchiveAverage
+.BZIP2 - Bzip2 Compressed ArchiveAverage
+.EMZ - Windows Compressed Enhanced MetafileAverage
+.ETC - eTreppid Compressed FileAverage
+.LHA - Compressed Archive File (LZH)Average
+.LZH - Compressed Archive FileAverage
+.LZM - Slax ModuleAverage
+.MZP - MAXScript Zip PackageAverage
+.PEA - PeaZip Compressed Archive FileAverage
+.PZIP - ZIP ArchiveAverage
+.QL$ - Compressed QLB FileAverage
+.SEG1 - StuffIt SegmentAverage
+.SFARK - sfArk Compressed SoundFontAverage
+.SHAR - SHell ARchive script (Unix)Average
+.TBZ2 - BZIP2 Compressed TARAverage
+.TGZ - Unix Gzip/Tape ArchiveAverage
+.WBA - WinAce Zip FileAverage
+.XMCDZ - MatchCAD Compressed WorksheetAverage
+.Z - Unix Gzip ArchiveAverage
+.Z01 - Split Compressed Archive File Part 1Average
+.ZCP - Zune HD Application FileAverage
+.ADZ - Amiga Packed ADF fileUncommon
+.ASWCS - Avast! Compressed SkinUncommon
+.BIX - BIX Compressed File ArchiveUncommon
+.CPIO - Unix CPIO ArchiveUncommon
+.NSIS - Compressed Archive FileUncommon
+.OB$ - Microsoft Compressed ObjectUncommon
+.PI$ - Compressed PIF FileUncommon
+.PIT - PackIt Compressed Macintosh ArchiveUncommon
+.RPM - Package ManagerUncommon
+.TLZMA - LZMA Compressed TAR ArchiveUncommon
+.ZIX - WinZix FileUncommon
+.__B - Fastest File Splitter and Joiner (FFSJ) Split Archive FileUncommon
+.QDA - Quadruple D ArchiveRare
+.UC2 - Compressed Archive File

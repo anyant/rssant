@@ -1,0 +1,3 @@
+.css - css
+.js - javascript
+.ico - favicon

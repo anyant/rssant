@@ -80,7 +80,7 @@ FeedView = RestRouter()
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id = T.feed_unionid.object, dt_updated = T.datetime.object)).optional,
+    hints: T.list(T.dict(id=T.feed_unionid.object, dt_updated=T.datetime.object)).optional,
     detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.optional,
@@ -286,6 +286,8 @@ def feed_import(request, text: T.str) -> FeedImportResultSchema:
     """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
     with timer('Import-Feed-From-Text'):
         urls = import_feed_from_text(text)
+    if len(urls) > 2000:
+        return Response({"message": "订阅数超过限制"}, status=400)
     is_from_bookmark = len(urls) > 100
     return _create_feeds_by_urls(request.user, urls, is_from_bookmark=is_from_bookmark)
 

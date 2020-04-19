@@ -1,5 +1,6 @@
 import re
 import logging
+from pathlib import Path
 from collections import namedtuple
 from urllib.parse import urlsplit, urlunsplit
 from xml.etree import ElementTree
@@ -23,8 +24,6 @@ validate_url = compiler.compile(T.url)
 
 
 BLACKLIST_CONTENT = """
-google
-google.com
 youtube.com
 facebook.com
 amazon.com
@@ -79,14 +78,40 @@ readthedocs.io
 readthedocs.org
 blog.csdn.net
 toutiao.com
-github.com
-stackoverflow.com
-pypi.org
-v2ex.com/member
 """
 
 
-is_in_blacklist = compile_url_blacklist(BLACKLIST_CONTENT)
+is_in_url_blacklist = compile_url_blacklist(BLACKLIST_CONTENT)
+
+
+def load_dotwhat_blacklist() -> set:
+    """
+    http://dotwhat.net/
+    """
+    blacklist = set()
+    data_dir = Path(__file__).parent / 'dotwhat_data'
+    for filepath in data_dir.glob('*.txt'):
+        lines = filepath.read_text().strip().splitlines()
+        for line in lines:
+            file_ext = line.strip().split('-', 1)[0]
+            file_ext = file_ext.strip('.').strip().lower()
+            blacklist.add(file_ext)
+    return blacklist
+
+
+DOTWHAT_BLACKLIST = load_dotwhat_blacklist()
+
+
+def is_in_blacklist(url: str):
+    if is_in_url_blacklist(url):
+        return True
+    scheme, netloc, path, query, fragment = urlsplit(url)
+    path: str
+    parts = path.rsplit('.', 1)
+    if len(parts) < 2:
+        return False
+    ext = parts[1].lower()
+    return ext in DOTWHAT_BLACKLIST
 
 
 def parse_opml(text):
@@ -122,6 +147,22 @@ def remove_url_fragment(url):
 
 
 def parse_text(text):
+    """
+    >>> parse_text('https://www.example.com/aaa.bbb.JPG')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.JPEG')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.TTF')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.js')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.mp3')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.avi')
+    []
+    >>> parse_text('https://www.example.com/aaa.bbb.tar.gz')
+    []
+    """
     tmp_urls = set()
     for match in RE_URL.finditer(text):
         url = match.group(0).strip()
