@@ -44,11 +44,16 @@ def _decode_union_feed_ids(option_feeds):
     return [unionid.decode(x)[1] for x in option_feeds.strip().split(',')]
 
 
+def _get_all_feed_ids():
+    feed_ids = [feed.id for feed in Feed.objects.only('id').all()]
+    return feed_ids
+
+
 def _get_feed_ids(option_feeds):
-    if option_feeds:
+    if option_feeds and option_feeds != 'all':
         feed_ids = _decode_feed_ids(option_feeds)
     else:
-        feed_ids = [feed.id for feed in Feed.objects.only('id').all()]
+        feed_ids = _get_all_feed_ids()
     return feed_ids
 
 
@@ -379,7 +384,7 @@ def delete_feed(key):
 def refresh_feed(feeds, union_feeds, key):
     feed_objs = []
     if feeds:
-        feed_ids = _decode_feed_ids(feeds)
+        feed_ids = _get_feed_ids(feeds)
         feed_objs.extend([Feed.get_by_pk(x) for x in feed_ids])
     if union_feeds:
         feed_ids = _decode_union_feed_ids(union_feeds)
