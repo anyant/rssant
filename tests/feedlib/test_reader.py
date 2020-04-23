@@ -1,16 +1,12 @@
 import asyncio
 import os.path
-import json
-import traceback
 import logging
-from urllib.parse import urlparse, parse_qsl
 from typing import Type
 from pathlib import Path
 
 import pytest
 from pytest_httpserver import HTTPServer
-from werkzeug.datastructures import Headers as HTTPHeaders
-from werkzeug import Response as WerkzeugResponse, Request as WerkzeugRequest
+from werkzeug import Response as WerkzeugResponse
 
 from rssant_config import CONFIG
 from rssant_feedlib.reader import FeedReader, FeedResponseStatus
@@ -156,63 +152,13 @@ def test_read_testdata(reader_class: Type[FeedReader], httpserver: HTTPServer, f
             assert response.feed_type
 
 
-_RSS_PROXY_TOKEN = 'TEST_RSS_PROXY_TOKEN'
-
-
-def _parse_query(qs) -> dict:
-    query = {}
-    for k, v in parse_qsl(qs):
-        query[k] = v
-    return query
-
-
-def rss_proxy_handler(request: WerkzeugRequest) -> WerkzeugResponse:
-    try:
-        data = json.loads(request.data.decode('utf-8'))
-        assert data['token'] == _RSS_PROXY_TOKEN
-        assert data.get('method') in (None, 'POST')
-        url = urlparse(data['url'])
-        query = _parse_query(url.query)
-        assert url.path == '/not-proxy'
-        assert HTTPHeaders(data['headers'])['user-agent']
-    except Exception as ex:
-        LOG.warning(ex, exc_info=ex)
-        msg = traceback.format_exception_only(type(ex), ex)
-        return WerkzeugResponse(msg, status=400)
-    status = query.get('status')
-    error = query.get('error')
-    if error:
-        if error == 'ERROR':
-            headers = {'x-rss-proxy-status': 'ERROR'}
-            return WerkzeugResponse(str(status), status=200, headers=headers)
-        else:
-            return WerkzeugResponse(str(status), status=int(error))
-    else:
-        status = int(status) if status else 200
-        headers = {'x-rss-proxy-status': status}
-        return WerkzeugResponse(str(status), status=200, headers=headers)
-
-
-def _setup_rss_proxy(httpserver: HTTPServer):
-    httpserver.expect_request("/rss-proxy", method='POST')\
-        .respond_with_handler(rss_proxy_handler)
-    httpserver.expect_request("/not-proxy").respond_with_data('ERROR', status=500)
-    proxy_url = httpserver.url_for('/rss-proxy')
-    url = httpserver.url_for('/not-proxy')
-    options = dict(
-        allow_private_address=True,
-        rss_proxy_url=proxy_url,
-        rss_proxy_token=_RSS_PROXY_TOKEN,
-    )
-    return options, url
-
-
 @pytest.mark.parametrize('status', [
     200, 201, 301, 302, 400, 403, 404, 500, 502, 600,
 ])
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
-def test_read_rss_proxy(reader_class: Type[FeedReader], httpserver: HTTPServer, status: int):
-    options, url = _setup_rss_proxy(httpserver)
+def test_read_rss_proxy(reader_class: Type[FeedReader], rss_proxy_server, httpserver: HTTPServer, status: int):
+    options = rss_proxy_server
+    url = httpserver.url_for('/not-proxy')
     with reader_class(**options) as reader:
         response = reader.read(url + f'?status={status}', use_proxy=True)
         httpserver.check_assertions()
@@ -223,8 +169,9 @@ def test_read_rss_proxy(reader_class: Type[FeedReader], httpserver: HTTPServer, 
     301, 302, 400, 403, 404, 500, 502, 'ERROR',
 ])
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
-def test_read_rss_proxy_error(reader_class: Type[FeedReader], httpserver: HTTPServer, error):
-    options, url = _setup_rss_proxy(httpserver)
+def test_read_rss_proxy_error(reader_class: Type[FeedReader], rss_proxy_server, httpserver: HTTPServer, error):
+    options = rss_proxy_server
+    url = httpserver.url_for('/not-proxy')
     with reader_class(**options) as reader:
         response = reader.read(url + f'?error={error}', use_proxy=True)
         httpserver.check_assertions()

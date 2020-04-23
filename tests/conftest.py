@@ -2,6 +2,8 @@ import asyncio
 import pytest
 import rssant_common.django_setup  # noqa:F401
 
+from .rss_proxy_server import *  # noqa:F401,F403
+
 
 @pytest.fixture(scope="session")
 def event_loop():
