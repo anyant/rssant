@@ -1,11 +1,11 @@
 from typing import List, Dict, Any
 import logging
-import copy
 import random
 import ipaddress
 import ssl
 import socket
 import asyncio
+from urllib.parse import urlparse
 from collections import defaultdict
 from urllib3.util import connection
 
@@ -13,7 +13,7 @@ import aiohttp
 
 from rssant_config import CONFIG
 from .rss_proxy import RSSProxyClient, ProxyStrategy
-
+from .helper import get_or_create_event_loop
 
 LOG = logging.getLogger(__name__)
 
@@ -66,18 +66,28 @@ class RssantAsyncResolver(aiohttp.AsyncResolver):
         hosts = self._dns_service.resolve_aiohttp(host, port)
         if hosts:
             return hosts
-        return super().resolve(host, port, family=family)
+        return await super().resolve(host, port, family=family)
 
 
 class DNSService:
 
     def __init__(self, client: RSSProxyClient, records: dict = None):
         self.hosts = list(records or {})
-        self.records = copy.deepcopy(records or {})
+        self.update(records or {})
         self.client = client
 
     def update(self, records: dict):
-        self.records = copy.deepcopy(records)
+        new_records = defaultdict(set)
+        for host, ip_set in records.items():
+            new_records[host].update(ip_set)
+        self.records = new_records
+
+    def is_resolved_host(self, host) -> bool:
+        return bool(self.records.get(host))
+
+    def is_resolved_url(self, url) -> bool:
+        host = urlparse(url).hostname
+        return self.is_resolved_host(host)
 
     def resolve_urllib3(self, host):
         ip_set = self.records.get(host)
@@ -87,11 +97,10 @@ class DNSService:
             return ip
         return host
 
-    def aiohttp_resolver(self):
-        return RssantAsyncResolver(dns_service=self)
+    def aiohttp_resolver(self, **kwargs):
+        return RssantAsyncResolver(dns_service=self, **kwargs)
 
     def resolve_aiohttp(self, host, port):
-        LOG.info(f'resolve_aiohttp {host}')
         hosts = []
         ip_set = self.records.get(host)
         if not ip_set:
@@ -155,7 +164,7 @@ class DNSService:
         return valid_records
 
     def validate_records(self, records: dict) -> dict:
-        loop = asyncio.get_event_loop()
+        loop = get_or_create_event_loop()
         valid_records = loop.run_until_complete(self._validate_records(records))
         return valid_records
 

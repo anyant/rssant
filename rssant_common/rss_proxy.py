@@ -35,13 +35,14 @@ def _log_response(method, url, response, use_proxy):
         msg = f'status={response.status_code}'
     else:
         msg = f'status={response.status_code}: {response.text!r}'
-    proxy_info = '[proxy]' if use_proxy else ''
+    proxy_info = '[proxy] ' if use_proxy else ''
     LOG.info(f'{proxy_info}{method} {log_url} %s', msg)
 
 
-def _log_exception(method, url, ex):
+def _log_exception(method, url, ex, use_proxy):
     log_url = _get_log_url(url)
-    LOG.warning(f'{method} {log_url} %r', ex)
+    proxy_info = '[proxy] ' if use_proxy else ''
+    LOG.warning(f'{proxy_info}{method} {log_url} %r', ex)
 
 
 _RequestNetworkErrors = (
@@ -147,18 +148,18 @@ class RSSProxyClient:
             request_second = self.request_direct
         else:
             raise ValueError(f'unknown proxy strategy {proxy_strategy!r}')
+        use_proxy = request_first == self.request_by_proxy
         try:
             response = request_first(method, url, timeout=timeout, **kwargs)
-            use_proxy = request_first == self.request_by_proxy
         except (*_RequestNetworkErrors, RSSProxyClientError) as ex:
-            _log_exception(method, url, ex)
+            _log_exception(method, url, ex, use_proxy)
             if not request_second:
                 raise
+            use_proxy = request_second == self.request_by_proxy
             try:
                 response = request_second(method, url, timeout=timeout, **kwargs)
-                use_proxy = request_second == self.request_by_proxy
             except (*_RequestNetworkErrors, RSSProxyClientError) as ex:
-                _log_exception(method, url, ex)
+                _log_exception(method, url, ex, use_proxy)
                 raise
         _log_response(method, url, response, use_proxy)
         return response

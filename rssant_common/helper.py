@@ -4,6 +4,7 @@ import time
 import logging
 import socket
 import contextlib
+import asyncio
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
@@ -68,6 +69,17 @@ def get_referer_of_url(url):
     schema, netloc, path, __, __, __ = urlparse(url)
     referer = urlunparse((schema, netloc, path, None, None, None))
     return referer
+
+
+def get_or_create_event_loop() -> asyncio.BaseEventLoop:
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if 'no current event loop' not in ex.args[0]:
+            raise
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop
 
 
 def aiohttp_raise_for_status(response: aiohttp.ClientResponse):

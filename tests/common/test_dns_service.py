@@ -8,8 +8,11 @@ from rssant_common.dns_service import DNS_SERVICE
 
 
 @pytest.mark.xfail(run=False, reason='depends on test network')
-def test_dns_service_urllib3():
-    url = 'https://rsshub.app/'
+@pytest.mark.parametrize('url', [
+    'https://rsshub.app/',
+    'https://www.baidu.com/'
+])
+def test_dns_service_urllib3(url):
     assert requests.get(url).ok
 
 
@@ -19,8 +22,7 @@ def test_dns_service_direct(httpserver: HTTPServer):
     assert requests.get(url).ok
 
 
-async def _async_test_dns_service_aiohttp():
-    url = 'https://rsshub.app/'
+async def _async_test_dns_service_aiohttp(url):
     resolver = DNS_SERVICE.aiohttp_resolver()
     async with aiohttp_client_session(resolver=resolver) as session:
         resp = await session.get(url)
@@ -28,9 +30,13 @@ async def _async_test_dns_service_aiohttp():
 
 
 @pytest.mark.xfail(run=False, reason='depends on test network')
-def test_dns_service_aiohttp():
+@pytest.mark.parametrize('url', [
+    'https://rsshub.app/',
+    'https://www.baidu.com/'
+])
+def test_dns_service_aiohttp(url):
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(_async_test_dns_service_aiohttp())
+    loop.run_until_complete(_async_test_dns_service_aiohttp(url))
 
 
 @pytest.mark.xfail(run=False, reason='depends on test network')

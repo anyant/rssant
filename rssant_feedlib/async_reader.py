@@ -38,9 +38,11 @@ class AsyncFeedReader:
         allow_non_webpage=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
+        resolver_factory=None,
     ):
         self._close_session = session is None
         self.session = session
+        self.resolver_factory = resolver_factory
         self.resolver = None
         self.user_agent = user_agent
         self.request_timeout = request_timeout
@@ -56,9 +58,14 @@ class AsyncFeedReader:
 
     async def _async_init(self):
         if self.resolver is None:
-            self.resolver = aiodns.DNSResolver(loop=asyncio.get_event_loop())
+            loop = asyncio.get_event_loop()
+            if self.resolver_factory is None:
+                self.resolver = aiodns.DNSResolver(loop=loop)
+            else:
+                self.resolver = self.resolver_factory(loop=loop)
         if self.session is None:
-            self.session = aiohttp_client_session(timeout=self.request_timeout)
+            self.session = aiohttp_client_session(
+                resolver=self.resolver, timeout=self.request_timeout)
 
     async def _resolve_hostname(self, hostname):
         """

@@ -11,6 +11,7 @@ LOG = logging.getLogger(__name__)
 @actor('actor.init')
 async def do_init(ctx: ActorContext):
     await ctx.hope('scheduler.load_registery')
+    await ctx.hope('scheduler.dns_service_refresh')
 
 
 if __name__ == "__main__":

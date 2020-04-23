@@ -16,6 +16,7 @@ from rssant_common.helper import pretty_format_json
 from rssant_common.validator import compiler as schema_compiler
 from rssant_common.logger import configure_logging
 from rssant_common.kong_client import KongClient
+from rssant_common.dns_service import DNS_SERVICE
 
 
 LOG = logging.getLogger(__name__)
@@ -41,6 +42,12 @@ def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
     ctx.registery.update(nodes)
     nodes = pretty_format_json(ctx.registery.to_spec())
     LOG.info(f'current registery:\n' + nodes)
+
+
+@actor('actor.dns_service_update')
+def do_dns_service_update(ctx, records: T.dict.key(T.str).value(T.list(T.str))):
+    LOG.info('dns_service_update %r', records)
+    DNS_SERVICE.update(records)
 
 
 @actor('actor.keepalive', timer='60s')
@@ -155,6 +162,7 @@ def start_actor(actor_type, **kwargs):
         actors.extend([
             do_update_registery,
             do_keepalive,
+            do_dns_service_update,
         ])
         kwargs.update(
             on_startup=[on_startup],

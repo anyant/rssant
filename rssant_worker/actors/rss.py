@@ -27,6 +27,7 @@ from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
 from rssant_common.validator import compiler
+from rssant_common.dns_service import DNS_SERVICE
 from rssant_config import CONFIG
 
 
@@ -168,6 +169,8 @@ def do_sync_feed(
         params = dict(etag=etag, last_modified=last_modified)
     options = _get_proxy_options()
     options.update(allow_private_address=CONFIG.allow_private_address)
+    if DNS_SERVICE.is_resolved_url(url):
+        use_proxy = False
     with FeedReader(**options) as reader:
         use_proxy = reader.has_rss_proxy and use_proxy
         response = reader.read(url, **params, use_proxy=use_proxy)
@@ -195,7 +198,9 @@ def do_sync_feed(
         warnings = '; '.join(raw_result.warnings)
         LOG.warning('warning parse feed#%s url=%r: %s', feed_id, unquote(url), warnings)
     try:
-        feed = _parse_found((response, raw_result), checksum_data=checksum_data, is_refresh=is_refresh)
+        feed = _parse_found(
+            (response, raw_result),
+            checksum_data=checksum_data, is_refresh=is_refresh)
     except (Invalid, FeedParserError) as ex:
         LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
         return
@@ -233,7 +238,10 @@ async def do_fetch_story(
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
     options = _get_proxy_options()
+    options.update(resolver_factory=DNS_SERVICE.aiohttp_resolver)
     options.update(allow_private_address=CONFIG.allow_private_address)
+    if DNS_SERVICE.is_resolved_url(url):
+        use_proxy = False
     async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_rss_proxy
         url_content = await _fetch_story(reader, story_id, url, use_proxy=use_proxy)
@@ -309,6 +317,7 @@ async def do_detect_story_images(
         allow_non_webpage=True,
         allow_private_address=CONFIG.allow_private_address,
     )
+    options.update(resolver_factory=DNS_SERVICE.aiohttp_resolver)
     async with AsyncFeedReader(**options) as reader:
         async def _read(url):
             if is_referer_deny_url(url):

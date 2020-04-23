@@ -6,6 +6,8 @@ from collections import defaultdict
 from validr import T
 from actorlib import actor, ActorContext
 
+from rssant_common.dns_service import DNS_SERVICE
+
 
 LOG = logging.getLogger(__name__)
 
@@ -55,6 +57,18 @@ async def do_schedule_clean_feedurlmap_by_retention(ctx: ActorContext):
 @actor('scheduler.schedule_feed_refresh_freeze_level', timer='20m')
 async def do_schedule_feed_refresh_freeze_level(ctx: ActorContext):
     await ctx.tell('harbor_rss.feed_refresh_freeze_level', expire_at=time.time() + 600)
+
+
+@actor('scheduler.dns_service_refresh', timer='4h')
+def do_dns_service_refresh(ctx: ActorContext):
+    DNS_SERVICE.refresh()
+    records = {}
+    for host, ip_set in DNS_SERVICE.records.items():
+        records[host] = list(ip_set)
+    msg = dict(records=records)
+    expire_at = time.time() + 60 * 60
+    for node in ctx.registery.remote_nodes:
+        ctx.tell('actor.dns_service_update', msg, dst_node=node.name, expire_at=expire_at)
 
 
 @actor("scheduler.proxy_tell")
