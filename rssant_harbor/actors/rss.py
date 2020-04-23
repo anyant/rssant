@@ -173,12 +173,20 @@ def do_update_feed(
                          f'feed#{target_feed.id} url={target_feed.url}')
                 target_feed.merge(feed)
                 return
+        # only update dt_updated if has storys or feed fields updated
+        is_feed_updated = bool(storys)
         for k, v in feed_dict.items():
+            if k == 'dt_updated':
+                continue
             if v != '' and v is not None:
-                setattr(feed, k, v)
+                old_v = getattr(feed, k, None)
+                if v != old_v:
+                    is_feed_updated = True
+                    setattr(feed, k, v)
         now = timezone.now()
         now_sub_30d = now - timezone.timedelta(days=30)
-        if not feed.dt_updated:
+        if is_feed_updated:
+            # set dt_updated to now, not trust rss date
             feed.dt_updated = now
         feed.dt_checked = feed.dt_synced = now
         feed.status = FeedStatus.READY
