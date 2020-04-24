@@ -9,6 +9,7 @@ from pytest_httpserver import HTTPServer
 from werkzeug import Response as WerkzeugResponse
 
 from rssant_config import CONFIG
+from rssant_feedlib.reader import PrivateAddressError
 from rssant_feedlib.reader import FeedReader, FeedResponseStatus
 from rssant_feedlib.async_reader import AsyncFeedReader
 
@@ -28,6 +29,9 @@ class SyncAsyncFeedReader:
 
     def read(self, *args, **kwargs):
         return self._loop_run(self._reader.read(*args, **kwargs))
+
+    def check_private_address(self, *args, **kwargs):
+        return self._loop_run(self._reader.check_private_address(*args, **kwargs))
 
     def __enter__(self):
         self._loop_run(self._reader.__aenter__())
@@ -176,3 +180,22 @@ def test_read_rss_proxy_error(reader_class: Type[FeedReader], rss_proxy_server, 
         response = reader.read(url + f'?error={error}', use_proxy=True)
         httpserver.check_assertions()
         assert response.status == FeedResponseStatus.RSS_PROXY_ERROR
+
+
+@pytest.mark.parametrize('url, expect', [
+    ('http://192.168.0.1:8080/', True),
+    ('http://localhost:8080/', True),
+    ('https://rsshub.app/', False),
+    ('https://gitee.com/', False),
+    ('https://www.baidu.com/', False),
+])
+@pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
+def test_check_private_address(reader_class: Type[FeedReader], url, expect):
+    with reader_class() as reader:
+        try:
+            reader.check_private_address(url)
+        except PrivateAddressError:
+            is_private = True
+        else:
+            is_private = False
+        assert is_private == expect

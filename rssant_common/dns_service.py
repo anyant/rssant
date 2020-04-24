@@ -24,9 +24,6 @@ _orig_create_connection = connection.create_connection
 _cache_records_text = """
 104.26.12.87 rsshub.app
 104.26.13.87 rsshub.app
-172.217.6.73 blogspot.com
-172.217.164.110 feedburner.com
-172.217.14.78 feeds.feedburner.com
 168.235.96.195 kindle4rss.com
 168.235.96.195 feedmaker.kindle4rss.com
 192.30.255.112 github.com
@@ -89,8 +86,12 @@ class DNSService:
         host = urlparse(url).hostname
         return self.is_resolved_host(host)
 
-    def resolve_urllib3(self, host):
+    def resolve(self, host) -> list:
         ip_set = self.records.get(host)
+        return list(ip_set) if ip_set else []
+
+    def resolve_urllib3(self, host):
+        ip_set = self.resolve(host)
         if ip_set:
             ip = random.choice(list(ip_set))
             LOG.info('resolve_urllib3 %s to %s', host, ip)
@@ -102,7 +103,7 @@ class DNSService:
 
     def resolve_aiohttp(self, host, port):
         hosts = []
-        ip_set = self.records.get(host)
+        ip_set = self.resolve(host)
         if not ip_set:
             return hosts
         LOG.info('resolve_aiohttp %s to %s', host, ip_set)

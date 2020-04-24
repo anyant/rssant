@@ -8,6 +8,7 @@ from http import HTTPStatus
 
 import requests
 
+from rssant_common.dns_service import DNSService, DNS_SERVICE
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 
@@ -90,6 +91,7 @@ class FeedReader:
         allow_non_webpage=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
+        dns_service: DNSService = DNS_SERVICE,
     ):
         if session is None:
             session = requests.session()
@@ -104,12 +106,18 @@ class FeedReader:
         self.allow_non_webpage = allow_non_webpage
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
+        self.dns_service = dns_service
 
     @property
     def has_rss_proxy(self):
         return bool(self.rss_proxy_url)
 
     def _resolve_hostname(self, hostname):
+        if self.dns_service:
+            hosts = self.dns_service.resolve(hostname)
+            if hosts:
+                yield from hosts
+                return
         addrinfo = socket.getaddrinfo(hostname, None)
         for family, __, __, __, sockaddr in addrinfo:
             if family == socket.AF_INET:

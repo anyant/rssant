@@ -11,6 +11,7 @@ import aiodns
 import aiohttp
 
 from rssant_common.helper import aiohttp_client_session
+from rssant_common.dns_service import DNSService, DNS_SERVICE
 
 from .reader import DEFAULT_USER_AGENT, is_webpage, is_ok_status
 from .reader import (
@@ -38,12 +39,11 @@ class AsyncFeedReader:
         allow_non_webpage=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
-        resolver_factory=None,
+        dns_service: DNSService = DNS_SERVICE,
     ):
         self._close_session = session is None
         self.session = session
-        self.resolver_factory = resolver_factory
-        self.resolver = None
+        self.resolver: aiohttp.AsyncResolver = None
         self.user_agent = user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
@@ -51,6 +51,7 @@ class AsyncFeedReader:
         self.allow_non_webpage = allow_non_webpage
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
+        self.dns_service = dns_service
 
     @property
     def has_rss_proxy(self):
@@ -59,34 +60,18 @@ class AsyncFeedReader:
     async def _async_init(self):
         if self.resolver is None:
             loop = asyncio.get_event_loop()
-            if self.resolver_factory is None:
-                self.resolver = aiodns.DNSResolver(loop=loop)
+            if self.dns_service is None:
+                self.resolver = aiohttp.AsyncResolver(loop=loop)
             else:
-                self.resolver = self.resolver_factory(loop=loop)
+                self.resolver = self.dns_service.aiohttp_resolver(loop=loop)
         if self.session is None:
             self.session = aiohttp_client_session(
                 resolver=self.resolver, timeout=self.request_timeout)
 
     async def _resolve_hostname(self, hostname):
-        """
-        Note on addrinfo:
-        # https://pycares.readthedocs.io/en/latest/channel.html#pycares.Channel.query
-        # extra type ares_host_result: addresses, aliases, name
-        # example: <ares_host_result> name=fn0wz54v.dayugslb.com, aliases=['gitee.com'], addresses=['180.97.125.228']
-        # example dig gitee.com:
-        ;; QUESTION SECTION:
-        ;gitee.com.			IN	A
-
-        ;; ANSWER SECTION:
-        gitee.com.		300	IN	CNAME	fn0wz54v.dayugslb.com.
-        fn0wz54v.dayugslb.com.	300	IN	A	180.97.125.228
-        """
-        addrinfo = await self.resolver.gethostbyname(hostname, socket.AF_INET)
-        if getattr(addrinfo, 'addresses', None):
-            for ip in addrinfo.addresses:
-                yield ip
-        elif getattr(addrinfo, 'host', None):
-            yield addrinfo.host
+        hosts = await self.resolver.resolve(hostname, family=socket.AF_INET)
+        for item in hosts:
+            yield item['host']
 
     async def check_private_address(self, url):
         """Prevent request private address, which will attack local network"""

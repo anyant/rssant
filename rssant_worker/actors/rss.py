@@ -238,7 +238,6 @@ async def do_fetch_story(
 ):
     LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
     options = _get_proxy_options()
-    options.update(resolver_factory=DNS_SERVICE.aiohttp_resolver)
     options.update(allow_private_address=CONFIG.allow_private_address)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
@@ -317,7 +316,6 @@ async def do_detect_story_images(
         allow_non_webpage=True,
         allow_private_address=CONFIG.allow_private_address,
     )
-    options.update(resolver_factory=DNS_SERVICE.aiohttp_resolver)
     async with AsyncFeedReader(**options) as reader:
         async def _read(url):
             if is_referer_deny_url(url):
