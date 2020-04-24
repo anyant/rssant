@@ -556,6 +556,8 @@ class UnionStory:
 
     @staticmethod
     def query_recent_by_user(user_id, feed_unionids=None, days=14, limit=300, detail=False):
+        if (not feed_unionids) and feed_unionids is not None:
+            return []  # when feed_unionids is empty list, return empty list
         if feed_unionids:
             feed_ids = [x.feed_id for x in feed_unionids]
             q = UserFeed.objects.only('id', 'feed_id')\

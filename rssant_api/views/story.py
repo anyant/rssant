@@ -74,7 +74,7 @@ def story_query_by_feed(
 @StoryView.post('story/recent')
 def story_query_recent(
     request,
-    feed_ids: T.list(T.feed_unionid.object),
+    feed_ids: T.list(T.feed_unionid.object).optional,
     days: T.int.min(1).max(30).default(14),
     detail: StoryDetailSchema,
 ) -> StoryResultSchema:
