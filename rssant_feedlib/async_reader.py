@@ -69,7 +69,11 @@ class AsyncFeedReader:
                 resolver=self.resolver, timeout=self.request_timeout)
 
     async def _resolve_hostname(self, hostname):
-        hosts = await self.resolver.resolve(hostname, family=socket.AF_INET)
+        try:
+            hosts = await self.resolver.resolve(hostname, family=socket.AF_INET)
+        except (aiodns.error.DNSError, OSError) as ex:
+            LOG.info("resolve hostname %s failed %r", hostname, ex)
+            hosts = []
         for item in hosts:
             yield item['host']
 
