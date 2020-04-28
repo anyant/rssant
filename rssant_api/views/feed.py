@@ -54,6 +54,7 @@ FeedSchema = T.dict(
     dryness=T.int.min(0).max(1000).optional,
     freeze_level=T.int.min(0).optional,
     use_proxy=T.bool.optional,
+    response_status=T.int.optional,
     dt_first_story_published=T.datetime.object.optional.invalid_to_default,
     dt_latest_story_published=T.datetime.object.optional.invalid_to_default,
 ).slim

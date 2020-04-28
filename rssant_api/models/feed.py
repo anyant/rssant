@@ -52,6 +52,7 @@ FeedDetailSchema = T.detail.fields("""
     last_modified
     content_length
     content_hash_base64
+    response_status
     dt_checked
     dt_synced
 """).default(False)
@@ -93,6 +94,8 @@ class Feed(Model, ContentHashMixin):
         max_length=200, **optional, help_text="HTTP response header Last-Modified")
     content_length = models.IntegerField(
         **optional, help_text='length of content')
+    response_status = models.IntegerField(
+        **optional, help_text='response status code')
     # 其他
     monthly_story_count_data = models.BinaryField(
         **optional, max_length=514, help_text="monthly story count data")
@@ -731,6 +734,10 @@ class UnionFeed:
     @property
     def last_modified(self):
         return self._feed.last_modified
+
+    @property
+    def response_status(self):
+        return self._feed.response_status
 
     @property
     def content_length(self):

@@ -78,6 +78,7 @@ FeedSchema = T.dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
+    response_status=T.int.optional,
     checksum_data=T.bytes.maxlen(4096).optional,
     warnings=T.str.optional,
     storys=T.list,
@@ -183,16 +184,22 @@ def do_sync_feed(
             if proxy_response.ok:
                 response = proxy_response
     if (not response.ok) or (not response.content):
+        status = FeedStatus.READY if response.status == 304 else FeedStatus.ERROR
+        _update_feed_info(ctx, feed_id, status=status, response=response)
         return
     new_hash = compute_hash_base64(response.content)
     if (not is_refresh) and (new_hash == content_hash_base64):
         LOG.info(f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!')
+        _update_feed_info(ctx, feed_id, response=response)
         return
     LOG.info(f'parse feed#{feed_id} url={unquote(url)}')
     try:
         raw_result = RawFeedParser().parse(response)
     except FeedParserError as ex:
         LOG.warning('failed parse feed#%s url=%r: %s', feed_id, unquote(url), ex)
+        _update_feed_info(
+            ctx, feed_id, status=FeedStatus.ERROR,
+            response=response, warnings=str(ex))
         return
     if raw_result.warnings:
         warnings = '; '.join(raw_result.warnings)
@@ -203,8 +210,22 @@ def do_sync_feed(
             checksum_data=checksum_data, is_refresh=is_refresh)
     except (Invalid, FeedParserError) as ex:
         LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
+        _update_feed_info(
+            ctx, feed_id, status=FeedStatus.ERROR,
+            response=response, warnings=str(ex))
         return
     ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh))
+
+
+def _update_feed_info(ctx, feed_id, response: FeedResponse, status: str = None, warnings: str = None):
+    ctx.tell('harbor_rss.update_feed_info', dict(
+        feed_id=feed_id,
+        feed=dict(
+            status=status,
+            response_status=response.status,
+            warnings=warnings,
+        )
+    ))
 
 
 async def _fetch_story(reader, story_id, url, use_proxy):
@@ -367,6 +388,7 @@ def _parse_found(found, checksum_data=None, is_refresh=False):
     feed.etag = response.etag
     feed.last_modified = response.last_modified
     feed.encoding = response.encoding
+    feed.response_status = response.status
     del found, response  # release memory in advance
 
     # parse feed and storys

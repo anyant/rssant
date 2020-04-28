@@ -61,6 +61,7 @@ FeedSchemaFields = dict(
     encoding=T.str.optional,
     etag=T.str.optional,
     last_modified=T.str.optional,
+    response_status=T.int.optional,
     checksum_data=T.bytes.maxlen(4096).optional,
     warnings=T.str.optional,
 )
@@ -74,6 +75,19 @@ StorySchema = T.dict(**StorySchemaFields)
 FeedSchema = T.dict(
     **FeedSchemaFields,
     storys=T.list(StorySchema),
+)
+
+FeedInfoSchemaFieldNames = [
+    'response_status',
+    'warnings',
+]
+FeedInfoSchemaFields = {
+    k: FeedSchemaFields[k]
+    for k in FeedInfoSchemaFieldNames
+}
+FeedInfoSchema = T.dict(
+    **FeedInfoSchemaFields,
+    status=T.str.default(FeedStatus.READY),
 )
 
 StoryOutputSchema = T.dict(**StoryOutputSchemaFields)
@@ -178,7 +192,7 @@ def do_update_feed(
         for k, v in feed_dict.items():
             if k == 'dt_updated':
                 continue
-            if v != '' and v is not None:
+            if (v != '' and v is not None) or k in {'warnings'}:
                 old_v = getattr(feed, k, None)
                 if v != old_v:
                     is_feed_updated = True
@@ -221,6 +235,22 @@ def do_update_feed(
             ))
         else:
             _detect_story_images(ctx, story)
+
+
+@actor('harbor_rss.update_feed_info')
+@django_context
+def do_update_feed_info(
+    ctx: ActorContext,
+    feed_id: T.int,
+    feed: FeedInfoSchema,
+):
+    with transaction.atomic():
+        feed_dict = feed
+        feed = Feed.get_by_pk(feed_id)
+        for k, v in feed_dict.items():
+            setattr(feed, k, v)
+        feed.dt_updated = timezone.now()
+        feed.save()
 
 
 def is_fulltext_story(story):
