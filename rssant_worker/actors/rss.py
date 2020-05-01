@@ -1,6 +1,7 @@
 import logging
 import asyncio
 import time
+import random
 from urllib.parse import unquote
 import concurrent.futures
 
@@ -172,8 +173,11 @@ def do_sync_feed(
     options.update(allow_private_address=CONFIG.allow_private_address)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
+    switch_prob = 0.25  # the prob of switch from use proxy to not use proxy
     with FeedReader(**options) as reader:
         use_proxy = reader.has_rss_proxy and use_proxy
+        if use_proxy and random.random() < switch_prob:
+            use_proxy = False
         response = reader.read(url, **params, use_proxy=use_proxy)
         LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
         need_proxy = FeedResponseStatus.is_need_proxy(response.status)
