@@ -99,6 +99,8 @@ class FeedParser:
     def _parse_feed(self, feed: dict):
         url = feed['url']
         title = story_html_to_text(feed['title'])[:200]
+        if not title:
+            title = url  # when title is empty after clean
         home_url = normalize_url(feed['home_url'], base_url=url)
         icon_url = normalize_url(feed['icon_url'], base_url=url)
         description = story_html_to_text(feed['description'])[:300]
@@ -142,6 +144,8 @@ class FeedParser:
     def _parse_story(self, story: dict, feed_url: str):
         ident = story['ident'][:200]
         title = story_html_to_text(story['title'])[:200]
+        if not title:
+            title = ident  # when title is empty after clean
         url = normalize_url(story['url'] or story['ident'], base_url=feed_url)
         try:
             valid_url = validate_url(url)
