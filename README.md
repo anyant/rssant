@@ -164,7 +164,7 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 git clone git@gitee.com:anyant/rssant.git
 cd rssant
-pyenv virtualenv -p python3.7 3.7.4 rssant
+pyenv virtualenv -p python3.7 3.7.7 rssant
 pyenv local rssant
 pip install -r requirements.txt
 ```
@@ -172,7 +172,7 @@ pip install -r requirements.txt
 启动数据库
 
 ```
-./scripts/postgres_start.sh
+bash ./scripts/postgres_start.sh
 ```
 
 初始化数据库
@@ -231,23 +231,16 @@ npm run serve
 docker build -t rssant/web:latest .
 ```
 
-#### rssant/box
-
-将前端代码放到 box/web 目录下
-
-```
-cd rssant
-git clone git@gitee.com:anyant/rssant-web.git box/web
-```
+#### guyskk/rssant
 
 打包
 
 ```
-./box/build.sh
+bash ./box/build.sh
 ```
 
 运行
 
 ```
-./box/run.sh
+bash ./box/run.sh
 ```

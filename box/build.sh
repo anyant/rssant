@@ -2,7 +2,7 @@
 
 set -e
 
-current_repo=$(git remote get-url origin)
+current_repo=$(git config --get remote.origin.url)
 web_repo=$(python -c '
 import sys;
 p=sys.argv[1].rsplit("/",1);

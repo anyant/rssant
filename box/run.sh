@@ -13,6 +13,6 @@ docker run -ti --name rssant -d \
     -v rssant-postgres-logs:/var/log/postgresql \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
     --restart unless-stopped \
-    rssant/box:latest $@
+    guyskk/rssant:latest $@
 
 docker logs --tail 1000 -f rssant
