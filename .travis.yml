@@ -1,9 +1,9 @@
 os: linux
 dist: xenial
-language: minimal
+language: shell
 services:
   - docker
-before_install:
+install:
   - bash ./box/build.sh
 script:
   - bash ./box/test.sh

@@ -5,19 +5,17 @@
 ### 主要特点
 
 - 非社交，无广告，无推荐，专注阅读
-- 为移动端优化，适合随时随地阅读
-- 按订阅更新频率区分消息，好文章慢慢看，读资讯一目十行
-- 输入博客地址，智能查找订阅，支持批量导入导出
+- 为移动端优化，可添加到主屏，沉浸式体验
+- 支持订阅播客和视频内容
+- 输入链接，智能查找订阅，支持批量导入导出
 - 智能图片代理，解决图片无法加载问题
 - 智能 RSS 代理，全球 RSS 均可订阅
 - 开源，可以自己部署，也可以直接用在线版
 
-开箱即用地址: https://rss.anyant.com (建议用手机浏览器访问)  
+开箱即用地址: https://rss.anyant.com (推荐用手机浏览器访问)  
 
 <p>
-<img src="docs/pictures/rssant-home.png" width="33%" alt="首页" />
-<img src="docs/pictures/rssant-list.png" width="33%" alt="故事列表" />
-<img src="docs/pictures/rssant-story.png" width="33%" alt="故事内容" />
+<img src="docs/pictures/rssant-screenshot.png" alt="蚁阅界面" />
 </p>
 
 ## 部署文档
