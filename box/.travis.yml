@@ -1,0 +1,6 @@
+services:
+  - docker
+before_install:
+  - bash ./box/build.sh
+script:
+  - bash ./box/test.sh

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-docker volume create rssant-data
-docker volume create rssant-postgres-data
-docker volume create rssant-postgres-logs
+docker volume create rssant-data || true
+docker volume create rssant-postgres-data || true
+docker volume create rssant-postgres-logs || true
 
-docker rm -f rssant
+docker rm -f rssant || true
 docker run -ti --name rssant -d \
     -p 6789:80 \
     --env-file box/rssant.env \
