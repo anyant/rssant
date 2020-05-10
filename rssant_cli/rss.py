@@ -11,6 +11,7 @@ from django.contrib.auth import get_user_model
 
 import rssant_common.django_setup  # noqa:F401
 from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
+from rssant_api.helper import reverse_url
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus, FeedReader
@@ -402,6 +403,16 @@ def refresh_feed(feeds, union_feeds, key, expire=None):
             use_proxy=feed.use_proxy,
             is_refresh=True,
         ), expire_at=expire_at)
+
+
+@main.command()
+@click.option('--feeds', required=True, help="feed ids, separate by ','")
+def update_feed_reverse_url(feeds):
+    feed_ids = _get_feed_ids(feeds)
+    for feed_id in tqdm.tqdm(feed_ids, ncols=80, ascii=True):
+        feed = Feed.objects.get(pk=feed_id)
+        feed.reverse_url = reverse_url(feed.url)
+        feed.save()
 
 
 if __name__ == "__main__":

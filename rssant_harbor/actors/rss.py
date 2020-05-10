@@ -14,6 +14,7 @@ from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
 from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_content
 from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
+from rssant_api.helper import reverse_url
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
 from rssant_common.validator import compiler
@@ -141,6 +142,7 @@ def do_save_feed_creation_result(
             now = timezone.now()
             feed = Feed(
                 url=url, status=FeedStatus.READY,
+                reverse_url=reverse_url(url),
                 dt_updated=now, dt_checked=now, dt_synced=now)
             feed.save()
         feed_creation.status = FeedStatus.READY
@@ -203,6 +205,7 @@ def do_update_feed(
             # set dt_updated to now, not trust rss date
             feed.dt_updated = now
         feed.dt_checked = feed.dt_synced = now
+        feed.reverse_url = reverse_url(feed.url),
         feed.status = FeedStatus.READY
         feed.save()
         for s in storys:
@@ -523,3 +526,31 @@ def do_feed_refresh_freeze_level(ctx: ActorContext):
     Feed.refresh_freeze_level()
     cost = time.time() - begin_time
     LOG.info('feed_refresh_freeze_level cost {:.1f}ms'.format(cost * 1000))
+
+
+def _feed_merge_duplicate(found: list):
+    for feed_ids in found:
+        primary_id, *duplicates = feed_ids
+        with transaction.atomic():
+            primary = Feed.get_by_pk(primary_id)
+            primary_info = f'#{primary.id} url={primary.url!r}'
+            for feed_id in duplicates:
+                other = Feed.get_by_pk(feed_id)
+                other_info = f'#{other.id} url={other.url!r}'
+                LOG.info('merge duplicate feed %s into %s', other_info, primary_info)
+                FeedUrlMap(source=other.url, target=primary.url).save()
+                primary.merge(other)
+
+
+@actor('harbor_rss.feed_detect_and_merge_duplicate')
+@django_context
+def do_feed_detect_and_merge_duplicate(ctx: ActorContext):
+    begin_time = time.time()
+    checkpoint = None
+    while True:
+        found, checkpoint = Feed.find_duplicate_feeds(checkpoint=checkpoint)
+        _feed_merge_duplicate(found)
+        if not checkpoint:
+            break
+    cost = time.time() - begin_time
+    LOG.info('feed_detect_and_merge_duplicate cost {:.1f}ms'.format(cost * 1000))

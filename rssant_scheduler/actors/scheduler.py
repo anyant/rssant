@@ -54,9 +54,14 @@ async def do_schedule_clean_feedurlmap_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_feedurlmap_by_retention', expire_at=time.time() + 180)
 
 
-@actor('scheduler.schedule_feed_refresh_freeze_level', timer='20m')
+@actor('scheduler.schedule_feed_refresh_freeze_level', timer='40m')
 async def do_schedule_feed_refresh_freeze_level(ctx: ActorContext):
     await ctx.tell('harbor_rss.feed_refresh_freeze_level', expire_at=time.time() + 600)
+
+
+@actor('scheduler.schedule_feed_detect_and_merge_duplicate', timer='4h')
+async def do_schedule_feed_detect_and_merge_duplicate(ctx: ActorContext):
+    await ctx.tell('harbor_rss.feed_detect_and_merge_duplicate', expire_at=time.time() + 600)
 
 
 @actor('scheduler.dns_service_refresh', timer='4h')

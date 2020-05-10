@@ -8,6 +8,7 @@ from validr import T
 from rssant_common.validator import FeedUnionId
 from rssant_common.detail import Detail
 from rssant_api.monthly_story_count import MonthlyStoryCount
+from rssant_api.helper import DuplicateFeedDetector
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
 
@@ -67,12 +68,16 @@ class Feed(Model, ContentHashMixin):
     class Meta:
         indexes = [
             models.Index(fields=["url"]),
+            models.Index(fields=["reverse_url"]),
         ]
 
     class Admin:
         display_fields = ['status', 'title', 'url']
 
+    # TODO: deprecate url, use reverse_url instead
     url = models.TextField(unique=True, help_text="供稿地址")
+    # TODO: make reverse_url unique and not null
+    reverse_url = models.TextField(**optional, help_text="倒转URL")
     status = models.CharField(
         max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
     # RSS解析内容
@@ -132,7 +137,7 @@ class Feed(Model, ContentHashMixin):
         Merge other feed to self by change other's userfeeds' feed_id to self id.
         User stotys are ignored / not handled.
         """
-        user_feeds = UserFeed.objects.only('id', 'user_id', 'feed_id')\
+        user_feeds = UserFeed.objects.only('id', 'user_id', 'feed_id', 'story_offset')\
             .filter(feed_id__in=(self.id, other.id)).all()
         self_user_ids = set()
         other_user_feeds = []
@@ -143,10 +148,13 @@ class Feed(Model, ContentHashMixin):
                 other_user_feeds.append(user_feed)
         updates = []
         for user_feed in other_user_feeds:
+            user_feed: UserFeed
             if user_feed.user_id not in self_user_ids:
                 user_feed.feed_id = self.id
+                if user_feed.story_offset > self.total_storys:
+                    user_feed.story_offset = self.total_storys
                 updates.append(user_feed)
-        UserFeed.objects.bulk_update(updates, ['feed_id'])
+        UserFeed.objects.bulk_update(updates, ['feed_id', 'story_offset'])
         other.status = FeedStatus.DISCARD
         other.save()
 
@@ -217,10 +225,11 @@ class Feed(Model, ContentHashMixin):
         if not timeout_seconds:
             timeout_seconds = 3 * outdate_seconds
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
-        sql_check = """
+        sql_check = f"""
         SELECT id, url, etag, last_modified, use_proxy, checksum_data
         FROM rssant_api_feed AS feed
         WHERE
+            (status != '{FeedStatus.DISCARD}') AND (
             (
                 dt_checked IS NULL
             )
@@ -237,7 +246,7 @@ class Feed(Model, ContentHashMixin):
                 (status=ANY(%s) AND NOW() - dt_checked > %s * freeze_level * '1s'::interval)
                 OR
                 (NOW() - dt_checked > %s * freeze_level * '1s'::interval)
-            )
+            ))
         ORDER BY id LIMIT %s
         """
         sql_update_status = """
@@ -259,6 +268,45 @@ class Feed(Model, ContentHashMixin):
             feed_ids = [x['feed_id'] for x in feeds]
             cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
         return feeds
+
+    @classmethod
+    def _query_feeds_by_reverse_url(cls, begin=None, limit=1000) -> list:
+        if begin:
+            where = 'AND reverse_url >= %s'
+            params = [begin, limit]
+        else:
+            where = ''
+            params = [limit]
+        sql = f"""
+        SELECT id, reverse_url FROM rssant_api_feed
+        WHERE status != '{FeedStatus.DISCARD}' AND
+            reverse_url IS NOT NULL AND reverse_url != '' {where}
+        ORDER BY reverse_url LIMIT %s
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            feeds = list(cursor.fetchall())
+        return feeds
+
+    @classmethod
+    def find_duplicate_feeds(cls, checkpoint=None, limit=1000):
+        """
+        find duplicate feeds
+
+        Returns: (duplicates, checkpoint)
+            duplicates:
+                (primary_feed_id, duplicate_feed_id ...)
+                (primary_feed_id, duplicate_feed_id ...)
+                ...
+        """
+        detector = DuplicateFeedDetector()
+        feeds = cls._query_feeds_by_reverse_url(begin=checkpoint, limit=limit)
+        for feed_id, rev_url in feeds:
+            detector.push(feed_id, rev_url)
+        if len(feeds) < limit:
+            detector.flush()
+        got = detector.poll()
+        return got, detector.checkpoint
 
     @staticmethod
     def take_retention_feeds(retention=5000, limit=5):
@@ -302,7 +350,7 @@ class Feed(Model, ContentHashMixin):
         +------------+----------+------------+----------+
         """
         # https://stackoverflow.com/questions/7869592/how-to-do-an-update-join-in-postgresql
-        sql = """
+        sql = f"""
         WITH t AS (
         SELECT
             feed.id AS id,
@@ -338,6 +386,7 @@ class Feed(Model, ContentHashMixin):
         FROM rssant_api_feed AS feed
         LEFT OUTER JOIN rssant_api_userfeed AS userfeed
         ON feed.id = userfeed.feed_id
+        WHERE feed.status != '{FeedStatus.DISCARD}'
         )
         UPDATE rssant_api_feed AS feed
         SET freeze_level = t.freeze_level
@@ -535,7 +584,8 @@ class FeedUrlMap(Model):
 
     NOT_FOUND = '#'  # 特殊Target
     NOT_FOUND_TTL = timezone.timedelta(hours=4)
-    OK_TTL = timezone.timedelta(days=180)
+    # TODO: retention of OK url maps
+    OK_TTL = timezone.timedelta(days=100 * 365)
 
     class Meta:
         indexes = [
