@@ -289,7 +289,7 @@ class Feed(Model, ContentHashMixin):
         return feeds
 
     @classmethod
-    def find_duplicate_feeds(cls, checkpoint=None, limit=1000):
+    def find_duplicate_feeds(cls, checkpoint=None, limit=5000):
         """
         find duplicate feeds
 
@@ -305,8 +305,13 @@ class Feed(Model, ContentHashMixin):
             detector.push(feed_id, rev_url)
         if len(feeds) < limit:
             detector.flush()
+        next_checkpoint = detector.checkpoint
+        # force flush when single host has too many feeds
+        if checkpoint is not None and checkpoint == next_checkpoint:
+            detector.flush()
+            next_checkpoint = rev_url
         got = detector.poll()
-        return got, detector.checkpoint
+        return got, next_checkpoint
 
     @staticmethod
     def take_retention_feeds(retention=5000, limit=5):
