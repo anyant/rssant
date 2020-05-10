@@ -105,6 +105,9 @@ class DuplicateFeedDetector:
                         primary = feed_id
                     else:
                         duplicates.append(feed_id)
+                # use oldest feed as primary
+                if primary is None:
+                    primary = duplicates.pop(0)
                 results.append((primary, *duplicates))
         self._results.extend(results)
         self._buffer.clear()
