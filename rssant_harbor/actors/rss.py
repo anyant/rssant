@@ -205,7 +205,7 @@ def do_update_feed(
             # set dt_updated to now, not trust rss date
             feed.dt_updated = now
         feed.dt_checked = feed.dt_synced = now
-        feed.reverse_url = reverse_url(feed.url),
+        feed.reverse_url = reverse_url(feed.url)
         feed.status = FeedStatus.READY
         feed.save()
         for s in storys:
