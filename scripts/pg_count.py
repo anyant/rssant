@@ -25,7 +25,7 @@ def pg_count_limit(tables, limit):
         for table in tables:
             sql = sql_count_limit.format(table=table, limit=limit)
             cursor.execute(sql)
-            row_count, = cursor.fetchone()
+            (row_count,) = cursor.fetchone()
             row_count = int(row_count)
             if row_count < limit:
                 result[table] = row_count

@@ -79,6 +79,7 @@ pycodestyle==2.5.0
 coverage==4.5.4
 flask==1.1.1
 autopep8==1.5
+pre-commit==2.3.0
 
 # package
 pip-tools==4.5.1
