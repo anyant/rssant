@@ -287,10 +287,7 @@ class UnionStory:
         return union_storys
 
     @classmethod
-    def batch_get_by_feed_offset(cls, user_id, story_keys, detail=False):
-        """
-        story_keys: List[Tuple[feed_id, offset]]
-        """
+    def _validate_story_keys(cls, user_id, story_keys):
         if not story_keys:
             return []
         # verify feed_id is subscribed by user
@@ -300,17 +297,34 @@ class UnionStory:
         for feed_id, offset in story_keys:
             if feed_id in feed_ids:
                 verified_story_keys.append((feed_id, offset))
-        if not verified_story_keys:
+        return verified_story_keys
+
+    @classmethod
+    def batch_get_by_feed_offset(cls, user_id, story_keys, detail=False):
+        """
+        story_keys: List[Tuple[feed_id, offset]]
+        """
+        story_keys = cls._validate_story_keys(user_id, story_keys)
+        if not story_keys:
             return []
         detail = Detail.from_schema(detail, StoryDetailSchema)
         select_fields = set(cls._story_field_names()) - set(detail.exclude_fields)
         select_fields_quoted = ','.join(['"{}"'.format(x) for x in select_fields])
+        # Note: below query can not use index, it's very slow
+        # WHERE ("feed_id","offset")=Any(%s)
+        # WHERE ("feed_id","offset")=Any(ARRAY[(XX, YY), ...])
+        where_items = []
+        for feed_id, offset in story_keys:
+            # ensure integer, avoid sql inject attack
+            feed_id, offset = int(feed_id), int(offset)
+            where_items.append(f'("feed_id"={feed_id} AND "offset"={offset})')
+        where_clause = ' OR '.join(where_items)
         sql = f"""
         SELECT {select_fields_quoted}
         FROM rssant_api_story
-        WHERE ("feed_id","offset")=Any(%s)
+        WHERE {where_clause}
         """
-        storys = list(Story.objects.raw(sql, [verified_story_keys]))
+        storys = list(Story.objects.raw(sql))
         union_storys = cls._query_union_storys(
             user_id=user_id, storys=storys, detail=detail)
         return union_storys
