@@ -43,7 +43,6 @@ class Story(Model, ContentHashMixin):
         )
         indexes = [
             models.Index(fields=["feed", "offset"]),
-            models.Index(fields=["feed", "dt_published"]),
             models.Index(fields=["feed", "unique_id"]),
         ]
 
