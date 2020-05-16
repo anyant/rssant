@@ -1,9 +1,6 @@
 #!/bin/bash
 
 docker network create rssant || true
-docker volume create rssant-postgres || true
-#!/bin/bash
-
 docker volume create rssant_postgres
 docker rm -f rssant-postgres
 docker run -d \
