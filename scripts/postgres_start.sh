@@ -18,4 +18,4 @@ docker run -d \
     -e "POSTGRES_PASSWORD=rssant" \
     -e "POSTGRES_DB=rssant" \
     -v rssant_postgres:/var/lib/postgresql/data \
-    postgres:10
+    postgres:11.7
