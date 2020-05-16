@@ -26,6 +26,7 @@ StoryDetailSchema = T.detail.fields("""
     dt_synced
     summary
     content
+    content_hash_base64
 """).default(False)
 
 STORY_DETAIL_FEILDS = Detail.from_schema(False, StoryDetailSchema).exclude_fields

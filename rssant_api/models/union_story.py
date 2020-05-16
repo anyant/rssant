@@ -16,6 +16,19 @@ def convert_summary(summary):
 
 class UnionStory:
 
+    _STORY_FIELD_NAMES = None
+
+    @classmethod
+    def _story_field_names(cls):
+        if cls._STORY_FIELD_NAMES is None:
+            names = set()
+            for field in Story._meta.get_fields():
+                column = getattr(field, 'column', None)
+                if column:
+                    names.add(column)
+            cls._STORY_FIELD_NAMES = list(sorted(names))
+        return cls._STORY_FIELD_NAMES
+
     def __init__(self, story, *, user_id, user_feed_id, user_story=None, detail=False):
         self._story = story
         self._user_id = user_id
@@ -110,6 +123,10 @@ class UnionStory:
         if not self._user_story:
             return None
         return self._user_story.dt_favorited
+
+    @property
+    def content_hash_base64(self):
+        return self._story.content_hash_base64
 
     @cached_property
     def summary(self):
@@ -223,20 +240,18 @@ class UnionStory:
             storys, user_storys, user_feeds=[user_feed], user_id=user_id, detail=detail)
         return total, offset, ret
 
-    @staticmethod
-    def query_recent_by_user(user_id, feed_unionids=None, days=14, limit=300, detail=False):
+    @classmethod
+    def query_recent_by_user(cls, user_id, feed_unionids=None, days=14, limit=300, detail=False):
+        """
+        Deprecated since 1.4.2, use batch_get_by_feed_offset instead
+        """
         if (not feed_unionids) and feed_unionids is not None:
             return []  # when feed_unionids is empty list, return empty list
         if feed_unionids:
             feed_ids = [x.feed_id for x in feed_unionids]
-            q = UserFeed.objects.only('id', 'feed_id')\
-                .filter(user_id=user_id, feed_id__in=feed_ids)
-            user_feeds = list(q.all())
+            feed_ids = cls._query_user_feed_ids(user_id, feed_ids)
         else:
-            q = UserFeed.objects.only('id', 'feed_id')\
-                .filter(user_id=user_id)
-            user_feeds = list(q.all())
-        feed_ids = [x.feed_id for x in q.all()]
+            feed_ids = cls._query_user_feed_ids(user_id)
         dt_begin = timezone.now() - timezone.timedelta(days=days)
         q = Story.objects.filter(feed_id__in=feed_ids)\
             .filter(dt_published__gte=dt_begin)
@@ -244,12 +259,60 @@ class UnionStory:
         q = q.defer(*detail.exclude_fields)
         q = q.order_by('-dt_published')[:limit]
         storys = list(q.all())
+        union_storys = cls._query_union_storys(
+            user_id=user_id, storys=storys, detail=detail)
+        return union_storys
+
+    @classmethod
+    def _query_user_feed_ids(cls, user_id, feed_ids=None):
+        q = UserFeed.objects.only('id', 'feed_id')
+        if feed_ids is None:
+            q = q.filter(user_id=user_id)
+        else:
+            q = q.filter(user_id=user_id, feed_id__in=feed_ids)
+        user_feeds = list(q.all())
+        feed_ids = [x.feed_id for x in user_feeds]
+        return feed_ids
+
+    @classmethod
+    def _query_union_storys(cls, user_id, storys, detail):
         story_ids = [x.id for x in storys]
-        q = UserStory.objects.filter(user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids)
+        feed_ids = list(set([x.feed_id for x in storys]))
+        q = UserStory.objects.filter(
+            user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids)
         q = q.exclude(is_favorited=False, is_watched=False)
         user_storys = list(q.all())
         union_storys = UnionStory._merge_storys(
-            storys, user_storys, user_feeds=user_feeds, user_id=user_id, detail=detail)
+            storys, user_storys, user_id=user_id, detail=detail)
+        return union_storys
+
+    @classmethod
+    def batch_get_by_feed_offset(cls, user_id, story_keys, detail=False):
+        """
+        story_keys: List[Tuple[feed_id, offset]]
+        """
+        if not story_keys:
+            return []
+        # verify feed_id is subscribed by user
+        feed_ids = list(set(x[0] for x in story_keys))
+        feed_ids = set(cls._query_user_feed_ids(user_id, feed_ids))
+        verified_story_keys = []
+        for feed_id, offset in story_keys:
+            if feed_id in feed_ids:
+                verified_story_keys.append((feed_id, offset))
+        if not verified_story_keys:
+            return []
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        select_fields = set(cls._story_field_names()) - set(detail.exclude_fields)
+        select_fields_quoted = ','.join(['"{}"'.format(x) for x in select_fields])
+        sql = f"""
+        SELECT {select_fields_quoted}
+        FROM rssant_api_story
+        WHERE ("feed_id","offset")=Any(%s)
+        """
+        storys = list(Story.objects.raw(sql, [verified_story_keys]))
+        union_storys = cls._query_union_storys(
+            user_id=user_id, storys=storys, detail=detail)
         return union_storys
 
     @staticmethod

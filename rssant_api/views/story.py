@@ -91,6 +91,34 @@ def story_query_recent(
     )
 
 
+@StoryView.post('story/query-batch')
+def story_query_batch(
+    request,
+    storys: T.list(T.dict(
+        feed_id=T.feed_unionid.object,
+        offset=T.int.min(0),
+        limit=T.int.min(1).max(10).default(1),
+    )),
+    detail: StoryDetailSchema,
+) -> StoryResultSchema:
+    feed_union_ids = [x['feed_id'] for x in storys]
+    check_unionid(request, feed_union_ids)
+    story_keys = []
+    for item in storys:
+        feed_id = item['feed_id'].feed_id
+        offset = item['offset']
+        for i in range(item['limit']):
+            story_keys.append((feed_id, offset + i))
+    storys = UnionStory.batch_get_by_feed_offset(
+        story_keys=story_keys, user_id=request.user.id, detail=detail)
+    storys = [x.to_dict() for x in storys]
+    return dict(
+        total=len(storys),
+        size=len(storys),
+        storys=storys,
+    )
+
+
 @StoryView.get('story/<slug:feed_unionid>-<int:offset>')
 def story_get_by_offset(
     request,
