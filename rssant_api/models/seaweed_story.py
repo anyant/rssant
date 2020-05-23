@@ -14,7 +14,6 @@ class SeaweedStory:
     feed_id: int = T.int
     offset: int = T.int
     unique_id: str = T.str
-    content_length: int = T.int.min(0)
     title: str = T.str
     link: str = T.str.optional
     author: str = T.str.optional
@@ -28,6 +27,7 @@ class SeaweedStory:
     dt_synced: datetime.datetime = T.datetime.object.optional
     summary: str = T.str.optional
     content: str = T.str.optional
+    content_length: int = T.int.min(0).optional
     content_hash_base64: str = T.str.optional
 
 
@@ -123,7 +123,10 @@ class SeaweedStoryStorage:
     def save_story(self, story: SeaweedStory):
         header = asdict(story)
         content = header.pop('content', None) or ''
-        header.setdefault('content_length', len(content))
+        if content:
+            header.update(content_length=len(content))
+        else:
+            header.setdefault('content_length', len(content))
         header_data = SeaweedData.encode_json(header)
         fid = seaweed_fid_for(story.feed_id, story.offset, SeaweedFileType.HEADER)
         self._put_by_fid(fid, header_data)

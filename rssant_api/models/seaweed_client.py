@@ -28,7 +28,7 @@ class SeaweedClient:
     def put(self, fid: str, data: bytes) -> None:
         url = self._get_file_url(fid)
         response = self._session.post(url, files={'file': data})
-        if response.status_code not in (200, 201):
+        if response.status_code not in (200, 201, 204):
             raise SeaweedError(self._err('put', fid, response))
 
     def get(self, fid: str) -> bytes:
@@ -43,7 +43,7 @@ class SeaweedClient:
     def delete(self, fid: str) -> None:
         url = self._get_file_url(fid)
         response = self._session.delete(url)
-        if response.status_code not in (200, 202, 404):
+        if response.status_code not in (200, 202, 204, 404):
             raise SeaweedError(self._err('delete', fid, response))
 
     def __enter__(self):
@@ -62,5 +62,6 @@ class SeaweedClient:
             self._m_session = requests.Session()
 
     def _err(self, method: str, fid: str, response: requests.Response) -> str:
+        msg = f': {response.text}' if response.text else ''
         return (f'seaweed {method} failed, fid={fid} '
-                f'status={response.status_code}: {response.text}')
+                f'status={response.status_code}{msg}')
