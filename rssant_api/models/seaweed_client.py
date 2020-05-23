@@ -17,14 +17,22 @@ class SeaweedClient:
         self._init()
         return self._m_session
 
+    def _get_file_url(self, fid: str):
+        try:
+            volume_id, rest = fid.strip().split(",")
+        except ValueError:
+            raise ValueError(
+                "fid must be in format: <volume_id>,<file_key>")
+        return self.volume_url + f'/{fid}'
+
     def put(self, fid: str, data: bytes) -> None:
-        url = self.volume_url + f'/{fid}'
+        url = self._get_file_url(fid)
         response = self._session.post(url, files={'file': data})
         if response.status_code not in (200, 201):
             raise SeaweedError(self._err('put', fid, response))
 
     def get(self, fid: str) -> bytes:
-        url = self.volume_url + f'/{fid}'
+        url = self._get_file_url(fid)
         response = self._session.get(url)
         if response.status_code == 404:
             return None
@@ -33,9 +41,9 @@ class SeaweedClient:
         return response.content
 
     def delete(self, fid: str) -> None:
-        url = self.volume_url + f'/{fid}'
+        url = self._get_file_url(fid)
         response = self._session.delete(url)
-        if response.status_code not in (200, 204):
+        if response.status_code not in (200, 202, 404):
             raise SeaweedError(self._err('delete', fid, response))
 
     def __enter__(self):
