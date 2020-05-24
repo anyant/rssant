@@ -63,17 +63,22 @@ INSTALLED_APPS.extend([
     'rssant_api',
 ])
 
-MIDDLEWARE = [
-    'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
+
+def _gen_middleware():
+    yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
+    if ENV_CONFIG.profiler_enable:
+        yield 'rssant.middleware.profiler.RssantProfilerMiddleware'
+    yield 'django.middleware.security.SecurityMiddleware'
+    yield 'whitenoise.middleware.WhiteNoiseMiddleware'
+    yield 'django.contrib.sessions.middleware.SessionMiddleware'
+    yield 'django.middleware.common.CommonMiddleware'
+    yield 'django.middleware.csrf.CsrfViewMiddleware'
+    yield 'django.contrib.auth.middleware.AuthenticationMiddleware'
+    yield 'django.contrib.messages.middleware.MessageMiddleware'
+    yield 'django.middleware.clickjacking.XFrameOptionsMiddleware'
+
+
+MIDDLEWARE = list(_gen_middleware())
 
 INTERNAL_IPS = ['127.0.0.1']
 
@@ -226,9 +231,12 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
 
-
+# Django debug toolbar and X-Time header
 DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.timer.TimerPanel",
-    "debug_toolbar.panels.sql.SQLPanel",
     "rssant.middleware.seaweed_panel.SeaweedPanel",
+    "debug_toolbar.panels.sql.SQLPanel",
 ]
+DEBUG_TOOLBAR_CONFIG = {
+    "ENABLE_STACKTRACES": False,
+}

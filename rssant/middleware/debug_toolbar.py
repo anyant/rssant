@@ -47,14 +47,13 @@ class RssantDebugToolbarMiddleware(DebugToolbarMiddleware):
             panel.generate_server_timing(request, response)
         stats = self._extract_panel_stats(toolbar.enabled_panels)
         message = self._stats_message(stats)
-        LOG.info(f'X-Time-Debug: {message}')
-        response['X-Time-Debug'] = message
-        response['X-Time'] = ms(stats['timer']['total_time'])
+        LOG.info(f'X-Time: {message}')
+        response['X-Time'] = message
         return response
 
     def _stats_message(self, stats):
         timer_msg = '0ms'
-        total_time = int(stats['timer']['total_time'] or 0)
+        total_time = int(stats['timer'].get('total_time') or 0)
         if total_time > 0:
             timer_msg = '{},utime={},stime={}'.format(
                 ms(total_time),
