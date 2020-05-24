@@ -13,6 +13,9 @@ class MockSeaweedClient:
     def get(self, fid: str) -> bytes:
         return self._store.get(fid)
 
+    def batch_get(self, fid_s: list) -> list:
+        return {fid: self._store.get(fid) for fid in fid_s}
+
     def put(self, fid: str, data: bytes) -> None:
         self._store[fid] = data
 
@@ -72,6 +75,9 @@ def test_seaweed_story_storage(content_name):
     storage.save_story(story)
     got = storage.get_story(123, 234, include_content=True)
     assert got == story
+    got_s = storage.batch_get_story([(123, 234), (123, 235)], include_content=True)
+    assert len(got_s) == 1
+    assert got_s[0] == story
     storage.delete_story(123, 234)
     got = storage.get_story(123, 234, include_content=True)
     assert got is None

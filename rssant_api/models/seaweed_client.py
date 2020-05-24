@@ -1,3 +1,5 @@
+import typing
+from concurrent.futures import ThreadPoolExecutor
 import requests
 
 from rssant.middleware.seaweed_panel import SeaweedMetrics
@@ -10,14 +12,22 @@ class SeaweedError(Exception):
 
 
 class SeaweedClient:
-    def __init__(self, volume_url: str):
+    def __init__(self, volume_url: str, thread_pool_size: int = 30, timeout: int = 3):
         self.volume_url = volume_url.rstrip('/')
-        self._m_session = None
+        self.thread_pool_size = thread_pool_size
+        self.timeout = timeout
+        self._m_session: requests.Session = None
+        self._m_executor: ThreadPoolExecutor = None
 
     @property
     def _session(self):
         self._init()
         return self._m_session
+
+    @property
+    def _executor(self):
+        self._init()
+        return self._m_executor
 
     def _get_file_url(self, fid: str):
         try:
@@ -30,24 +40,39 @@ class SeaweedClient:
     def put(self, fid: str, data: bytes) -> None:
         url = self._get_file_url(fid)
         with SeaweedMetrics.record('put'):
-            response = self._session.post(url, files={'file': data})
+            response = self._session.post(url, files={'file': data}, timeout=self.timeout)
             if response.status_code not in (200, 201, 204):
                 raise SeaweedError(self._err('put', fid, response))
 
     def get(self, fid: str) -> bytes:
         url = self._get_file_url(fid)
         with SeaweedMetrics.record('get'):
-            response = self._session.get(url)
-            if response.status_code == 404:
-                return None
-            if response.status_code not in (200,):
-                raise SeaweedError(self._err('get', fid, response))
-            return response.content
+            return self._get_by_url(fid, url)
+
+    def _get_by_url(self, fid, url: str) -> bytes:
+        response = self._session.get(url, timeout=self.timeout)
+        if response.status_code == 404:
+            return None
+        if response.status_code not in (200,):
+            raise SeaweedError(self._err('get', fid, response))
+        return response.content
+
+    def batch_get(self, fid_s: typing.List[str]) -> typing.Dict[str, bytes]:
+        url_s = [self._get_file_url(fid) for fid in fid_s]
+        fut_s = []
+        result = {}
+        with SeaweedMetrics.record('get', len(fid_s)):
+            for fid, url in zip(fid_s, url_s):
+                fut = self._executor.submit(self._get_by_url, fid, url)
+                fut_s.append((fid, fut))
+            for fid, fut in fut_s:
+                result[fid] = fut.result()
+        return result
 
     def delete(self, fid: str) -> None:
         url = self._get_file_url(fid)
         with SeaweedMetrics.record('delete'):
-            response = self._session.delete(url)
+            response = self._session.delete(url, timeout=self.timeout)
             if response.status_code not in (200, 202, 204, 404):
                 raise SeaweedError(self._err('delete', fid, response))
 
@@ -61,10 +86,20 @@ class SeaweedClient:
     def close(self):
         if self._m_session:
             self._m_session.close()
+        if self._m_executor:
+            self._m_executor.shutdown(wait=False)
 
     def _init(self):
         if self._m_session is None:
             self._m_session = requests.Session()
+            pool_maxsize = 10 + self.thread_pool_size
+            for scheme in ['http://', 'https://']:
+                adapter = requests.adapters.HTTPAdapter(
+                    pool_maxsize=pool_maxsize, pool_connections=pool_maxsize)
+                self._m_session.mount(scheme, adapter)
+        if self._m_executor is None:
+            self._m_executor = ThreadPoolExecutor(
+                self.thread_pool_size, thread_name_prefix='seaweed_client')
 
     def _err(self, method: str, fid: str, response: requests.Response) -> str:
         msg = f': {response.text}' if response.text else ''

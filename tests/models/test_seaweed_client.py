@@ -32,3 +32,15 @@ def test_seaweed_client_context():
     volume_url = 'http://127.0.0.1:9080'
     with SeaweedClient(volume_url) as client:
         assert client
+
+
+@pytest.mark.xfail(run=False, reason='depends on seaweed service')
+def test_batch_get():
+    volume_url = 'http://127.0.0.1:9080'
+    with SeaweedClient(volume_url) as client:
+        fid = '1,01637037d6'
+        client.delete(fid)
+        client.put(fid, b'hello world')
+        bad_fid = '1,01637037d7'
+        got = client.batch_get([fid, bad_fid])
+        assert set(got.keys()) == {fid, bad_fid}

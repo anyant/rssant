@@ -225,12 +225,10 @@ class UnionStory:
 
     @classmethod
     def _query_storys_by_story_service(cls, feed_id, offset, size, detail):
-        storys = []
+        story_keys = []
         for offset in range(offset, offset + size, 1):
-            s = STORY_SERVICE.get_by_offset(
-                feed_id, offset, detail=detail, fallback_to_postgres=False)
-            if s:
-                storys.append(s)
+            story_keys.append((feed_id, offset))
+        storys = STORY_SERVICE.seaweed_batch_get_by_offset(story_keys, detail=detail)
         return storys
 
     @classmethod
@@ -383,12 +381,7 @@ class UnionStory:
         story_keys = cls._validate_story_keys(user_id, story_keys)
         if not story_keys:
             return []
-        storys = []
-        for feed_id, offset in story_keys:
-            s = STORY_SERVICE.get_by_offset(
-                feed_id, offset, detail=detail, fallback_to_postgres=False)
-            if s:
-                storys.append(s)
+        storys = STORY_SERVICE.seaweed_batch_get_by_offset(story_keys, detail=detail)
         finish_story_keys = set((x.feed_id, x.offset) for x in storys)
         remain_story_keys = list(sorted(set(story_keys) - finish_story_keys))
         if remain_story_keys:

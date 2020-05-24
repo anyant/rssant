@@ -31,7 +31,7 @@ class SeaweedMetrics:
 
     @classmethod
     @contextmanager
-    def record(cls, op: str):
+    def record(cls, op: str, n: int = 1):
         if op not in (cls.GET, cls.PUT, cls.DELETE):
             raise ValueError(f'unknown seaweed operation {op!r}')
         if getattr(_seaweed_metrics, 'value', None) is None:
@@ -41,7 +41,7 @@ class SeaweedMetrics:
             yield
         finally:
             cost = time.time() - t_begin
-            _seaweed_metrics.value[op] += 1
+            _seaweed_metrics.value[op] += n
             _seaweed_metrics.value[f'{op}_time'] += cost
 
 

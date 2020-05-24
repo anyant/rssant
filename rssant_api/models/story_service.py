@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from django.utils import timezone
 from django.forms.models import model_to_dict
@@ -40,18 +41,22 @@ class StoryService:
         detail = Detail.from_schema(detail, StoryDetailSchema)
         return 'content' in detail.include_fields
 
-    def get_by_offset(self, feed_id, offset, detail=False, fallback_to_postgres=True) -> CommonStory:
+    def get_by_offset(self, feed_id, offset, detail=False) -> CommonStory:
         include_content = self._is_include_content(detail)
         seaweed_story = self._storage.get_story(feed_id, offset, include_content=include_content)
         if seaweed_story:
             return CommonStory(seaweed_story)
-        if not fallback_to_postgres:
-            return None
         try:
             story = Story.get_by_offset(feed_id, offset, detail=detail)
         except Story.DoesNotExist:
             return None
         return self._to_common(story)
+
+    def seaweed_batch_get_by_offset(self, story_keys, detail=False) -> typing.List[CommonStory]:
+        include_content = self._is_include_content(detail)
+        seaweed_storys = self._storage.batch_get_story(
+            story_keys, include_content=include_content)
+        return [CommonStory(x) for x in seaweed_storys]
 
     def set_user_marked(self, feed_id, offset, is_user_marked=True):
         story = Story.get_by_offset(feed_id, offset)
@@ -208,5 +213,8 @@ class StoryService:
         return 0
 
 
-SEAWEED_CLIENT = SeaweedClient(CONFIG.seaweed_volume_url)
+SEAWEED_CLIENT = SeaweedClient(
+    CONFIG.seaweed_volume_url,
+    thread_pool_size=CONFIG.seaweed_thread_pool_size,
+)
 STORY_SERVICE = StoryService(SeaweedStoryStorage(SEAWEED_CLIENT))

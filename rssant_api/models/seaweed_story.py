@@ -2,6 +2,7 @@ import json
 import gzip
 import datetime
 import struct
+import typing
 
 from validr import T, modelclass, asdict
 from rssant_common.validator import compiler
@@ -105,20 +106,44 @@ class SeaweedStoryStorage:
         return self._get_by_fid(fid)
 
     def get_story(self, feed_id, offset, include_content=False) -> SeaweedStory:
-        fid = seaweed_fid_for(feed_id, offset, SeaweedFileType.HEADER)
-        header_data: bytes = self._get_by_fid(fid)
-        if not header_data:
-            return None
-        story = SeaweedData.decode_json(header_data)
+        storys = self.batch_get_story([(feed_id, offset)], include_content=include_content)
+        return storys[0] if storys else None
+
+    def _batch_get_by_keys(self, story_keys, ftype):
+        fid_s = {}
+        for feed_id, offset in story_keys:
+            fid = seaweed_fid_for(feed_id, offset, ftype)
+            fid_s[fid] = (feed_id, offset)
+        data_s = self._client.batch_get(fid_s.keys())
+        for fid, data in data_s.items():
+            if data:
+                yield fid_s[fid], data
+
+    def batch_get_story(self, story_keys, include_content=False) -> typing.List[SeaweedStory]:
+        header_data_s = list(self._batch_get_by_keys(story_keys, SeaweedFileType.HEADER))
+        story_s = []
+        for (feed_id, offset), header_data in header_data_s:
+            story = SeaweedData.decode_json(header_data)
+            story_s.append(((feed_id, offset), story))
         if include_content:
-            content_length = story.get('content_length', 0)
-            if (content_length is None) or content_length <= 0:
-                content = ''
-            else:
-                content_data = self._get_content_by_offset(feed_id, offset)
-                content = SeaweedData.decode_text(content_data)
-            story['content'] = content
-        return SeaweedStory(story)
+            content_keys = []
+            for (feed_id, offset), story in story_s:
+                content_length = story.get('content_length', 0)
+                has_content = (content_length is not None) and content_length > 0
+                if has_content:
+                    content_keys.append((feed_id, offset))
+            content_data_map = dict(self._batch_get_by_keys(content_keys, SeaweedFileType.CONTENT))
+            for (feed_id, offset), story in story_s:
+                content_data = content_data_map.get((feed_id, offset))
+                if content_data:
+                    content = SeaweedData.decode_text(content_data)
+                else:
+                    content = ''
+                story['content'] = content
+        result = []
+        for _, story in story_s:
+            result.append(SeaweedStory(story))
+        return result
 
     def save_story(self, story: SeaweedStory):
         header = asdict(story)
