@@ -100,6 +100,9 @@ class Story(Model, ContentHashMixin):
 
     @staticmethod
     def bulk_save_by_feed(feed_id, storys, batch_size=100, is_refresh=False):
+        """
+        Deprecated since 1.5.0
+        """
         if not storys:
             return []  # modified_story_objects
         storys = Story._dedup_sort_storys(storys)
@@ -273,6 +276,8 @@ class Story(Model, ContentHashMixin):
     @staticmethod
     def delete_by_retention(feed_id, retention=5000, limit=5000):
         """
+        Deprecated since 1.5.0
+
         Params:
             feed_id: feed ID
             retention: num storys to keep

@@ -232,12 +232,13 @@ def _update_feed_info(ctx, feed_id, response: FeedResponse, status: str = None, 
     ))
 
 
-async def _fetch_story(reader, story_id, url, use_proxy):
+async def _fetch_story(reader, feed_id, offset, url, use_proxy):
     for i in range(2):
         response = await reader.read(url, use_proxy=use_proxy)
         if response and response.url:
             url = str(response.url)
-        LOG.info(f'fetch story#{story_id} url={unquote(url)} status={response.status} finished')
+        LOG.info(
+            f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished')
         if not (response and response.ok and response.content):
             return None
         try:
@@ -248,7 +249,7 @@ async def _fetch_story(reader, story_id, url, use_proxy):
         html_redirect = get_html_redirect_url(content)
         if (not html_redirect) or html_redirect == url:
             return url, content
-        LOG.info('story#%s resolve html redirect to %r', story_id, html_redirect)
+        LOG.info('story#%s,%s resolve html redirect to %r', feed_id, offset, html_redirect)
         url = html_redirect
     return url, content
 
@@ -256,30 +257,32 @@ async def _fetch_story(reader, story_id, url, use_proxy):
 @actor('worker_rss.fetch_story')
 async def do_fetch_story(
     ctx: ActorContext,
-    story_id: T.int,
+    feed_id: T.int,
+    offset: T.int,
     url: T.url,
     use_proxy: T.bool.default(False),
     num_sub_sentences: T.int.optional,
 ):
-    LOG.info(f'fetch story#{story_id} url={unquote(url)} begin')
+    LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
     options = _get_proxy_options()
     options.update(allow_private_address=CONFIG.allow_private_address)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_rss_proxy
-        url_content = await _fetch_story(reader, story_id, url, use_proxy=use_proxy)
+        url_content = await _fetch_story(reader, feed_id, offset, url, use_proxy=use_proxy)
     if not url_content:
         return
     url, content = url_content
     if len(content) >= _MAX_STORY_HTML_LENGTH:
         content = story_html_clean(content)
         if len(content) >= _MAX_STORY_HTML_LENGTH:
-            msg = 'too large story#%s size=%s url=%r'
-            LOG.warning(msg, story_id, len(content), url)
+            msg = 'too large story#%s,%s size=%s url=%r'
+            LOG.warning(msg, feed_id, offset, len(content), url)
             content = story_html_to_text(content)[:_MAX_STORY_HTML_LENGTH]
     await ctx.hope('worker_rss.process_story_webpage', dict(
-        story_id=story_id,
+        feed_id=feed_id,
+        offset=offset,
         url=url,
         text=content,
         num_sub_sentences=num_sub_sentences,
@@ -289,7 +292,8 @@ async def do_fetch_story(
 @actor('worker_rss.process_story_webpage')
 def do_process_story_webpage(
     ctx: ActorContext,
-    story_id: T.int,
+    feed_id: T.int,
+    offset: T.int,
     url: T.url,
     text: T.str.maxlen(_MAX_STORY_HTML_LENGTH),
     num_sub_sentences: T.int.optional,
@@ -307,22 +311,23 @@ def do_process_story_webpage(
     content = story_readability(text)
     content = process_story_links(content, url)
     if len(content) > _MAX_STORY_CONTENT_LENGTH:
-        msg = 'too large story#%s size=%s url=%r, will only save plain text'
-        LOG.warning(msg, story_id, len(content), url)
+        msg = 'too large story#%s,%s size=%s url=%r, will only save plain text'
+        LOG.warning(msg, feed_id, offset, len(content), url)
         content = shorten(story_html_to_text(content), width=_MAX_STORY_CONTENT_LENGTH)
     # 如果取回的内容比RSS内容更短，就不是正确的全文
     if num_sub_sentences is not None:
         if not is_fulltext_content(content):
             num_sentences = len(split_sentences(story_html_to_text(content)))
             if num_sentences <= num_sub_sentences:
-                msg = 'fetched story#%s url=%s num_sentences=%s less than num_sub_sentences=%s'
-                LOG.info(msg, story_id, url, num_sentences, num_sub_sentences)
+                msg = 'fetched story#%s,%s url=%s num_sentences=%s less than num_sub_sentences=%s'
+                LOG.info(msg, feed_id, offset, url, num_sentences, num_sub_sentences)
                 return
     summary = shorten(story_html_to_text(content), width=_MAX_STORY_SUMMARY_LENGTH)
     if not summary:
         return
     ctx.hope('harbor_rss.update_story', dict(
-        story_id=story_id,
+        feed_id=feed_id,
+        offset=offset,
         content=content,
         summary=summary,
         url=url,
@@ -332,11 +337,12 @@ def do_process_story_webpage(
 @actor('worker_rss.detect_story_images')
 async def do_detect_story_images(
     ctx: ActorContext,
-    story_id: T.int,
+    feed_id: T.int,
+    offset: T.int,
     story_url: T.url,
     image_urls: T.list(T.url).unique,
 ):
-    LOG.info(f'detect story images story_id={story_id} num_images={len(image_urls)} begin')
+    LOG.info(f'detect story images story={feed_id},{offset} num_images={len(image_urls)} begin')
     options = dict(
         allow_non_webpage=True,
         allow_private_address=CONFIG.allow_private_address,
@@ -368,11 +374,12 @@ async def do_detect_story_images(
         else:
             num_error += 1
         images.append(dict(url=url, status=status))
-    LOG.info(f'detect story images story_id={story_id} '
+    LOG.info(f'detect story images story={feed_id},{offset} '
              f'num_images={len(image_urls)} finished, '
              f'ok={num_ok} error={num_error} cost={cost_ms:.0f}ms')
     await ctx.hope('harbor_rss.update_story_images', dict(
-        story_id=story_id,
+        feed_id=feed_id,
+        offset=offset,
         story_url=story_url,
         images=images,
     ))

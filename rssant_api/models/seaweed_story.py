@@ -68,7 +68,7 @@ class SeaweedData:
 
     @classmethod
     def encode_json(cls, value: dict, version: int = 1) -> bytes:
-        value = json.dumps(value, default=_json_default).encode('utf-8')
+        value = json.dumps(value, ensure_ascii=False, default=_json_default).encode('utf-8')
         return cls(value, version=version).encode()
 
     @classmethod
@@ -112,7 +112,7 @@ class SeaweedStoryStorage:
         story = SeaweedData.decode_json(header_data)
         if include_content:
             content_length = story.get('content_length', 0)
-            if content_length <= 0:
+            if (content_length is None) or content_length <= 0:
                 content = ''
             else:
                 content_data = self._get_content_by_offset(feed_id, offset)

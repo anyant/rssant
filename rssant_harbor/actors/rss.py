@@ -13,7 +13,7 @@ from rssant_feedlib import processor
 from rssant_feedlib.reader import FeedResponseStatus
 from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
 from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_content
-from rssant_api.models import UserFeed, Feed, Story, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
+from rssant_api.models import UserFeed, Feed, STORY_SERVICE, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
 from rssant_api.helper import reverse_url
 from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context
@@ -215,7 +215,7 @@ def do_update_feed(
                 # set dt_published to now - 30d to avoid these storys
                 # take over mushroom page, i.e. Story.query_recent_by_user
                 s['dt_published'] = now_sub_30d
-        modified_storys = Story.bulk_save_by_feed(feed.id, storys, is_refresh=is_refresh)
+        modified_storys = STORY_SERVICE.bulk_save_by_feed(feed.id, storys, is_refresh=is_refresh)
         LOG.info(
             'feed#%s save storys total=%s num_modified=%s',
             feed.id, len(storys), len(modified_storys)
@@ -233,7 +233,8 @@ def do_update_feed(
             ctx.tell('worker_rss.fetch_story', dict(
                 url=story.link,
                 use_proxy=feed.use_proxy,
-                story_id=str(story.id),
+                feed_id=story.feed_id,
+                offset=story.offset,
                 num_sub_sentences=num_sub_sentences,
             ))
         else:
@@ -325,7 +326,7 @@ def _detect_story_images(ctx, story):
             url_root = ImageInfo.extract_url_root(url)
             todo_url_roots[url_root].append(url)
     LOG.info(
-        f'story#{story.id} {story.link} has {len(image_urls)} images, '
+        f'story#{story.feed_id},{story.offset} {story.link} has {len(image_urls)} images, '
         f'need detect {num_todo_image_urls} images '
         f'from {len(todo_url_roots)} url_roots'
     )
@@ -337,40 +338,41 @@ def _detect_story_images(ctx, story):
             else:
                 todo_urls.extend(items)
         ctx.hope('worker_rss.detect_story_images', dict(
-            story_id=story.id,
+            feed_id=story.feed_id,
+            offset=story.offset,
             story_url=story.link,
             image_urls=list(set(todo_urls)),
         ))
     else:
-        _replace_story_images(story.id)
+        _replace_story_images(feed_id=story.feed_id, offset=story.offset)
 
 
 @actor('harbor_rss.update_story')
 @django_context
 def do_update_story(
     ctx: ActorContext,
-    story_id: T.int,
+    feed_id: T.int,
+    offset: T.int,
     content: T.str,
     summary: T.str,
     has_mathjax: T.bool.optional,
     url: T.url,
 ):
-    story = Story.objects.get(pk=story_id)
+    story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
     if not is_fulltext_content(content):
         story_text = processor.story_html_to_text(story.content)
         text = processor.story_html_to_text(content)
         if not is_summary(story_text, text):
-            msg = 'fetched story#%s url=%r is not fulltext of feed story content'
-            LOG.info(msg, story_id, url)
+            msg = 'fetched story#%s,%s url=%r is not fulltext of feed story content'
+            LOG.info(msg, feed_id, offset, url)
             return
-    with transaction.atomic():
-        story.refresh_from_db()
-        story.link = url
-        story.content = content
-        story.summary = summary
-        if has_mathjax is not None:
-            story.has_mathjax = has_mathjax
-        story.save()
+    data = dict(
+        link=url,
+        content=content,
+        summary=summary,
+        has_mathjax=has_mathjax,
+    )
+    STORY_SERVICE.update_story(feed_id, offset, data)
     _detect_story_images(ctx, story)
 
 
@@ -385,7 +387,8 @@ IMAGE_REFERER_DENY_STATUS = set([
 @django_context
 def do_update_story_images(
     ctx: ActorContext,
-    story_id: T.int,
+    feed_id: T.int,
+    offset: T.int,
     story_url: T.url,
     images: T.list(T.dict(
         url=T.url,
@@ -412,11 +415,11 @@ def do_update_story_images(
             ))
         LOG.info(f'bulk create {len(image_info_objects)} ImageInfo objects')
         ImageInfo.objects.bulk_create(image_info_objects)
-    _replace_story_images(story_id)
+    _replace_story_images(feed_id, offset)
 
 
-def _replace_story_images(story_id):
-    story = Story.objects.get(pk=story_id)
+def _replace_story_images(feed_id, offset):
+    story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
     image_processor = StoryImageProcessor(story.link, story.content)
     image_indexs = image_processor.parse()
     image_urls = _image_urls_of_indexs(image_indexs)
@@ -428,13 +431,12 @@ def _replace_story_images(story_id):
         if status in IMAGE_REFERER_DENY_STATUS:
             new_url_data = encode_image_url(url, story.link)
             image_replaces[url] = '/api/v1/image/{}?{}'.format(new_url_data, RSSANT_IMAGE_TAG)
-    LOG.info(f'story#{story_id} {story.link} '
+    LOG.info(f'story#{feed_id},{offset} {story.link} '
              f'replace {len(image_replaces)} referer deny images')
     # image_processor.process will (1) fix relative url (2) replace image url
     # call image_processor.process regardless of image_replaces is empty or not
     content = image_processor.process(image_indexs, image_replaces)
-    story.content = content
-    story.save()
+    STORY_SERVICE.update_story(feed_id, offset, {'content': content})
 
 
 @actor('harbor_rss.check_feed')
@@ -501,7 +503,7 @@ def do_clean_by_retention(ctx: ActorContext):
     for feed in feeds:
         feed_id = feed['feed_id']
         url = feed['url']
-        n = Story.delete_by_retention(feed_id, retention=retention)
+        n = STORY_SERVICE.delete_by_retention(feed_id, retention=retention)
         LOG.info(f'deleted {n} storys of feed#{feed_id} {url} by retention')
 
 
