@@ -1,5 +1,7 @@
 import requests
 
+from rssant.middleware.seaweed_panel import SeaweedMetrics
+
 
 class SeaweedError(Exception):
     """
@@ -27,24 +29,27 @@ class SeaweedClient:
 
     def put(self, fid: str, data: bytes) -> None:
         url = self._get_file_url(fid)
-        response = self._session.post(url, files={'file': data})
-        if response.status_code not in (200, 201, 204):
-            raise SeaweedError(self._err('put', fid, response))
+        with SeaweedMetrics.record('put'):
+            response = self._session.post(url, files={'file': data})
+            if response.status_code not in (200, 201, 204):
+                raise SeaweedError(self._err('put', fid, response))
 
     def get(self, fid: str) -> bytes:
         url = self._get_file_url(fid)
-        response = self._session.get(url)
-        if response.status_code == 404:
-            return None
-        if response.status_code not in (200,):
-            raise SeaweedError(self._err('get', fid, response))
-        return response.content
+        with SeaweedMetrics.record('get'):
+            response = self._session.get(url)
+            if response.status_code == 404:
+                return None
+            if response.status_code not in (200,):
+                raise SeaweedError(self._err('get', fid, response))
+            return response.content
 
     def delete(self, fid: str) -> None:
         url = self._get_file_url(fid)
-        response = self._session.delete(url)
-        if response.status_code not in (200, 202, 204, 404):
-            raise SeaweedError(self._err('delete', fid, response))
+        with SeaweedMetrics.record('delete'):
+            response = self._session.delete(url)
+            if response.status_code not in (200, 202, 204, 404):
+                raise SeaweedError(self._err('delete', fid, response))
 
     def __enter__(self):
         self._init()

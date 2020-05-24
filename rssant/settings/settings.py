@@ -64,8 +64,7 @@ INSTALLED_APPS.extend([
 ])
 
 MIDDLEWARE = [
-    'rssant.middleware.time.TimeMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -226,3 +225,10 @@ REST_FRAMEWORK = {
     # TODO: https://github.com/encode/django-rest-framework/issues/6809
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
 }
+
+
+DEBUG_TOOLBAR_PANELS = [
+    "debug_toolbar.panels.timer.TimerPanel",
+    "debug_toolbar.panels.sql.SQLPanel",
+    "rssant.middleware.seaweed_panel.SeaweedPanel",
+]

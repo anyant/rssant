@@ -11,7 +11,9 @@ docker run -d \
     --cpus=0.5 \
     --network rssant \
     -p 127.0.0.1:9333:9333 \
+    -p 127.0.0.1:19333:19333 \
     -p 127.0.0.1:9080:9080 \
+    -p 127.0.0.1:19080:19080 \
     -v rssant_seaweedfs:/data \
     chrislusf/seaweedfs:1.77 \
     server \
