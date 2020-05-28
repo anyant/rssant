@@ -1,22 +1,43 @@
 import logging
-import typing
+import datetime
 
 from django.utils import timezone
 from django.forms.models import model_to_dict
 from django.db import transaction
-from validr import asdict
+from validr import T, asdict, modelclass
 
 from rssant_common.detail import Detail
+from rssant_common.validator import compiler
 from rssant_config import CONFIG
 from .seaweed_client import SeaweedClient
-from .seaweed_story import SeaweedStory, SeaweedStoryStorage
+from .seaweed_story import SeaweedStoryStorage
 from .story import Story, StoryDetailSchema
+from .story_info import StoryInfo, StoryId, STORY_INFO_DETAIL_FEILDS
 from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
 
 
-class CommonStory(SeaweedStory):
+@modelclass(compiler=compiler)
+class CommonStory:
+    feed_id: int = T.int
+    offset: int = T.int
+    unique_id: str = T.str
+    title: str = T.str
+    link: str = T.str.optional
+    author: str = T.str.optional
+    image_url: str = T.str.optional
+    audio_url: str = T.str.optional
+    iframe_url: str = T.str.optional
+    has_mathjax: bool = T.bool.optional
+    dt_published: datetime.datetime = T.datetime.object.optional
+    dt_updated: datetime.datetime = T.datetime.object.optional
+    dt_created: datetime.datetime = T.datetime.object.optional
+    dt_synced: datetime.datetime = T.datetime.object.optional
+    summary: str = T.str.optional
+    content: str = T.str.optional
+    content_length: int = T.int.min(0).optional
+    content_hash_base64: str = T.str.optional
 
     def to_dict(self):
         return asdict(self)
@@ -29,12 +50,15 @@ class StoryService:
     def __init__(self, storage: SeaweedStoryStorage):
         self._storage = storage
 
-    def _to_common(self, story: Story):
+    @staticmethod
+    def to_common(story: Story):
         d = model_to_dict(story)
         content = d.get('content', None)
         if content:
             d['content_length'] = len(content)
+        d['dt_created'] = story.dt_created
         d['feed_id'] = story.feed_id
+        d['offset'] = story.offset
         return CommonStory(d)
 
     def _is_include_content(self, detail):
@@ -42,24 +66,29 @@ class StoryService:
         return 'content' in detail.include_fields
 
     def get_by_offset(self, feed_id, offset, detail=False) -> CommonStory:
-        include_content = self._is_include_content(detail)
-        seaweed_story = self._storage.get_story(feed_id, offset, include_content=include_content)
-        if seaweed_story:
-            return CommonStory(seaweed_story)
+        q = StoryInfo.objects.filter(pk=StoryId.encode(feed_id, offset))
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        if not detail:
+            q = q.defer(*STORY_INFO_DETAIL_FEILDS)
+        story_info = q.first()
+        if story_info:
+            story = self.to_common(story_info)
+            include_content = self._is_include_content(detail)
+            if include_content:
+                content = self._storage.get_content(feed_id, offset)
+                story.content = content
+            return story
         try:
             story = Story.get_by_offset(feed_id, offset, detail=detail)
         except Story.DoesNotExist:
             return None
-        return self._to_common(story)
-
-    def seaweed_batch_get_by_offset(self, story_keys, detail=False) -> typing.List[CommonStory]:
-        include_content = self._is_include_content(detail)
-        seaweed_storys = self._storage.batch_get_story(
-            story_keys, include_content=include_content)
-        return [CommonStory(x) for x in seaweed_storys]
+        return self.to_common(story)
 
     def set_user_marked(self, feed_id, offset, is_user_marked=True):
-        story = Story.get_by_offset(feed_id, offset)
+        try:
+            story = Story.get_by_offset(feed_id, offset)
+        except Story.DoesNotExist:
+            story = None
         if (not story) and is_user_marked:
             common_story = self.get_by_offset(feed_id, offset, detail=True)
             d = asdict(common_story)
@@ -71,12 +100,22 @@ class StoryService:
             Story.set_user_marked_by_id(story.id, is_user_marked=is_user_marked)
 
     def update_story(self, feed_id, offset, data: dict):
-        old_story = self.get_by_offset(feed_id, offset, detail=True)
+        story = self.get_by_offset(feed_id, offset, detail=True)
         for k, v in data.items():
             if v is not None:
-                setattr(old_story, k, v)
-        seaweed_story = SeaweedStory(old_story)
-        self._storage.save_story(seaweed_story)
+                setattr(story, k, v)
+        self._storage.save_content(feed_id, offset, story.content)
+        update_params = story.to_dict()
+        update_params.pop('content', None)
+        update_params.pop('feed_id', None)
+        update_params.pop('offset', None)
+        story_id = StoryId.encode(feed_id, offset)
+        updated = StoryInfo.objects\
+            .filter(pk=story_id)\
+            .update(**update_params)
+        if updated <= 0:
+            story_info = StoryInfo(pk=story_id, **update_params)
+            story_info.save()
 
     def _get_unique_ids_by_stat(self, feed_id):
         stat = FeedStoryStat.objects\
@@ -157,9 +196,32 @@ class StoryService:
         new_total_storys = offset
         return_storys = modified_storys + new_storys
 
-        for story in modified_storys + new_storys:
-            seaweed_story = SeaweedStory(story)
-            self._storage.save_story(seaweed_story)
+        bulk_update_objects = []
+        bulk_create_objects = []
+        for story in modified_storys:
+            story_id = StoryId.encode(story.feed_id, story.offset)
+            story_info = StoryInfo.objects.filter(pk=story_id).first()
+            if not story_info:
+                story_info = StoryInfo(id=story_id)
+                bulk_create_objects.append(story_info)
+            else:
+                bulk_update_objects.append(story_info)
+            update_params = story.to_dict()
+            update_params.pop('content', None)
+            update_params.pop('feed_id', None)
+            update_params.pop('offset', None)
+            for k, v in update_params.items():
+                setattr(story_info, k, v)
+        for story in new_storys:
+            story_id = StoryId.encode(story.feed_id, story.offset)
+            story_info = StoryInfo(id=story_id)
+            bulk_create_objects.append(story_info)
+            update_params = story.to_dict()
+            update_params.pop('content', None)
+            update_params.pop('feed_id', None)
+            update_params.pop('offset', None)
+            for k, v in update_params.items():
+                setattr(story_info, k, v)
 
         tmp_unique_ids = {y: x for x, y in unique_ids_map.items()}
         for story in new_storys:
@@ -176,8 +238,16 @@ class StoryService:
         unique_ids_data = StoryUniqueIdsData(
             new_begin_offset, new_unique_ids).encode()
 
-        if new_storys:
-            with transaction.atomic():
+        for story in modified_storys + new_storys:
+            self._storage.save_content(
+                story.feed_id, story.offset, story.content)
+
+        with transaction.atomic():
+            for story_info in bulk_update_objects:
+                story_info.save()
+            if bulk_create_objects:
+                StoryInfo.objects.bulk_create(bulk_create_objects, batch_size=batch_size)
+            if new_storys:
                 FeedStoryStat.save_unique_ids_data(feed_id, unique_ids_data)
                 Story._update_feed_monthly_story_count(feed, new_storys)
                 feed.total_storys = new_total_storys
@@ -190,7 +260,7 @@ class StoryService:
 
     def _delete_seaweed_by_retention(self, feed_id, begin_offset, end_offset):
         for offset in range(begin_offset, end_offset, 1):
-            self._storage.delete_story(feed_id, offset)
+            self._storage.delete_content(feed_id, offset)
 
     def delete_by_retention(self, feed_id, retention=3000, limit=1000):
         """
@@ -199,17 +269,19 @@ class StoryService:
             retention: num storys to keep
             limit: delete at most limit rows
         """
+        feed = Feed.get_by_pk(feed_id)
+        offset = feed.retention_offset or 0
+        # delete at most limit rows, avoid out of memory and timeout
+        new_offset = min(offset + limit, feed.total_storys - retention)
+        if new_offset <= offset:
+            return 0
+        self._delete_seaweed_by_retention(feed_id, offset, new_offset)
         with transaction.atomic():
-            feed = Feed.get_by_pk(feed_id)
-            offset = feed.retention_offset or 0
-            # delete at most limit rows, avoid out of memory and timeout
-            new_offset = min(offset + limit, feed.total_storys - retention)
-            if new_offset > offset:
-                self._delete_seaweed_by_retention(feed_id, offset, new_offset)
-                n = Story.delete_by_retention_offset(feed_id, new_offset)
-                feed.retention_offset = new_offset
-                feed.save()
-                return n
+            n = StoryInfo.delete_by_retention_offset(feed_id, new_offset)
+            m = Story.delete_by_retention_offset(feed_id, new_offset)
+            feed.retention_offset = new_offset
+            feed.save()
+            return max(m, n)
         return 0
 
 

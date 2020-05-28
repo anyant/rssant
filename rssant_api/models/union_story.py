@@ -7,6 +7,7 @@ from rssant_common.validator import StoryUnionId, FeedUnionId
 from rssant_common.detail import Detail
 from .feed import UserFeed
 from .story import Story, UserStory, StoryDetailSchema, USER_STORY_DETAIL_FEILDS
+from .story_info import StoryInfo, StoryId, STORY_INFO_DETAIL_FEILDS
 from .errors import FeedNotFoundError, StoryNotFoundError
 from .story_service import STORY_SERVICE
 
@@ -225,10 +226,14 @@ class UnionStory:
 
     @classmethod
     def _query_storys_by_story_service(cls, feed_id, offset, size, detail):
-        story_keys = []
-        for offset in range(offset, offset + size, 1):
-            story_keys.append((feed_id, offset))
-        storys = STORY_SERVICE.seaweed_batch_get_by_offset(story_keys, detail=detail)
+        begin_id = StoryId.encode(feed_id, offset)
+        end_id = StoryId.encode(feed_id, offset + size - 1)
+        q = StoryInfo.objects\
+            .filter(pk__gte=begin_id, pk__lte=end_id)
+        if not detail:
+            q = q.defer(*STORY_INFO_DETAIL_FEILDS)
+        story_info_s = list(q.all())
+        storys = [STORY_SERVICE.to_common(x) for x in story_info_s]
         return storys
 
     @classmethod
@@ -374,6 +379,19 @@ class UnionStory:
         return storys
 
     @classmethod
+    def _batch_get_story_infos(cls, story_keys, detail):
+        story_ids = []
+        for feed_id, offset in story_keys:
+            story_ids.append(StoryId.encode(feed_id, offset))
+        q = StoryInfo.objects.filter(pk__in=story_ids)
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        if not detail:
+            q = q.defer(*STORY_INFO_DETAIL_FEILDS)
+        story_info_s = list(q.all())
+        storys = [STORY_SERVICE.to_common(x) for x in story_info_s]
+        return storys
+
+    @classmethod
     def batch_get_by_feed_offset(cls, user_id, story_keys, detail=False):
         """
         story_keys: List[Tuple[feed_id, offset]]
@@ -381,7 +399,7 @@ class UnionStory:
         story_keys = cls._validate_story_keys(user_id, story_keys)
         if not story_keys:
             return []
-        storys = STORY_SERVICE.seaweed_batch_get_by_offset(story_keys, detail=detail)
+        storys = cls._batch_get_story_infos(story_keys, detail=detail)
         finish_story_keys = set((x.feed_id, x.offset) for x in storys)
         remain_story_keys = list(sorted(set(story_keys) - finish_story_keys))
         if remain_story_keys:

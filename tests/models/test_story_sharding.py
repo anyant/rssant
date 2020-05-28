@@ -3,8 +3,9 @@ from collections import defaultdict
 
 from rssant_api.models.story_sharding import (
     hash_feed_id, sharding_for, seaweed_volume_for,
-    SeaweedFileType, seaweed_fid_for, seaweed_fid_decode,
+    SeaweedFileType, seaweed_fid_encode, seaweed_fid_decode,
 )
+from rssant_api.models.story_info import StoryId
 
 
 def test_hash_feed_id():
@@ -49,15 +50,26 @@ def test_sharding_for_uniform():
 
 def test_seaweed_fid():
     cases = [
-        (123, 10, SeaweedFileType.HEADER, '1,7b0000000a100000000'),
-        (123, 1023, SeaweedFileType.HEADER, '1,7b000003ff100000000'),
-        (123, 1023, SeaweedFileType.CONTENT, '1,7b000003ff200000000'),
+        (123, 10, SeaweedFileType.CONTENT, '1,7b000000a200000000'),
+        (123, 1023, SeaweedFileType.CONTENT, '1,7b00003ff200000000'),
+        (123, 1023, SeaweedFileType.CONTENT, '1,7b00003ff200000000'),
     ]
     for feed_id, offset, ftype, expect in cases:
-        fid = seaweed_fid_for(feed_id, offset, ftype)
+        fid = seaweed_fid_encode(feed_id, offset, ftype)
         msg = f'expect {feed_id, offset, ftype} -> {expect}, got {fid}'
         assert fid == expect, msg
-        _, x_feed_id, _, x_offset, x_ftype = seaweed_fid_decode(fid)
+        volume_id, x_feed_id, x_offset, x_ftype = seaweed_fid_decode(fid)
+        assert volume_id == 1
         assert x_feed_id == feed_id
         assert x_offset == offset
         assert x_ftype == ftype
+
+
+def test_story_id():
+    cases = [
+        (123, 10, 0x7b000000a0),
+        (123, 1023, 0x7b00003ff0),
+    ]
+    for feed_id, offset, story_id in cases:
+        assert StoryId.encode(feed_id, offset) == story_id
+        assert StoryId.decode(story_id) == (feed_id, offset)

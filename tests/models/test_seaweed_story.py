@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from rssant_api.models.seaweed_story import (
-    SeaweedData, SeaweedStory, SeaweedStoryStorage)
+    SeaweedData, SeaweedStoryStorage)
 
 
 class MockSeaweedClient:
@@ -54,30 +54,10 @@ CONTENTS = {
 def test_seaweed_story_storage(content_name):
     client = MockSeaweedClient()
     storage = SeaweedStoryStorage(client)
-    dt = datetime.datetime(2020, 5, 23, 12, 12, 12, tzinfo=datetime.timezone.utc)
     content = CONTENTS[content_name]
-    story = SeaweedStory(
-        feed_id=123,
-        offset=234,
-        unique_id='https://www.example.com/1.html',
-        title='hello world',
-        link='https://www.example.com/1.html',
-        author='',
-        image_url='https://www.example.com/1.png',
-        dt_published=dt,
-        dt_updated=dt,
-        dt_created=dt,
-        summary='hello world hello world',
-        content=content,
-        content_length=len(content or ''),
-        content_hash_base64=None,
-    )
-    storage.save_story(story)
-    got = storage.get_story(123, 234, include_content=True)
-    assert got == story
-    got_s = storage.batch_get_story([(123, 234), (123, 235)], include_content=True)
-    assert len(got_s) == 1
-    assert got_s[0] == story
-    storage.delete_story(123, 234)
-    got = storage.get_story(123, 234, include_content=True)
+    storage.save_content(123, 234, content)
+    got = storage.get_content(123, 234)
+    assert got == content
+    storage.delete_content(123, 234)
+    got = storage.get_content(123, 234)
     assert got is None
