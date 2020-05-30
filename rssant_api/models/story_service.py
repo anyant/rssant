@@ -342,7 +342,7 @@ class StoryService:
             m = Story.delete_by_retention_offset(feed_id, new_offset)
             feed.retention_offset = new_offset
             feed.save()
-            return max(m, n)
+            return n + m
         return 0
 
 

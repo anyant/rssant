@@ -1,9 +1,11 @@
+import pytest
 from django.utils import timezone
 from django.test import TestCase
 
 from rssant_api.models import Feed, FeedStatus
 
 
+@pytest.mark.dbtest
 class FeedSimpleTestCase(TestCase):
     def setUp(self):
         feed = Feed(

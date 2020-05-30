@@ -1,10 +1,11 @@
+import pytest
 from django.utils import timezone
 from django.test import TransactionTestCase
 from validr import T
 
 from rssant_common.validator import compiler
 from rssant_api.models import Feed, FeedStatus
-from rssant_api.models import STORY_SERVICE, Story
+from rssant_api.models import STORY_SERVICE, Story, StoryInfo
 from rssant.helper.content_hash import compute_hash_base64
 
 
@@ -27,6 +28,7 @@ StorySchema = T.dict(
 validate_story = compiler.compile(StorySchema)
 
 
+@pytest.mark.dbtest
 class StoryTestCase(TransactionTestCase):
 
     def setUp(self):
@@ -70,57 +72,85 @@ class StoryTestCase(TransactionTestCase):
         feed.save()
         self.feed_id = feed.id
 
+    def assert_feed_total_storys(self, expect):
+        total_storys = Feed.get_by_pk(self.feed_id).total_storys
+        self.assertEqual(total_storys, expect)
+
+    def assert_total_story_infos(self, expect):
+        total_storys = StoryInfo.objects.count()
+        self.assertEqual(total_storys, expect)
+
     def test_new_bulk_save_by_feed(self):
         storys_0_30 = self.storys[:30]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_0_30, batch_size=10)
         self.assertEqual(len(modified), 30)
+        self.assert_feed_total_storys(30)
+        self.assert_total_story_infos(30)
 
         storys_20_50 = self.storys[20:50]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_20_50, batch_size=10)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(50)
 
         updated_storys_30_50 = self.updated_storys[30:50]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, updated_storys_30_50, batch_size=10)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(50)
 
     def test_mix_bulk_save_by_feed(self):
         storys_0_30 = self.storys[:30]
         modified = Story.bulk_save_by_feed(
             self.feed_id, storys_0_30, batch_size=10)
         self.assertEqual(len(modified), 30)
+        self.assert_feed_total_storys(30)
+        self.assert_total_story_infos(0)
 
         storys_10_50 = self.updated_storys[10:30] + self.storys[30:50]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_10_50, batch_size=10)
         self.assertEqual(len(modified), 40)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(40)
 
         storys_40_60 = self.storys[40:60]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_40_60, batch_size=10)
         self.assertEqual(len(modified), 10)
+        self.assert_feed_total_storys(60)
+        self.assert_total_story_infos(50)
 
     def test_bulk_save_by_feed_refresh(self):
         storys_0_20 = self.storys[:20]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_0_20, batch_size=10)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(20)
+        self.assert_total_story_infos(20)
 
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_0_20, batch_size=10)
         self.assertEqual(len(modified), 0)
+        self.assert_feed_total_storys(20)
+        self.assert_total_story_infos(20)
 
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_0_20, batch_size=10, is_refresh=True)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(20)
+        self.assert_total_story_infos(20)
 
     def test_update_story(self):
         storys_0_20 = self.storys[:20]
         modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_0_20, batch_size=10)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(20)
+        self.assert_total_story_infos(20)
 
         story_10 = self.updated_storys[10]
         data = {k: story_10[k] for k in ['content', 'summary', 'dt_published']}
@@ -131,14 +161,22 @@ class StoryTestCase(TransactionTestCase):
         modified = Story.bulk_save_by_feed(
             self.feed_id, storys_0_30, batch_size=10)
         self.assertEqual(len(modified), 30)
+        self.assert_feed_total_storys(30)
+        self.assert_total_story_infos(0)
 
         storys_20_50 = self.storys[20:50]
-        modified = Story.bulk_save_by_feed(
+        modified = STORY_SERVICE.bulk_save_by_feed(
             self.feed_id, storys_20_50, batch_size=10)
         self.assertEqual(len(modified), 20)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(20)
 
         n = STORY_SERVICE.delete_by_retention(self.feed_id, retention=10, limit=10)
         self.assertEqual(n, 10)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(20)
 
         n = STORY_SERVICE.delete_by_retention(self.feed_id, retention=10, limit=50)
         self.assertEqual(n, 30)
+        self.assert_feed_total_storys(50)
+        self.assert_total_story_infos(10)
