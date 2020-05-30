@@ -2,9 +2,8 @@ import logging
 import datetime
 
 from django.utils import timezone
-from django.forms.models import model_to_dict
 from django.db import transaction
-from validr import T, asdict, modelclass
+from validr import T, asdict, modelclass, fields
 
 from rssant_common.detail import Detail
 from rssant_common.validator import compiler
@@ -12,7 +11,7 @@ from rssant_config import CONFIG
 from .seaweed_client import SeaweedClient
 from .seaweed_story import SeaweedStoryStorage
 from .story import Story, StoryDetailSchema
-from .story_info import StoryInfo, StoryId, STORY_INFO_DETAIL_FEILDS
+from .story_info import StoryInfo, StoryId
 from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
@@ -52,7 +51,11 @@ class StoryService:
 
     @staticmethod
     def to_common(story: Story):
-        d = model_to_dict(story)
+        d = {}
+        for key in fields(CommonStory):
+            value = story.__dict__.get(key, None)
+            if value is not None:
+                d[key] = value
         content = d.get('content', None)
         if content:
             d['content_length'] = len(content)
@@ -66,11 +69,7 @@ class StoryService:
         return 'content' in detail.include_fields
 
     def get_by_offset(self, feed_id, offset, detail=False) -> CommonStory:
-        q = StoryInfo.objects.filter(pk=StoryId.encode(feed_id, offset))
-        detail = Detail.from_schema(detail, StoryDetailSchema)
-        if not detail:
-            q = q.defer(*STORY_INFO_DETAIL_FEILDS)
-        story_info = q.first()
+        story_info = StoryInfo.get(feed_id, offset, detail=detail)
         if story_info:
             story = self.to_common(story_info)
             include_content = self._is_include_content(detail)
@@ -98,6 +97,7 @@ class StoryService:
             story.save()
         elif story:
             Story.set_user_marked_by_id(story.id, is_user_marked=is_user_marked)
+        return story
 
     def update_story(self, feed_id, offset, data: dict):
         story = self.get_by_offset(feed_id, offset, detail=True)
@@ -141,90 +141,115 @@ class StoryService:
             result[story.unique_id] = story.offset
         return result
 
-    def bulk_save_by_feed(self, feed_id, storys, batch_size=100, is_refresh=False):
-        if not storys:
-            return []  # story_objects
-        storys = Story._dedup_sort_storys(storys)
-
-        feed = Feed.get_by_pk(feed_id)
-        offset = feed.total_storys
-
+    def _get_unique_ids(self, feed_id, feed_total_story):
         unique_ids_map = self._get_unique_ids_by_stat(feed_id)
         if unique_ids_map is None:
             unique_ids_map = self._get_unique_ids_by_story(
-                feed_id, offset - 100, offset)
+                feed_id, feed_total_story - 100, feed_total_story)
+        return unique_ids_map
 
+    def _group_storys(self, storys, unique_ids_map):
+        old_storys_map = {}
         new_storys = []
-        modified_storys = []
-        now = timezone.now()
-
-        for data in storys:
-            unique_id = data['unique_id']
-            is_story_exist = unique_id in unique_ids_map
-            story = dict(data)
-            story['feed_id'] = feed_id
-
-            if is_story_exist:
-                old_story = self.get_by_offset(
-                    feed_id, offset, detail='+dt_published,content_hash_base64')
-                if not old_story:
-                    msg = 'story feed_id=%s unique_id=%r not consitent with unique_ids_data'
-                    LOG.error(msg, feed_id, unique_id)
-                    is_story_exist = False
-
-            if is_story_exist:
-                # 判断内容是否更新
-                content_hash_base64 = story['content_hash_base64']
-                is_modified = content_hash_base64 and content_hash_base64 != old_story.content_hash_base64
-                if (not is_refresh) and (not is_modified):
-                    continue
-                # 发布时间只第一次赋值，不更新
-                if old_story and old_story.dt_published:
-                    story['dt_published'] = old_story.dt_published
-                story['offset'] = unique_ids_map[unique_id]
-            else:
-                story['offset'] = offset
-
-            story['dt_synced'] = now
-            story = CommonStory(story)
-            if is_story_exist:
-                modified_storys.append(story)
-            else:
+        for story in storys:
+            offset = unique_ids_map.get(story['unique_id'])
+            if offset is None:
                 new_storys.append(story)
-                offset += 1
-
-        new_total_storys = offset
-        return_storys = modified_storys + new_storys
-
-        bulk_update_objects = []
-        bulk_create_objects = []
-        for story in modified_storys:
-            story_id = StoryId.encode(story.feed_id, story.offset)
-            story_info = StoryInfo.objects.filter(pk=story_id).first()
-            if not story_info:
-                story_info = StoryInfo(id=story_id)
-                bulk_create_objects.append(story_info)
             else:
-                bulk_update_objects.append(story_info)
-            update_params = story.to_dict()
-            update_params.pop('content', None)
-            update_params.pop('feed_id', None)
-            update_params.pop('offset', None)
-            for k, v in update_params.items():
-                setattr(story_info, k, v)
-        for story in new_storys:
-            story_id = StoryId.encode(story.feed_id, story.offset)
-            story_info = StoryInfo(id=story_id)
-            bulk_create_objects.append(story_info)
-            update_params = story.to_dict()
-            update_params.pop('content', None)
-            update_params.pop('feed_id', None)
-            update_params.pop('offset', None)
-            for k, v in update_params.items():
-                setattr(story_info, k, v)
+                old_storys_map[offset] = story
+        return old_storys_map, new_storys
 
+    def _query_story_infos(self, feed_id, offset_s):
+        keys = [(feed_id, offset) for offset in offset_s]
+        detail = '+dt_published,content_hash_base64'
+        story_infos = StoryInfo.batch_get(keys, detail=detail)
+        return story_infos
+
+    def _query_story_objects(self, feed_id, offset_s):
+        keys = [(feed_id, offset) for offset in offset_s]
+        detail = '+dt_published,content_hash_base64'
+        storys = Story.batch_get_by_offset(keys, detail=detail)
+        return storys
+
+    def _query_old_story_objects(self, feed_id, old_storys_map):
+        old_story_infos = self._query_story_infos(feed_id, old_storys_map.keys())
+        remain_offsets = set(old_storys_map.keys()) - {x.offset for x in old_story_infos}
+        old_story_objects = self._query_story_objects(feed_id, remain_offsets)
+        old_story_objects_map = {}
+        for story_info in old_story_infos:
+            old_story_objects_map[story_info.offset] = (True, story_info)
+        for story_object in old_story_objects:
+            old_story_objects_map[story_object.offset] = (False, story_object)
+        return old_story_objects_map
+
+    def _compute_modified_storys(self, feed_id, old_storys_map, new_storys, is_refresh):
+        old_story_objects_map = self._query_old_story_objects(feed_id, old_storys_map)
+        modified_story_objects = {}
+        new_storys = list(new_storys)
+        for offset, story in old_storys_map.items():
+            if offset not in old_story_objects_map:
+                msg = 'story feed_id=%s offset=%r not consitent with unique_ids_data'
+                LOG.error(msg, feed_id, offset)
+                new_storys.append(story)
+            else:
+                is_story_info, old_story = old_story_objects_map[offset]
+                new_hash = story['content_hash_base64']
+                if not new_hash:
+                    is_modified = True
+                else:
+                    is_modified = old_story.content_hash_base64 != new_hash
+                if is_refresh or is_modified:
+                    modified_story_objects[offset] = (is_story_info, old_story, story)
+        return new_storys, modified_story_objects
+
+    def _common_story_of(self, story, feed_id, offset, now):
+        story['feed_id'] = feed_id
+        story['offset'] = offset
+        story['dt_synced'] = now
+        for key in ['dt_created', 'dt_updated']:
+            if not story.get(key):
+                story[key] = now
+        story = CommonStory(story)
+        return story
+
+    def _compute_storys_map(self, feed_id, feed_total_story, new_storys, modified_story_objects):
+        storys_map = {}
+        now = timezone.now()
+        for offset, story in enumerate(new_storys, feed_total_story):
+            story = self._common_story_of(story, feed_id, offset, now)
+            storys_map[offset] = (story, None, False)
+        for offset, (is_story_info, old_story, story) in modified_story_objects.items():
+            story = self._common_story_of(story, feed_id, offset, now)
+            # 发布时间只第一次赋值，不更新
+            if old_story.dt_published:
+                story.dt_published = old_story.dt_published
+            storys_map[offset] = (story, old_story, is_story_info)
+        return storys_map
+
+    def _compute_story_infos(self, storys_map):
+        new_story_infos = []
+        modified_story_infos = []
+        for offset, (story, old_story, is_story_info) in storys_map.items():
+            if (not old_story) or (not is_story_info):
+                story_id = StoryId.encode(story.feed_id, story.offset)
+                story_info = StoryInfo(id=story_id)
+                new_story_infos.append(story_info)
+            else:
+                assert isinstance(old_story, StoryInfo)
+                story_info = old_story
+                modified_story_infos.append(old_story)
+            update_params = story.to_dict()
+            update_params.pop('content', None)
+            update_params.pop('feed_id', None)
+            update_params.pop('offset', None)
+            for k, v in update_params.items():
+                setattr(story_info, k, v)
+        new_story_infos = list(sorted(new_story_infos, key=lambda x: x.offset))
+        return new_story_infos, modified_story_infos
+
+    def _compute_new_unique_ids_data(self, feed_id, new_total_storys, modified_storys, unique_ids_map):
         tmp_unique_ids = {y: x for x, y in unique_ids_map.items()}
-        for story in new_storys:
+        for story in modified_storys:
             tmp_unique_ids[story.offset] = story.unique_id
         new_unique_ids = []
         for offset in reversed(range(max(0, new_total_storys - 100), new_total_storys)):
@@ -235,28 +260,64 @@ class StoryService:
                 break
             new_unique_ids.append(unique_id)
             new_begin_offset = offset
+        new_unique_ids = list(reversed(new_unique_ids))
         unique_ids_data = StoryUniqueIdsData(
             new_begin_offset, new_unique_ids).encode()
+        return unique_ids_data
 
-        for story in modified_storys + new_storys:
-            self._storage.save_content(
-                story.feed_id, story.offset, story.content)
+    def bulk_save_by_feed(self, feed_id, storys, batch_size=100, is_refresh=False):
+        if not storys:
+            return []  # modified_common_storys
+        storys = Story._dedup_sort_storys(storys)
+
+        feed = Feed.get_by_pk(feed_id)
+        unique_ids_map = self._get_unique_ids(feed_id, feed.total_storys)
+
+        old_storys_map, new_storys = self._group_storys(storys, unique_ids_map)
+
+        new_storys, modified_story_objects = self._compute_modified_storys(
+            feed_id, old_storys_map, new_storys, is_refresh=is_refresh,
+        )
+        new_storys = Story._dedup_sort_storys(new_storys)
+        new_total_storys = feed.total_storys + len(new_storys)
+
+        storys_map = self._compute_storys_map(
+            feed_id, feed.total_storys, new_storys, modified_story_objects,
+        )
+
+        new_common_storys = []
+        modified_common_storys = []
+        save_story_contents = []
+        for offset, (story, old_story, is_story_info) in storys_map.items():
+            modified_common_storys.append(story)
+            if not old_story:
+                new_common_storys.append(story)
+            save_story_contents.append((offset, story.content))
+
+        new_story_infos, modified_story_infos = self._compute_story_infos(storys_map)
+
+        unique_ids_data = self._compute_new_unique_ids_data(
+            feed_id, new_total_storys, modified_common_storys, unique_ids_map,
+        )
+
+        for offset, content in save_story_contents:
+            self._storage.save_content(feed_id, offset, content)
 
         with transaction.atomic():
-            for story_info in bulk_update_objects:
+            for story_info in modified_story_infos:
                 story_info.save()
-            if bulk_create_objects:
-                StoryInfo.objects.bulk_create(bulk_create_objects, batch_size=batch_size)
-            if new_storys:
+            if new_story_infos:
+                StoryInfo.objects.bulk_create(new_story_infos, batch_size=batch_size)
+            if new_common_storys:
                 FeedStoryStat.save_unique_ids_data(feed_id, unique_ids_data)
-                Story._update_feed_monthly_story_count(feed, new_storys)
+                Story._update_feed_monthly_story_count(feed, new_common_storys)
                 feed.total_storys = new_total_storys
                 if feed.dt_first_story_published is None:
-                    feed.dt_first_story_published = new_storys[0].dt_published
-                feed.dt_latest_story_published = new_storys[-1].dt_published
+                    feed.dt_first_story_published = new_common_storys[0].dt_published
+                feed.dt_latest_story_published = new_common_storys[-1].dt_published
                 feed.save()
 
-        return return_storys
+        return modified_common_storys
 
     def _delete_seaweed_by_retention(self, feed_id, begin_offset, end_offset):
         for offset in range(begin_offset, end_offset, 1):

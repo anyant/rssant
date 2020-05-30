@@ -1,7 +1,6 @@
 import pytest
 import yarl
-
-from .helper import reverse_url, forward_url
+from rssant_api.helper import reverse_url, forward_url
 
 
 reverse_and_forward_url_cases = [
@@ -44,7 +43,8 @@ reverse_and_forward_url_cases = [
 ]
 
 
-@pytest.mark.parametrize('url,rev_url', reverse_and_forward_url_cases)
-def test_reverse_and_forward_url(url, rev_url):
+@pytest.mark.parametrize('n', range(len(reverse_and_forward_url_cases)))
+def test_reverse_and_forward_url(n):
+    url, rev_url = reverse_and_forward_url_cases[n]
     assert reverse_url(url) == rev_url
     assert yarl.URL(forward_url(rev_url)) == yarl.URL(url)

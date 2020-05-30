@@ -1,7 +1,9 @@
 import typing
+
+from rssant_common.detail import Detail
 from .helper import models, VersionedMixin, VersionField, optional
 from .story_sharding import StoryKey
-from .story import STORY_DETAIL_FEILDS
+from .story import STORY_DETAIL_FEILDS, StoryDetailSchema
 
 
 STORY_INFO_DETAIL_FEILDS = list(STORY_DETAIL_FEILDS)
@@ -59,6 +61,30 @@ class StoryInfo(VersionedMixin, models.Model):
     def offset(self) -> int:
         feed_id, offset = StoryId.decode(self.id)
         return offset
+
+    @classmethod
+    def _get_exclude_fields(cls, detail):
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        exclude_fields = set(detail.exclude_fields)
+        exclude_fields.discard('content')
+        return exclude_fields
+
+    @classmethod
+    def get(cls, feed_id, offset, detail=False):
+        q = StoryInfo.objects.filter(pk=StoryId.encode(feed_id, offset))
+        q = q.defer(*cls._get_exclude_fields(detail))
+        return q.first()
+
+    @classmethod
+    def batch_get(cls, keys, detail=False):
+        if not keys:
+            return []
+        story_ids = []
+        for feed_id, offset in keys:
+            story_ids.append(StoryId.encode(feed_id, offset))
+        q = StoryInfo.objects.filter(pk__in=story_ids)
+        q = q.defer(*cls._get_exclude_fields(detail))
+        return list(q.all())
 
     @staticmethod
     def delete_by_retention_offset(feed_id, retention_offset):

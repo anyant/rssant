@@ -18,19 +18,6 @@ def convert_summary(summary):
 
 class UnionStory:
 
-    _STORY_FIELD_NAMES = None
-
-    @classmethod
-    def _story_field_names(cls):
-        if cls._STORY_FIELD_NAMES is None:
-            names = set()
-            for field in Story._meta.get_fields():
-                column = getattr(field, 'column', None)
-                if column:
-                    names.add(column)
-            cls._STORY_FIELD_NAMES = list(sorted(names))
-        return cls._STORY_FIELD_NAMES
-
     def __init__(self, story, *, user_id, user_feed_id, user_story=None, detail=False):
         self._story = story
         self._user_id = user_id
@@ -357,37 +344,8 @@ class UnionStory:
         return verified_story_keys
 
     @classmethod
-    def _batch_get_storys(cls, story_keys, detail):
-        detail = Detail.from_schema(detail, StoryDetailSchema)
-        select_fields = set(cls._story_field_names()) - set(detail.exclude_fields)
-        select_fields_quoted = ','.join(['"{}"'.format(x) for x in select_fields])
-        # Note: below query can not use index, it's very slow
-        # WHERE ("feed_id","offset")=Any(%s)
-        # WHERE ("feed_id","offset")=Any(ARRAY[(XX, YY), ...])
-        where_items = []
-        for feed_id, offset in story_keys:
-            # ensure integer, avoid sql inject attack
-            feed_id, offset = int(feed_id), int(offset)
-            where_items.append(f'("feed_id"={feed_id} AND "offset"={offset})')
-        where_clause = ' OR '.join(where_items)
-        sql = f"""
-        SELECT {select_fields_quoted}
-        FROM rssant_api_story
-        WHERE {where_clause}
-        """
-        storys = list(Story.objects.raw(sql))
-        return storys
-
-    @classmethod
     def _batch_get_story_infos(cls, story_keys, detail):
-        story_ids = []
-        for feed_id, offset in story_keys:
-            story_ids.append(StoryId.encode(feed_id, offset))
-        q = StoryInfo.objects.filter(pk__in=story_ids)
-        detail = Detail.from_schema(detail, StoryDetailSchema)
-        if not detail:
-            q = q.defer(*STORY_INFO_DETAIL_FEILDS)
-        story_info_s = list(q.all())
+        story_info_s = StoryInfo.batch_get(story_keys, detail=detail)
         storys = [STORY_SERVICE.to_common(x) for x in story_info_s]
         return storys
 
@@ -403,7 +361,7 @@ class UnionStory:
         finish_story_keys = set((x.feed_id, x.offset) for x in storys)
         remain_story_keys = list(sorted(set(story_keys) - finish_story_keys))
         if remain_story_keys:
-            storys.extend(cls._batch_get_storys(remain_story_keys, detail=detail))
+            storys.extend(Story.batch_get_by_offset(remain_story_keys, detail=detail))
         union_storys = cls._query_union_storys_by_offset(
             user_id=user_id, storys=storys, detail=detail)
         return union_storys
@@ -434,11 +392,17 @@ class UnionStory:
     @staticmethod
     def _set_tag_by_id(story_unionid, is_favorited=None, is_watched=None):
         user_id, feed_id, offset = story_unionid
-        STORY_SERVICE.set_user_marked(feed_id, offset)
-        union_story = UnionStory.get_by_id(story_unionid)
-        user_feed_id = union_story._user_feed_id
-        user_story = union_story._user_story
-        story = Story.get_by_offset(feed_id, offset, detail=False)
+        story = STORY_SERVICE.set_user_marked(feed_id, offset)
+        if not story:
+            story = Story.get_by_offset(feed_id, offset, detail=False)
+        user_feed = UserFeed.objects\
+            .only('id', 'user_id', 'feed_id')\
+            .get(user_id=user_id, feed_id=feed_id)
+        user_feed_id = user_feed.id
+        try:
+            user_story = UserStory.get_by_offset(user_id, feed_id, offset, detail=False)
+        except UserStory.DoesNotExist:
+            user_story = None
         with transaction.atomic():
             if user_story is None:
                 user_story = UserStory(
@@ -456,9 +420,12 @@ class UnionStory:
                 user_story.dt_watched = timezone.now()
             user_story.save()
             if is_favorited or is_watched:
-                story.is_user_marked = True
-                story.save()
-            union_story._user_story = user_story
+                if not story.is_user_marked:
+                    story.is_user_marked = True
+                    story.save()
+        union_story = UnionStory(
+            story, user_id=user_id, user_feed_id=user_feed_id,
+            user_story=user_story, detail=False)
         return union_story
 
     @staticmethod

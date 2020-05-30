@@ -72,12 +72,49 @@ class Story(Model, ContentHashMixin):
     summary = models.TextField(**optional, help_text="摘要或较短的内容")
     content = models.TextField(**optional, help_text="文章内容")
 
+    _STORY_FIELD_NAMES = None
+
+    @classmethod
+    def _story_field_names(cls):
+        if cls._STORY_FIELD_NAMES is None:
+            names = set()
+            for field in cls._meta.get_fields():
+                column = getattr(field, 'column', None)
+                if column:
+                    names.add(column)
+            cls._STORY_FIELD_NAMES = list(sorted(names))
+        return cls._STORY_FIELD_NAMES
+
     @staticmethod
     def get_by_offset(feed_id, offset, detail=False) -> 'Story':
         q = Story.objects.filter(feed_id=feed_id, offset=offset)
-        if not detail:
-            q = q.defer(*STORY_DETAIL_FEILDS)
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        q = q.defer(*detail.exclude_fields)
         return q.get()
+
+    @classmethod
+    def batch_get_by_offset(cls, keys, detail=False):
+        if not keys:
+            return []
+        detail = Detail.from_schema(detail, StoryDetailSchema)
+        select_fields = set(cls._story_field_names()) - set(detail.exclude_fields)
+        select_fields_quoted = ','.join(['"{}"'.format(x) for x in select_fields])
+        # Note: below query can not use index, it's very slow
+        # WHERE ("feed_id","offset")=Any(%s)
+        # WHERE ("feed_id","offset")=Any(ARRAY[(XX, YY), ...])
+        where_items = []
+        for feed_id, offset in keys:
+            # ensure integer, avoid sql inject attack
+            feed_id, offset = int(feed_id), int(offset)
+            where_items.append(f'("feed_id"={feed_id} AND "offset"={offset})')
+        where_clause = ' OR '.join(where_items)
+        sql = f"""
+        SELECT {select_fields_quoted}
+        FROM rssant_api_story
+        WHERE {where_clause}
+        """
+        storys = list(Story.objects.raw(sql))
+        return storys
 
     @staticmethod
     def _dedup_sort_storys(storys):
