@@ -143,6 +143,7 @@ def do_save_feed_creation_result(
             feed = Feed(
                 url=url, status=FeedStatus.READY,
                 reverse_url=reverse_url(url),
+                title=feed_dict['title'],
                 dt_updated=now, dt_checked=now, dt_synced=now)
             feed.save()
         feed_creation.status = FeedStatus.READY
@@ -359,6 +360,9 @@ def do_update_story(
     url: T.url,
 ):
     story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
+    if not story:
+        LOG.error('story#%s,%s not found', feed_id, offset)
+        return
     if not is_fulltext_content(content):
         story_text = processor.story_html_to_text(story.content)
         text = processor.story_html_to_text(content)

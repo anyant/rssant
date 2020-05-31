@@ -15,6 +15,7 @@ from .story_info import StoryInfo, StoryId
 from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
+from .errors import StoryNotFoundError
 
 
 @modelclass(compiler=compiler)
@@ -101,6 +102,8 @@ class StoryService:
 
     def update_story(self, feed_id, offset, data: dict):
         story = self.get_by_offset(feed_id, offset, detail=True)
+        if not story:
+            raise StoryNotFoundError(f'story#{feed_id},{offset} not found')
         for k, v in data.items():
             if v is not None:
                 setattr(story, k, v)
