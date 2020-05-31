@@ -133,6 +133,7 @@ initdb                           EXITED    Dec 22 01:15 PM
 nginx                            RUNNING   pid 15, uptime 0:10:03
 postgres                         RUNNING   pid 17, uptime 0:10:03
 scheduler                        RUNNING   pid 19, uptime 0:10:03
+seaweedfs                        RUNNING   pid 24, uptime 0:10:03
 worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 
@@ -142,7 +143,7 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 **大功告成，返回首页即可开始使用了！**
 
 如需停止服务，执行: `docker rm -f rssant`  
-如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
+如需备份数据，备份 `rssant-postgres-data` 和 `rssant-data` 这两个卷，其他卷可忽略。  
 
 ## 反馈与协作
 
