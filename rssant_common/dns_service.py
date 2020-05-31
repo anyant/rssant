@@ -179,7 +179,7 @@ class DNSService:
                 response = self.client.request('GET', url, headers=headers)
                 response.raise_for_status()
             except Exception as ex:
-                LOG.warning(ex, exc_info=ex)
+                LOG.warning(f'{type(ex).__name__}: {ex}')
                 continue
             for item in response.json()['Answer']:
                 if item['type'] == 1:  # ipv4
