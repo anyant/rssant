@@ -148,7 +148,7 @@ class StoryService:
         unique_ids_map = self._get_unique_ids_by_stat(feed_id)
         if unique_ids_map is None:
             unique_ids_map = self._get_unique_ids_by_story(
-                feed_id, feed_total_story - 100, feed_total_story)
+                feed_id, feed_total_story - 300, feed_total_story)
         return unique_ids_map
 
     def _group_storys(self, storys, unique_ids_map):
@@ -255,7 +255,8 @@ class StoryService:
         for story in modified_storys:
             tmp_unique_ids[story.offset] = story.unique_id
         new_unique_ids = []
-        for offset in reversed(range(max(0, new_total_storys - 100), new_total_storys)):
+        size = min(len(tmp_unique_ids), 300)
+        for offset in reversed(range(max(0, new_total_storys - size), new_total_storys)):
             unique_id = tmp_unique_ids.get(offset, '')
             if not unique_id:
                 msg = 'wrong unique_ids_data, feed_id=%s offset=%s: %r'
