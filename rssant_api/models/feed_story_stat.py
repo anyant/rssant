@@ -28,8 +28,10 @@ class FeedStoryStat(Model):
     @classmethod
     def _create_or_update(cls, feed_id, **kwargs):
         cls._create_if_not_exists(feed_id)
-        FeedStoryStat.objects.filter(pk=feed_id)\
+        updated = FeedStoryStat.objects.filter(pk=feed_id)\
             .update(**kwargs)
+        if updated <= 0:
+            raise ValueError(f'update FeedStoryStat#{feed_id} failed')
 
     @classmethod
     def save_unique_ids_data(cls, feed_id: int, unique_ids_data: bytes):

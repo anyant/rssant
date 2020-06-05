@@ -18,6 +18,9 @@ from .story_unique_ids import StoryUniqueIdsData
 from .errors import StoryNotFoundError
 
 
+LOG = logging.getLogger(__name__)
+
+
 @modelclass(compiler=compiler)
 class CommonStory:
     feed_id: int = T.int
@@ -42,8 +45,9 @@ class CommonStory:
     def to_dict(self):
         return asdict(self)
 
-
-LOG = logging.getLogger(__name__)
+    def __repr__(self):
+        base = f'{type(self).__name__}#{self.feed_id},{self.offset}'
+        return f'<{base} unique_id={self.unique_id!r} title={self.title!r}>'
 
 
 class StoryService:
@@ -124,7 +128,7 @@ class StoryService:
         stat = FeedStoryStat.objects\
             .only('unique_ids_data')\
             .filter(pk=feed_id).first()
-        if not stat:
+        if not stat or not stat.unique_ids_data:
             return None
         result = {}
         unique_ids_data = StoryUniqueIdsData.decode(stat.unique_ids_data)
@@ -248,16 +252,21 @@ class StoryService:
             for k, v in update_params.items():
                 setattr(story_info, k, v)
         new_story_infos = list(sorted(new_story_infos, key=lambda x: x.offset))
+        modified_story_infos = list(sorted(modified_story_infos, key=lambda x: x.offset))
         return new_story_infos, modified_story_infos
 
-    def _compute_new_unique_ids_data(self, feed_id, new_total_storys, modified_storys, unique_ids_map):
-        tmp_unique_ids = {y: x for x, y in unique_ids_map.items()}
+    def _compute_new_unique_ids_data(self, feed_id, new_total_storys, modified_storys, unique_ids_map) -> bytes:
+        # 容忍旧的 unique_ids_map 有错，用新的正确的值覆盖旧值
+        tmp_unique_ids = dict(unique_ids_map)
         for story in modified_storys:
-            tmp_unique_ids[story.offset] = story.unique_id
+            tmp_unique_ids[story.unique_id] = story.offset
+        tmp_unique_ids = {y: x for x, y in tmp_unique_ids.items()}
         new_unique_ids = []
         size = min(len(tmp_unique_ids), 300)
-        for offset in reversed(range(max(0, new_total_storys - size), new_total_storys)):
-            unique_id = tmp_unique_ids.get(offset, '')
+        begin_offset = max(0, new_total_storys - size)
+        new_begin_offset = new_total_storys
+        for offset in reversed(range(begin_offset, new_total_storys)):
+            unique_id = tmp_unique_ids.get(offset, None)
             if not unique_id:
                 msg = 'wrong unique_ids_data, feed_id=%s offset=%s: %r'
                 LOG.error(msg, feed_id, offset, tmp_unique_ids)
@@ -265,6 +274,10 @@ class StoryService:
             new_unique_ids.append(unique_id)
             new_begin_offset = offset
         new_unique_ids = list(reversed(new_unique_ids))
+        if len(new_unique_ids) != len(set(new_unique_ids)):
+            msg = 'found feed_id=%s begin_offset=%s duplicate new_unique_ids, will discard it: %r'
+            LOG.error(msg, feed_id, new_begin_offset, new_unique_ids)
+            return None
         unique_ids_data = StoryUniqueIdsData(
             new_begin_offset, new_unique_ids).encode()
         return unique_ids_data

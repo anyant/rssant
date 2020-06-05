@@ -209,19 +209,20 @@ def do_update_feed(
         feed.reverse_url = reverse_url(feed.url)
         feed.status = FeedStatus.READY
         feed.save()
-        for s in storys:
-            if not s['dt_updated']:
-                s['dt_updated'] = now
-            if not s['dt_published']:
-                # set dt_published to now - 30d to avoid these storys
-                # take over mushroom page, i.e. Story.query_recent_by_user
-                s['dt_published'] = now_sub_30d
-        modified_storys = STORY_SERVICE.bulk_save_by_feed(feed.id, storys, is_refresh=is_refresh)
-        LOG.info(
-            'feed#%s save storys total=%s num_modified=%s',
-            feed.id, len(storys), len(modified_storys)
-        )
-    feed.refresh_from_db()
+    # save storys, bulk_save_by_feed has standalone transaction
+    for s in storys:
+        if not s['dt_updated']:
+            s['dt_updated'] = now
+        if not s['dt_published']:
+            # set dt_published to now - 30d to avoid these storys
+            # take over mushroom page, i.e. Story.query_recent_by_user
+            s['dt_published'] = now_sub_30d
+    modified_storys = STORY_SERVICE.bulk_save_by_feed(feed.id, storys, is_refresh=is_refresh)
+    LOG.info(
+        'feed#%s save storys total=%s num_modified=%s',
+        feed.id, len(storys), len(modified_storys)
+    )
+    feed = Feed.get_by_pk(feed_id)
     if modified_storys:
         feed.unfreeze()
     need_fetch_story = _is_feed_need_fetch_storys(feed, modified_storys)

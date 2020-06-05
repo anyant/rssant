@@ -25,7 +25,7 @@ class Model(VersionedMixin, models.Model):
 
     def __str__(self):
         default = f'{self.__class__.__name__}#{self.id}'
-        admin = getattr(self.__class__, 'Admin')
+        admin = getattr(self.__class__, 'Admin', None)
         if not admin:
             return default
         fields = getattr(admin, 'display_fields')
