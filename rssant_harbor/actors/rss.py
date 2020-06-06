@@ -16,7 +16,7 @@ from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_con
 from rssant_api.models import UserFeed, Feed, STORY_SERVICE, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
 from rssant_api.helper import reverse_url
 from rssant_common.image_url import encode_image_url
-from rssant_common.actor_helper import django_context
+from rssant_common.actor_helper import django_context, profile_django_context
 from rssant_common.validator import compiler
 from rssant_config import CONFIG
 
@@ -113,6 +113,7 @@ def do_update_feed_creation_status(
 
 @actor('harbor_rss.save_feed_creation_result')
 @django_context
+@profile_django_context
 def do_save_feed_creation_result(
     ctx: ActorContext,
     feed_creation_id: T.int,
@@ -172,6 +173,7 @@ def do_save_feed_creation_result(
 
 @actor('harbor_rss.update_feed')
 @django_context
+@profile_django_context
 def do_update_feed(
     ctx: ActorContext,
     feed_id: T.int,
@@ -351,6 +353,7 @@ def _detect_story_images(ctx, story):
 
 @actor('harbor_rss.update_story')
 @django_context
+@profile_django_context
 def do_update_story(
     ctx: ActorContext,
     feed_id: T.int,
@@ -390,6 +393,7 @@ IMAGE_REFERER_DENY_STATUS = set([
 
 @actor('harbor_rss.update_story_images')
 @django_context
+@profile_django_context
 def do_update_story_images(
     ctx: ActorContext,
     feed_id: T.int,

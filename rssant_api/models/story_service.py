@@ -1,4 +1,5 @@
 import logging
+import time
 import datetime
 
 from django.utils import timezone
@@ -317,8 +318,11 @@ class StoryService:
             feed_id, new_total_storys, modified_common_storys, unique_ids_map,
         )
 
+        save_content_begin = time.time()
         for offset, content in save_story_contents:
             self._storage.save_content(feed_id, offset, content)
+        save_content_cost = int((time.time() - save_content_begin) * 1000)
+        LOG.info('storage.save_content %d cost=%dms', len(save_story_contents), save_content_cost)
 
         with transaction.atomic():
             for story_info in modified_story_infos:
