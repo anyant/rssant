@@ -90,7 +90,7 @@ class Story(Model, ContentHashMixin):
         q = Story.objects.filter(feed_id=feed_id, offset=offset)
         detail = Detail.from_schema(detail, StoryDetailSchema)
         q = q.defer(*detail.exclude_fields)
-        return q.get()
+        return q.seal().get()
 
     @classmethod
     def batch_get_by_offset(cls, keys, detail=False):
@@ -113,7 +113,7 @@ class Story(Model, ContentHashMixin):
         FROM rssant_api_story
         WHERE {where_clause}
         """
-        storys = list(Story.objects.raw(sql))
+        storys = list(Story.objects.seal().raw(sql))
         return storys
 
     @staticmethod

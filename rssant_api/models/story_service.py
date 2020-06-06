@@ -127,7 +127,7 @@ class StoryService:
     def _get_unique_ids_by_stat(self, feed_id):
         stat = FeedStoryStat.objects\
             .only('unique_ids_data')\
-            .filter(pk=feed_id).first()
+            .filter(pk=feed_id).seal().first()
         if not stat or not stat.unique_ids_data:
             return None
         result = {}
@@ -142,7 +142,7 @@ class StoryService:
             .only('offset', 'unique_id')\
             .filter(feed_id=feed_id)\
             .filter(offset__gte=begin_offset, offset__lt=end_offset)\
-            .all()
+            .seal().all()
         result = {}
         for story in story_s:
             result[story.unique_id] = story.offset
