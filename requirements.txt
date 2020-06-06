@@ -44,7 +44,7 @@ django-postgrespool2==1.0.1  # via -r requirements.in
 django-rest-auth==0.9.5   # via -r requirements.in
 django-rest-swagger==2.2.0  # via -r requirements.in
 django-timezone-field==4.0  # via -r requirements.in
-django==2.2.12            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-timezone-field, djangorestframework, jsonfield
+django==2.2.13            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-timezone-field, djangorestframework, jsonfield
 djangorestframework==3.11.0  # via -r requirements.in, django-rest-auth, django-rest-swagger
 entrypoints==0.3          # via flake8
 feedparser==6.0.0b3       # via -r requirements.in
@@ -57,7 +57,6 @@ html2text==2020.1.16      # via -r requirements.in
 humanize==0.5.1           # via pgcli
 identify==1.4.15          # via pre-commit
 idna==2.8                 # via requests, validr, yarl
-importlib-metadata==1.5.0  # via pluggy, pre-commit, pytest, virtualenv
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
 jinja2==2.10.3            # via coreschema, flask
@@ -138,7 +137,6 @@ wcwidth==0.1.7            # via prompt-toolkit, pytest, tabulate
 werkzeug==0.16.0          # via flask, pytest-httpserver
 whitenoise==5.0.1         # via -r requirements.in
 yarl==1.4.2               # via -r requirements.in, aiohttp
-zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
