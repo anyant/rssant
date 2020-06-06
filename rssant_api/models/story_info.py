@@ -91,9 +91,10 @@ class StoryInfo(VersionedMixin, models.Model):
         """
         delete storys < retention_offset and not is_user_marked
         """
+        begin_story_id = StoryId.encode(feed_id, 0)
         retention_story_id = StoryId.encode(feed_id, retention_offset)
         n, __ = StoryInfo.objects\
-            .filter(pk__lt=retention_story_id)\
+            .filter(pk__gte=begin_story_id, pk__lt=retention_story_id)\
             .exclude(is_user_marked=True)\
             .delete()
         return n
