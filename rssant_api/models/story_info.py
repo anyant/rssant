@@ -1,28 +1,11 @@
-import typing
-
 from rssant_common.detail import Detail
 from .helper import models, SealableModel, VersionedMixin, VersionField, optional
-from .story_sharding import StoryKey
+from .story_storage import StoryId
 from .story import STORY_DETAIL_FEILDS, StoryDetailSchema
 
 
 STORY_INFO_DETAIL_FEILDS = list(STORY_DETAIL_FEILDS)
 STORY_INFO_DETAIL_FEILDS.remove('content')
-
-
-class StoryId:
-    """
-    virtual story id, composited by feed_id and offset
-    """
-
-    @staticmethod
-    def encode(feed_id: int, offset: int) -> int:
-        return StoryKey.encode(feed_id, offset)
-
-    @staticmethod
-    def decode(story_id: int) -> typing.Tuple[int, int]:
-        feed_id, offset, __, __ = StoryKey.decode(story_id)
-        return feed_id, offset
 
 
 class StoryInfo(VersionedMixin, SealableModel):

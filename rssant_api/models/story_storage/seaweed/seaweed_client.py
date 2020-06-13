@@ -58,9 +58,11 @@ class SeaweedClient:
         return response.content
 
     def batch_get(self, fid_s: typing.List[str]) -> typing.Dict[str, bytes]:
+        result = {}
+        if not fid_s:
+            return result
         url_s = [self._get_file_url(fid) for fid in fid_s]
         fut_s = []
-        result = {}
         with SeaweedMetrics.record('get', len(fid_s)):
             for fid, url in zip(fid_s, url_s):
                 fut = self._executor.submit(self._get_by_url, fid, url)
@@ -92,6 +94,8 @@ class SeaweedClient:
     def _init(self):
         if self._m_session is None:
             self._m_session = requests.Session()
+            # requests get_environ_proxies is too slow
+            self._m_session.trust_env = False
             pool_maxsize = 10 + self.thread_pool_size
             for scheme in ['http://', 'https://']:
                 adapter = requests.adapters.HTTPAdapter(

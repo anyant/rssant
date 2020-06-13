@@ -1,5 +1,7 @@
 import pytest
-from rssant_api.models.seaweed_client import SeaweedClient, SeaweedError
+from rssant_api.models.story_storage import (
+    SeaweedClient, SeaweedError
+)
 
 
 @pytest.mark.xfail(run=False, reason='depends on seaweed service')

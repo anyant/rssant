@@ -2,8 +2,8 @@ import datetime
 
 import pytest
 
-from rssant_api.models.seaweed_story import (
-    SeaweedData, SeaweedStoryStorage)
+from rssant_api.models.story_storage import SeaweedStoryStorage
+from rssant_api.models.story_storage import StoryData
 
 
 class MockSeaweedClient:
@@ -32,15 +32,15 @@ def test_encode_decode_json():
     }
     value = {**base, 'datetime': dt}
     expect = {**base, 'datetime': '2020-05-23T12:12:12.000000Z'}
-    data = SeaweedData.encode_json(value)
-    got = SeaweedData.decode_json(data)
+    data = StoryData.encode_json(value)
+    got = StoryData.decode_json(data)
     assert got == expect
 
 
 def test_encode_decode_text():
     text = 'hello world\n你好世界\n'
-    data = SeaweedData.encode_text(text)
-    got = SeaweedData.decode_text(data)
+    data = StoryData.encode_text(text)
+    got = StoryData.decode_text(data)
     assert got == text
 
 

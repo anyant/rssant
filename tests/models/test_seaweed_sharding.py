@@ -1,11 +1,11 @@
 import random
 from collections import defaultdict
 
-from rssant_api.models.story_sharding import (
-    hash_feed_id, sharding_for, seaweed_volume_for,
+from rssant_api.models.story_storage.seaweed.seaweed_sharding import (
+    sharding_for, seaweed_volume_for,
     SeaweedFileType, seaweed_fid_encode, seaweed_fid_decode,
 )
-from rssant_api.models.story_info import StoryId
+from rssant_api.models.story_storage.common.story_key import StoryId, hash_feed_id
 
 
 def test_hash_feed_id():
@@ -15,32 +15,32 @@ def test_hash_feed_id():
 
 
 def test_sharding_for_0():
-    for i in [0, 1, 2, 1, 8 * 1024 - 1]:
-        assert sharding_for(i) == 0
-    assert sharding_for(8 * 1024) > 0
-    assert sharding_for(8 * 1024 + 1) > 0
+    for i in [0, 1, 2, 1, 1024 - 1, 2 * 1024, 8 * 1024 - 1]:
+        v = sharding_for(i)
+        assert v >= 0 and v < 8
+    assert sharding_for(8 * 1024) >= 8
 
 
 def test_seaweed_volume_for():
-    assert seaweed_volume_for(0) == 1
-    assert seaweed_volume_for(8 * 1024 - 1) == 1
-    assert seaweed_volume_for(8 * 1024) > 1
+    assert seaweed_volume_for(0) >= 1
+    assert seaweed_volume_for(8 * 1024 - 1) >= 1
+    assert seaweed_volume_for(8 * 1024) >= 9
 
 
 def test_sharding_for_group():
-    for i in [8 * 1024, 8 * 1024 + 1, 64 * 1024, (8 + 64) * 1024 - 1]:
+    for i in [0, 1024 - 1, 1024, 8 * 1024 - 1]:
         val = sharding_for(i)
-        assert val >= 1 and val < 9
-    for i in [(8 + 64) * 1024, (64 * 2) * 1024, (8 + 64 * 2) * 1024 - 1]:
+        assert val >= 0 and val < 8
+    for i in [8 * 1024, 8 * 1024 + 1, 16 * 1024 - 1]:
         val = sharding_for(i)
-        assert val >= 9 and val < 17
+        assert val >= 8 and val < 16
 
 
 def test_sharding_for_uniform():
     volumes = defaultdict(lambda: 0)
     N = 100000
     for i in range(N):
-        feed_id = random.randint(0, (8 + 64) * 1024 - 1)
+        feed_id = random.randint(0, 8 * 1024 - 1)
         volumes[sharding_for(feed_id)] += 1
     min_count = min(volumes.values())
     max_count = max(volumes.values())
@@ -59,7 +59,7 @@ def test_seaweed_fid():
         msg = f'expect {feed_id, offset, ftype} -> {expect}, got {fid}'
         assert fid == expect, msg
         volume_id, x_feed_id, x_offset, x_ftype = seaweed_fid_decode(fid)
-        assert volume_id == 1
+        assert volume_id >= 1 and volume_id < 8
         assert x_feed_id == feed_id
         assert x_offset == offset
         assert x_ftype == ftype

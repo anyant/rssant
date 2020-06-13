@@ -9,14 +9,15 @@ from validr import T, asdict, modelclass, fields
 from rssant_common.detail import Detail
 from rssant_common.validator import compiler
 from rssant_config import CONFIG
-from .seaweed_client import SeaweedClient
-from .seaweed_story import SeaweedStoryStorage
 from .story import Story, StoryDetailSchema
 from .story_info import StoryInfo, StoryId
 from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
 from .errors import StoryNotFoundError
+
+from .story_storage import SeaweedClient, SeaweedStoryStorage
+from .story_storage import PostgresClient, PostgresStoryStorage
 
 
 LOG = logging.getLogger(__name__)
@@ -310,7 +311,7 @@ class StoryService:
             modified_common_storys.append(story)
             if not old_story:
                 new_common_storys.append(story)
-            save_story_contents.append((offset, story.content))
+            save_story_contents.append(((feed_id, offset), story.content))
 
         new_story_infos, modified_story_infos = self._compute_story_infos(storys_map)
 
@@ -319,8 +320,7 @@ class StoryService:
         )
 
         save_content_begin = time.time()
-        for offset, content in save_story_contents:
-            self._storage.save_content(feed_id, offset, content)
+        self._storage.batch_save_content(save_story_contents)
         save_content_cost = int((time.time() - save_content_begin) * 1000)
         LOG.info('storage.save_content %d cost=%dms', len(save_story_contents), save_content_cost)
 
@@ -340,9 +340,11 @@ class StoryService:
 
         return modified_common_storys
 
-    def _delete_seaweed_by_retention(self, feed_id, begin_offset, end_offset):
+    def _delete_content_by_retention(self, feed_id, begin_offset, end_offset):
+        keys = []
         for offset in range(begin_offset, end_offset, 1):
-            self._storage.delete_content(feed_id, offset)
+            keys.append((feed_id, offset))
+        self._storage.batch_delete_content(keys)
 
     def delete_by_retention(self, feed_id, retention=3000, limit=1000):
         """
@@ -357,7 +359,7 @@ class StoryService:
         new_offset = min(offset + limit, feed.total_storys - retention)
         if new_offset <= offset:
             return 0
-        self._delete_seaweed_by_retention(feed_id, offset, new_offset)
+        self._delete_content_by_retention(feed_id, offset, new_offset)
         with transaction.atomic():
             n = StoryInfo.delete_by_retention_offset(feed_id, new_offset)
             m = Story.delete_by_retention_offset(feed_id, new_offset)
@@ -371,4 +373,33 @@ SEAWEED_CLIENT = SeaweedClient(
     CONFIG.seaweed_volume_url,
     thread_pool_size=CONFIG.seaweed_thread_pool_size,
 )
-STORY_SERVICE = StoryService(SeaweedStoryStorage(SEAWEED_CLIENT))
+SEAWEED_STORY_STORAGE = SeaweedStoryStorage(SEAWEED_CLIENT)
+
+
+PG_DSN = (
+    f'postgresql://{CONFIG.pg_user}:{CONFIG.pg_password}@'
+    f'{CONFIG.pg_host}:{CONFIG.pg_port}/{CONFIG.pg_db}'
+)
+POSTGRES_STORY_STORAGE = PostgresStoryStorage(PostgresClient(PG_DSN, 'story'))
+
+
+class MirrorStoryStorage:
+
+    def _make_mirror(self, name):
+
+        f_seaweed = getattr(SEAWEED_STORY_STORAGE, name)
+        f_postgres = getattr(POSTGRES_STORY_STORAGE, name)
+
+        def mirror(*args, **kwargs):
+            r_seaweed = f_seaweed(*args, **kwargs)
+            r_postgres = f_postgres(*args, **kwargs)
+            assert r_seaweed == r_postgres
+            return r_seaweed
+
+        return mirror
+
+    def __getattr__(self, name):
+        return self._make_mirror(name)
+
+
+STORY_SERVICE = StoryService(MirrorStoryStorage())
