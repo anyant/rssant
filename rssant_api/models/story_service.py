@@ -376,11 +376,8 @@ SEAWEED_CLIENT = SeaweedClient(
 SEAWEED_STORY_STORAGE = SeaweedStoryStorage(SEAWEED_CLIENT)
 
 
-PG_DSN = (
-    f'postgresql://{CONFIG.pg_user}:{CONFIG.pg_password}@'
-    f'{CONFIG.pg_host}:{CONFIG.pg_port}/{CONFIG.pg_db}'
-)
-POSTGRES_STORY_STORAGE = PostgresStoryStorage(PostgresClient(PG_DSN, 'story'))
+POSTGRES_CLIENT = PostgresClient(CONFIG.pg_story_volumes_parsed)
+POSTGRES_STORY_STORAGE = PostgresStoryStorage(POSTGRES_CLIENT)
 
 
 class MirrorStoryStorage:

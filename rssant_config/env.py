@@ -1,4 +1,5 @@
 import os.path
+import re
 
 from dotenv import load_dotenv
 from validr import T, modelclass, fields, Invalid
@@ -32,6 +33,7 @@ class EnvConfig(ConfigModel):
     feed_story_retention: int = T.int.min(1).default(5000).desc('max storys to keep per feed')
     seaweed_volume_url: str = T.url.relaxed.default('http://localhost:9080')
     seaweed_thread_pool_size: int = T.int.min(1).default(30)
+    pg_story_volumes: str = T.str.optional
     # actor
     actor_storage_path: str = T.str.default('data/actor_storage')
     actor_storage_compact_wal_delta: int = T.int.min(1).default(5000)
@@ -77,6 +79,37 @@ class EnvConfig(ConfigModel):
         networks = validate_extra_networks(networks)
         return list(networks)
 
+    @classmethod
+    def _parse_story_volumes(cls, text: str):
+        """
+        Format:
+            {volume}:{user}:{password}@{host}:{port}/{db}/{table}
+
+        >>> volumes = EnvConfig._parse_story_volumes('0:user:password@host:5432/db/table')
+        >>> expect = {0: dict(
+        ...    user='user', password='password',
+        ...    host='host', port=5432, db='db', table='table'
+        ... )}
+        >>> volumes == expect
+        True
+        """
+        re_volume = re.compile(r'^(\d+)\:(\w+)\:(\w+)\@(\w+)\:(\d+)\/(\w+)\/(\w+)$')
+        volumes = {}
+        for part in text.split(','):
+            match = re_volume.match(part)
+            if not match:
+                raise Invalid(f'invalid story volume {part!r}')
+            volume = int(match.group(1))
+            volumes[volume] = dict(
+                user=match.group(2),
+                password=match.group(3),
+                host=match.group(4),
+                port=int(match.group(5)),
+                db=match.group(6),
+                table=match.group(7),
+            )
+        return volumes
+
     def __post_init__(self):
         if self.sentry_enable and not self.sentry_dsn:
             raise Invalid('sentry_dsn is required when sentry_enable=True')
@@ -102,6 +135,18 @@ class EnvConfig(ConfigModel):
                 'url': None,
             }]
         }
+        if self.pg_story_volumes:
+            volumes = self._parse_story_volumes(self.pg_story_volumes)
+        else:
+            volumes = {0: dict(
+                user=self.pg_user,
+                password=self.pg_password,
+                host=self.pg_host,
+                port=self.pg_port,
+                db=self.pg_db,
+                table='story_volume_0',
+            )}
+        self.pg_story_volumes_parsed = volumes
 
 
 def load_env_config() -> EnvConfig:
