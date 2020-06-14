@@ -15,8 +15,6 @@ from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
 from .errors import StoryNotFoundError
-
-from .story_storage import SeaweedClient, SeaweedStoryStorage
 from .story_storage import PostgresClient, PostgresStoryStorage
 
 
@@ -53,7 +51,7 @@ class CommonStory:
 
 
 class StoryService:
-    def __init__(self, storage: SeaweedStoryStorage):
+    def __init__(self, storage: PostgresStoryStorage):
         self._storage = storage
 
     @staticmethod
@@ -369,34 +367,7 @@ class StoryService:
         return 0
 
 
-SEAWEED_CLIENT = SeaweedClient(
-    CONFIG.seaweed_volume_url,
-    thread_pool_size=CONFIG.seaweed_thread_pool_size,
-)
-SEAWEED_STORY_STORAGE = SeaweedStoryStorage(SEAWEED_CLIENT)
-
-
 POSTGRES_CLIENT = PostgresClient(CONFIG.pg_story_volumes_parsed)
 POSTGRES_STORY_STORAGE = PostgresStoryStorage(POSTGRES_CLIENT)
 
-
-class MirrorStoryStorage:
-
-    def _make_mirror(self, name):
-
-        f_seaweed = getattr(SEAWEED_STORY_STORAGE, name)
-        f_postgres = getattr(POSTGRES_STORY_STORAGE, name)
-
-        def mirror(*args, **kwargs):
-            r_seaweed = f_seaweed(*args, **kwargs)
-            r_postgres = f_postgres(*args, **kwargs)
-            assert r_seaweed == r_postgres
-            return r_seaweed
-
-        return mirror
-
-    def __getattr__(self, name):
-        return self._make_mirror(name)
-
-
-STORY_SERVICE = StoryService(MirrorStoryStorage())
+STORY_SERVICE = StoryService(POSTGRES_STORY_STORAGE)
