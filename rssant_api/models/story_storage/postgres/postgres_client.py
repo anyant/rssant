@@ -64,3 +64,8 @@ class PostgresClient:
         if volume not in self._volumes:
             raise ValueError(f'story volume {volume} not exists')
         return self._table_s[volume]
+
+    def close(self):
+        engine: Engine
+        for engine in self._engine_s.values():
+            engine.dispose()

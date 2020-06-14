@@ -65,6 +65,7 @@ jinja2==2.10.3            # via coreschema, flask
 jsonfield==3.1.0          # via -r requirements.in
 loguru==0.3.1             # via -r requirements.in
 lxml==4.3.3               # via -r requirements.in, readability-lxml
+lz4==3.1.0                # via -r requirements.in
 mako==1.1.2               # via -r requirements.in
 markdown==3.2.1           # via -r requirements.in
 markupsafe==1.1.1         # via jinja2, mako

@@ -34,17 +34,6 @@ RUN sh -c "echo 'deb http://mirrors.zju.edu.cn/postgresql/repos/apt/ stretch-pgd
     apt-get update && \
     apt-get install -y postgresql-11
 
-# install seaweedfs
-RUN mkdir -p /tmp/seaweedfs && \
-    wget -O /tmp/seaweedfs/weed.tar.gz 'https://github.com/chrislusf/seaweedfs/releases/download/1.79/linux_amd64.tar.gz' && \
-    bash -exc '\
-    pushd /tmp/seaweedfs; \
-    tar -xzf weed.tar.gz; \
-    mv weed /usr/bin/ && chmod u+x /usr/bin/weed; \
-    popd;' && \
-    weed version && \
-    rm -r /tmp/seaweedfs
-
 # install rssant
 ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
 ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -62,6 +51,6 @@ RUN bash box/setup-container.sh
 VOLUME /var/lib/postgresql/11/main
 VOLUME /var/log/postgresql
 VOLUME /app/data
-EXPOSE 80 5432 6786 6788 6790 6791 6792 9001 9333 9080 19333 19080 
+EXPOSE 80 5432 6786 6788 6790 6791 6792 9001
 
 CMD ["/bin/bash", "-c", "/usr/local/bin/supervisord -c /etc/supervisord.conf"]

@@ -133,7 +133,6 @@ initdb                           EXITED    Dec 22 01:15 PM
 nginx                            RUNNING   pid 15, uptime 0:10:03
 postgres                         RUNNING   pid 17, uptime 0:10:03
 scheduler                        RUNNING   pid 19, uptime 0:10:03
-seaweedfs                        RUNNING   pid 24, uptime 0:10:03
 worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 
