@@ -74,18 +74,7 @@ class RssantDebugToolbarMiddleware(DebugToolbarMiddleware):
             if duplicate_count and duplicate_count > 0:
                 sql_msg += f',duplicate={duplicate_count}'
 
-        seaweed_msg = 'seaweed=0'
-        if stats['seaweed']:
-            seaweed_items = []
-            for op in ['get', 'put', 'delete']:
-                count = stats['seaweed'].get(op)
-                if count and count > 0:
-                    seaweed_items.append('{}:{}:{}'.format(
-                        op, count, s_ms(stats['seaweed'].get(f'{op}_time'))))
-            if seaweed_items:
-                seaweed_msg = 'seaweed=' + ','.join(seaweed_items)
-
-        return ';'.join([timer_msg, sql_msg, seaweed_msg])
+        return ';'.join([timer_msg, sql_msg])
 
     def _extract_panel_stats(self, panels):
         stats_map = {}
@@ -94,7 +83,7 @@ class RssantDebugToolbarMiddleware(DebugToolbarMiddleware):
             if not stats:
                 continue
             stats_map[panel.__class__.__name__] = stats
-        result = {'sql': {}, 'timer': {}, 'seaweed': {}}
+        result = {'sql': {}, 'timer': {}}
         sql_panel_stats = stats_map.get('SQLPanel')
         if sql_panel_stats and sql_panel_stats['databases']:
             _, sql_stats = sql_panel_stats['databases'][0]
@@ -106,7 +95,4 @@ class RssantDebugToolbarMiddleware(DebugToolbarMiddleware):
             keys = ['total_time', 'utime', 'stime', 'total']
             for key in keys:
                 result['timer'][key] = timer_stats.get(key)
-        seaweed_stats = stats_map.get('SeaweedPanel')
-        if seaweed_stats:
-            result['seaweed'].update(seaweed_stats)
         return result

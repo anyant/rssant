@@ -4,7 +4,6 @@ set -e
 
 mkdir -p logs/
 mkdir -p data/
-mkdir -p data/seaweedfs/
 chmod a+x box/bin/*
 
 # config postgres

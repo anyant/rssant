@@ -132,7 +132,7 @@ class RestRouter:
             'message': ex.message,
             'field': ex.field,
             'value': ex.value,
-        }, status=400, content_type=JSON_TYPE)
+        }, status=400)
 
     @classmethod
     def _json_response(cls, data, status=200):

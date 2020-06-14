@@ -31,8 +31,6 @@ class EnvConfig(ConfigModel):
     allow_private_address: bool = T.bool.default(False)
     check_feed_minutes: int = T.int.min(1).default(30)
     feed_story_retention: int = T.int.min(1).default(5000).desc('max storys to keep per feed')
-    seaweed_volume_url: str = T.url.relaxed.default('http://localhost:9080')
-    seaweed_thread_pool_size: int = T.int.min(1).default(30)
     pg_story_volumes: str = T.str.optional
     # actor
     actor_storage_path: str = T.str.default('data/actor_storage')

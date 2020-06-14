@@ -234,7 +234,6 @@ REST_FRAMEWORK = {
 # Django debug toolbar and X-Time header
 DEBUG_TOOLBAR_PANELS = [
     "debug_toolbar.panels.timer.TimerPanel",
-    "rssant.middleware.seaweed_panel.SeaweedPanel",
     "debug_toolbar.panels.sql.SQLPanel",
 ]
 DEBUG_TOOLBAR_CONFIG = {
