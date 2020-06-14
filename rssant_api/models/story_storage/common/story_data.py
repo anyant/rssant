@@ -23,6 +23,8 @@ class StoryData:
     VERSION_GZIP = 1
     VERSION_LZ4 = 2
 
+    __slots__ = ('_value', '_version')
+
     def __init__(self, value: bytes, version: int):
         self._value = value
         self._check_version(version)
