@@ -142,7 +142,7 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 **大功告成，返回首页即可开始使用了！**
 
 如需停止服务，执行: `docker rm -f rssant`  
-如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。
+如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
 
 ## 反馈与协作
 

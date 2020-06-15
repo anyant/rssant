@@ -22,6 +22,7 @@ class StoryData:
 
     VERSION_GZIP = 1
     VERSION_LZ4 = 2
+    VERSION_RAW = 3
 
     __slots__ = ('_value', '_version')
 
@@ -32,7 +33,7 @@ class StoryData:
 
     @classmethod
     def _check_version(cls, version: int):
-        supported = (cls.VERSION_GZIP, cls.VERSION_LZ4,)
+        supported = (cls.VERSION_GZIP, cls.VERSION_LZ4, cls.VERSION_RAW, )
         if version not in supported:
             raise ValueError(f'not support version {version}')
 
@@ -50,6 +51,8 @@ class StoryData:
             data_bytes = gzip.compress(self._value)
         elif self._version == self.VERSION_LZ4:
             data_bytes = lz4.compress(self._value)
+        elif self._version == self.VERSION_RAW:
+            data_bytes = self._value
         else:
             assert False, f'unknown version {version}'
         return version + data_bytes
@@ -62,12 +65,14 @@ class StoryData:
             value = gzip.decompress(data[1:])
         elif version == cls.VERSION_LZ4:
             value = lz4.decompress(data[1:])
+        elif version == cls.VERSION_RAW:
+            value = bytes(data[1:])
         else:
             assert False, f'unknown version {version}'
         return cls(value, version=version)
 
     @classmethod
-    def encode_json(cls, value: dict, version: int = VERSION_LZ4) -> bytes:
+    def encode_json(cls, value: dict, version: int = VERSION_RAW) -> bytes:
         value = json.dumps(value, ensure_ascii=False, default=_json_default).encode('utf-8')
         return cls(value, version=version).encode()
 
@@ -77,7 +82,7 @@ class StoryData:
         return json.loads(value.decode('utf-8'))
 
     @classmethod
-    def encode_text(cls, value: str, version: int = VERSION_LZ4) -> bytes:
+    def encode_text(cls, value: str, version: int = VERSION_RAW) -> bytes:
         value = value.encode('utf-8')
         return cls(value, version=version).encode()
 
