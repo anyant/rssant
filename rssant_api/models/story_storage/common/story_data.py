@@ -48,9 +48,9 @@ class StoryData:
     def encode(self) -> bytes:
         version = struct.pack('>B', self._version)
         if self._version == self.VERSION_GZIP:
-            data_bytes = gzip.compress(self._value)
+            data_bytes = gzip.compress(self._value, compresslevel=5)
         elif self._version == self.VERSION_LZ4:
-            data_bytes = lz4.compress(self._value)
+            data_bytes = lz4.compress(self._value, compression_level=7)
         elif self._version == self.VERSION_RAW:
             data_bytes = self._value
         else:
@@ -72,7 +72,7 @@ class StoryData:
         return cls(value, version=version)
 
     @classmethod
-    def encode_json(cls, value: dict, version: int = VERSION_RAW) -> bytes:
+    def encode_json(cls, value: dict, version: int = VERSION_LZ4) -> bytes:
         value = json.dumps(value, ensure_ascii=False, default=_json_default).encode('utf-8')
         return cls(value, version=version).encode()
 
@@ -82,7 +82,7 @@ class StoryData:
         return json.loads(value.decode('utf-8'))
 
     @classmethod
-    def encode_text(cls, value: str, version: int = VERSION_RAW) -> bytes:
+    def encode_text(cls, value: str, version: int = VERSION_LZ4) -> bytes:
         value = value.encode('utf-8')
         return cls(value, version=version).encode()
 
