@@ -1,4 +1,5 @@
 import datetime
+import pytest
 from rssant_api.models.story_storage import StoryData
 
 
@@ -16,8 +17,12 @@ def test_encode_decode_json():
     assert got == expect
 
 
-def test_encode_decode_text():
-    text = 'hello world\n你好世界\n'
+SAMPLE_TEXT = 'hello world\n你好世界\n'
+
+
+@pytest.mark.parametrize('length', [0, 255, 1024, 16 * 1024, 64 * 1024])
+def test_encode_decode_text(length):
+    text = (SAMPLE_TEXT * (length // len(SAMPLE_TEXT)))[:length]
     data = StoryData.encode_text(text)
     got = StoryData.decode_text(data)
     assert got == text

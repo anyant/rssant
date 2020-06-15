@@ -26,16 +26,11 @@ class StoryData:
 
     __slots__ = ('_value', '_version')
 
-    def __init__(self, value: bytes, version: int):
+    def __init__(self, value: bytes, version: int = None):
         self._value = value
+        version = self._default_version(value, version)
         self._check_version(version)
         self._version = version
-
-    @classmethod
-    def _check_version(cls, version: int):
-        supported = (cls.VERSION_GZIP, cls.VERSION_LZ4, cls.VERSION_RAW, )
-        if version not in supported:
-            raise ValueError(f'not support version {version}')
 
     @property
     def value(self) -> bytes:
@@ -44,6 +39,24 @@ class StoryData:
     @property
     def version(self) -> int:
         return self._version
+
+    @classmethod
+    def _check_version(cls, version: int):
+        supported = (cls.VERSION_GZIP, cls.VERSION_LZ4, cls.VERSION_RAW, )
+        if version not in supported:
+            raise ValueError(f'not support version {version}')
+
+    @classmethod
+    def _default_version(cls, value: bytes, version: int = None) -> int:
+        if version is not None:
+            return version
+        length = len(value)
+        if length <= 1024:
+            return cls.VERSION_RAW
+        elif length <= 16 * 1024:
+            return cls.VERSION_LZ4
+        else:
+            return cls.VERSION_GZIP
 
     def encode(self) -> bytes:
         version = struct.pack('>B', self._version)
@@ -72,7 +85,7 @@ class StoryData:
         return cls(value, version=version)
 
     @classmethod
-    def encode_json(cls, value: dict, version: int = VERSION_LZ4) -> bytes:
+    def encode_json(cls, value: dict, version: int = None) -> bytes:
         value = json.dumps(value, ensure_ascii=False, default=_json_default).encode('utf-8')
         return cls(value, version=version).encode()
 
@@ -82,7 +95,7 @@ class StoryData:
         return json.loads(value.decode('utf-8'))
 
     @classmethod
-    def encode_text(cls, value: str, version: int = VERSION_LZ4) -> bytes:
+    def encode_text(cls, value: str, version: int = None) -> bytes:
         value = value.encode('utf-8')
         return cls(value, version=version).encode()
 
