@@ -155,6 +155,8 @@ class StoryTestCase(TransactionTestCase):
         story_10 = self.updated_storys[10]
         data = {k: story_10[k] for k in ['content', 'summary', 'dt_published']}
         STORY_SERVICE.update_story(self.feed_id, 10, data)
+        content_data = {'content': data['content']}
+        STORY_SERVICE.update_story(self.feed_id, 10, content_data)
 
     def test_delete_by_retention(self):
         storys_0_30 = self.storys[:30]

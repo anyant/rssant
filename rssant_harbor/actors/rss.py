@@ -224,9 +224,9 @@ def do_update_feed(
         'feed#%s save storys total=%s num_modified=%s',
         feed.id, len(storys), len(modified_storys)
     )
-    feed = Feed.get_by_pk(feed_id)
-    if modified_storys:
-        feed.unfreeze()
+    is_freezed = feed.freeze_level is None or feed.freeze_level > 1
+    if modified_storys and is_freezed:
+        Feed.unfreeze_by_id(feed_id)
     need_fetch_story = _is_feed_need_fetch_storys(feed, modified_storys)
     for story in modified_storys:
         if not story.link:

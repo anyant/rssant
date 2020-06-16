@@ -14,7 +14,6 @@ from .story_info import StoryInfo, StoryId
 from .feed import Feed
 from .feed_story_stat import FeedStoryStat
 from .story_unique_ids import StoryUniqueIdsData
-from .errors import StoryNotFoundError
 from .story_storage import PostgresClient, PostgresStoryStorage
 
 
@@ -104,31 +103,41 @@ class StoryService:
             Story.set_user_marked_by_id(story.id, is_user_marked=is_user_marked)
         return story
 
+    def _validate_update_story_params(self, data: dict):
+        story = CommonStory(
+            feed_id=0,
+            offset=0,
+            unique_id='#',
+            title='#',
+        )
+        for k, v in data.items():
+            setattr(story, k, v)
+        story = story.to_dict()
+        update_params = {}
+        for k in data.keys():
+            if k in story:
+                update_params[k] = story[k]
+        return update_params
+
     def update_story(self, feed_id, offset, data: dict):
         data = {k: v for k, v in data.items() if v is not None}
         keys = set(data.keys())
         if keys == {'content'}:
             self._storage.save_content(feed_id, offset, data['content'])
             return
-        has_content = 'content' in keys
-        story = self.get_by_offset(feed_id, offset, detail=not has_content)
-        if not story:
-            raise StoryNotFoundError(f'story#{feed_id},{offset} not found')
-        for k, v in data.items():
-            setattr(story, k, v)
-        self._storage.save_content(feed_id, offset, story.content)
-        update_params = story.to_dict()
-        update_params.pop('content', None)
-        update_params.pop('feed_id', None)
-        update_params.pop('offset', None)
+        # assume StoryInfo already created when bulk_save_by_feed
+        update_params = self._validate_update_story_params(data)
+        content = update_params.pop('content', None)
+        if content:
+            self._storage.save_content(feed_id, offset, content)
         story_id = StoryId.encode(feed_id, offset)
         with transaction.atomic():
             updated = StoryInfo.objects\
                 .filter(pk=story_id)\
                 .update(**update_params)
             if updated <= 0:
-                story_info = StoryInfo(pk=story_id, **update_params)
-                story_info.save()
+                msg = 'story#%s,%s not found in StoryInfo when update story'
+                LOG.warning(msg, feed_id, offset)
 
     def _get_unique_ids_by_stat(self, feed_id):
         stat = FeedStoryStat.objects\
