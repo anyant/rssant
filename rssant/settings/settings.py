@@ -34,40 +34,41 @@ USE_X_FORWARDED_PORT = True
 
 # Application definition
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.postgres',
-    'django.contrib.sites',
-]
 
-if ENV_CONFIG.sentry_enable:
-    INSTALLED_APPS.append('raven.contrib.django.raven_compat')
+def _gen_installed_apps():
+    yield 'django.contrib.admin'
+    yield 'django.contrib.auth'
+    yield 'django.contrib.contenttypes'
+    yield 'django.contrib.sessions'
+    yield 'django.contrib.messages'
+    yield 'django.contrib.staticfiles'
+    yield 'django.contrib.postgres'
+    yield 'django.contrib.sites'
+    if ENV_CONFIG.sentry_enable:
+        yield 'raven.contrib.django.raven_compat'
+    if ENV_CONFIG.debug_toolbar_enable:
+        yield 'debug_toolbar'
+    yield 'django_extensions'
+    yield 'rest_framework'
+    yield 'rest_framework_swagger'
+    yield 'rest_framework.authtoken'
+    yield 'allauth'
+    yield 'allauth.account'
+    yield 'allauth.socialaccount'
+    yield 'allauth.socialaccount.providers.github'
+    yield 'rest_auth'
+    yield 'rest_auth.registration'
+    yield 'rssant_api'
 
-INSTALLED_APPS.extend([
-    'debug_toolbar',
-    'django_extensions',
-    'rest_framework',
-    'rest_framework_swagger',
-    'rest_framework.authtoken',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.github',
-    'rest_auth',
-    'rest_auth.registration',
-    'rssant_api',
-])
+
+INSTALLED_APPS = list(_gen_installed_apps())
 
 
 def _gen_middleware():
-    yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
     if ENV_CONFIG.profiler_enable:
         yield 'rssant.middleware.profiler.RssantProfilerMiddleware'
+    if ENV_CONFIG.debug_toolbar_enable:
+        yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
     yield 'django.middleware.security.SecurityMiddleware'
     yield 'whitenoise.middleware.WhiteNoiseMiddleware'
     yield 'django.contrib.sessions.middleware.SessionMiddleware'

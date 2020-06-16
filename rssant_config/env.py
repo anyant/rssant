@@ -22,6 +22,7 @@ class ConfigModel:
 class EnvConfig(ConfigModel):
     debug: bool = T.bool.default(False).desc('debug')
     profiler_enable: bool = T.bool.default(False).desc('enable profiler or not')
+    debug_toolbar_enable: bool = T.bool.default(False).desc('enable debug toolbar or not')
     log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url: str = T.url.relaxed.default('http://localhost:6789')
     scheduler_network: str = T.str.default('localhost')
