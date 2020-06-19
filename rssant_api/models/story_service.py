@@ -184,13 +184,13 @@ class StoryService:
 
     def _query_story_infos(self, feed_id, offset_s):
         keys = [(feed_id, offset) for offset in offset_s]
-        detail = '+dt_published,content_hash_base64'
+        detail = '+dt_published,dt_created,content_hash_base64'
         story_infos = StoryInfo.batch_get(keys, detail=detail)
         return story_infos
 
     def _query_story_objects(self, feed_id, offset_s):
         keys = [(feed_id, offset) for offset in offset_s]
-        detail = '+dt_published,content_hash_base64'
+        detail = '+dt_published,dt_created,content_hash_base64'
         storys = Story.batch_get_by_offset(keys, detail=detail)
         return storys
 
@@ -248,6 +248,9 @@ class StoryService:
             # 发布时间只第一次赋值，不更新
             if old_story.dt_published:
                 story.dt_published = old_story.dt_published
+            # 创建时间只第一次赋值，不更新
+            if old_story.dt_created:
+                story.dt_created = old_story.dt_created
             storys_map[offset] = (story, old_story, is_story_info)
         return storys_map
 

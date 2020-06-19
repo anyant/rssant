@@ -1,4 +1,5 @@
 import typing
+from django.utils import timezone
 from rssant_common.detail import Detail
 from .helper import models, SealableModel, VersionedMixin, VersionField, optional
 from .story_storage import StoryId
@@ -29,7 +30,8 @@ class StoryInfo(VersionedMixin, SealableModel):
         **optional, help_text='is user favorited or watched ever')
     dt_published = models.DateTimeField(help_text="发布时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
-    dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
+    # fix auto_now_add not support modify. see also: DateField.auto_now_add
+    dt_created = models.DateTimeField(default=timezone.now, help_text="创建时间")
     dt_synced = models.DateTimeField(**optional, help_text="最近一次同步时间")
     content_length = models.IntegerField(**optional, help_text='content length')
     summary = models.TextField(**optional, help_text="摘要或较短的内容")

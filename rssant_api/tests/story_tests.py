@@ -12,7 +12,7 @@ from rssant.helper.content_hash import compute_hash_base64
 StorySchema = T.dict(
     unique_id=T.str,
     title=T.str,
-    content_hash_base64=T.str,
+    content_hash_base64=T.str.optional,
     author=T.str.optional,
     link=T.str.optional,
     image_url=T.url.optional,
@@ -35,7 +35,7 @@ class StoryTestCase(TransactionTestCase):
         print('setUp')
         storys = []
         updated_storys = []
-        now = timezone.datetime(2020, 6, 1, 12, 12, 12)
+        now = timezone.datetime(2020, 6, 1, 12, 12, 12, tzinfo=timezone.utc)
         for i in range(200):
             dt = now + timezone.timedelta(minutes=i)
             content = f'test story content {i}' * (i % 5)
@@ -182,3 +182,56 @@ class StoryTestCase(TransactionTestCase):
         self.assertEqual(n, 30)
         self.assert_feed_total_storys(50)
         self.assert_total_story_infos(10)
+
+    def test_story_dt_and_content_length(self):
+        dt = timezone.datetime(2019, 6, 1, 12, 12, 12, tzinfo=timezone.utc)
+        story = {
+            'unique_id': f'blog.example.com/1',
+            'title': f'test story 1',
+            'dt_published': dt,
+            'dt_updated': dt,
+        }
+        modified = Story.bulk_save_by_feed(
+            self.feed_id, [validate_story(story)], batch_size=10)
+        self.assertEqual(len(modified), 1)
+        self.assert_feed_total_storys(1)
+        self.assert_total_story_infos(0)
+        dt_created = modified[0].dt_created
+        dt_published = modified[0].dt_published
+        assert modified[0].dt_updated == dt
+
+        dt = dt + timezone.timedelta(days=1)
+        updated_content = 'updated_content 1'
+        story.update(
+            content=updated_content,
+            content_hash_base64=compute_hash_base64(updated_content),
+            dt_published=dt,
+            dt_updated=dt,
+        )
+        modified = STORY_SERVICE.bulk_save_by_feed(
+            self.feed_id, [validate_story(story)], batch_size=10)
+        self.assertEqual(len(modified), 1)
+        self.assert_feed_total_storys(1)
+        self.assert_total_story_infos(1)
+        assert modified[0].dt_created == dt_created
+        assert modified[0].dt_published == dt_published
+        assert modified[0].dt_updated == dt
+        assert modified[0].content_length == len(updated_content)
+
+        dt = dt + timezone.timedelta(days=2)
+        updated_content = 'updated_content 22'
+        story.update(
+            content=updated_content,
+            content_hash_base64=compute_hash_base64(updated_content),
+            dt_published=dt,
+            dt_updated=dt,
+        )
+        modified = STORY_SERVICE.bulk_save_by_feed(
+            self.feed_id, [validate_story(story)], batch_size=10)
+        self.assertEqual(len(modified), 1)
+        self.assert_feed_total_storys(1)
+        self.assert_total_story_infos(1)
+        assert modified[0].dt_created == dt_created
+        assert modified[0].dt_published == dt_published
+        assert modified[0].dt_updated == dt
+        assert modified[0].content_length == len(updated_content)
