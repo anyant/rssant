@@ -45,7 +45,7 @@ django-rest-auth==0.9.5   # via -r requirements.in
 django-rest-swagger==2.2.0  # via -r requirements.in
 django-seal==1.2.3        # via -r requirements.in
 django-timezone-field==4.0  # via -r requirements.in
-django==2.2.12            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
+django==2.2.13            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
 djangorestframework==3.11.0  # via -r requirements.in, django-rest-auth, django-rest-swagger
 entrypoints==0.3          # via flake8
 feedparser==6.0.0b3       # via -r requirements.in
