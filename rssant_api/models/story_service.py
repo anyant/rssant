@@ -232,6 +232,8 @@ class StoryService:
         for key in ['dt_created', 'dt_updated']:
             if not story.get(key):
                 story[key] = now
+        if story.get('content'):
+            story['content_length'] = len(story['content'])
         story = CommonStory(story)
         return story
 
