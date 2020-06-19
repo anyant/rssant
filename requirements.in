@@ -97,3 +97,4 @@ pyinstrument-cext==0.2.2
 memory-profiler==0.57.0
 graphviz==0.13
 module-graph==0.0.1
+py-spy==0.3.3

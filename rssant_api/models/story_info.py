@@ -1,3 +1,4 @@
+import typing
 from rssant_common.detail import Detail
 from .helper import models, SealableModel, VersionedMixin, VersionField, optional
 from .story_storage import StoryId
@@ -53,13 +54,13 @@ class StoryInfo(VersionedMixin, SealableModel):
         return exclude_fields
 
     @classmethod
-    def get(cls, feed_id, offset, detail=False):
+    def get(cls, feed_id, offset, detail=False) -> "StoryInfo":
         q = StoryInfo.objects.filter(pk=StoryId.encode(feed_id, offset))
         q = q.defer(*cls._get_exclude_fields(detail))
         return q.seal().first()
 
     @classmethod
-    def batch_get(cls, keys, detail=False):
+    def batch_get(cls, keys, detail=False) -> typing.List["StoryInfo"]:
         if not keys:
             return []
         story_ids = []
@@ -70,7 +71,7 @@ class StoryInfo(VersionedMixin, SealableModel):
         return list(q.seal().all())
 
     @staticmethod
-    def delete_by_retention_offset(feed_id, retention_offset):
+    def delete_by_retention_offset(feed_id, retention_offset) -> int:
         """
         delete storys < retention_offset and not is_user_marked
         """

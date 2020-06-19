@@ -46,7 +46,7 @@ class PostgresStoryStorage:
         return cls._split_by(items, lambda x: sharding_for(x[0][0]))
 
     @staticmethod
-    def _to_id_list(keys: List[_KEY]):
+    def _to_id_tuple(keys: List[_KEY]) -> tuple:
         return tuple(StoryId.encode(feed_id, offset) for feed_id, offset in keys)
 
     def batch_get_content(self, keys: List[_KEY]) -> List[Tuple[_KEY, str]]:
@@ -60,11 +60,11 @@ class PostgresStoryStorage:
 
     def _batch_get_content(self, volume: int, keys: List[_KEY]) -> List[Tuple[_KEY, str]]:
         q = sql("""
-        SELECT id, content FROM {table} WHERE id IN :id_list
+        SELECT id, content FROM {table} WHERE id IN :id_tuple
         """.format(table=self._client.get_table(volume)))
-        id_list = self._to_id_list(keys)
+        id_tuple = self._to_id_tuple(keys)
         with self._client.get_engine(volume).connect() as conn:
-            rows = list(conn.execute(q, id_list=id_list).fetchall())
+            rows = list(conn.execute(q, id_tuple=id_tuple).fetchall())
         result = []
         for story_id, content_data in rows:
             key = StoryId.decode(story_id)
@@ -84,12 +84,12 @@ class PostgresStoryStorage:
 
     def _batch_delete_content(self, volume: int, keys: List[_KEY]) -> None:
         q = sql("""
-        DELETE FROM {table} WHERE id IN :id_list
+        DELETE FROM {table} WHERE id IN :id_tuple
         """.format(table=self._client.get_table(volume)))
-        id_list = self._to_id_list(keys)
+        id_tuple = self._to_id_tuple(keys)
         with self._client.get_engine(volume).connect() as conn:
             with conn.begin():
-                conn.execute(q, id_list=id_list)
+                conn.execute(q, id_tuple=id_tuple)
 
     def batch_save_content(self, items: List[Tuple[_KEY, str]]) -> None:
         if not items:

@@ -54,7 +54,7 @@ class StoryService:
         self._storage = storage
 
     @staticmethod
-    def to_common(story: Story):
+    def to_common(story: Story) -> CommonStory:
         d = {}
         for key in fields(CommonStory):
             value = story.__dict__.get(key, None)
@@ -87,7 +87,7 @@ class StoryService:
             return None
         return self.to_common(story)
 
-    def set_user_marked(self, feed_id, offset, is_user_marked=True):
+    def set_user_marked(self, feed_id, offset, is_user_marked=True) -> Story:
         try:
             story = Story.get_by_offset(feed_id, offset)
         except Story.DoesNotExist:
@@ -287,9 +287,8 @@ class StoryService:
                 msg = 'wrong unique_ids_data, feed_id=%s offset=%s: %r'
                 LOG.error(msg, feed_id, offset, tmp_unique_ids)
                 break
-            new_unique_ids.append(unique_id)
+            new_unique_ids.insert(0, unique_id)
             new_begin_offset = offset
-        new_unique_ids = list(reversed(new_unique_ids))
         if len(new_unique_ids) != len(set(new_unique_ids)):
             msg = 'found feed_id=%s begin_offset=%s duplicate new_unique_ids, will discard it: %r'
             LOG.error(msg, feed_id, new_begin_offset, new_unique_ids)

@@ -19,6 +19,9 @@ def _json_default(obj):
 
 
 class StoryData:
+    """
+    http://quixdb.github.io/squash-benchmark/
+    """
 
     VERSION_GZIP = 1
     VERSION_LZ4 = 2
