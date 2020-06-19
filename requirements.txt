@@ -43,8 +43,9 @@ django-optimistic-lock==1.0.0  # via -r requirements.in
 django-postgrespool2==1.0.1  # via -r requirements.in
 django-rest-auth==0.9.5   # via -r requirements.in
 django-rest-swagger==2.2.0  # via -r requirements.in
+django-seal==1.2.3        # via -r requirements.in
 django-timezone-field==4.0  # via -r requirements.in
-django==2.2.12            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-timezone-field, djangorestframework, jsonfield
+django==2.2.12            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
 djangorestframework==3.11.0  # via -r requirements.in, django-rest-auth, django-rest-swagger
 entrypoints==0.3          # via flake8
 feedparser==6.0.0b3       # via -r requirements.in
@@ -64,6 +65,7 @@ jinja2==2.10.3            # via coreschema, flask
 jsonfield==3.1.0          # via -r requirements.in
 loguru==0.3.1             # via -r requirements.in
 lxml==4.3.3               # via -r requirements.in, readability-lxml
+lz4==3.1.0                # via -r requirements.in
 mako==1.1.2               # via -r requirements.in
 markdown==3.2.1           # via -r requirements.in
 markupsafe==1.1.1         # via jinja2, mako
@@ -90,6 +92,7 @@ prompt-toolkit==2.0.10    # via pgcli
 psutil==5.6.6             # via -r requirements.in, memory-profiler
 psycopg2-binary==2.7.7    # via -r requirements.in
 psycopg2==2.7.7           # via -r requirements.in, pgcli, pgspecial
+py-spy==0.3.3             # via -r requirements.in
 py==1.8.0                 # via pytest
 pycares==3.0.0            # via aiodns
 pycodestyle==2.5.0        # via -r requirements.in, autopep8, flake8
@@ -101,8 +104,9 @@ pyinstrument==3.1.3       # via -r requirements.in
 pynliner==0.8.0           # via -r requirements.in
 pyparsing==2.4.2          # via packaging, validr
 pytest-cov==2.8.1         # via -r requirements.in
+pytest-django==3.9.0      # via -r requirements.in
 pytest-httpserver==0.3.4  # via -r requirements.in
-pytest==5.4.1             # via -r requirements.in, pytest-cov
+pytest==5.4.1             # via -r requirements.in, pytest-cov, pytest-django
 python-dateutil==2.8.1    # via -r requirements.in, atoma
 python-dotenv==0.12.0     # via -r requirements.in
 python-slugify==3.0.2     # via -r requirements.in

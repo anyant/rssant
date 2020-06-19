@@ -15,4 +15,4 @@ docker run -ti --name rssant -d \
     --restart unless-stopped \
     guyskk/rssant:latest $@
 
-docker logs --tail 1000 -f rssant
+# docker logs --tail 1000 -f rssant

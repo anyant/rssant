@@ -1,4 +1,5 @@
 import time
+import json
 import itertools
 from collections import ChainMap
 
@@ -7,6 +8,7 @@ import coreschema
 from validr import T, Compiler, Invalid
 from django.urls import path
 from django.http import HttpResponse
+from django.core.serializers.json import DjangoJSONEncoder
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.schemas import AutoSchema
@@ -45,6 +47,9 @@ def coreschema_from_validr(item):
     description = item.params.get('desc')
     schema_cls = mapping.get(item.validator, coreschema.String)
     return schema_cls(default=default, description=description)
+
+
+JSON_TYPE = 'application/json; charset=utf-8'
 
 
 class RestViewSchema(AutoSchema):
@@ -119,9 +124,9 @@ class RestRouter:
                     urls_priority.append(urls_map[url])
         return urls_priority + urls
 
-    @staticmethod
-    def _response_from_invalid(ex):
-        return Response({
+    @classmethod
+    def _response_from_invalid(cls, ex):
+        return cls._json_response({
             'description': str(ex),
             'position': ex.position,
             'message': ex.message,
@@ -129,8 +134,18 @@ class RestRouter:
             'value': ex.value,
         }, status=400)
 
-    @staticmethod
-    def _make_method(method, f, params, returns):
+    @classmethod
+    def _json_response(cls, data, status=200):
+        # django.conf.Settings.DEFAULT_CONTENT_TYPE implement is slow !!!
+        text = json.dumps(data, ensure_ascii=False, cls=DjangoJSONEncoder)
+        return HttpResponse(
+            content=text.encode('utf-8'),
+            status=status,
+            content_type=JSON_TYPE,
+        )
+
+    @classmethod
+    def _make_method(cls, method, f, params, returns):
         def rest_method(self, request, format=None, **kwargs):
             ret = None
             validr_cost = 0
@@ -155,9 +170,9 @@ class RestRouter:
                     t_begin = time.time()
                     ret = returns(ret)
                     validr_cost += time.time() - t_begin
-                    ret = Response(ret)
+                    ret = cls._json_response(ret)
             elif ret is None:
-                ret = Response(status=204)
+                ret = HttpResponse(status=204, content_type=JSON_TYPE)
             if validr_cost > 0:
                 ret['X-Validr-Time'] = '{:.0f}ms'.format(validr_cost * 1000)
             if api_cost > 0:

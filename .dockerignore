@@ -1,6 +1,7 @@
 .git/
 .vscode/
 /data/
+/unmaintain/
 /static/
 /box/data/
 /box/logs/

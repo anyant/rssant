@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-import time
 
 import rssant_common.django_setup  # noqa:F401
 from rssant_config import CONFIG
@@ -17,11 +16,4 @@ if __name__ == '__main__':
             "forget to activate a virtual environment?"
         ) from exc
     configure_logging(level=CONFIG.log_level)
-    while True:
-        try:
-            execute_from_command_line(sys.argv)
-        except Exception as ex:
-            print(f'* {type(ex).__name__}: {ex}')
-            time.sleep(3)
-        else:
-            break
+    execute_from_command_line(sys.argv)

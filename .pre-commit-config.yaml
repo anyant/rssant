@@ -1,4 +1,4 @@
-exclude: '^(data/|static/|tests/feedlib/testdata/)'
+exclude: '^(data/|unmaintain/|static/|tests/feedlib/testdata/)'
 repos:
 - repo: git://github.com/pre-commit/pre-commit-hooks
   rev: v2.4.0

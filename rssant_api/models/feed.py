@@ -329,6 +329,10 @@ class Feed(Model, ContentHashMixin):
         self.freeze_level = 1
         self.save()
 
+    @classmethod
+    def unfreeze_by_id(cls, feed_id: int):
+        Feed.objects.filter(pk=feed_id).update(freeze_level=1)
+
     @staticmethod
     def refresh_freeze_level():
         """

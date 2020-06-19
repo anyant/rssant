@@ -8,7 +8,9 @@ django-rest-auth==0.9.5
 django-rest-swagger==2.2.0
 django-timezone-field==4.0
 django-optimistic-lock==1.0.0
+django-seal==1.2.3
 jsonfield==3.1.0
+pytest-django==3.9.0
 
 # wsgi
 whitenoise==5.0.1
@@ -69,6 +71,7 @@ cached-property==1.5.1
 python-dotenv==0.12.0
 markdown==3.2.1
 packaging==19.2
+lz4==3.1.0
 
 # test
 pytest==5.4.1
@@ -94,3 +97,4 @@ pyinstrument-cext==0.2.2
 memory-profiler==0.57.0
 graphviz==0.13
 module-graph==0.0.1
+py-spy==0.3.3

@@ -1,12 +1,15 @@
 import logging
 import time
 import functools
+from contextlib import contextmanager
 from urllib.parse import urlparse
 
 import click
 from django import db
+from django.db import connection
 from validr import T
 import backdoor
+from pyinstrument import Profiler
 from actorlib import actor, collect_actors, ActorNode, NodeSpecSchema
 from actorlib.sentry import sentry_init
 
@@ -26,14 +29,44 @@ def django_context(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        db.reset_queries()
-        db.close_old_connections()
+        with log_django_context_metric(f.__name__):
+            db.reset_queries()
+            db.close_old_connections()
+            try:
+                return f(*args, **kwargs)
+            finally:
+                db.close_old_connections()
+
+    return wrapper
+
+
+def profile_django_context(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        profiler = None
+        if CONFIG.profiler_enable:
+            profiler = Profiler()
+            profiler.start()
         try:
             return f(*args, **kwargs)
         finally:
-            db.close_old_connections()
-
+            if profiler is not None:
+                profiler.stop()
+                print(profiler.output_text(unicode=True, color=True))
     return wrapper
+
+
+@contextmanager
+def log_django_context_metric(name, profiler_enable=False):
+    begin_time = time.time()
+    try:
+        yield
+    finally:
+        num_sqls = len(connection.queries)
+        sql_cost = sum(float(x['time']) for x in connection.queries) * 1000
+        sql_time = f'{num_sqls},{sql_cost:.0f}ms'
+        cost = int((time.time() - begin_time) * 1000)
+        LOG.info(f'{name} sql=%s cost=%dms', sql_time, cost)
 
 
 @actor('actor.update_registery')

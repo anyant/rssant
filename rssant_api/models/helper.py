@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 # https://github.com/gavinwahl/django-optimistic-lock
 from ool import VersionField, VersionedMixin, ConcurrentUpdate as ConcurrentUpdateError
+# https://github.com/charettes/django-seal
+from seal.models import SealableModel
 
 from rssant.helper.content_hash import compute_hash_base64
 
@@ -14,7 +16,7 @@ def extract_choices(cls):
     return [(v, v)for k, v in vars(cls).items() if k.isupper()]
 
 
-class Model(VersionedMixin, models.Model):
+class Model(VersionedMixin, SealableModel):
 
     class Meta:
         abstract = True
@@ -25,7 +27,7 @@ class Model(VersionedMixin, models.Model):
 
     def __str__(self):
         default = f'{self.__class__.__name__}#{self.id}'
-        admin = getattr(self.__class__, 'Admin')
+        admin = getattr(self.__class__, 'Admin', None)
         if not admin:
             return default
         fields = getattr(admin, 'display_fields')
@@ -39,7 +41,7 @@ class Model(VersionedMixin, models.Model):
         return f'{self.__class__.__name__}#{self.id} {details}'
 
 
-class ContentHashMixin(models.Model):
+class ContentHashMixin(SealableModel):
 
     class Meta:
         abstract = True

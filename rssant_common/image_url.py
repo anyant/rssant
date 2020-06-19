@@ -32,7 +32,7 @@ class ImageUrlDecodeError(Exception):
 def encode_image_url(url, referer=None):
     try:
         text = json.dumps(validate_image_url(dict(url=url, referer=referer)))
-        data = brotli.compress(text.encode('utf-8'))
+        data = brotli.compress(text.encode('utf-8'), quality=6)
         return base64.urlsafe_b64encode(data).decode()
     except (Invalid, json.JSONDecodeError, brotli.error, UnicodeEncodeError) as ex:
         raise ImageUrlEncodeError(str(ex)) from ex

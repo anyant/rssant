@@ -81,7 +81,7 @@ FeedView = RestRouter()
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id=T.feed_unionid.object, dt_updated=T.datetime.object)).optional,
+    hints: T.list(T.dict(id=T.feed_unionid.object, dt_updated=T.datetime.object)).maxlen(5000).optional,
     detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.optional,
@@ -155,7 +155,7 @@ def feed_query_creation(
 ) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
-    feed_creations=T.list(FeedCreationSchema),
+    feed_creations=T.list(FeedCreationSchema).maxlen(2000),
 ):
     feed_creations = FeedCreation.query_by_user(request.user.id, limit=limit, detail=detail)
     feed_creations = [x.to_dict() for x in feed_creations]
