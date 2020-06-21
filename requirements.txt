@@ -48,6 +48,7 @@ django-timezone-field==4.0  # via -r requirements.in
 django==2.2.13            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
 djangorestframework==3.11.0  # via -r requirements.in, django-rest-auth, django-rest-swagger
 entrypoints==0.3          # via flake8
+fake-useragent==0.1.11    # via -r requirements.in
 feedparser==6.0.0b3       # via -r requirements.in
 filelock==3.0.12          # via virtualenv
 flake8==3.7.9             # via -r requirements.in

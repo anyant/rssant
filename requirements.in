@@ -41,6 +41,7 @@ beautifulsoup4==4.8.2
 pynliner==0.8.0
 html2text==2020.1.16
 readability-lxml==0.7.1
+fake-useragent==0.1.11
 
 # aiolibs
 aiohttp==3.6.2

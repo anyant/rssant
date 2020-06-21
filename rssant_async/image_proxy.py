@@ -91,7 +91,10 @@ async def image_proxy(request, url, referer=None):
 
     try:
         await check_private_address(url)
-        headers = {'User-Agent': DEFAULT_USER_AGENT}
+        user_agent = DEFAULT_USER_AGENT
+        if callable(user_agent):
+            user_agent = user_agent()
+        headers = {'User-Agent': user_agent}
         for h in PROXY_REQUEST_HEADERS:
             if h in request.headers:
                 headers[h] = request.headers[h]

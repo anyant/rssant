@@ -13,7 +13,7 @@ import aiohttp
 from rssant_common.helper import aiohttp_client_session
 from rssant_common.dns_service import DNSService, DNS_SERVICE
 
-from .reader import DEFAULT_USER_AGENT, is_webpage, is_ok_status
+from .reader import is_webpage, is_ok_status
 from .reader import (
     PrivateAddressError,
     ContentTooLargeError,
@@ -23,6 +23,7 @@ from .reader import (
 )
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
+from .useragent import DEFAULT_USER_AGENT
 
 
 LOG = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class AsyncFeedReader:
         self._close_session = session is None
         self.session = session
         self.resolver: aiohttp.AsyncResolver = None
-        self.user_agent = user_agent
+        self.user_agent = user_agent() if callable(user_agent) else user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address

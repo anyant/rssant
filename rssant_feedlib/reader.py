@@ -11,22 +11,10 @@ import requests
 from rssant_common.dns_service import DNSService, DNS_SERVICE
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
+from .useragent import DEFAULT_USER_AGENT
 
 
 LOG = logging.getLogger(__name__)
-
-
-DEFAULT_RSSANT_USER_AGENT = (
-    'Mozilla/5.0 (X11; Linux x86_64) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) '
-    'Chrome/67.0.3396.87 Safari/537.36 RSSAnt/1.0'
-)
-
-
-DEFAULT_USER_AGENT = (
-    'Mozilla/5.0 (Linux; Android 8.0.0; TA-1053 Build/OPR1.170623.026) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3368.0 Mobile Safari/537.36'
-)
 
 
 class FeedReaderError(Exception):
@@ -99,7 +87,7 @@ class FeedReader:
         else:
             self._close_session = False
         self.session = session
-        self.user_agent = user_agent
+        self.user_agent = user_agent() if callable(user_agent) else user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
