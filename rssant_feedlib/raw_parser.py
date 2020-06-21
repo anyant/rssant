@@ -218,7 +218,8 @@ class RawFeedParser:
         story = {}
         url = item.get("link")
         title = item.get("title")
-        unique_id = item.get('id') or url or title
+        unique_id = item.get('id') or url or title or ''
+        unique_id = unique_id.replace('\n', ' ').strip()
         if not unique_id:
             return None
         story['ident'] = unique_id
