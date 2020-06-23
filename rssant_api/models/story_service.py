@@ -160,7 +160,7 @@ class StoryService:
             .seal().all()
         result = {}
         for story in story_s:
-            unique_id = story.unique_id.replace('\n').strip()
+            unique_id = story.unique_id.replace('\n', ' ').strip()
             result[unique_id] = story.offset
         return result
 
