@@ -92,7 +92,7 @@ class EnvConfig(ConfigModel):
         >>> volumes == expect
         True
         """
-        re_volume = re.compile(r'^(\d+)\:(\w+)\:(\w+)\@(\w+)\:(\d+)\/(\w+)\/(\w+)$')
+        re_volume = re.compile(r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$')
         volumes = {}
         for part in text.split(','):
             match = re_volume.match(part)
