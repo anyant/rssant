@@ -18,6 +18,10 @@ SELECT relname as table_name, reltuples AS row_count
 FROM pg_class WHERE relname=ANY(%s);
 '''
 
+story_volume_tables = [
+    'story_volume_0',
+]
+
 
 def pg_count_limit(tables, limit):
     result = {}
@@ -55,6 +59,7 @@ def pg_count():
     """
     models = django.apps.apps.get_models()
     tables = [m._meta.db_table for m in models]
+    tables.extend(story_volume_tables)
     result = pg_count_limit(tables, limit=10000)
     large_tables = list(set(tables) - set(result))
     result.update(pg_count_estimate(large_tables))
