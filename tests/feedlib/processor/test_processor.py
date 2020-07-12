@@ -117,3 +117,20 @@ def test_story_extract_attach_audio():
     attach = story_extract_attach(html)
     expect = 'https://chtbl.com/track/r.typlog.com/pythonhunter/8417630310_189758.mp3'
     assert attach.audio_url == expect
+
+
+def test_story_extract_attach_audio_source():
+    html = '''
+    <div>
+    <p><strong>直接播放</strong>:</p>
+    <audio controls preload style="width:80%;margin-left:34px">
+    <source src="/static/2020-07-12/podcast-rssant-parttime-product.mp3?controls=1" type="audio/mpeg">
+    <p>你的浏览器不支持播放音频，你可以
+    <a href="/static/2020-07-12/podcast-rssant-parttime-product.mp3?controls=1">
+    下载</a>这个音频文件。</p></audio>
+    </div>
+    '''
+    base_url = 'https://blog.guyskk.com'
+    attach = story_extract_attach(html, base_url=base_url)
+    expect = '/static/2020-07-12/podcast-rssant-parttime-product.mp3?controls=1'
+    assert attach.audio_url == base_url + expect

@@ -387,7 +387,12 @@ def story_extract_attach(html, base_url=None) -> StoryAttach:
         iframe_url = _normalize_validate_url(iframe_el.get('src'), base_url=base_url)
     audio_el = dom.find('.//audio')
     if audio_el is not None:
-        audio_url = _normalize_validate_url(audio_el.get('src'), base_url=base_url)
+        audio_src = audio_el.get('src')
+        if not audio_src:
+            source_el = audio_el.find('source')
+            if source_el is not None:
+                audio_src = source_el.get('src')
+        audio_url = _normalize_validate_url(audio_src, base_url=base_url)
     attach = StoryAttach(iframe_url, audio_url)
     return attach
 
