@@ -45,7 +45,7 @@ class AsyncFeedReader:
         self._close_session = session is None
         self.session = session
         self.resolver: aiohttp.AsyncResolver = None
-        self.user_agent = user_agent() if callable(user_agent) else user_agent
+        self.user_agent = user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_private_address = allow_private_address
@@ -122,10 +122,13 @@ class AsyncFeedReader:
         content = await self._read_content(response)
         return content.decode('utf-8', errors='ignore')
 
-    def _prepare_headers(self, etag=None, last_modified=None, referer=None, headers=None):
+    def _prepare_headers(self, url, etag=None, last_modified=None, referer=None, headers=None):
         if headers is None:
             headers = {}
-        headers['User-Agent'] = self.user_agent
+        if callable(self.user_agent):
+            headers['User-Agent'] = self.user_agent(url)
+        else:
+            headers['User-Agent'] = self.user_agent
         if etag:
             headers["ETag"] = etag
         if last_modified:
@@ -139,6 +142,7 @@ class AsyncFeedReader:
             headers=None, ignore_content=False
     ) -> aiohttp.ClientResponse:
         headers = self._prepare_headers(
+            url,
             etag=etag,
             last_modified=last_modified,
             referer=referer,
@@ -163,6 +167,7 @@ class AsyncFeedReader:
         if not self.has_rss_proxy:
             raise ValueError("rss_proxy_url not provided")
         headers = self._prepare_headers(
+            url,
             etag=etag,
             last_modified=last_modified,
             referer=referer,
