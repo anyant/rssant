@@ -75,8 +75,8 @@ RE_MATHJAX = re.compile((
     r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
     r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
     r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
-    r'(\$[^\$]+?\$)|'                           # $...$
-    r'(\`[^\`]+?\`)'                             # `...`
+    r'(\$(?!\d)[^\$]+?\$(?!\d))|'               # $...$ but not $10...$10
+    r'(\`[^\`]+?\`)'                            # `...`
 ), re.I)
 
 
@@ -94,6 +94,8 @@ def story_has_mathjax(content):
     True
     >>> story_has_mathjax(r'hi $x^2$ ok?')
     True
+    >>> story_has_mathjax(r'hi $10 invest $10 ok?')
+    False
     >>> story_has_mathjax(r'hi `x^2` ok?')
     True
     """
