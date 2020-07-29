@@ -70,12 +70,17 @@ def story_link_count(content):
     return len(RE_LINK.findall(content))
 
 
+# $...$ but not $10...$10 and jQuery $
+# implement by regex negative lookahead and negative lookbehind
+# see also: https://regexr.com/
+_RE_MATHJAX_DOLLAR = r'(?<![\d\(\.])\$(?![\(\.]).*(?<![\(\.])\$(?![\d\(\.])'
+
 RE_MATHJAX = re.compile((
     r'(MathJax)|(AsciiMath)|(MathML)|'          # keywords
     r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
     r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
     r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
-    r'(\$(?!\d)[^\$]+?\$(?!\d))|'               # $...$ but not $10...$10
+    fr'({_RE_MATHJAX_DOLLAR})|'                 # $...$
     r'(\`[^\`]+?\`)'                            # `...`
 ), re.I)
 

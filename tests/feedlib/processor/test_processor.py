@@ -8,6 +8,7 @@ from rssant_feedlib.processor import (
     validate_url,
     get_html_redirect_url,
     story_extract_attach,
+    story_has_mathjax,
 )
 
 _data_dir = Path(__file__).parent.parent / 'testdata/processor'
@@ -134,3 +135,25 @@ def test_story_extract_attach_audio_source():
     attach = story_extract_attach(html, base_url=base_url)
     expect = '/static/2020-07-12/podcast-rssant-parttime-product.mp3?controls=1'
     assert attach.audio_url == base_url + expect
+
+
+def test_story_has_mathjax():
+    has_mathjax_cases = [
+        r'$x^{y^z}=(1+{\rm e}^x)^{-2xy^w}$',
+        r'$f(x,y,z) = 3y^2z \left( 3+\frac{7x+5}{1+y^2} \right)$',
+        r'$1 \over 3$',
+        r'$\vec{a} \cdot \vec{b}=0$',
+    ]
+    not_mathjax_cases = [
+        r'$10 aaa $10  $10 aaa $10',
+        r'$10 $10  $10 $10',
+        r'$10.0',
+        r'100$ 100$',
+        r'console.log($.fn.jquery); window.$;',
+        r'$ === jQuery; typeof($);',
+        r"$('p,div'); $('p.red,p.green');",
+    ]
+    for text in has_mathjax_cases:
+        assert story_has_mathjax(text), text
+    for text in not_mathjax_cases:
+        assert not story_has_mathjax(text), text
