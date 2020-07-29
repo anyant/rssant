@@ -76,7 +76,6 @@ def story_link_count(content):
 _RE_MATHJAX_DOLLAR = r'(?<![\d\(\.])\$(?![\(\.])[^\$]+?(?<![\(\.])\$(?![\d\(\.])'
 
 RE_MATHJAX = re.compile((
-    r'(MathJax)|(AsciiMath)|(MathML)|'          # keywords
     r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
     r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
     r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
@@ -87,8 +86,6 @@ RE_MATHJAX = re.compile((
 
 def story_has_mathjax(content):
     r"""
-    >>> story_has_mathjax(r'2.7.5/MathJax.js?config=TeX-MML-AM_CHTML')
-    True
     >>> story_has_mathjax(r'hi $$x^2$$ ok?')
     True
     >>> story_has_mathjax(r'hi \(x^2\), ok?')
