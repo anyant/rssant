@@ -143,6 +143,10 @@ def test_story_has_mathjax():
         r'$f(x,y,z) = 3y^2z \left( 3+\frac{7x+5}{1+y^2} \right)$',
         r'$1 \over 3$',
         r'$\vec{a} \cdot \vec{b}=0$',
+        r'<p>这里 $n$ 是特征',
+        r'向量 $\vec x$ 的长度，即特征的维数。',
+        r'<code>$v_i$</code> 是长度',
+        r'为 $k$ 的向量，与特征 id 对应，称为特征的隐向量。',
     ]
     not_mathjax_cases = [
         r'$10 aaa $10  $10 aaa $10',
@@ -152,6 +156,14 @@ def test_story_has_mathjax():
         r'console.log($.fn.jquery); window.$;',
         r'$ === jQuery; typeof($);',
         r"$('p,div'); $('p.red,p.green');",
+        r"""
+        The model of subscription premium audio content is popular in China,
+        where Ximalaya, a unicorn consumer audio platform, has a subscription
+        feature for $3 monthly that enables users to access over 4000 e-books
+        and over 300 premium audio courses or podcasts. Audio content is also
+        available a la carte starting at $0.03 per short, serialized book chapter,
+        or anywhere from $10 to $45 for paid audio courses.
+        """,
     ]
     for text in has_mathjax_cases:
         assert story_has_mathjax(text), text
