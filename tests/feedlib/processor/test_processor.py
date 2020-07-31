@@ -147,6 +147,8 @@ def test_story_has_mathjax():
         r'向量 $\vec x$ 的长度，即特征的维数。',
         r'<code>$v_i$</code> 是长度',
         r'为 $k$ 的向量，与特征 id 对应，称为特征的隐向量。',
+        r'`sum_(i=1)^n i^3=((n(n+1))/2)^2`',
+        r'<code>`sum_(i=1)^n i^3=((n(n+1))/2)^2`</code>',
     ]
     not_mathjax_cases = [
         r'$10 aaa $10  $10 aaa $10',
@@ -164,6 +166,14 @@ def test_story_has_mathjax():
         available a la carte starting at $0.03 per short, serialized book chapter,
         or anywhere from $10 to $45 for paid audio courses.
         """,
+        r"""$ shellcheck test.sh
+        In test.sh line 4:
+        if[ $# -eq 0 ]""",
+        r'$ shellcheck if[ $# -eq 0 ]',
+        '$x^\n{y^z}$',
+        r'$x^{$y^z}$',
+        '`x^\n{y^z}`',
+        r'```x^{y^z}```',
     ]
     for text in has_mathjax_cases:
         assert story_has_mathjax(text), text

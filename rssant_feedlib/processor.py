@@ -70,18 +70,21 @@ def story_link_count(content):
     return len(RE_LINK.findall(content))
 
 
-# $...$ but not $10...$10, 10$...10$ and jQuery $
 # implement by regex negative lookahead and negative lookbehind
 # see also: https://regexr.com/
-_RE_MATHJAX_DOLLAR = r'(?<![\d\(\.])\$(?![\(\.])[^\$]+?(?<![\(\.])\$(?![\d\(\.])'
+# $...$ but not $10...$10, 10$...10$ and jQuery $
+_RE_MATHJAX_DOLLAR = r'(?<![^\s>])\$[^$\n]+?\$(?![^\s<])'
+# `...` but not ```...```
+_RE_MATHJAX_ASCIIMATH = r'(?<![^\s>])\`[^`\n]+?\`(?![^\s<])'
 
+# loose regex for check MathJax
 RE_MATHJAX = re.compile((
-    r'(\$\$[^\$]+?\$\$)|'                       # $$...$$
-    r'(\\\([^\(\)]+?\\\))|'                     # \(...\)
-    r'(\\\[[^\[\]]+?\\\])|'                     # \[...\]
-    fr'({_RE_MATHJAX_DOLLAR})|'                 # $...$
-    r'(\`[^\`]+?\`)'                            # `...`
-), re.I)
+    r'(\$\$.+?\$\$)|'                       # $$...$$
+    r'(\\\[.+?\\\])|'                       # \[...\]
+    r'(\\\(.+?\\\))|'                       # \(...\)
+    fr'({_RE_MATHJAX_DOLLAR})|'             # $...$
+    fr'({_RE_MATHJAX_ASCIIMATH})'           # `...`
+), re.I | re.M)
 
 
 def story_has_mathjax(content):
