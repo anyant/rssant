@@ -298,19 +298,25 @@ def _is_feed_need_fetch_storys(feed, modified_storys):
     return True
 
 
-def normalize_url(url):
+def _normalize_url(url):
     """
-    >>> print(normalize_url('https://rss.anyant.com/^_^'))
+    >>> print(_normalize_url('https://rss.anyant.com/^_^'))
     https://rss.anyant.com/%5E_%5E
+    >>> print(_normalize_url('https://www.rfa.org/../../../resolveuid/6be5'))
+    None
     """
-    return str(yarl.URL(url))
+    try:
+        return str(yarl.URL(url))
+    except ValueError as ex:
+        LOG.warning('normalize image url %r failed: %s', url, ex)
+        return None
 
 
 def _image_urls_of_indexs(image_indexs):
     image_urls = []
     for x in image_indexs:
-        url = normalize_url(x.value)
-        if not is_replaced_image(url):
+        url = _normalize_url(x.value)
+        if url and not is_replaced_image(url):
             image_urls.append(url)
     return image_urls
 
