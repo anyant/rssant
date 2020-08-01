@@ -66,6 +66,9 @@ class StoryService:
         d['dt_created'] = story.dt_created
         d['feed_id'] = story.feed_id
         d['offset'] = story.offset
+        # some very old data may not have unique_id
+        if not d.get('unique_id'):
+            d['unique_id'] = d.get('link') or f'{story.feed_id}-{story.offset}'
         return CommonStory(d)
 
     def _is_include_content(self, detail):
