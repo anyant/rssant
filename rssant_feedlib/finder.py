@@ -310,7 +310,12 @@ class FeedFinder:
             return None
         if not (url.startswith('http://') or url.startswith('https://')):
             url = urljoin(page_url, url)  # 处理相对路径
-        scheme, netloc, path, query, fragment = urlsplit(url)
+        try:
+            scheme, netloc, path, query, fragment = urlsplit(url)
+        except ValueError as ex:
+            # eg: netloc '210.41.222.154：8088' contains invalid characters
+            LOG.warning('parse link %r failed: %s', url, ex)
+            return None
         base_netloc = '.'.join(netloc.rsplit('.', 2)[-2:])
         if (not netloc) or base_netloc not in self.netloc:
             return None
