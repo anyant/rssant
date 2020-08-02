@@ -41,6 +41,7 @@ urlpatterns = [
     path('docs/v1/schema/', schema_view),
     path('docs/v1/swagger/', swagger_view),
     path('api/v1/accounts/profile/', views.accounts_profile),
+    path('api/v1/analytics.js', views.analytics_script),
     # override allauth github views
     path('api/v1/accounts/', include(github_urls)),
     path('api/v1/accounts/', include('allauth.urls')),

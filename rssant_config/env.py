@@ -64,6 +64,12 @@ class EnvConfig(ConfigModel):
     rss_proxy_url: str = T.url.optional
     rss_proxy_token: str = T.str.optional
     rss_proxy_enable: bool = T.bool.default(False)
+    # analytics
+    analytics_matomo_enable: bool = T.bool.default(False)
+    analytics_matomo_url: str = T.str.optional
+    analytics_matomo_site_id: str = T.str.optional
+    analytics_google_enable: bool = T.bool.default(False)
+    analytics_google_tracking_id: str = T.str.optional
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:
@@ -92,7 +98,8 @@ class EnvConfig(ConfigModel):
         >>> volumes == expect
         True
         """
-        re_volume = re.compile(r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$')
+        re_volume = re.compile(
+            r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$')
         volumes = {}
         for part in text.split(','):
             match = re_volume.match(part)
