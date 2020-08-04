@@ -171,7 +171,7 @@ class FeedReader:
         if not is_ok_status(response.status_code):
             return
         content_type = response.headers.get('content-type')
-        if not is_webpage(content_type, response.url):
+        if not is_webpage(content_type, str(response.url)):
             raise ContentTypeNotSupportError(
                 f'content-type {content_type!r} not support')
 

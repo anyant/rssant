@@ -95,7 +95,7 @@ class AsyncFeedReader:
         if not is_ok_status(response.status):
             return
         content_type = response.headers.get('content-type')
-        if not is_webpage(content_type):
+        if not is_webpage(content_type, str(response.url)):
             raise ContentTypeNotSupportError(
                 f'content-type {content_type} not support')
 
