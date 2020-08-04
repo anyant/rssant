@@ -46,8 +46,31 @@ RE_WEBPAGE_CONTENT_TYPE = re.compile(
     r'(text/html|application/xml|text/xml|text/plain|application/json|'
     r'application/.*xml|application/.*json|text/.*xml)', re.I)
 
+RE_WEBPAGE_EXT = re.compile(
+    r'(html|xml|json|txt|opml|rss|feed|atom)', re.I)
 
-def is_webpage(content_type):
+RE_URL_EXT_SEP = re.compile(r'[./]')
+
+
+def _get_url_ext(url: str):
+    """
+    >>> _get_url_ext('http://example.com/blog/feed')
+    'feed'
+    >>> _get_url_ext('http://example.com/blog/feed.xml')
+    'xml'
+    >>> no_error = _get_url_ext('http：//example.com')
+    """
+    try:
+        url_path = urlparse(url).path.strip('/')
+    except ValueError:
+        return ''
+    parts = RE_URL_EXT_SEP.split(url_path[::-1], 1)
+    if len(parts) > 0:
+        return parts[0][::-1]
+    return ''
+
+
+def is_webpage(content_type, url=None):
     """
     >>> is_webpage(' text/HTML ')
     True
@@ -57,11 +80,28 @@ def is_webpage(content_type):
     True
     >>> is_webpage('image/jpeg')
     False
+    >>> is_webpage('')
+    True
+    >>> is_webpage('application/octet-stream', 'https://www.example.com/feed.XML?q=1')
+    True
+    >>> is_webpage('application/octet-stream', 'https://www.example.com/feed')
+    True
     """
+    if content_type:
+        content_type = content_type.split(';', maxsplit=1)[0].strip()
+        if bool(RE_WEBPAGE_CONTENT_TYPE.fullmatch(content_type)):
+            return True
+    # for most of compatibility
     if not content_type:
         return True
-    content_type = content_type.split(';', maxsplit=1)[0].strip()
-    return bool(RE_WEBPAGE_CONTENT_TYPE.fullmatch(content_type))
+    # feed use may 'application/octet-stream', check url ext for the case
+    # eg: https://blog.racket-lang.org/
+    if url:
+        url_ext = _get_url_ext(url)
+        if url_ext:
+            if bool(RE_WEBPAGE_EXT.fullmatch(url_ext.lstrip('.'))):
+                return True
+    return False
 
 
 def is_ok_status(status):
@@ -131,7 +171,7 @@ class FeedReader:
         if not is_ok_status(response.status_code):
             return
         content_type = response.headers.get('content-type')
-        if not is_webpage(content_type):
+        if not is_webpage(content_type, response.url):
             raise ContentTypeNotSupportError(
                 f'content-type {content_type!r} not support')
 

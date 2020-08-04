@@ -14,9 +14,7 @@ RE_CONTENT_HTML = re.compile(rb'(<!doctype html>|<html|<head|<body)')
 RE_CONTENT_MARKUP = re.compile(rb'[<>]')
 
 MIME_TYPE_NOT_FEED = {
-    'application/octet-stream',
     'application/javascript',
-    'application/vnd.',
     'text/css',
     'text/csv',
     'text/javascript',
