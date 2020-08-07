@@ -160,6 +160,7 @@ real_urls = [
     "https://www.zhihu.com/question/19580096",
     "https://www.reddit.com/r/Python",
     "https://news.ycombinator.com/show",
+    "https://ssshuos.com/",
 ]
 
 

@@ -55,6 +55,13 @@ URL_ENDS_NOT_FEED = {
 # URL路径，判断是否包含
 URL_PATH_FEED = _to_list({'feed': 0.1, 'atom': 0.1, 'rss': 0.1})
 
+# URL包含评论字样，降低权重
+URL_COMMENT = _to_list({
+    'comment': 0.1,
+    '评论': 0.1,
+    '評論': 0.1,
+})
+
 # link rel属性，判断是否包含
 LINK_REL_FEED = _to_list({"alternate": 0.9})
 # link rel属性，只要包含即排除
@@ -348,6 +355,9 @@ class FeedFinder:
             if key in path:
                 s += score
                 break
+        for key, score in URL_COMMENT:
+            if key in url.lower():
+                s -= score
         if link_rel:
             for key, score in LINK_REL_FEED:
                 if key in link_rel:
@@ -358,6 +368,8 @@ class FeedFinder:
                 if key in link_type:
                     s += score
                     break
+        if url.startswith('https://'):
+            s += 0.001  # 分数相差不大时，https更好
         s += 0.020 - len(path) * 0.001  # 分数相差不大时，越短的路径越好
         return ScoredLink(url, s)
 
@@ -442,24 +454,3 @@ class FeedFinder:
     def close(self):
         if self._close_reader:
             self.reader.close()
-
-
-def _main():
-    urls = [
-        "ruanyifeng.com",
-        "www.guyskk.com",
-        "https://arp242.net/feed.xml",
-        "https://www.imququ.com",
-        "blog.guyskk.com",
-        "http://www.zreading.cn/ican/2010/03/feed-subscribe/",
-        "http://www.ruanyifeng.com/blog/",
-        "https://www.zhihu.com",
-        "https://www.zhihu.com/question/19580096",
-    ]
-    for url in urls:
-        print("-" * 80)
-        with FeedFinder(url) as finder:
-            found = finder.find()
-            if found:
-                response, result = found
-                print(f"Got: response={response} result={result}")
