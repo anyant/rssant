@@ -11,6 +11,7 @@ from allauth.socialaccount.models import SocialAccount
 UserSchema = T.dict(
     id=T.int,
     username=T.str,
+    has_usable_password=T.bool.optional,
     avatar_url=T.str.optional,
     token=T.str.optional,
     social_accounts=T.list(T.dict(
@@ -34,9 +35,11 @@ def serialize_user(user):
             avatar_url=acc.get_avatar_url(),
         ))
     token, created = Token.objects.get_or_create(user=user)
+    has_usable_password = user.password and user.has_usable_password()
     return dict(
         id=user.id,
         username=user.username,
+        has_usable_password=has_usable_password,
         avatar_url=avatar_url,
         token=token.key,
         social_accounts=social_accounts_info,
