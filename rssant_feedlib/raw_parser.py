@@ -24,6 +24,10 @@ feedparser.SANITIZE_HTML = False
 
 UTC = datetime.timezone.utc
 
+# TODO: maybe remove in the future
+# On the date story ident change to v2 format
+STORY_INDENT_V2_DATE = datetime.datetime(2020, 8, 30, 16, 0, 0, tzinfo=UTC)
+
 RawFeedSchema = T.dict(
     version=T.str,
     title=T.str,
@@ -215,15 +219,23 @@ class RawFeedParser:
         return story
 
     @classmethod
-    def _extract_story_ident(cls, guid, title, link):
-        r"""
-        >>> RawFeedParser._extract_story_ident('', '', '') == ''
-        True
-        >>> RawFeedParser._extract_story_ident('guid', 'title', '')
+    def _extract_story_ident_v1(cls, guid, title, link) -> str:
+        """
+        >>> RawFeedParser._extract_story_ident_v1('guid', 'title', 'http://example.com/')
         'guid'
-        >>> RawFeedParser._extract_story_ident('guid', 'title', 'http://example.com/')
+        """
+        return guid or link or title or ''
+
+    @classmethod
+    def _extract_story_ident_v2(cls, guid, title, link) -> str:
+        r"""
+        >>> RawFeedParser._extract_story_ident_v2('', '', '') == ''
+        True
+        >>> RawFeedParser._extract_story_ident_v2('guid', 'title', '')
+        'guid'
+        >>> RawFeedParser._extract_story_ident_v2('guid', 'title', 'http://example.com/')
         'http://example.com/::guid'
-        >>> RawFeedParser._extract_story_ident('guid', 'title', 'http://example.com/page.html#abc')
+        >>> RawFeedParser._extract_story_ident_v2('guid', 'title', 'http://example.com/page.html#abc')
         'http://example.com/page.html::guid'
         """
         # strip link hash part to improve uniqueness
@@ -246,12 +258,27 @@ class RawFeedParser:
         """
         return (s or '').replace('\n', ' ').strip()
 
+    @classmethod
+    def _is_ident_v1(cls, dt: datetime.datetime) -> bool:
+        """
+        >>> RawFeedParser._is_ident_v1(None)
+        False
+        >>> RawFeedParser._is_ident_v1(STORY_INDENT_V2_DATE)
+        False
+        """
+        return bool(dt and dt < STORY_INDENT_V2_DATE)
+
     def _extract_story(self, item):
         story = {}
         url = self._strip_string(item.get("link"))
         title = self._strip_string(item.get("title"))
         guid = self._strip_string(item.get('id'))
-        ident = self._extract_story_ident(guid, title, url)
+        dt_published = self._get_date(item, 'published_parsed')
+        dt_updated = self._get_date(item, 'updated_parsed')
+        if self._is_ident_v1(dt_published or dt_updated):
+            ident = self._extract_story_ident_v1(guid, title, url)
+        else:
+            ident = self._extract_story_ident_v2(guid, title, url)
         if not ident:
             return None
         story['ident'] = ident
@@ -261,8 +288,8 @@ class RawFeedParser:
         story['summary'] = item.get("summary")
         story['image_url'] = self._get_story_image_url(item)
         story['audio_url'] = self._get_story_audio_url(item)
-        story['dt_published'] = self._get_date(item, 'published_parsed')
-        story['dt_updated'] = self._get_date(item, 'updated_parsed')
+        story['dt_published'] = dt_published
+        story['dt_updated'] = dt_updated
         story.update(self._get_author_info(item))
         story = self._normalize_story_content_summary(story)
         return story
