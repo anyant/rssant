@@ -214,17 +214,49 @@ class RawFeedParser:
         story['summary'] = summary
         return story
 
+    @classmethod
+    def _extract_story_ident(cls, guid, title, link):
+        r"""
+        >>> RawFeedParser._extract_story_ident('', '', '') == ''
+        True
+        >>> RawFeedParser._extract_story_ident('guid', 'title', '')
+        'guid'
+        >>> RawFeedParser._extract_story_ident('guid', 'title', 'http://example.com/')
+        'http://example.com/::guid'
+        >>> RawFeedParser._extract_story_ident('guid', 'title', 'http://example.com/page.html#abc')
+        'http://example.com/page.html::guid'
+        """
+        # strip link hash part to improve uniqueness
+        link = link.rsplit('#', 1)[0]
+        # guid may duplicate in some bad rss feed
+        # eg: https://www.lieyunwang.com/newrss/feed.xml
+        if guid and link:
+            ident = link + '::' + guid
+        else:
+            ident = guid or link or title or ''
+        return ident
+
+    @classmethod
+    def _strip_string(cls, s) -> str:
+        r"""
+        >>> RawFeedParser._strip_string(None) == ''
+        True
+        >>> RawFeedParser._strip_string(' hello\nworld ')
+        'hello world'
+        """
+        return (s or '').replace('\n', ' ').strip()
+
     def _extract_story(self, item):
         story = {}
-        url = item.get("link")
-        title = item.get("title")
-        unique_id = item.get('id') or url or title or ''
-        unique_id = unique_id.replace('\n', ' ').strip()
-        if not unique_id:
+        url = self._strip_string(item.get("link"))
+        title = self._strip_string(item.get("title"))
+        guid = self._strip_string(item.get('id'))
+        ident = self._extract_story_ident(guid, title, url)
+        if not ident:
             return None
-        story['ident'] = unique_id
+        story['ident'] = ident
         story['url'] = url
-        story['title'] = title or unique_id
+        story['title'] = title or ident
         story['content'] = self._get_story_content(item)
         story['summary'] = item.get("summary")
         story['image_url'] = self._get_story_image_url(item)
