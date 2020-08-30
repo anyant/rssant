@@ -237,12 +237,15 @@ class RawFeedParser:
         'http://example.com/::guid'
         >>> RawFeedParser._extract_story_ident_v2('guid', 'title', 'http://example.com/page.html#abc')
         'http://example.com/page.html::guid'
+        >>> link = 'http://example.com/'
+        >>> RawFeedParser._extract_story_ident_v2(link, 'title', link)
+        'http://example.com/'
         """
         # strip link hash part to improve uniqueness
         link = link.rsplit('#', 1)[0]
         # guid may duplicate in some bad rss feed
         # eg: https://www.lieyunwang.com/newrss/feed.xml
-        if guid and link:
+        if guid and link and guid != link:
             ident = link + '::' + guid
         else:
             ident = guid or link or title or ''
