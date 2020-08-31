@@ -5,6 +5,7 @@ services:
   - docker
 install:
   - bash ./box/build.sh \
-    --build-arg PYPI_MIRROR=https://pypi.org/simple/
+    --build-arg PYPI_MIRROR=https://pypi.org/simple/ \
+    --build-arg NPM_REGISTERY="--registry=https://registry.npmjs.org"
 script:
   - bash ./box/test.sh
