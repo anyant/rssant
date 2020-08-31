@@ -26,7 +26,7 @@ UTC = datetime.timezone.utc
 
 # TODO: maybe remove in the future
 # On the date story ident change to v2 format
-STORY_INDENT_V2_DATE = datetime.datetime(2020, 8, 30, 16, 0, 0, tzinfo=UTC)
+STORY_INDENT_V2_DATE = datetime.datetime(2020, 9, 1, 0, 0, 0, tzinfo=UTC)
 
 RawFeedSchema = T.dict(
     version=T.str,
