@@ -4,6 +4,7 @@ language: shell
 services:
   - docker
 install:
-  - bash ./box/build.sh
+  - bash ./box/build.sh \
+    --build-arg PYPI_MIRROR=https://pypi.org/simple/
 script:
   - bash ./box/test.sh
