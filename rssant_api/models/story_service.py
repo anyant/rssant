@@ -4,7 +4,7 @@ import datetime
 
 from django.utils import timezone
 from django.db import transaction
-from validr import T, asdict, modelclass, fields
+from validr import T, asdict, modelclass, fields, Invalid
 
 from rssant_common.detail import Detail
 from rssant_common.validator import compiler
@@ -251,7 +251,10 @@ class StoryService:
             story = self._common_story_of(story, feed_id, offset, now)
             # 发布时间只第一次赋值，不更新
             if old_story.dt_published:
-                story.dt_published = old_story.dt_published
+                try:
+                    story.dt_published = old_story.dt_published
+                except Invalid as ex:
+                    LOG.warning(f'old story#{feed_id},{offset} dt_published invalid: {ex}')
             # 创建时间只第一次赋值，不更新
             if old_story.dt_created:
                 story.dt_created = old_story.dt_created
