@@ -62,7 +62,7 @@ def analytics_script(request):
 
 
 SHOPANT_SERVER = None
-if CONFIG.shopant_product_id:
+if CONFIG.shopant_enable:
     SHOPANT_SERVER = ShopAntServer(
         product_id=CONFIG.shopant_product_id,
         product_secret=CONFIG.shopant_product_secret,

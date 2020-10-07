@@ -7,6 +7,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import AuthenticationFailed
 from allauth.socialaccount.models import SocialAccount
 
+from rssant_config import CONFIG
+
 
 UserSchema = T.dict(
     id=T.int,
@@ -17,7 +19,8 @@ UserSchema = T.dict(
     social_accounts=T.list(T.dict(
         provider=T.str,
         avatar_url=T.str.optional,
-    )).optional
+    )).optional,
+    shopant_enable=T.bool.default(False),
 )
 
 UserView = RestRouter(permission_classes=[AllowAny])
@@ -43,6 +46,7 @@ def serialize_user(user):
         avatar_url=avatar_url,
         token=token.key,
         social_accounts=social_accounts_info,
+        shopant_enable=CONFIG.shopant_enable,
     )
 
 
