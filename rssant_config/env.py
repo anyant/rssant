@@ -70,6 +70,11 @@ class EnvConfig(ConfigModel):
     analytics_matomo_site_id: str = T.str.optional
     analytics_google_enable: bool = T.bool.default(False)
     analytics_google_tracking_id: str = T.str.optional
+    # shopant
+    shopant_enable: bool = T.bool.default(False)
+    shopant_product_id: int = T.int.optional
+    shopant_product_secret: str = T.str.optional
+    shopant_url: str = T.url.optional
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:
