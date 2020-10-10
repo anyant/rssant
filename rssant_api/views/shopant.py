@@ -28,11 +28,8 @@ def shopant_integration(
     if not params:
         params = {}
     user = request.user
-    datefmt = '%Y-%m-%dT%H:%M:%S.%fZ'
-    dt_created = user.date_joined.strftime(datefmt)
     params['customer'] = dict(
         external_id=user.id,
-        external_dt_created=dt_created,
         nickname=user.username,
     )
     return SHOPANT_SERVER.integration(dict(method=method, params=params))
