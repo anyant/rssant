@@ -18,18 +18,39 @@
 <img src="docs/pictures/rssant-screenshot.png" alt="蚁阅界面" />
 </p>
 
-## 捐助蚁阅
+## 蚁阅会员
 
-蚁阅计划于今年年底推出付费功能，价格不会超过5元/月，同时所有功能会继续保持开源。
+蚁阅会员正在预售中，会员可享受全部功能，订阅数量不限，所有功能会继续保持开源。  
+充值入口在【账号设置】和【蚁阅锦囊】页面，预售期间仅需一折，欢迎体验~
 
-- 付费功能推出前给蚁阅捐款，可永久免费使用蚁阅全部功能
-- 给蚁阅提供反馈和建议，报 Bug 等等，可永久免费使用蚁阅全部功能
-- 付费功能推出前注册的用户，一年内均可一折购买蚁阅服务
+预售预计会持续到明年年初，这段时间里，我会继续完善蚁阅的功能，主要包括：
 
-欢迎大家给蚁阅捐款，支付蚁阅服务器费用 ^_^  
-有任何疑问或建议都欢迎与我联系！（**捐款请备注蚁阅账号或邮箱！**）
+1. 订阅分组
+2. 夜间模式
+3. 优化交互和界面
+4. 改进摘要和图片处理
+5. 提升性能和可靠性
 
-![捐助蚁阅](docs/pictures/rssant-donate.png)
+文章按时间倒序阅读还在考虑中，如果预售有超过 100 位付费用户，我承诺加上这个功能。
+
+欢迎大家充值会员，支付蚁阅服务器费用 ^_^  
+给蚁阅提供反馈和建议，报 Bug 等等，可以获得兑换码！  
+如有任何疑问和建议都欢迎与我联系！
+
+## 反馈与协作
+
+蚁阅主仓库托管在 [码云](https://gitee.com/anyant/rssant) 上，[GitHub](https://github.com/anyant/rssant) 主要作为镜像仓库。  
+
+码云和 GitHub 均可提交 Issue:
+- https://gitee.com/anyant/rssant/issues
+- https://github.com/anyant/rssant/issues
+
+码云和 GitHub 也均可提交 Pull Request:
+- https://gitee.com/anyant/rssant/pulls
+- https://github.com/anyant/rssant/pulls
+
+如果你有码云账号，建议到码云提交 Pull Request。  
+非常感谢你的支持！
 
 ## 部署文档
 
@@ -143,21 +164,6 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 
 如需停止服务，执行: `docker rm -f rssant`  
 如需备份数据，备份 `rssant-postgres-data` 这个卷即可，其他卷可忽略。  
-
-## 反馈与协作
-
-蚁阅主仓库托管在 [码云](https://gitee.com/anyant/rssant) 上，[GitHub](https://github.com/anyant/rssant) 主要作为镜像仓库。  
-
-码云和 GitHub 均可提交 Issue:
-- https://gitee.com/anyant/rssant/issues
-- https://github.com/anyant/rssant/issues
-
-码云和 GitHub 也均可提交 Pull Request:
-- https://gitee.com/anyant/rssant/pulls
-- https://github.com/anyant/rssant/pulls
-
-如果你有码云账号，建议到码云提交 Pull Request。  
-非常感谢你的支持！
 
 ## 开发环境
 
