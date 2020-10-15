@@ -1,20 +1,9 @@
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
-
-from shopant_sdk import ShopAntServer
-from rssant_config import CONFIG
+from rssant_common.shopant import SHOPANT_SERVER
 
 
 ShopantView = RestRouter()
-
-
-SHOPANT_SERVER = None
-if CONFIG.shopant_enable:
-    SHOPANT_SERVER = ShopAntServer(
-        product_id=CONFIG.shopant_product_id,
-        product_secret=CONFIG.shopant_product_secret,
-        url=CONFIG.shopant_url,
-    )
 
 
 @ShopantView.post('shopant/integration')
