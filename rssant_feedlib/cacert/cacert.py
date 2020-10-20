@@ -2,7 +2,6 @@ import typing
 import logging
 import os
 import stat
-import socket
 import ssl
 from pathlib import Path
 
@@ -19,6 +18,7 @@ _cacert_filepath = str(_here / 'cacert.pem')
 
 HOSTS = """
 solidot.org
+hotrss.top
 """
 
 
@@ -29,10 +29,9 @@ class CacertHelper:
         import logging
         logging.basicConfig(level='DEBUG')
         resolver = ChainResolver()
-        ssl_context = cls._create_ssl_context()
         for host in cls._get_hosts():
             LOG.info('Resolving {}'.format(host))
-            cert = cls._get_host_cert(host, ssl_context)
+            cert = cls._get_host_cert(host)
             resolver.resolve(cert)
         cls._save_cacert(resolver.list())
 
@@ -41,25 +40,9 @@ class CacertHelper:
         return [line.strip() for line in HOSTS.strip().splitlines()]
 
     @classmethod
-    def _create_ssl_context(cls) -> ssl.SSLContext:
-        context = ssl.SSLContext()
-        context.verify_mode = ssl.CERT_REQUIRED
-        context.check_hostname = True
-        context.load_default_certs()
-        context.load_verify_locations(
-            cafile=os.path.relpath(certifi.where()),
-            capath=None,
-            cadata=None,
-        )
-        return context
-
-    @classmethod
-    def _get_host_cert(cls, hostname: str, ssl_context: ssl.SSLContext) -> bytes:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            with ssl_context.wrap_socket(sock, server_hostname=hostname) as sock:
-                sock.connect((hostname, 443))
-                cert = sock.getpeercert(binary_form=True)
-        return cert
+    def _get_host_cert(cls, hostname: str) -> bytes:
+        cert = ssl.get_server_certificate((hostname, 443))
+        return cert.encode('ascii')
 
     @classmethod
     def _save_cacert(cls, certs: typing.List[CertContainer]):
