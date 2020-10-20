@@ -12,6 +12,7 @@ from rssant_common.dns_service import DNSService, DNS_SERVICE
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
+from . import cacert
 
 
 LOG = logging.getLogger(__name__)
@@ -135,6 +136,7 @@ class FeedReader:
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
         self.dns_service = dns_service
+        self._cacert = cacert.where()
 
     @property
     def has_rss_proxy(self):
@@ -213,7 +215,8 @@ class FeedReader:
 
     def _send_request(self, request, ignore_content):
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
-        response = self.session.send(request, timeout=(6.5, self.request_timeout), stream=True)
+        response = self.session.send(
+            request, verify=self._cacert, timeout=(6.5, self.request_timeout), stream=True)
         try:
             if not is_ok_status(response.status_code):
                 content = self._read_content(response)

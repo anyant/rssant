@@ -20,8 +20,8 @@ brotli==1.0.7             # via -r requirements.in
 bs4==0.0.1                # via -r requirements.in
 cached-property==1.5.1    # via -r requirements.in
 cchardet==2.1.6           # via -r requirements.in
-certifi==2019.11.28       # via -r requirements.in, requests, sentry-sdk
-cffi==1.13.0              # via pycares
+certifi==2020.6.20        # via -r requirements.in, requests, sentry-sdk
+cffi==1.13.0              # via cryptography, pycares
 cfgv==3.1.0               # via pre-commit
 chardet==3.0.4            # via -r requirements.in, aiohttp, readability-lxml, requests
 cli-helpers[styles]==1.2.1  # via pgcli
@@ -30,6 +30,7 @@ configobj==5.0.6          # via cli-helpers, pgcli
 coreapi==2.3.3            # via django-rest-swagger, openapi-codec
 coreschema==0.0.4         # via coreapi
 coverage==4.5.4           # via -r requirements.in, pytest-cov
+cryptography==3.1.1       # via -r requirements.in, pyopenssl
 cssselect==1.1.0          # via readability-lxml
 cssutils==1.0.2           # via pynliner
 decorator==4.4.0          # via validators
@@ -62,7 +63,7 @@ idna==2.8                 # via requests, validr, yarl
 importlib-metadata==1.5.0  # via pluggy, pre-commit, pytest, virtualenv
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
-jinja2==2.10.3            # via coreschema, flask
+jinja2==2.10.3            # via flask
 jsonfield==3.1.0          # via -r requirements.in
 loguru==0.3.1             # via -r requirements.in
 lxml==4.3.3               # via -r requirements.in, readability-lxml
@@ -104,6 +105,7 @@ pyinstrument-cext==0.2.2  # via -r requirements.in, pyinstrument
 pyinstrument==3.1.3       # via -r requirements.in
 pyjwt==1.7.1              # via -r requirements.in, shopant-sdk
 pynliner==0.8.0           # via -r requirements.in
+pyopenssl==19.1.0         # via -r requirements.in
 pyparsing==2.4.2          # via packaging, validr
 pytest-cov==2.8.1         # via -r requirements.in
 pytest-django==3.9.0      # via -r requirements.in
@@ -125,7 +127,7 @@ sgmllib3k==1.0.0          # via feedparser
 shiv==0.1.1               # via -r requirements.in
 shopant-sdk==0.0.2        # via -r requirements.in
 simplejson==3.16.0        # via django-rest-swagger
-six==1.12.0               # via attrdict, configobj, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, python-dateutil, validators, virtualenv
+six==1.12.0               # via attrdict, configobj, cryptography, django-extensions, django-rest-auth, packaging, pip-tools, prompt-toolkit, pyopenssl, python-dateutil, validators, virtualenv
 soupsieve==1.9.4          # via beautifulsoup4
 sqlalchemy==1.3.15        # via -r requirements.in, django-postgrespool2
 sqlparse==0.2.4           # via -r requirements.in, django, django-debug-toolbar, pgcli, pgspecial
@@ -141,7 +143,7 @@ validators==0.14.0        # via -r requirements.in
 validr==1.2.0b2           # via -r requirements.in
 virtualenv==20.0.20       # via pre-commit
 watchgod==0.5             # via aiohttp-devtools
-wcwidth==0.1.7            # via prompt-toolkit, pytest, tabulate
+wcwidth==0.1.7            # via prompt-toolkit, pytest
 werkzeug==0.16.0          # via flask, pytest-httpserver
 whitenoise==5.0.1         # via -r requirements.in
 yarl==1.4.2               # via -r requirements.in, aiohttp

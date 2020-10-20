@@ -29,7 +29,7 @@ sqlparse==0.2.4
 requests==2.22.0
 urllib3==1.25.8
 yarl==1.4.2
-certifi==2019.11.28
+certifi==2020.6.20
 chardet==3.0.4
 cchardet==2.1.6
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
@@ -42,6 +42,8 @@ pynliner==0.8.0
 html2text==2020.1.16
 readability-lxml==0.7.1
 fake-useragent==0.1.11
+pyOpenSSL==19.1.0
+cryptography==3.1.1
 
 # aiolibs
 aiohttp==3.6.2

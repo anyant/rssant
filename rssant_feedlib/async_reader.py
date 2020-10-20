@@ -24,6 +24,7 @@ from .reader import (
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
+from . import cacert
 
 
 LOG = logging.getLogger(__name__)
@@ -53,6 +54,7 @@ class AsyncFeedReader:
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
         self.dns_service = dns_service
+        self._sslcontext = ssl.create_default_context(cafile=cacert.where())
 
     @property
     def has_rss_proxy(self):
@@ -151,7 +153,7 @@ class AsyncFeedReader:
         await self._async_init()
         if not self.allow_private_address:
             await self.check_private_address(url)
-        async with self.session.get(url, headers=headers) as response:
+        async with self.session.get(url, headers=headers, ssl=self._sslcontext) as response:
             content = None
             if not is_ok_status(response.status) or not ignore_content:
                 content = await self._read_content(response)
