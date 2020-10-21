@@ -8,7 +8,7 @@ from rssant_feedlib.response import FeedResponseStatus
 ImageView = RestRouter()
 
 
-@ImageView.post('image/check')
+@ImageView.post('image-proxy/check')
 def image_check(
     request,
     referrer: T.url.optional,
