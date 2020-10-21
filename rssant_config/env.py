@@ -75,6 +75,9 @@ class EnvConfig(ConfigModel):
     shopant_product_id: int = T.int.optional
     shopant_product_secret: str = T.str.optional
     shopant_url: str = T.url.optional
+    # image token
+    image_token_secret: str = T.str.default('rssant')
+    image_token_expires: int = T.int.min(1).default(30 * 60).optional
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:

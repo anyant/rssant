@@ -68,6 +68,16 @@ class FeedResponseStatus(enum.IntEnum):
         """
         return value < 0 and abs(value) // 100 in (2, 3)
 
+    @classmethod
+    def is_referrer_deny(cls, value):
+        """
+        >>> FeedResponseStatus.is_need_proxy(403)
+        True
+        >>> FeedResponseStatus.is_need_proxy(500)
+        False
+        """
+        return value in _IMAGE_REFERER_DENY_STATUS
+
 
 _NEED_PROXY_STATUS_SET = {x.value for x in [
     FeedResponseStatus.CONNECTION_ERROR,
@@ -77,6 +87,13 @@ _NEED_PROXY_STATUS_SET = {x.value for x in [
     FeedResponseStatus.CONNECTION_RESET,
     FeedResponseStatus.PRIVATE_ADDRESS_ERROR,
 ]}
+
+
+_IMAGE_REFERER_DENY_STATUS = set([
+    400, 401, 403, 404,
+    FeedResponseStatus.REFERER_DENY.value,
+    FeedResponseStatus.REFERER_NOT_ALLOWED.value,
+])
 
 
 class FeedContentType(enum.Enum):

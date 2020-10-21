@@ -5,6 +5,7 @@ from .views.feed import FeedView
 from .views.story import StoryView
 from .views.user import UserView
 from .views.shopant import ShopantView
+from .views.image import ImageView
 
 app_name = 'rssant_api'
 urlpatterns = [
@@ -14,4 +15,5 @@ urlpatterns = [
     path('', include(StoryView.urls)),
     path('', include(UserView.urls)),
     path('', include(ShopantView.urls)),
+    path('', include(ImageView.urls)),
 ]
