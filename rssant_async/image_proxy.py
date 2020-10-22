@@ -136,7 +136,8 @@ async def image_proxy(request, url, referer=None):
         if response.headers.get('Content-Length'):
             content_length = int(response.headers['Content-Length'])
             if content_length > MAX_IMAGE_SIZE:
-                return json_response({'message': 'image too large'}, status=413)
+                message = 'image too large, size={}'.format(content_length)
+                return json_response({'message': message}, status=413)
             my_response.content_length = content_length
         if response.headers.get('Content-Type'):
             my_response.content_type = response.headers['Content-Type']
