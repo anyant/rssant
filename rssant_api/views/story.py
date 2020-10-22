@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
 from rssant_api.models import UnionStory
 from rssant_api.models.story import StoryDetailSchema
+from rssant_common.image_token import ImageToken
+from rssant_config import CONFIG
 from .helper import check_unionid
 
 StorySchema = T.dict(
@@ -33,6 +35,7 @@ StorySchema = T.dict(
     dt_favorited=T.datetime.object.optional,
     summary=T.str.optional,
     content=T.str.optional,
+    image_token=T.str.optional,
 ).slim
 
 StoryResultSchema = T.dict(
@@ -132,7 +135,11 @@ def story_get_by_offset(
         story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=detail)
     except StoryNotFoundError:
         return Response({"message": "does not exist"}, status=400)
-    return story.to_dict()
+    image_token = ImageToken(referrer=story.link)\
+        .encode(secret=CONFIG.image_token_secret)
+    ret = story.to_dict()
+    ret.update(image_token=image_token)
+    return ret
 
 
 @StoryView.get('story/favorited')

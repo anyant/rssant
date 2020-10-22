@@ -77,7 +77,7 @@ class EnvConfig(ConfigModel):
     shopant_url: str = T.url.optional
     # image token
     image_token_secret: str = T.str.default('rssant')
-    image_token_expires: int = T.int.min(1).default(30 * 60).optional
+    image_token_expires: float = T.timedelta.min('1s').default('12h')
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:

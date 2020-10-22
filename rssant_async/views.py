@@ -19,8 +19,6 @@ async def image_proxy_view_v2(request, token: T.str, url: T.url):
             expires=CONFIG.image_token_expires)
     except ImageTokenDecodeError as ex:
         return json_response({'message': str(ex)}, status=400)
-    if not url.startswith(token.url_root):
-        return json_response({'message': 'url and token not match'}, status=400)
     response = await image_proxy(request, url, token.referrer)
     return response
 
