@@ -71,9 +71,9 @@ class FeedResponseStatus(enum.IntEnum):
     @classmethod
     def is_referrer_deny(cls, value):
         """
-        >>> FeedResponseStatus.is_need_proxy(403)
+        >>> FeedResponseStatus.is_referrer_deny(403)
         True
-        >>> FeedResponseStatus.is_need_proxy(500)
+        >>> FeedResponseStatus.is_referrer_deny(500)
         False
         """
         return value in _IMAGE_REFERER_DENY_STATUS
