@@ -224,6 +224,7 @@ def do_update_feed(
         'feed#%s save storys total=%s num_modified=%s',
         feed.id, len(storys), len(modified_storys)
     )
+    feed = Feed.get_by_pk(feed_id)
     is_freezed = feed.freeze_level is None or feed.freeze_level > 1
     if modified_storys and is_freezed:
         Feed.unfreeze_by_id(feed_id)
@@ -322,6 +323,9 @@ def _image_urls_of_indexs(image_indexs):
 
 
 def _detect_story_images(ctx, story):
+    # TODO: deprecate detect_story_images
+    if not CONFIG.detect_story_image_enable:
+        return
     image_processor = StoryImageProcessor(story.link, story.content)
     image_urls = _image_urls_of_indexs(image_processor.parse())
     if not image_urls:
@@ -525,6 +529,8 @@ def do_clean_by_retention(ctx: ActorContext):
 @actor('harbor_rss.clean_image_info_by_retention')
 @django_context
 def do_clean_image_info_by_retention(ctx: ActorContext):
+    if not CONFIG.detect_story_image_enable:
+        return
     num_rows = ImageInfo.delete_by_retention()
     LOG.info('delete {} outdated imageinfos'.format(num_rows))
 
