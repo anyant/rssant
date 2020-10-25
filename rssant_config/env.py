@@ -64,12 +64,17 @@ class EnvConfig(ConfigModel):
     rss_proxy_url: str = T.url.optional
     rss_proxy_token: str = T.str.optional
     rss_proxy_enable: bool = T.bool.default(False)
-    # analytics
+    # analytics matomo
     analytics_matomo_enable: bool = T.bool.default(False)
     analytics_matomo_url: str = T.str.optional
     analytics_matomo_site_id: str = T.str.optional
+    # analytics google
     analytics_google_enable: bool = T.bool.default(False)
     analytics_google_tracking_id: str = T.str.optional
+    # analytics plausible
+    analytics_plausible_enable: str = T.bool.default(False)
+    analytics_plausible_url: str = T.str.optional
+    analytics_plausible_domain: str = T.str.optional
     # shopant
     shopant_enable: bool = T.bool.default(False)
     shopant_product_id: int = T.int.optional
