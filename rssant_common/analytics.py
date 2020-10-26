@@ -28,12 +28,14 @@ ga('send', 'pageview');
 
 PLAUSIBLE_SCRIPT = Template(r'''
 (function () {
+    window.plausible = window.plausible || function() {
+        (window.plausible.q = window.plausible.q || []).push(arguments) }
     var d = document, g = d.createElement('script'), s = d.getElementsByTagName('script')[0];
     g.type = 'text/javascript'; g.async = true; g.defer = true;
     g.setAttribute('data-domain', '${domain}');
     g.src = '${url}' + 'js/plausible.js'; s.parentNode.insertBefore(g, s);
 })();
-''')
+'''.strip())
 
 
 class AnalyticsScript:
