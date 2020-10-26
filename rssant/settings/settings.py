@@ -149,6 +149,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/2.2/ref/settings/#logging-config
 LOGGING_CONFIG = None
 
+SESSION_COOKIE_AGE = 90 * 24 * 60 * 60
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
