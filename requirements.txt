@@ -30,7 +30,7 @@ configobj==5.0.6          # via cli-helpers, pgcli
 coreapi==2.3.3            # via django-rest-swagger, openapi-codec
 coreschema==0.0.4         # via coreapi
 coverage==4.5.4           # via -r requirements.in, pytest-cov
-cryptography==3.1.1       # via -r requirements.in, pyopenssl
+cryptography==3.2         # via -r requirements.in, pyopenssl
 cssselect==1.1.0          # via readability-lxml
 cssutils==1.0.2           # via pynliner
 decorator==4.4.0          # via validators
@@ -60,7 +60,6 @@ html2text==2020.1.16      # via -r requirements.in
 humanize==0.5.1           # via pgcli
 identify==1.4.15          # via pre-commit
 idna==2.8                 # via requests, validr, yarl
-importlib-metadata==1.5.0  # via pluggy, pre-commit, pytest, virtualenv
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
 jinja2==2.10.3            # via flask
@@ -147,7 +146,6 @@ wcwidth==0.1.7            # via prompt-toolkit, pytest
 werkzeug==0.16.0          # via flask, pytest-httpserver
 whitenoise==5.0.1         # via -r requirements.in
 yarl==1.4.2               # via -r requirements.in, aiohttp
-zipp==3.1.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
