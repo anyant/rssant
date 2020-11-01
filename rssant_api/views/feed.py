@@ -38,7 +38,8 @@ FeedSchema = T.dict(
     icon=T.str.optional,
     description=T.str.optional,
     version=T.str.optional,
-    title=T.str.optional,
+    title=T.str.maxlen(200).optional,
+    group=T.str.maxlen(50).optional,
     warnings=T.str.optional,
     num_unread_storys=T.int.optional,
     total_storys=T.int.optional,
@@ -167,9 +168,36 @@ def feed_query_creation(
 
 
 @FeedView.put('feed/<slug:feed_unionid>')
-def feed_update(request, feed_unionid: T.feed_unionid.object, title: T.str.optional) -> FeedSchema:
+def feed_update(
+    request,
+    feed_unionid: T.feed_unionid.object,
+    title: T.str.maxlen(200).optional,
+) -> FeedSchema:
+    """deprecated, use feed_set_title instead"""
     check_unionid(request, feed_unionid)
     feed = UnionFeed.set_title(feed_unionid, title)
+    return feed.to_dict()
+
+
+@FeedView.put('feed/set-title')
+def feed_set_title(
+    request,
+    id: T.feed_unionid.object,
+    title: T.str.maxlen(200).optional,
+) -> FeedSchema:
+    check_unionid(request, id)
+    feed = UnionFeed.set_title(id, title)
+    return feed.to_dict()
+
+
+@FeedView.put('feed/set-group')
+def feed_set_group(
+    request,
+    id: T.feed_unionid.object,
+    group: T.str.maxlen(50).optional,
+) -> FeedSchema:
+    check_unionid(request, id)
+    feed = UnionFeed.set_group(id, group)
     return feed.to_dict()
 
 

@@ -34,6 +34,7 @@ FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 FeedDetailSchema = T.detail.fields("""
     icon
     title
+    group,
     author
     version
     link
@@ -464,6 +465,7 @@ class UserFeed(Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
+    group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
     story_offset = models.IntegerField(**optional, default=0, help_text="story offset")
     is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")

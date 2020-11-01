@@ -43,6 +43,10 @@ class UnionFeed:
         return self._feed.title
 
     @property
+    def group(self):
+        return self._user_feed.group
+
+    @property
     def link(self):
         return self._feed.link
 
@@ -251,11 +255,20 @@ class UnionFeed:
         user_feed.save()
         return union_feed
 
+    @classmethod
+    def set_title(cls, feed_unionid, title):
+        return cls._set_fields(feed_unionid, title=title)
+
+    @classmethod
+    def set_group(cls, feed_unionid, group):
+        return cls._set_fields(feed_unionid, group=group)
+
     @staticmethod
-    def set_title(feed_unionid, title):
+    def _set_fields(feed_unionid, **fields):
         union_feed = UnionFeed.get_by_id(feed_unionid)
         user_feed = union_feed._user_feed
-        user_feed.title = title
+        for key, value in fields.items():
+            setattr(user_feed, key, value)
         user_feed.dt_updated = timezone.now()
         user_feed.save()
         return union_feed
