@@ -83,7 +83,7 @@ class EnvConfig(ConfigModel):
     # image token
     image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('12h')
-    detect_story_image_enable: bool = T.bool.default(True)
+    detect_story_image_enable: bool = T.bool.default(False)
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:
