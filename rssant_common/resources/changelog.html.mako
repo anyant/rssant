@@ -58,7 +58,7 @@
         .changelog-content {
             margin-top: 16px;
             margin-left: 24px;
-            overflow: scroll;
+            overflow: auto;
         }
     </style>
 </head>
