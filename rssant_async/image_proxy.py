@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 import yarl
 import aiohttp
@@ -58,7 +59,7 @@ async def check_private_address(url):
 async def get_response(session, url, headers):
     try:
         response = await session.get(url, headers=headers)
-    except (OSError, TimeoutError, IOError, aiohttp.ClientError) as ex:
+    except (OSError, TimeoutError, IOError, aiohttp.ClientError, asyncio.TimeoutError) as ex:
         await session.close()
         raise ImageProxyError(str(ex))
     except Exception:
