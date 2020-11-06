@@ -107,7 +107,7 @@ class FeedUrlMap(Model):
     """起始 URL 到 Feed URL 直接关联，用于加速FeedFinder"""
 
     NOT_FOUND = '#'  # 特殊Target
-    NOT_FOUND_TTL = timezone.timedelta(hours=4)
+    NOT_FOUND_TTL = timezone.timedelta(minutes=3)
     # TODO: retention of OK url maps
     OK_TTL = timezone.timedelta(days=100 * 365)
 
