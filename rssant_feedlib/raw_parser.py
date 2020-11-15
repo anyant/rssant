@@ -27,6 +27,9 @@ UTC = datetime.timezone.utc
 # TODO: maybe remove in the future
 # On the date story ident change to v2 format
 STORY_INDENT_V2_DATE = datetime.datetime(2020, 9, 1, 0, 0, 0, tzinfo=UTC)
+# On the date story ident change to v3 format
+# TODO: update before release
+STORY_INDENT_V3_DATE = datetime.datetime(2020, 11, 16, 0, 0, 0, tzinfo=UTC)
 
 RawFeedSchema = T.dict(
     version=T.str,
@@ -252,6 +255,39 @@ class RawFeedParser:
         return ident
 
     @classmethod
+    def _extract_story_ident_v3(cls, guid, title, link) -> str:
+        r"""
+        >>> RawFeedParser._extract_story_ident_v3('', '', '')
+        ''
+        >>> RawFeedParser._extract_story_ident_v3('guid', 'title', '')
+        'guid::title'
+        >>> RawFeedParser._extract_story_ident_v3('guid', 'title', 'http://example.com/')
+        'guid::title'
+        >>> RawFeedParser._extract_story_ident_v3('guid', '', 'link')
+        'guid::'
+        >>> link = 'http://example.com/page.html#abc'
+        >>> RawFeedParser._extract_story_ident_v3('', 'title', link)
+        'http://example.com/page.html'
+        >>> link = 'http://example.com/page.html'
+        >>> RawFeedParser._extract_story_ident_v3(link, 'title', link)
+        'http://example.com/page.html::title'
+        """
+        # strip link hash part to improve uniqueness
+        link = link.rsplit('#', 1)[0]
+        # guid may duplicate in some bad rss feed
+        #   eg: https://www.lieyunwang.com/newrss/feed.xml
+        # and link may change in some feed when story not change
+        #   eg: https://rsshub.app/coolapk/user/727333/dynamic
+        #       https://rsshub.app/coolapk/tuwen
+        #       https://github.com/DIYgod/RSSHub/issues/4523
+        #       https://github.com/DIYgod/RSSHub/issues/6015
+        if guid:
+            ident = guid + '::' + title
+        else:
+            ident = link or title or ''
+        return ident
+
+    @classmethod
     def _strip_string(cls, s) -> str:
         r"""
         >>> RawFeedParser._strip_string(None) == ''
@@ -262,14 +298,41 @@ class RawFeedParser:
         return (s or '').replace('\n', ' ').strip()
 
     @classmethod
-    def _is_ident_v1(cls, dt: datetime.datetime) -> bool:
+    def _get_story_ident_func(cls, dt: datetime.datetime, *, is_json_feed: bool) -> callable:
         """
-        >>> RawFeedParser._is_ident_v1(None)
-        False
-        >>> RawFeedParser._is_ident_v1(STORY_INDENT_V2_DATE)
-        False
+        >>> RawFeedParser._get_story_ident_func(None, is_json_feed=False) \
+            == RawFeedParser._extract_story_ident_v3
+        True
+        >>> RawFeedParser._get_story_ident_func(STORY_INDENT_V3_DATE, is_json_feed=False) \
+            == RawFeedParser._extract_story_ident_v3
+        True
+        >>> RawFeedParser._get_story_ident_func(STORY_INDENT_V2_DATE, is_json_feed=False) \
+            == RawFeedParser._extract_story_ident_v2
+        True
+        >>> dt = STORY_INDENT_V2_DATE - datetime.timedelta(days=1)
+        >>> RawFeedParser._get_story_ident_func(dt, is_json_feed=False) == RawFeedParser._extract_story_ident_v1
+        True
+        >>> RawFeedParser._get_story_ident_func(None, is_json_feed=True) == RawFeedParser._extract_story_ident_v3
+        True
+        >>> RawFeedParser._get_story_ident_func(STORY_INDENT_V3_DATE, is_json_feed=True) \
+            == RawFeedParser._extract_story_ident_v3
+        True
+        >>> dt = STORY_INDENT_V3_DATE - datetime.timedelta(days=1)
+        >>> RawFeedParser._get_story_ident_func(dt, is_json_feed=True) == RawFeedParser._extract_story_ident_v1
+        True
         """
-        return bool(dt and dt < STORY_INDENT_V2_DATE)
+        if is_json_feed:
+            if dt and dt < STORY_INDENT_V3_DATE:
+                return cls._extract_story_ident_v1
+            else:
+                return cls._extract_story_ident_v3
+        else:
+            if dt and dt < STORY_INDENT_V2_DATE:
+                return cls._extract_story_ident_v1
+            elif dt and dt < STORY_INDENT_V3_DATE:
+                return cls._extract_story_ident_v2
+            else:
+                return cls._extract_story_ident_v3
 
     def _extract_story(self, item):
         story = {}
@@ -278,10 +341,9 @@ class RawFeedParser:
         guid = self._strip_string(item.get('id'))
         dt_published = self._get_date(item, 'published_parsed')
         dt_updated = self._get_date(item, 'updated_parsed')
-        if self._is_ident_v1(dt_published or dt_updated):
-            ident = self._extract_story_ident_v1(guid, title, url)
-        else:
-            ident = self._extract_story_ident_v2(guid, title, url)
+        ident_func = self._get_story_ident_func(
+            dt_published or dt_updated, is_json_feed=False)
+        ident = ident_func(guid, title, url)
         if not ident:
             return None
         story['ident'] = ident
@@ -336,7 +398,14 @@ class RawFeedParser:
         return None
 
     def _get_json_feed_story(self, item: RawJSONFeedItem):
-        ident = item.id_ or item.url or item.title
+        dt_published = self._normalize_date(item.date_published)
+        dt_updated = self._normalize_date(item.date_modified)
+        guid = self._strip_string(item.id_)
+        title = self._strip_string(item.title)
+        url = self._strip_string(item.url)
+        ident_func = self._get_story_ident_func(
+            dt_published or dt_updated, is_json_feed=True)
+        ident = ident_func(guid, title, url)
         if not ident:
             return None
         content = item.content_html or item.content_text or item.summary or ''
@@ -344,14 +413,14 @@ class RawFeedParser:
         audio_url = self._get_json_feed_story_audio_url(item)
         story = dict(
             ident=ident,
-            url=item.url,
-            title=item.title or ident,
+            url=url,
+            title=title or ident,
             content=content,
             summary=summary,
             image_url=item.image or item.banner_image,
             audio_url=audio_url,
-            dt_published=item.date_published,
-            dt_updated=item.date_modified,
+            dt_published=dt_published,
+            dt_updated=dt_updated,
             **self._get_json_feed_author(item.author),
         )
         story = self._normalize_story_content_summary(story)
