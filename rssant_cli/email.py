@@ -5,6 +5,7 @@ from validr import Compiler, T
 import click
 import rssant_common.django_setup  # noqa:F401
 from rssant.email_template import EmailTemplate
+from rssant_config import CONFIG
 
 
 @click.group()
@@ -20,7 +21,7 @@ def _parse_receivers(text) -> list:
 @click.option('--receivers', required=True, help="receiver emails")
 def send_recall(receivers):
     subject = '好久不见，甚是想念，欢迎回蚁阅看看~'
-    sender = 'guyskk@anyant.com'
+    sender = CONFIG.smtp_username
     email = EmailTemplate(subject, filename='recall.html')
     receivers = _parse_receivers(receivers)
     click.confirm('Send recall email to {} receivers?'.format(len(receivers)), abort=True)
@@ -54,7 +55,7 @@ def send_recall_timed(receiver_file, duration):
         return
 
     subject = '好久不见，甚是想念，欢迎回蚁阅看看~'
-    sender = 'guyskk@anyant.com'
+    sender = CONFIG.smtp_username
     email = EmailTemplate(subject, filename='recall.html')
 
     sleep_time = duration / len(todo_receivers)
