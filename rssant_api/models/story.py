@@ -14,6 +14,7 @@ ONE_MONTH = timezone.timedelta(days=30)
 StoryDetailSchema = T.detail.fields("""
     unique_id
     image_url
+    sentence_count
     dt_published
     dt_updated
     dt_created
@@ -71,6 +72,7 @@ class Story(Model, ContentHashMixin):
     dt_synced = models.DateTimeField(**optional, help_text="最近一次同步时间")
     summary = models.TextField(**optional, help_text="摘要或较短的内容")
     content = models.TextField(**optional, help_text="文章内容")
+    sentence_count = models.IntegerField(**optional, help_text='sentence count')
 
     _STORY_FIELD_NAMES = None
 
