@@ -39,6 +39,7 @@ StorySchemaFields = dict(
     dt_updated=T.datetime.object.optional,
     summary=T.str.optional,
     content=T.str.optional,
+    sentence_count=T.int.min(0).optional,
 )
 
 StoryOutputSchemaFields = StorySchemaFields.copy()
@@ -372,6 +373,7 @@ def do_update_story(
     summary: T.str,
     has_mathjax: T.bool.optional,
     url: T.url,
+    sentence_count: T.int.min(0).optional
 ):
     story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
     if not story:
@@ -389,6 +391,7 @@ def do_update_story(
         content=content,
         summary=summary,
         has_mathjax=has_mathjax,
+        sentence_count=sentence_count,
     )
     STORY_SERVICE.update_story(feed_id, offset, data)
     _detect_story_images(ctx, story)

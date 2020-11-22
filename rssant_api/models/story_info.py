@@ -37,6 +37,7 @@ class StoryInfo(VersionedMixin, SealableModel):
     summary = models.TextField(**optional, help_text="摘要或较短的内容")
     content_hash_base64 = models.CharField(
         max_length=200, **optional, help_text='base64 hash value of content')
+    sentence_count = models.IntegerField(**optional, help_text='sentence count')
 
     @property
     def feed_id(self) -> int:

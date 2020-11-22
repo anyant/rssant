@@ -234,7 +234,7 @@ def test_parse_too_many_storys():
     result = FeedParser().parse(raw_result)
     assert len(result.storys) == _MAX_STORYS
     expected = set(range(num_storys - _MAX_STORYS, num_storys))
-    story_ids = {int(x['ident']) for x in result.storys}
+    story_ids = {int(x['ident'].split('::')[0]) for x in result.storys}
     assert story_ids == expected
 
 

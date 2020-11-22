@@ -62,6 +62,7 @@ StorySchema = T.dict(
     dt_updated=T.datetime.optional,
     summary=T.str.optional,
     content=T.str.optional,
+    sentence_count=T.int.min(0).optional,
 )
 
 FeedSchema = T.dict(
@@ -310,19 +311,20 @@ def do_process_story_webpage(
     text = story_html_clean(text)
     content = story_readability(text)
     content = process_story_links(content, url)
+    text_content = shorten(story_html_to_text(content), width=_MAX_STORY_CONTENT_LENGTH)
+    num_sentences = len(split_sentences(text_content))
     if len(content) > _MAX_STORY_CONTENT_LENGTH:
         msg = 'too large story#%s,%s size=%s url=%r, will only save plain text'
         LOG.warning(msg, feed_id, offset, len(content), url)
-        content = shorten(story_html_to_text(content), width=_MAX_STORY_CONTENT_LENGTH)
+        content = text_content
     # 如果取回的内容比RSS内容更短，就不是正确的全文
     if num_sub_sentences is not None:
         if not is_fulltext_content(content):
-            num_sentences = len(split_sentences(story_html_to_text(content)))
             if num_sentences <= num_sub_sentences:
                 msg = 'fetched story#%s,%s url=%s num_sentences=%s less than num_sub_sentences=%s'
                 LOG.info(msg, feed_id, offset, url, num_sentences, num_sub_sentences)
                 return
-    summary = shorten(story_html_to_text(content), width=_MAX_STORY_SUMMARY_LENGTH)
+    summary = shorten(text_content, width=_MAX_STORY_SUMMARY_LENGTH)
     if not summary:
         return
     ctx.hope('harbor_rss.update_story', dict(
@@ -331,6 +333,7 @@ def do_process_story_webpage(
         content=content,
         summary=summary,
         url=url,
+        sentence_count=num_sentences,
     ))
 
 
@@ -446,6 +449,7 @@ def _get_storys(entries: list):
         story['iframe_url'] = data['iframe_url']
         story['summary'] = summary
         story['content'] = content
+        story['sentence_count'] = _compute_sentence_count(content)
         content_hash_base64 = compute_hash_base64(content, summary, title)
         story['title'] = title
         story['content_hash_base64'] = content_hash_base64
@@ -457,3 +461,7 @@ def _get_storys(entries: list):
         story['dt_updated'] = min(dt_updated or dt_published or now, now)
         storys.append(story)
     return storys
+
+
+def _compute_sentence_count(content: str) -> int:
+    return len(split_sentences(story_html_to_text(content)))

@@ -21,7 +21,21 @@ sentence_text = (
 
 def test_split_sentences():
     sentences = split_sentences(sentence_text)
-    assert len(sentences) == 22, sentences
+    assert len(sentences) == 17, sentences
+
+
+def test_split_short_sentences():
+    text = (
+        '这是一句话。'
+        '短句\n'
+        'short.'
+        'I like read RSS!'
+        '。。。'
+    )
+    sentences = split_sentences(text)
+    assert len(sentences) == 2, sentences
+    assert split_sentences('hello') == []
+    assert split_sentences('你好，世界') == []
 
 
 thoughtworks_subtext = """

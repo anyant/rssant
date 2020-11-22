@@ -13,6 +13,7 @@ ONE_MONTH = timezone.timedelta(days=30)
 
 StoryDetailSchema = T.detail.fields("""
     unique_id
+    image_url
     dt_published
     dt_updated
     dt_created
@@ -20,7 +21,6 @@ StoryDetailSchema = T.detail.fields("""
     dt_favorited
 """).extra_fields("""
     author
-    image_url
     audio_url
     iframe_url
     dt_synced

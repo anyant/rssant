@@ -25,6 +25,7 @@ StorySchema = T.dict(
     audio_url=T.str.optional,
     iframe_url=T.str.optional,
     has_mathjax=T.bool.optional,
+    sentence_count=T.int.optional,
     dt_published=T.datetime.object.optional.invalid_to_default,
     dt_updated=T.datetime.object.optional,
     dt_created=T.datetime.object.optional,

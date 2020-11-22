@@ -2,6 +2,7 @@ import re
 import difflib
 from typing import List
 
+from wcwidth import wcswidth
 from . import processor
 
 
@@ -15,7 +16,7 @@ sentence_sep_s = [
 RE_SENTENCE_SEP = re.compile(r'(?:[\s\d]*(?:{})[\s\d]*)+'.format('|'.join(sentence_sep_s)))
 
 
-def split_sentences(text: str) -> List[str]:
+def split_sentences(text: str, keep_short: bool = False) -> List[str]:
     """
     中英文分句
     """
@@ -26,7 +27,27 @@ def split_sentences(text: str) -> List[str]:
         sentences = sentences[1:]
     if sentences and not sentences[-1]:
         sentences = sentences[:-1]
+    if not keep_short:
+        sentences = [x for x in sentences if not is_short_sentence(x)]
     return sentences
+
+
+def is_short_sentence(sentence: str) -> bool:
+    """
+    >>> is_short_sentence('')
+    True
+    >>> is_short_sentence('hello')
+    True
+    >>> is_short_sentence('你好呀')
+    True
+    >>> is_short_sentence('hello world')
+    False
+    >>> is_short_sentence('你好世界!')
+    False
+    >>> is_short_sentence('aaaa bbbb cccc dddd eeee ffff')
+    False
+    """
+    return len(sentence) <= 16 and wcswidth(sentence) <= 8
 
 
 def is_summary_prob(subtext: str, fulltext: str) -> float:

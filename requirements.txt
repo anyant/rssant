@@ -60,6 +60,7 @@ html2text==2020.1.16      # via -r requirements.in
 humanize==0.5.1           # via pgcli
 identify==1.4.15          # via pre-commit
 idna==2.8                 # via requests, validr, yarl
+importlib-metadata==1.7.0  # via pluggy, pre-commit, pytest, virtualenv
 itsdangerous==1.1.0       # via flask
 itypes==1.1.0             # via coreapi
 jinja2==2.10.3            # via flask
@@ -142,10 +143,11 @@ validators==0.14.0        # via -r requirements.in
 validr==1.2.0b2           # via -r requirements.in
 virtualenv==20.0.20       # via pre-commit
 watchgod==0.5             # via aiohttp-devtools
-wcwidth==0.1.7            # via prompt-toolkit, pytest
+wcwidth==0.1.7            # via -r requirements.in, prompt-toolkit, pytest
 werkzeug==0.16.0          # via flask, pytest-httpserver
 whitenoise==5.0.1         # via -r requirements.in
 yarl==1.4.2               # via -r requirements.in, aiohttp
+zipp==3.4.0               # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

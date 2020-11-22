@@ -38,6 +38,7 @@ class CommonStory:
     dt_synced: datetime.datetime = T.datetime.object.optional
     summary: str = T.str.optional
     content: str = T.str.optional
+    sentence_count: int = T.int.min(0).optional
     content_length: int = T.int.min(0).optional
     content_hash_base64: str = T.str.optional
 

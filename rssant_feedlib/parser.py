@@ -125,7 +125,8 @@ class FeedParser:
         content = story_html_clean(content, loose=True)
         # extract video iframe, eg: bilibili.com
         attach = None
-        is_short_story = content and len(content) < 2000
+        # 只需要中短篇文章的附加内容，长篇是文字为主
+        is_short_story = content and len(content) < 64000
         if is_short_story:
             attach = story_extract_attach(content, base_url=link)
         # clean again, remove iframe from content
@@ -163,11 +164,14 @@ class FeedParser:
             iframe_url = attach.iframe_url
             if (not audio_url) and attach.audio_url:
                 audio_url = attach.audio_url
+            if (not image_url) and attach.image_url:
+                image_url = attach.image_url
         if story['summary']:
             summary = story_html_clean(story['summary'])
         else:
             summary = content
         summary = shorten(story_html_to_text(summary), width=_MAX_SUMMARY_LENGTH)
+        # TODO: summary with links
         has_mathjax = story_has_mathjax(content)
         return dict(
             ident=ident,

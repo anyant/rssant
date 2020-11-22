@@ -74,6 +74,11 @@ class UnionStory:
         return self._story.has_mathjax
 
     @property
+    def sentence_count(self) -> int:
+        # only StoryInfo support sentence_count field
+        return getattr(self._story, 'sentence_count', None)
+
+    @property
     def dt_published(self):
         return self._story.dt_published
 
@@ -133,6 +138,7 @@ class UnionStory:
             offset=self.offset,
             title=self.title,
             link=self.link,
+            sentence_count=self.sentence_count,
             has_mathjax=self.has_mathjax,
             is_watched=self.is_watched,
             is_favorited=self.is_favorited,
