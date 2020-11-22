@@ -264,7 +264,7 @@ def do_update_feed_info(
 
 
 def is_fulltext_story(story):
-    if story.iframe_url or story.audio_url:
+    if story.iframe_url or story.audio_url or story.image_url:
         return True
     return is_fulltext_content(story.content)
 
