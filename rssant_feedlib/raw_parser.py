@@ -197,14 +197,14 @@ class RawFeedParser:
     def _normalize_story_content(self, content, story_key):
         if content and len(content) > _MAX_CONTENT_LENGTH:
             msg = 'story %r content length=%s too large, will truncate it'
-            LOG.warning(msg, len(content), story_key)
+            LOG.warning(msg, story_key, len(content))
             content = content[:_MAX_CONTENT_LENGTH]
         return content or ''
 
     def _normalize_story_summary(self, summary, story_key):
         if summary and len(summary) > _MAX_SUMMARY_LENGTH:
             msg = 'story %r summary length=%s too large, will discard it'
-            LOG.warning(msg, len(summary), story_key)
+            LOG.warning(msg, story_key, len(summary))
             summary = ''
         return summary or ''
 
