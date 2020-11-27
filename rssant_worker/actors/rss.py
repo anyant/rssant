@@ -111,7 +111,7 @@ def validate_feed(feed):
 
 
 def _get_proxy_options():
-    options = {}
+    options = dict(dns_service=DNS_SERVICE)
     if CONFIG.rss_proxy_enable:
         options.update(
             rss_proxy_url=CONFIG.rss_proxy_url,
@@ -139,7 +139,7 @@ def do_find_feed(
         messages.append(msg)
 
     options = dict(message_handler=message_handler, **_get_proxy_options())
-    options.update(allow_private_address=CONFIG.allow_private_address)
+    options.update(dns_service=DNS_SERVICE)
     with FeedFinder(url, **options) as finder:
         found = finder.find()
     try:
@@ -171,7 +171,6 @@ def do_sync_feed(
     if not is_refresh:
         params = dict(etag=etag, last_modified=last_modified)
     options = _get_proxy_options()
-    options.update(allow_private_address=CONFIG.allow_private_address)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     switch_prob = 0.25  # the prob of switch from use proxy to not use proxy
@@ -266,7 +265,6 @@ async def do_fetch_story(
 ):
     LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
     options = _get_proxy_options()
-    options.update(allow_private_address=CONFIG.allow_private_address)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     async with AsyncFeedReader(**options) as reader:
@@ -348,7 +346,7 @@ async def do_detect_story_images(
     LOG.info(f'detect story images story={feed_id},{offset} num_images={len(image_urls)} begin')
     options = dict(
         allow_non_webpage=True,
-        allow_private_address=CONFIG.allow_private_address,
+        dns_service=DNS_SERVICE,
     )
     async with AsyncFeedReader(**options) as reader:
         async def _read(url):

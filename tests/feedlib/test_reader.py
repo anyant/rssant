@@ -9,9 +9,9 @@ from pytest_httpserver import HTTPServer
 from werkzeug import Response as WerkzeugResponse
 
 from rssant_config import CONFIG
-from rssant_feedlib.reader import PrivateAddressError
 from rssant_feedlib.reader import FeedReader, FeedResponseStatus
 from rssant_feedlib.async_reader import AsyncFeedReader
+from rssant_common.dns_service import DNSService
 
 
 LOG = logging.getLogger(__name__)
@@ -29,9 +29,6 @@ class SyncAsyncFeedReader:
 
     def read(self, *args, **kwargs):
         return self._loop_run(self._reader.read(*args, **kwargs))
-
-    def check_private_address(self, *args, **kwargs):
-        return self._loop_run(self._reader.check_private_address(*args, **kwargs))
 
     def __enter__(self):
         self._loop_run(self._reader.__aenter__())
@@ -78,7 +75,8 @@ def test_read_by_real(reader_class: Type[FeedReader], url):
 ])
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
 def test_read_status(reader_class: Type[FeedReader], httpserver: HTTPServer, status: int):
-    options = dict(allow_non_webpage=True, allow_private_address=True)
+    dns_service = DNSService.create(allow_private_address=True)
+    options = dict(allow_non_webpage=True, dns_service=dns_service)
     local_resp = WerkzeugResponse(str(status), status=status)
     httpserver.expect_request("/status").respond_with_response(local_resp)
     url = httpserver.url_for("/status")
@@ -93,7 +91,7 @@ def test_read_status(reader_class: Type[FeedReader], httpserver: HTTPServer, sta
 ])
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
 def test_read_non_webpage(reader_class: Type[FeedReader], httpserver: HTTPServer, mime_type: str):
-    options = dict(allow_private_address=True)
+    options = dict(dns_service=DNSService.create(allow_private_address=True))
     local_resp = WerkzeugResponse(b'xxxxxxxx', mimetype=mime_type)
     httpserver.expect_request("/non-webpage").respond_with_response(local_resp)
     url = httpserver.url_for("/non-webpage")
@@ -107,7 +105,8 @@ def test_read_non_webpage(reader_class: Type[FeedReader], httpserver: HTTPServer
 def test_read_private_addres(reader_class: Type[FeedReader], httpserver: HTTPServer):
     httpserver.expect_request("/private-address").respond_with_json(0)
     url = httpserver.url_for("/private-address")
-    with reader_class() as reader:
+    dns_service = DNSService.create(allow_private_address=False)
+    with reader_class(dns_service=dns_service) as reader:
         response = reader.read(url)
         assert response.status == FeedResponseStatus.PRIVATE_ADDRESS_ERROR
         assert not response.content
@@ -146,7 +145,7 @@ def test_read_testdata(reader_class: Type[FeedReader], httpserver: HTTPServer, f
         local_resp = WerkzeugResponse(content, content_type=x)
         httpserver.expect_request(f"/testdata/{i}").respond_with_response(local_resp)
         urls.append(httpserver.url_for(f"/testdata/{i}"))
-    options = dict(allow_private_address=True)
+    options = dict(dns_service=DNSService.create(allow_private_address=True))
     with reader_class(**options) as reader:
         for url in urls:
             response = reader.read(url)
@@ -180,22 +179,3 @@ def test_read_rss_proxy_error(reader_class: Type[FeedReader], rss_proxy_server, 
         response = reader.read(url + f'?error={error}', use_proxy=True)
         httpserver.check_assertions()
         assert response.status == FeedResponseStatus.RSS_PROXY_ERROR
-
-
-@pytest.mark.parametrize('url, expect', [
-    ('http://192.168.0.1:8080/', True),
-    ('http://localhost:8080/', True),
-    ('https://rsshub.app/', False),
-    ('https://gitee.com/', False),
-    ('https://www.baidu.com/', False),
-])
-@pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
-def test_check_private_address(reader_class: Type[FeedReader], url, expect):
-    with reader_class() as reader:
-        try:
-            reader.check_private_address(url)
-        except PrivateAddressError:
-            is_private = True
-        else:
-            is_private = False
-        assert is_private == expect

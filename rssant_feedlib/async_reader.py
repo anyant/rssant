@@ -3,19 +3,20 @@ import ssl
 import asyncio
 import logging
 import concurrent.futures
-import ipaddress
 from http import HTTPStatus
-from urllib.parse import urlparse
 
 import aiodns
 import aiohttp
 
 from rssant_common.helper import aiohttp_client_session
-from rssant_common.dns_service import DNSService, DNS_SERVICE
+from rssant_common.dns_service import (
+    DNSService, DNS_SERVICE,
+    PrivateAddressError,
+    NameNotResolvedError,
+)
 
 from .reader import is_webpage, is_ok_status
 from .reader import (
-    PrivateAddressError,
     ContentTooLargeError,
     ContentTypeNotSupportError,
     RSSProxyError,
@@ -37,7 +38,6 @@ class AsyncFeedReader:
         user_agent=DEFAULT_USER_AGENT,
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
-        allow_private_address=False,
         allow_non_webpage=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
@@ -49,7 +49,6 @@ class AsyncFeedReader:
         self.user_agent = user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
-        self.allow_private_address = allow_private_address
         self.allow_non_webpage = allow_non_webpage
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
@@ -70,26 +69,6 @@ class AsyncFeedReader:
         if self.session is None:
             self.session = aiohttp_client_session(
                 resolver=self.resolver, timeout=self.request_timeout)
-
-    async def _resolve_hostname(self, hostname):
-        try:
-            hosts = await self.resolver.resolve(hostname, family=socket.AF_INET)
-        except (aiodns.error.DNSError, OSError) as ex:
-            LOG.info("resolve hostname %s failed %r", hostname, ex)
-            hosts = []
-        for item in hosts:
-            yield item['host']
-
-    async def check_private_address(self, url):
-        """Prevent request private address, which will attack local network"""
-        if self.allow_private_address:
-            return
-        await self._async_init()
-        hostname = urlparse(url).hostname
-        async for ip in self._resolve_hostname(hostname):
-            ip = ipaddress.ip_address(ip)
-            if ip.is_private:
-                raise PrivateAddressError(ip)
 
     def check_content_type(self, response):
         if self.allow_non_webpage:
@@ -151,8 +130,6 @@ class AsyncFeedReader:
             headers=headers,
         )
         await self._async_init()
-        if not self.allow_private_address:
-            await self.check_private_address(url)
         async with self.session.get(url, headers=headers, ssl=self._sslcontext) as response:
             content = None
             if not is_ok_status(response.status) or not ignore_content:
@@ -208,7 +185,7 @@ class AsyncFeedReader:
                 headers, content, url, status = await self._read_by_proxy(url, *args, **kwargs)
             else:
                 headers, content, url, status = await self._read(url, *args, **kwargs)
-        except (socket.gaierror, aiodns.error.DNSError):
+        except (socket.gaierror, aiodns.error.DNSError, NameNotResolvedError):
             status = FeedResponseStatus.DNS_ERROR.value
         except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,
                 asyncio.TimeoutError, concurrent.futures.TimeoutError):
@@ -234,6 +211,8 @@ class AsyncFeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except UnicodeDecodeError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
+        except PrivateAddressError:
+            status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
         except FeedReaderError as ex:
             status = ex.status
             LOG.warning(type(ex).__name__ + " url=%s %s", url, ex)

@@ -1,14 +1,17 @@
 import re
 import socket
 import ssl
-import ipaddress
 import logging
 from urllib.parse import urlparse
 from http import HTTPStatus
 
 import requests
 
-from rssant_common.dns_service import DNSService, DNS_SERVICE
+from rssant_common.dns_service import (
+    DNSService, DNS_SERVICE,
+    PrivateAddressError,
+    NameNotResolvedError,
+)
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
@@ -21,11 +24,6 @@ LOG = logging.getLogger(__name__)
 class FeedReaderError(Exception):
     """FeedReaderError"""
     status = None
-
-
-class PrivateAddressError(FeedReaderError):
-    """Private IP address"""
-    status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
 
 
 class ContentTooLargeError(FeedReaderError):
@@ -116,7 +114,6 @@ class FeedReader:
         user_agent=DEFAULT_USER_AGENT,
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
-        allow_private_address=False,
         allow_non_webpage=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
@@ -124,6 +121,9 @@ class FeedReader:
     ):
         if session is None:
             session = requests.session()
+            if dns_service:
+                session.mount('http://', dns_service.requests_http_adapter())
+                session.mount('https://', dns_service.requests_http_adapter())
             self._close_session = True
         else:
             self._close_session = False
@@ -131,7 +131,6 @@ class FeedReader:
         self.user_agent = user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
-        self.allow_private_address = allow_private_address
         self.allow_non_webpage = allow_non_webpage
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
@@ -141,31 +140,6 @@ class FeedReader:
     @property
     def has_rss_proxy(self):
         return bool(self.rss_proxy_url)
-
-    def _resolve_hostname(self, hostname):
-        if self.dns_service:
-            hosts = self.dns_service.resolve(hostname)
-            if hosts:
-                yield from hosts
-                return
-        addrinfo = socket.getaddrinfo(hostname, None)
-        for family, __, __, __, sockaddr in addrinfo:
-            if family == socket.AF_INET:
-                ip, __ = sockaddr
-                yield ip
-            elif family == socket.AF_INET6:
-                ip, __, __, __ = sockaddr
-                yield ip
-
-    def check_private_address(self, url):
-        """Prevent request private address, which will attack local network"""
-        if self.allow_private_address:
-            return
-        hostname = urlparse(url).hostname
-        for ip in self._resolve_hostname(hostname):
-            ip = ipaddress.ip_address(ip)
-            if ip.is_private:
-                raise PrivateAddressError(ip)
 
     def check_content_type(self, response):
         if self.allow_non_webpage:
@@ -235,8 +209,6 @@ class FeedReader:
         headers = self._prepare_headers(url, etag=etag, last_modified=last_modified)
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
-        if not self.allow_private_address:
-            self.check_private_address(prepared.url)
         response, content = self._send_request(prepared, ignore_content=ignore_content)
         return response.headers, content, response.url, response.status_code
 
@@ -271,7 +243,7 @@ class FeedReader:
                 headers, content, url, status = self._read_by_proxy(url, *args, **kwargs)
             else:
                 headers, content, url, status = self._read(url, *args, **kwargs)
-        except socket.gaierror:
+        except (socket.gaierror, NameNotResolvedError):
             status = FeedResponseStatus.DNS_ERROR.value
         except requests.exceptions.ReadTimeout:
             status = FeedResponseStatus.READ_TIMEOUT.value
@@ -291,6 +263,8 @@ class FeedReader:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
         except UnicodeDecodeError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
+        except PrivateAddressError:
+            status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value
         except FeedReaderError as ex:
             status = ex.status
             LOG.warning(type(ex).__name__ + " url=%s %s", url, ex)

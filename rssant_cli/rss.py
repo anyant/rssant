@@ -343,10 +343,10 @@ def update_feed_use_proxy():
     with reader:
         for i, feed in enumerate(feeds):
             click.echo(f'#{i} {feed}')
-            status, _ = reader.read(feed.url)
+            status = reader.read(feed.url).status
             click.echo(f'    #{i} status={FeedResponseStatus.name_of(status)}')
             if FeedResponseStatus.is_need_proxy(status):
-                proxy_status, _ = reader.read(feed.url, use_proxy=True)
+                proxy_status = reader.read(feed.url, use_proxy=True).status
                 click.echo(f'    #{i} proxy_status={FeedResponseStatus.name_of(proxy_status)}')
                 if proxy_status == 200:
                     proxy_feeds.append(feed)

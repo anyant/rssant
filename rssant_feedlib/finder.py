@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from validr import Invalid
 
 from rssant_common.helper import coerce_url
+from rssant_common.dns_service import DNS_SERVICE
 
 from .raw_parser import RawFeedParser, FeedParserError, RawFeedResult
 from .reader import FeedReader
@@ -184,9 +185,9 @@ class FeedFinder:
         message_handler=None,
         max_trys=10,
         reader=None,
-        allow_private_address=False,
         rss_proxy_url=None,
         rss_proxy_token=None,
+        dns_service=DNS_SERVICE,
     ):
         start_url = coerce_url(start_url)
         try:
@@ -198,7 +199,7 @@ class FeedFinder:
         self.max_trys = max_trys
         if reader is None:
             reader = FeedReader(
-                allow_private_address=allow_private_address,
+                dns_service=dns_service,
                 rss_proxy_url=rss_proxy_url,
                 rss_proxy_token=rss_proxy_token,
             )

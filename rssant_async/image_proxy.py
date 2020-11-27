@@ -1,15 +1,13 @@
 import logging
 import asyncio
 
-import yarl
 import aiohttp
 from aiohttp.web import StreamResponse, json_response
 from aiohttp import HttpVersion11
 
-from rssant_config import CONFIG
+from rssant_common.dns_service import DNS_SERVICE, PrivateAddressError
 from rssant_common.helper import get_referer_of_url, aiohttp_client_session
-from rssant_feedlib.reader import DEFAULT_USER_AGENT, PrivateAddressError
-from rssant_feedlib.async_reader import AsyncFeedReader
+from rssant_feedlib.reader import DEFAULT_USER_AGENT
 from rssant_feedlib.blacklist import compile_url_blacklist
 
 
@@ -46,16 +44,6 @@ class ImageProxyError(Exception):
         return json_response({'message': self.message}, status=self.status)
 
 
-async def check_private_address(url):
-    if CONFIG.allow_private_address:
-        return
-    async with AsyncFeedReader() as reader:
-        try:
-            await reader.check_private_address(url)
-        except PrivateAddressError:
-            raise ImageProxyError('private address not allowed')
-
-
 _IMAGE_NETWORK_ERROR_S = (
     OSError, TimeoutError, IOError, aiohttp.ClientError,
     asyncio.TimeoutError, asyncio.CancelledError,
@@ -65,22 +53,28 @@ _IMAGE_NETWORK_ERROR_S = (
 async def get_response(session, url, headers):
     try:
         response = await session.get(url, headers=headers)
+    except PrivateAddressError:
+        await session.close()
+        raise ImageProxyError('private address not allowed')
     except _IMAGE_NETWORK_ERROR_S as ex:
         await session.close()
         raise ImageProxyError('{}: {}'.format(type(ex).__name__, ex))
     except Exception:
         await session.close()
         raise
-    if yarl.URL(response.url) != yarl.URL(url):
-        try:
-            await check_private_address(str(response.url))
-        except Exception:
-            await session.close()
-            raise
     return response
 
 
 REFERER_DENY_STATUS = {401, 403}
+
+
+def _create_aiohttp_client_session():
+    loop = asyncio.get_event_loop()
+    resolver = DNS_SERVICE.aiohttp_resolver(loop=loop)
+    request_timeout = 30
+    session = aiohttp_client_session(
+        resolver=resolver, timeout=request_timeout)
+    return session
 
 
 async def image_proxy(request, url, referer=None):
@@ -97,7 +91,6 @@ async def image_proxy(request, url, referer=None):
             await session.close()
 
     try:
-        await check_private_address(url)
         user_agent = DEFAULT_USER_AGENT
         if callable(user_agent):
             user_agent = user_agent()
@@ -107,11 +100,7 @@ async def image_proxy(request, url, referer=None):
                 headers[h] = request.headers[h]
         referer_headers = dict(headers)
         referer_headers['Referer'] = referer
-        request_timeout = 30
-        session = aiohttp_client_session(
-            auto_decompress=False,
-            timeout=request_timeout,
-        )
+        session = _create_aiohttp_client_session()
         # 先尝试发带Referer的请求，不行再尝试不带Referer
         response = await get_response(session, url, referer_headers)
         if response.status in REFERER_DENY_STATUS:

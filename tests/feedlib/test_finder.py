@@ -1,8 +1,10 @@
 import pytest
+import requests
 from pytest_httpserver import HTTPServer
 
 from rssant_config import CONFIG
 from rssant_feedlib.finder import FeedFinder
+from rssant_common.dns_service import DNSService
 
 
 home_page = """
@@ -102,6 +104,7 @@ def _setup_feed_server(httpserver: HTTPServer):
         'Go Home', status=301, headers=headers)
     httpserver.expect_request('/ok-feed.xml').respond_with_data(ok_feed_page)
     httpserver.expect_request('/bad-feed.xml').respond_with_data(bad_feed_page)
+    assert requests.get(httpserver.url_for('/')).ok
 
 
 def _create_finder(start_url, **kwargs):
@@ -113,7 +116,7 @@ def _create_finder(start_url, **kwargs):
     finder = FeedFinder(
         start_url,
         message_handler=message_handler,
-        allow_private_address=True,
+        dns_service=DNSService.create(allow_private_address=True),
         **kwargs,
     )
     return finder, messages

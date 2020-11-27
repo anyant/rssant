@@ -6,19 +6,17 @@ import ssl
 import socket
 import asyncio
 from urllib.parse import urlparse
-from collections import defaultdict
-from urllib3.util import connection
+from collections import defaultdict, OrderedDict
 
+import yarl
 import aiohttp
+import requests.adapters
 
 from rssant_config import CONFIG
 from .rss_proxy import RSSProxyClient, ProxyStrategy
 from .helper import get_or_create_event_loop
 
 LOG = logging.getLogger(__name__)
-
-
-_orig_create_connection = connection.create_connection
 
 
 _cache_records_text = """
@@ -42,36 +40,58 @@ def _read_records(text) -> dict:
 _CACHE_RECORDS = _read_records(_cache_records_text)
 
 
+class DNSError(Exception):
+    """DNS Error"""
+
+
+class PrivateAddressError(DNSError):
+    """
+    Private IP address Error.
+
+    Prevent request private address, which will attack local network.
+    """
+
+
+class NameNotResolvedError(DNSError):
+    """Name not resolved Error"""
+
+
 def _is_public_ipv4(value):
     try:
         ip = ipaddress.ip_address(value)
     except ipaddress.AddressValueError:
         return False
-    return not ip.is_private
-
-
-class RssantAsyncResolver(aiohttp.AsyncResolver):
-
-    def __init__(self, *args, dns_service, **kwargs):
-        self._dns_service = dns_service
-        super().__init__(*args, **kwargs)
-
-    async def resolve(
-        self, host: str, port: int = 0,
-        family: int = socket.AF_INET
-    ) -> List[Dict[str, Any]]:
-        hosts = self._dns_service.resolve_aiohttp(host, port)
-        if hosts:
-            return hosts
-        return await super().resolve(host, port, family=family)
+    return ip.version == 4 and (not ip.is_private)
 
 
 class DNSService:
 
-    def __init__(self, client: RSSProxyClient, records: dict = None):
+    def __init__(self, client: RSSProxyClient, records: dict = None, allow_private_address: bool = False):
         self.hosts = list(records or {})
         self.update(records or {})
         self.client = client
+        self.allow_private_address = allow_private_address
+
+    @staticmethod
+    def create(*, rss_proxy_url: str = None, rss_proxy_token: str = None, allow_private_address: bool = False):
+
+        def proxy_strategy(url):
+            if 'google.com' in url:
+                return ProxyStrategy.PROXY_FIRST
+            else:
+                return ProxyStrategy.DIRECT_FIRST
+
+        _rss_proxy_client = RSSProxyClient(
+            rss_proxy_url=rss_proxy_url,
+            rss_proxy_token=rss_proxy_token,
+            proxy_strategy=proxy_strategy,
+        )
+        service = DNSService(
+            client=_rss_proxy_client,
+            records=_CACHE_RECORDS,
+            allow_private_address=allow_private_address,
+        )
+        return service
 
     def update(self, records: dict):
         new_records = defaultdict(set)
@@ -86,35 +106,60 @@ class DNSService:
         host = urlparse(url).hostname
         return self.is_resolved_host(host)
 
-    def resolve(self, host) -> list:
+    def _sync_resolve(self, host) -> list:
+        addrinfo = socket.getaddrinfo(host, None)
+        for family, __, __, __, sockaddr in addrinfo:
+            if family == socket.AF_INET:
+                ip, __ = sockaddr
+                yield ip
+            elif family == socket.AF_INET6:
+                ip, __, __, __ = sockaddr
+                yield ip
+
+    def _local_resolve(self, host) -> list:
         ip_set = self.records.get(host)
         return list(ip_set) if ip_set else []
 
-    def resolve_urllib3(self, host):
-        ip_set = self.resolve(host)
-        if ip_set:
-            ip = random.choice(list(ip_set))
-            LOG.info('resolve_urllib3 %s to %s', host, ip)
-            return ip
-        return host
+    def _select_ip(self, ip_set: list, *, host: str) -> list:
+        # Discard private and prefer ipv4
+        groups = OrderedDict([
+            ((4, False), []),
+            ((6, False), []),
+            ((4, True), []),
+            ((6, True), []),
+        ])
+        for ip in ip_set:
+            ip = ipaddress.ip_address(ip)
+            key = (ip.version, ip.is_private)
+            if key not in groups:
+                LOG.error(f'unknown version IP {ip}')
+                continue
+            groups[key].append(str(ip))
+        public_s = groups[(4, False)] or groups[(6, False)]
+        if public_s:
+            return random.choice(public_s)
+        private_s = groups[(4, True)] or groups[(4, True)]
+        if self.allow_private_address:
+            if private_s:
+                return random.choice(private_s)
+        else:
+            if private_s:
+                raise PrivateAddressError(private_s[0])
+        raise NameNotResolvedError(host)
+
+    def resolve_urllib3(self, host) -> str:
+        ip_set = self._local_resolve(host)
+        if not ip_set:
+            ip_set = list(set(self._sync_resolve(host)))
+        LOG.debug('resolve_urllib3 %s to %s', host, ip_set)
+        ip = self._select_ip(ip_set, host=host)
+        return ip
 
     def aiohttp_resolver(self, **kwargs):
         return RssantAsyncResolver(dns_service=self, **kwargs)
 
-    def resolve_aiohttp(self, host, port):
-        hosts = []
-        ip_set = self.resolve(host)
-        if not ip_set:
-            return hosts
-        LOG.info('resolve_aiohttp %s to %s', host, ip_set)
-        for ip in ip_set:
-            hosts.append({
-                'hostname': host,
-                'host': ip, 'port': port,
-                'family': socket.AF_INET, 'proto': 0,
-                'flags': socket.AI_NUMERICHOST
-            })
-        return hosts
+    def requests_http_adapter(self, **kwargs):
+        return RssantHttpAdapter(dns_service=self, **kwargs)
 
     def refresh(self):
         records = defaultdict(set)
@@ -196,19 +241,60 @@ class DNSService:
         url_template = 'https://dns.google.com/resolve?name={name}&type=A'
         return self.query_from_dns_over_tls(url_template)
 
-    def patch_urllib3(self):
-        """
-        https://stackoverflow.com/questions/22609385/python-requests-library-define-specific-dns
-        """
-        connection.create_connection = self._patched_create_connection
 
-    def _patched_create_connection(self, address, *args, **kwargs):
-        """Wrap urllib3's create_connection to resolve the name elsewhere"""
-        # resolve hostname to an ip address; use your own
-        # resolver here, as otherwise the system resolver will be used.
-        host, port = address
-        hostname = self.resolve_urllib3(host)
-        return _orig_create_connection((hostname, port), *args, **kwargs)
+class RssantAsyncResolver(aiohttp.AsyncResolver):
+
+    def __init__(self, *args, dns_service: DNSService, **kwargs):
+        self._dns_service = dns_service
+        super().__init__(*args, **kwargs)
+
+    async def _async_resolve(self, hostname) -> list:
+        hosts = await super().resolve(hostname, family=socket.AF_INET)
+        return list(set(item['host'] for item in hosts))
+
+    async def resolve(
+        self, host: str, port: int = 0,
+        family: int = socket.AF_INET
+    ) -> List[Dict[str, Any]]:
+        ip_set = self._dns_service._local_resolve(host)
+        if not ip_set:
+            ip_set = await self._async_resolve(host)
+        LOG.debug('resolve_aiohttp %s to %s', host, ip_set)
+        ip = self._dns_service._select_ip(ip_set, host=host)
+        return [{
+            'hostname': host,
+            'host': ip, 'port': port,
+            'family': socket.AF_INET, 'proto': 0,
+            'flags': socket.AI_NUMERICHOST,
+        }]
+
+
+class RssantHttpAdapter(requests.adapters.HTTPAdapter):
+    """
+    https://stackoverflow.com/questions/22609385/python-requests-library-define-specific-dns
+    """
+
+    def __init__(self, dns_service: DNSService, **kwargs):
+        self.dns_service = dns_service
+        super().__init__(**kwargs)
+
+    def send(self, request, **kwargs):
+        origin_request_url = request.url
+        parsed_url = yarl.URL(request.url)
+        hostname = parsed_url.raw_host
+        ip = self.dns_service.resolve_urllib3(hostname)
+        request.url = str(parsed_url.with_host(ip))
+        request.headers['Host'] = str(parsed_url.origin()).split('://', 1)[1]
+        connection_pool_kwargs = self.poolmanager.connection_pool_kw
+        if parsed_url.scheme == 'https':
+            connection_pool_kwargs['server_hostname'] = hostname
+            connection_pool_kwargs['assert_hostname'] = hostname
+        else:
+            connection_pool_kwargs.pop('server_hostname', None)
+            connection_pool_kwargs.pop('assert_hostname', None)
+        response: requests.Response = super().send(request, **kwargs)
+        response.url = request.url = origin_request_url
+        return response
 
 
 def _setup():
@@ -218,17 +304,10 @@ def _setup():
             rss_proxy_url=CONFIG.rss_proxy_url,
             rss_proxy_token=CONFIG.rss_proxy_token,
         )
-
-    def proxy_strategy(url):
-        if 'google.com' in url:
-            return ProxyStrategy.PROXY_FIRST
-        else:
-            return ProxyStrategy.DIRECT_FIRST
-
-    _rss_proxy_client = RSSProxyClient(
-        **_rss_proxy_options, proxy_strategy=proxy_strategy)
-    service = DNSService(client=_rss_proxy_client, records=_CACHE_RECORDS)
-    service.patch_urllib3()
+    service = DNSService.create(
+        **_rss_proxy_options,
+        allow_private_address=CONFIG.allow_private_address,
+    )
     return service
 
 

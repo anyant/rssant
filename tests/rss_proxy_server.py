@@ -6,6 +6,7 @@ from urllib.parse import urlparse, parse_qsl
 from pytest_httpserver import HTTPServer
 from werkzeug.datastructures import Headers as HTTPHeaders
 from werkzeug import Response as WerkzeugResponse, Request as WerkzeugRequest
+from rssant_common.dns_service import DNSService
 
 
 LOG = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ def _setup_rss_proxy(httpserver: HTTPServer):
     httpserver.expect_request("/direct/200").respond_with_data('DIRECT', status=200)
     proxy_url = httpserver.url_for('/rss-proxy')
     options = dict(
-        allow_private_address=True,
+        dns_service=DNSService.create(allow_private_address=True),
         rss_proxy_url=proxy_url,
         rss_proxy_token=_RSS_PROXY_TOKEN,
     )
