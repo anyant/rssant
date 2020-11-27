@@ -22,8 +22,22 @@ _dir = os.path.dirname(__file__)
 _filename = 'fake_useragent_{}.json'.format(fake_useragent.VERSION)
 _useragent_path = os.path.join(_dir, _filename)
 
-useragent = fake_useragent.UserAgent(
-    path=_useragent_path, fallback=_DEFAULT_USER_AGENT)
+
+class FakeUserAgent:
+    """
+    Avoid warning: Error occurred during getting browser, but was suppressed with fallback.
+    https://github.com/hellysmile/fake-useragent/blob/master/fake_useragent/fake.py#L142
+    """
+
+    def __init__(self):
+        self._useragent = fake_useragent.UserAgent(
+            path=_useragent_path, fallback=_DEFAULT_USER_AGENT)
+
+    def random(self):
+        return str(self._useragent.random)
+
+
+useragent = FakeUserAgent()
 
 
 def DEFAULT_USER_AGENT(target=None):
@@ -36,4 +50,4 @@ def DEFAULT_USER_AGENT(target=None):
         # eg: https://cdn.werss.weapp.design/api/v1/feeds/xxxx.xml
         if host and 'werss.' in host.lower():
             return WERSS_USER_AGENT
-    return str(useragent.random)
+    return str(useragent.random())
