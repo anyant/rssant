@@ -56,12 +56,18 @@ async def check_private_address(url):
             raise ImageProxyError('private address not allowed')
 
 
+_IMAGE_NETWORK_ERROR_S = (
+    OSError, TimeoutError, IOError, aiohttp.ClientError,
+    asyncio.TimeoutError, asyncio.CancelledError,
+)
+
+
 async def get_response(session, url, headers):
     try:
         response = await session.get(url, headers=headers)
-    except (OSError, TimeoutError, IOError, aiohttp.ClientError, asyncio.TimeoutError) as ex:
+    except _IMAGE_NETWORK_ERROR_S as ex:
         await session.close()
-        raise ImageProxyError(str(ex))
+        raise ImageProxyError('{}: {}'.format(type(ex).__name__, ex))
     except Exception:
         await session.close()
         raise
@@ -109,7 +115,7 @@ async def image_proxy(request, url, referer=None):
         # 先尝试发带Referer的请求，不行再尝试不带Referer
         response = await get_response(session, url, referer_headers)
         if response.status in REFERER_DENY_STATUS:
-            LOG.info(f'proxy image {url} referer={referer} '
+            LOG.info(f'proxy image {url!r} referer={referer!r} '
                      f'failed {response.status}, will try without referer')
             response.close()
             response = await get_response(session, response.url, headers)
@@ -118,7 +124,7 @@ async def image_proxy(request, url, referer=None):
         if is_chunked and request.version < HttpVersion11:
             version = 'HTTP/{0.major}.{0.minor}'.format(request.version)
             error_msg = f"using chunked encoding is forbidden for {version}"
-            LOG.info(f'proxy image {url} referer={referer} failed: {error_msg}')
+            LOG.info(f'proxy image {url!r} referer={referer!r} failed: {error_msg}')
             response.close()
             raise ImageProxyError(error_msg)
     except ImageProxyError as ex:
@@ -154,11 +160,16 @@ async def image_proxy(request, url, referer=None):
         async for chunk in response.content.iter_chunked(8 * 1024):
             content_length += len(chunk)
             if content_length > MAX_IMAGE_SIZE:
-                LOG.warning(f'image too large, abort the response, url={url}')
+                LOG.warning(f'image too large, abort the response, url={url!r}')
                 my_response.force_close()
                 break
             await my_response.write(chunk)
         await my_response.write_eof()
+    except _IMAGE_NETWORK_ERROR_S as ex:
+        msg = "image proxy failed {}: {} url={!r}".format(type(ex).__name__, ex, url)
+        LOG.warning(msg)
     finally:
         await do_cleanup()
+        my_response.force_close()
+        await my_response.write_eof()
     return my_response
