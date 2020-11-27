@@ -58,7 +58,9 @@ async def get_response(session, url, headers):
         raise ImageProxyError('private address not allowed')
     except _IMAGE_NETWORK_ERROR_S as ex:
         await session.close()
-        raise ImageProxyError('{}: {}'.format(type(ex).__name__, ex))
+        msg = '{}: {}'.format(type(ex).__name__, ex)
+        LOG.info('image request failed %s, url=%r', msg, url)
+        raise ImageProxyError(msg)
     except Exception:
         await session.close()
         raise
