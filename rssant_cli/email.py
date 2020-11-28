@@ -21,8 +21,8 @@ def _parse_receivers(text) -> list:
 @click.option('--receivers', required=True, help="receiver emails")
 def send_recall(receivers):
     subject = '好久不见，甚是想念，欢迎回蚁阅看看~'
+    email = EmailTemplate(subject=subject, filename='recall.html')
     sender = CONFIG.smtp_username
-    email = EmailTemplate(subject, filename='recall.html')
     receivers = _parse_receivers(receivers)
     click.confirm('Send recall email to {} receivers?'.format(len(receivers)), abort=True)
     for receiver in receivers:

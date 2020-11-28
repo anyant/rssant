@@ -14,15 +14,17 @@ LOG = logging.getLogger(__name__)
 
 
 class EmailTemplate:
-    def __init__(self, subject, filename):
+    def __init__(self, filename, subject=None):
         filepath = os.path.join(BASE_DIR, 'rssant/templates/email', filename)
         with open(filepath) as f:
             html = f.read()
-        text = html2text(html)
-        self.text_template = Template(text)
-        html = pynliner.fromString(html)
         self.html_template = Template(html)
-        self.subject = subject
+        self.subject = subject or ''
+
+    def render_html(self, **kwargs) -> str:
+        html = self.html_template.render(Context(kwargs))
+        html = pynliner.fromString(html)
+        return html
 
     def send(self, sender, receiver, context):
         LOG.info(f'send email subject={self.subject!r} to {receiver}')
@@ -30,9 +32,8 @@ class EmailTemplate:
             rssant_url=ENV_CONFIG.root_url,
             rssant_email=ENV_CONFIG.smtp_username,
         )
-        context = Context(context)
-        text = self.text_template.render(context)
-        html = self.html_template.render(context)
+        html = self.render_html(**context)
+        text = html2text(html)
         try:
             send_mail(self.subject, text, sender, [receiver],
                       fail_silently=False, html_message=html)
