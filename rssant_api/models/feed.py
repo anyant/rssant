@@ -337,11 +337,13 @@ class Feed(Model, ContentHashMixin):
     @staticmethod
     def refresh_freeze_level():
         """
+        活跃用户: 90天内有阅读记录
         冻结策略:
             1. 无人订阅，冻结1个月。有人订阅时解冻。
             2. 创建时间>=7天，且2年无更新，冻结1个月。有更新时解冻。
             3. 创建时间>=7天，且没有任何内容，冻结7天。有更新时解冻。
-            4. 其余订阅参照冻结时间表格。
+            4. 无活跃用户订阅，冻结3天。有活跃用户订阅时解冻。
+            5. 其余订阅参照冻结时间表格。
         统计数据:
             - 90%的订阅小于300KB
             - 99%的订阅小于1500KB
@@ -363,16 +365,19 @@ class Feed(Model, ContentHashMixin):
             feed.id AS id,
             CASE
                 WHEN (
-                    userfeed.id is NULL
+                    feed_stat.feed_id is NULL OR feed_stat.user_count <= 0
                 ) THEN 31 * 24
                 WHEN (
                     (feed.dt_created <= NOW() - INTERVAL '7 days')
-                    and (feed.dt_latest_story_published <= NOW() - INTERVAL '2 years')
+                    AND (feed.dt_latest_story_published <= NOW() - INTERVAL '2 years')
                 ) THEN 30 * 24
                 WHEN (
                     (feed.dt_created <= NOW() - INTERVAL '7 days')
-                    and (feed.dt_latest_story_published is NULL and total_storys <= 0)
+                    AND (feed.dt_latest_story_published is NULL and total_storys <= 0)
                 ) THEN 7 * 24
+                WHEN (
+                    feed_stat.active_user_count <= 0
+                ) THEN 3 * 24
                 WHEN (
                     feed.content_length >= 1500 * 1024 AND feed.dryness >= 500
                 ) THEN 9
@@ -391,14 +396,27 @@ class Feed(Model, ContentHashMixin):
                 ELSE 1
             END AS freeze_level
         FROM rssant_api_feed AS feed
-        LEFT OUTER JOIN rssant_api_userfeed AS userfeed
-        ON feed.id = userfeed.feed_id
+        LEFT OUTER JOIN (
+            SELECT
+                feed_id,
+                COUNT(1) AS user_count,
+                SUM(user_stat.is_active) AS active_user_count
+            FROM rssant_api_userfeed JOIN (
+                SELECT user_id, CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '90 days'
+                ) THEN 1 ELSE 0 END AS is_active
+                FROM rssant_api_userfeed GROUP BY user_id
+            ) user_stat
+            ON rssant_api_userfeed.user_id = user_stat.user_id
+            GROUP BY feed_id
+        ) AS feed_stat
+        ON feed.id = feed_stat.feed_id
         WHERE feed.status != '{FeedStatus.DISCARD}'
         )
         UPDATE rssant_api_feed AS feed
         SET freeze_level = t.freeze_level
         FROM t
-        WHERE feed.id = t.id
+        WHERE feed.id = t.id AND feed.freeze_level != t.freeze_level
         ;
         """
         with connection.cursor() as cursor:
