@@ -10,6 +10,7 @@ from urllib.parse import urlparse, urlunparse
 import aiohttp
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import timezone
 
 
 LOG = logging.getLogger(__name__)
@@ -121,3 +122,8 @@ def timer(name, response=None):
             LOG.debug(f'Timer X-{name}-Time: {cost:.0f}ms')
             if response:
                 response[f'X-{name}-Time'] = f'{cost:.0f}ms'
+
+
+def to_timezone_cst(dt: timezone.datetime) -> timezone.datetime:
+    delta = timezone.timedelta(hours=8)
+    return dt.astimezone(timezone.timezone(delta))

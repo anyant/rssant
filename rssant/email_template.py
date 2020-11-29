@@ -4,6 +4,7 @@ from smtplib import SMTPException
 
 from django.template import Template, Context
 from django.core.mail import send_mail
+from mako.template import Template as MakoTemplate
 
 import pynliner
 from html2text import html2text
@@ -18,11 +19,19 @@ class EmailTemplate:
         filepath = os.path.join(BASE_DIR, 'rssant/templates/email', filename)
         with open(filepath) as f:
             html = f.read()
-        self.html_template = Template(html)
+        if filename.endswith('.mako'):
+            self.is_mako = True
+            self.html_template = MakoTemplate(html)
+        else:
+            self.is_mako = False
+            self.html_template = Template(html)
         self.subject = subject or ''
 
     def render_html(self, **kwargs) -> str:
-        html = self.html_template.render(Context(kwargs))
+        if self.is_mako:
+            html = self.html_template.render(**kwargs)
+        else:
+            html = self.html_template.render(Context(kwargs))
         html = pynliner.fromString(html)
         return html
 

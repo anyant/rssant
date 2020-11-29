@@ -7,6 +7,7 @@ import click
 from django.utils import timezone
 from django.db import connection
 import rssant_common.django_setup  # noqa:F401
+from rssant_common.helper import to_timezone_cst
 from rssant.email_template import EmailTemplate
 from rssant_config import CONFIG
 
@@ -43,7 +44,7 @@ def query_users(dt_gte: timezone.datetime = None, dt_lt: timezone.datetime = Non
         rows = list(cursor.fetchall())
     items = []
     for row in rows:
-        id = id, username, email, dt_joined, feed_count, dt_last_visit = row
+        id, username, email, dt_joined, feed_count, dt_last_visit = row
         if not dt_last_visit:
             dt_last_visit = dt_joined
         user = User(
@@ -78,26 +79,18 @@ def compute_retain(users: typing.List[User], periods: typing.List[int]) -> list:
     return [v for k, v in sorted(ratios.items())]
 
 
-TIMEZONE_OFFSET = 8
-
-
-def tz_dt(dt: timezone.datetime):
-    delta = timezone.timedelta(hours=TIMEZONE_OFFSET)
-    return dt.astimezone(timezone.timezone(delta))
-
-
 def analysis(users: typing.List[User], periods: typing.List[int], by='day') -> list:
     if by == 'day':
         def key(x):
-            dt = tz_dt(x.dt_joined)
+            dt = to_timezone_cst(x.dt_joined)
             return dt.strftime('%Y-%m-%d')
     elif by == 'month':
         def key(x):
-            dt = tz_dt(x.dt_joined)
+            dt = to_timezone_cst(x.dt_joined)
             return dt.strftime('%Y-%m')
     elif by == 'week':
         def key(x):
-            dt = tz_dt(x.dt_joined)
+            dt = to_timezone_cst(x.dt_joined)
             dt_week = dt - timezone.timedelta(days=dt.weekday())
             return dt_week.strftime('%Y-%m-%d')
     else:
@@ -123,7 +116,7 @@ def render_html(rows: list, periods: typing.List[int]) -> str:
 
 
 def render_and_send_email(rows: list, periods: typing.List[int], dt_end: timezone.datetime, receiver: str):
-    date = tz_dt(dt_end).strftime('%Y-%m-%d')
+    date = to_timezone_cst(dt_end).strftime('%Y-%m-%d')
     template = EmailTemplate(
         subject=f'蚁阅用户留存 {date}',
         filename='retain_analysis.html',
@@ -157,7 +150,7 @@ MONTHLY_RETAIN_PERIODS = [1, 2, 3, 5, 7, 14, 30, 60, 90]
 @click.option('--dt-end', type=str, required=False, help='end date joined')
 @click.option('--days', type=int, default=30, help='analysis days')
 @click.option('--by', type=click.Choice(['day', 'week', 'month']), default='day', help='group user by')
-@click.option('--output', type=str, required=True, help='output filepath')
+@click.option('--output', type=str, required=True, help='output email or filepath')
 @click.option('--output-type', type=click.Choice(['html', 'csv', 'email']), default='html')
 @click.command()
 def main(output: str, output_type: str, days: int, dt_end=None, by=None):
@@ -165,7 +158,7 @@ def main(output: str, output_type: str, days: int, dt_end=None, by=None):
         dt_end = timezone.datetime.strptime(dt_end, '%Y-%m-%d')
     else:
         dt_end = timezone.datetime.now()
-    dt_lt = tz_dt(dt_end)\
+    dt_lt = to_timezone_cst(dt_end)\
         .replace(hour=0, minute=0, second=0, microsecond=0)\
         .astimezone(timezone.utc)
     dt_gte = dt_lt - timezone.timedelta(days=days)
