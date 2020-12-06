@@ -102,7 +102,7 @@
     <td class="cell ${ value_class(row['base'][key]) } ${ delta_class(row['delta'][key]) }">
         <div class="cell-wrapper">
         <span class="value">${ row['base'][key] }</span>
-        <span class="delta">${ row['delta'][key] }</span>
+        <span class="delta">${ '{:+}'.format(row['delta'][key]) }</span>
         </div>
     </td>
 </%def>
