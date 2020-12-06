@@ -18,23 +18,23 @@
 
         table {
             text-align: center;
+            font-family: monospace;
             font-size: 12px;
             border-collapse: collapse;
             margin-bottom: 48px;
             min-width: 720px;
         }
 
+        table th{
+            border: 1px solid #f3f3f3;
+        }
+
+        table tr.data:hover {
+            background: #E7F4FE;
+        }
+
         .domain {
             text-align: left;
-        }
-
-        .response-status-name {
-            text-align: right;
-        }
-
-        .response-status-label {
-            text-align: left;
-            padding-left: 16px;
         }
 
         .domain,
@@ -44,7 +44,7 @@
 
         .cell {
             text-align: right;
-            min-width: 48px;
+            min-width: 64px;
         }
 
         .cell .delta {
@@ -83,14 +83,6 @@
         .cell.delta-zero.value-zero .value {
             visibility: hidden;
         }
-
-        table td,
-        table th {
-            font-family: monospace;
-            padding: 2px;
-            border-collapse: collapse;
-            word-break: keep-all;
-        }
     </style>
 </head>
 
@@ -106,86 +98,44 @@
         return 'value-zero' if value == 0 else ''
 %>
 
-<%def name="number_cell(stats, key)">
-    <td class="cell ${ value_class(stats[key]) } ${ delta_class(stats[key+'_diff']) }">
+<%def name="number_cell(row, key)">
+    <td class="cell ${ value_class(row['base'][key]) } ${ delta_class(row['delta'][key]) }">
         <div class="cell-wrapper">
-        <span class="value ">${ stats[key] }</span>
-        <span class="delta">${ stats[key+'_diff'] }</span>
+        <span class="value">${ row['base'][key] }</span>
+        <span class="delta">${ row['delta'][key] }</span>
         </div>
     </td>
 </%def>
 
-<%def name="count_cells(stats, key, names)">
-    % for name in names:
-    <td class="cell ${ value_class(stats[key][name]) } ${ delta_class(stats[key+'_diff'][name]) }">
-        <div class="cell-wrapper">
-        <span class="value">${ stats[key][name] }</span>
-        <span class="delta">${ '{:+}'.format(stats[key+'_diff'][name]) }</span>
-        </div>
-    </td>
-    % endfor
-</%def>
-
-    <h2>Overview</h2>
     <table>
-        <tr>
-            <th>domain</th>
-            <th>total</th>
-            <th>use_proxy</th>
-            % for name in status_names:
+        <tr class="header">
+            <th rowspan="2">domain</th>
+            <th rowspan="2">total</th>
+            <th rowspan="2">proxy</th>
+            <th colspan="${ len(headers['response_status']) }">response_status</th>
+            <th colspan="${ len(headers['freeze_level']) }">freeze_level</th>
+        </tr>
+        <tr class="header">
+            % for name in headers['response_status']:
+            <th>${ name }</th>
+            % endfor
+            % for name in headers['freeze_level']:
             <th>${ name }</th>
             % endfor
         </tr>
-        % for domain, stats in result:
-        <tr>
-            <td class="domain">${ domain }</td>
-            ${ number_cell(stats, 'total') }
-            ${ number_cell(stats, 'use_proxy') }
-            ${ count_cells(stats, 'status', status_names) }
-        </tr>
-        % endfor
-    </table>
-
-    <h2>Response Status</h2>
-    <table>
-        <tr>
-            <th>domain</th>
-            % for name in response_status_names:
-            <th>${ name }</th>
+        % for row in records:
+        <tr class="data">
+            <td class="domain">${ row['domain'] }</td>
+            ${ number_cell(row, 'total') }
+            ${ number_cell(row, 'use_proxy') }
+            % for name in headers['response_status']:
+            ${ number_cell(row, 'response_status:' + name) }
+            % endfor
+            % for name in headers['freeze_level']:
+            ${ number_cell(row, 'freeze_level:' + name) }
             % endfor
         </tr>
-        % for domain, stats in result:
-        <tr>
-            <td class="domain">${ domain }</td>
-            ${ count_cells(stats, 'response_status', response_status_names) }
-        </tr>
         % endfor
-    </table>
-
-    <h2>Freeze Level</h2>
-    <table>
-        <tr>
-            <th>domain</th>
-            % for name in freeze_level_names:
-            <th>${ name }</th>
-            % endfor
-        </tr>
-        % for domain, stats in result:
-        <tr>
-            <td class="domain">${ domain }</td>
-            ${ count_cells(stats, 'freeze_level', freeze_level_names) }
-        </tr>
-        % endfor
-    </table>
-
-    <h2>状态码表</h2>
-    <table class="response-status">
-    % for name, label in zip(response_status_names, response_status_labels):
-        <tr>
-        <td class="response-status-name">${ name }</td>
-        <td class="response-status-label">${ label}</td>
-        </tr>
-    % endfor
     </table>
 
 </body>

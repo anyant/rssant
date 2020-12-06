@@ -1,10 +1,10 @@
 import json
+import gzip
 import typing
 import logging
 import os.path
-import copy
-from itertools import groupby, chain
-from collections import namedtuple, defaultdict, OrderedDict
+from itertools import groupby
+from collections import namedtuple, defaultdict
 
 import click
 from django.utils import timezone
@@ -14,7 +14,6 @@ from rssant_common.helper import to_timezone_cst
 from rssant.email_template import EmailTemplate
 from rssant_config import CONFIG
 from rssant_api.models import FeedStatus
-from rssant_feedlib.response import FeedResponseStatus
 
 
 LOG = logging.getLogger(__name__)
@@ -39,6 +38,7 @@ def query_feeds() -> typing.List[Feed]:
         if not domain:
             LOG.error(f'Feed#{id} domain is None, skip it!')
             continue
+        domain = '.'.join(reversed(domain.split('.')))
         feed = Feed(
             id=id,
             domain=domain,
@@ -58,31 +58,27 @@ def compute_group_stats(feeds: typing.List[Feed]) -> dict:
     for feed in feeds:
         for key in keys:
             stats[key][str(getattr(feed, key))] += 1
-    stats['use_proxy'] = stats['use_proxy']['true']
+    stats['use_proxy'] = stats['use_proxy']['True']
     return stats
 
 
-def domain_sort_key(domain: str):
-    return (domain.startswith('other:'), domain)
-
-
-def compute_snapshot(feeds: typing.List[Feed]) -> dict:
-    groups = defaultdict(lambda: [])
+def compute_snapshot(feeds: typing.List[Feed]) -> list:
+    result_items = []
     def key(x): return x.domain
     for domain, group_feeds in groupby(sorted(feeds, key=key), key=key):
-        group_feeds = list(group_feeds)
-        if len(group_feeds) <= 5:
-            domain = 'other:{}'.format(len(group_feeds))
-        groups[domain].extend(group_feeds)
-    result = {}
-    for domain, group_feeds in groups.items():
-        group_stats = compute_group_stats(group_feeds)
-        result[domain] = group_stats
-    result = OrderedDict(sorted(result.items(), key=lambda x: domain_sort_key(x[0])))
-    return result
+        group_stats = compute_group_stats(list(group_feeds))
+        group_stats['domain'] = domain
+        result_items.append(group_stats)
+    return dict(items=result_items)
 
 
-def compute_report(snapshot1, snapshot2):
+DomainRecord = namedtuple('DomainRecord', 'domain,total,snapshot1,snapshot2')
+
+
+def _compute_domain_records(snapshot1, snapshot2):
+    snapshot1 = {x['domain']: x for x in snapshot1['items']}
+    snapshot2 = {x['domain']: x for x in snapshot2['items']}
+    records = []
     empty_domain = {
         'total': 0,
         'use_proxy': 0,
@@ -90,28 +86,108 @@ def compute_report(snapshot1, snapshot2):
         'response_status': {},
         'freeze_level': {},
     }
-    number_keys = ['total', 'use_proxy']
-    count_keys = ['status', 'response_status', 'freeze_level']
-    count_names = defaultdict(lambda: set())
-    for stats in chain(snapshot1.values(), snapshot2.values()):
-        for key in count_keys:
-            count_names[key].update(stats[key].keys())
-    result = OrderedDict()
-    domains = sorted(set(snapshot1.keys()) | set(snapshot2.keys()), key=domain_sort_key)
-    for domain in domains:
-        stats_1 = copy.deepcopy(snapshot1.get(domain, empty_domain))
-        stats_2 = snapshot2.get(domain, empty_domain)
-        for key in number_keys:
-            delta = stats_2[key] - stats_1[key]
-            stats_1[f'{key}_diff'] = delta
-        for key in count_keys:
-            delta = {}
-            for name in count_names[key]:
-                v2 = stats_2[key].get(name, 0)
-                v1 = stats_1[key].setdefault(name, 0)
-                delta[name] = v2 - v1
-            stats_1[f'{key}_diff'] = delta
-        result[domain] = stats_1
+    for domain in set(snapshot1.keys()) | set(snapshot2.keys()):
+        d1 = snapshot1.get(domain, empty_domain)
+        d2 = snapshot2.get(domain, empty_domain)
+        total = max(d1['total'], d2['total'])
+        records.append(DomainRecord(domain, total, d1, d2))
+    records = list(sorted(records, key=lambda x: x.total, reverse=True))
+    return records
+
+
+def compute_record_values(domain_snapshot):
+    result = defaultdict(lambda: 0)
+    result['total'] = domain_snapshot['total']
+    result['use_proxy'] = domain_snapshot['use_proxy']
+    for status, count in domain_snapshot['response_status'].items():
+        status = int(status)
+        if status in (200, 304):
+            key = 'ok'
+        elif -299 <= status <= -200:
+            key = 'neterr'
+        elif status in (401, 403):
+            key = 'deny'
+        elif 400 <= status <= 499:
+            key = '4xx'
+        elif 500 <= status <= 599:
+            key = '5xx'
+        else:
+            key = 'other'
+        result['response_status:' + key] += count
+    for level, count in domain_snapshot['freeze_level'].items():
+        level = int(level)
+        if level >= 168:
+            key = '168+'
+        elif level >= 12:
+            key = '12-167'
+        elif level >= 4:
+            key = '4-11'
+        else:
+            key = '1-3'
+        result['freeze_level:' + key] += count
+    return result
+
+
+def _compute_record_deltas(values1, values2):
+    keys = set(values1.keys()) | set(values2.keys())
+    deltas = {}
+    for k in keys:
+        deltas[k] = values2.get(k, 0) - values1.get(k, 0)
+    return deltas
+
+
+def _default_domain_report():
+    return {
+        'total': 0,
+        'base': defaultdict(lambda: 0),
+        'delta': defaultdict(lambda: 0),
+    }
+
+
+def compute_report(snapshot1, snapshot2):
+    report_records = defaultdict(_default_domain_report)
+    domain_records = _compute_domain_records(snapshot1, snapshot2)
+    for index, dr in enumerate(domain_records):
+        if index < 30:
+            key = dr.domain
+        else:
+            if dr.total <= 3:
+                key = f'other:{dr.total}'
+            elif dr.total <= 9:
+                key = f'other:4-9'
+            elif dr.total <= 99:
+                key = f'other:10-99'
+            else:
+                key = f'other:100+'
+        domain_report = report_records[key]
+        domain_report['total'] += dr.total
+        values1 = compute_record_values(dr.snapshot1)
+        for k, v in values1.items():
+            domain_report['base'][k] += v
+        values2 = compute_record_values(dr.snapshot2)
+        deltas = _compute_record_deltas(values1, values2)
+        for k, v in deltas.items():
+            domain_report['delta'][k] += v
+    for domain, domain_report in report_records.items():
+        domain_report['domain'] = domain
+
+    def record_sort_key(x):
+        if x['domain'].startswith('other:'):
+            count = int(x['domain'][len('other:'):].strip('+').split('-')[0])
+            return (False, -count, x['domain'])
+        else:
+            return (True, x['total'], x['domain'])
+    report_records = list(sorted(report_records.values(), key=record_sort_key, reverse=True))
+
+    response_status_headers = ['ok', 'neterr', 'deny', '4xx', '5xx', 'other']
+    freeze_level_headers = ['1-3', '4-11', '12-167', '168+', ]
+    result = {
+        'records': report_records,
+        'headers': {
+            'response_status': response_status_headers,
+            'freeze_level': freeze_level_headers,
+        }
+    }
     return result
 
 
@@ -125,11 +201,12 @@ def main():
 def snapshot(output=None):
     feeds = query_feeds()
     result = compute_snapshot(feeds)
-    content = json.dumps(result, ensure_ascii=False, indent=4)
+    text = json.dumps(result, ensure_ascii=False, indent=4)
+    content = gzip.compress(text.encode('utf-8'))
     if output:
         output = os.path.abspath(os.path.expanduser(output))
         click.echo(f'save to {output}')
-        with open(output, 'w') as f:
+        with open(output, 'wb') as f:
             f.write(content)
     else:
         click.echo(content)
@@ -137,39 +214,27 @@ def snapshot(output=None):
 
 def load_snapshot(filepath):
     filepath = os.path.abspath(os.path.expanduser(filepath))
-    with open(filepath) as f:
-        return json.load(f)
+    with open(filepath, 'rb') as f:
+        content = f.read()
+    return json.loads(gzip.decompress(content).decode('utf-8'))
 
 
-def _to_template_context(result: dict) -> dict:
-    stats = next(iter(result.values()))
-    response_status_names = list(sorted(stats['response_status'].keys(), key=int))
-    response_status_labels = [FeedResponseStatus.name_of(int(x)) for x in response_status_names]
-    freeze_level_names = list(sorted(stats['freeze_level'].keys(), key=int))
-    context = {
-        'result': list(result.items()),
-        'status_names': list(sorted(stats['status'].keys())),
-        'response_status_names': response_status_names,
-        'response_status_labels': response_status_labels,
-        'freeze_level_names': freeze_level_names,
-    }
-    return context
-
-
-def render_html(result: dict) -> str:
-    template = EmailTemplate(filename='feed_analysis.html.mako')
-    return template.render_html(**_to_template_context(result))
-
-
-def render_and_send_email(result: dict, receiver: str):
+def _get_template():
     date = to_timezone_cst(timezone.now()).strftime('%Y-%m-%d')
-    template = EmailTemplate(
+    return EmailTemplate(
         subject=f'蚁阅订阅分析 {date}',
         filename='feed_analysis.html.mako',
     )
-    context = _to_template_context(result)
+
+
+def render_html(report: dict) -> str:
+    return _get_template().render_html(**report)
+
+
+def render_and_send_email(report: dict, receiver: str):
+    template = _get_template()
     sender = CONFIG.smtp_username
-    return template.send(sender=sender, receiver=receiver, context=context)
+    return template.send(sender=sender, receiver=receiver, context=report)
 
 
 @click.option('--snapshot1', type=str, help='snapshot1 filepath')
@@ -180,9 +245,9 @@ def render_and_send_email(result: dict, receiver: str):
 def report(snapshot1, snapshot2, output: str, output_type: str):
     snapshot1 = load_snapshot(snapshot1)
     snapshot2 = load_snapshot(snapshot2)
-    result = compute_report(snapshot1, snapshot2)
+    report = compute_report(snapshot1, snapshot2)
     if output_type == 'html':
-        content = render_html(result)
+        content = render_html(report)
         output = os.path.abspath(os.path.expanduser(output))
         click.echo(f'save to {output}')
         with open(output, 'w') as f:
@@ -190,7 +255,7 @@ def report(snapshot1, snapshot2, output: str, output_type: str):
     else:
         assert output_type == 'email', f'unknown output type {output_type}'
         click.echo(f'send to {output}')
-        render_and_send_email(result, receiver=output)
+        render_and_send_email(report, receiver=output)
 
 
 if __name__ == "__main__":
