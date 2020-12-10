@@ -1,6 +1,6 @@
 import logging
 
-from rssant_config import CONFIG
+from rssant_common import _proxy_helper
 from rssant_common.rss_proxy import RSSProxyClient, ProxyStrategy
 
 
@@ -18,9 +18,6 @@ def oauth_api_request(method, url, **kwargs):
     """
     when network error, fallback to use rss proxy
     """
-    client = RSSProxyClient(
-        rss_proxy_url=CONFIG.rss_proxy_url,
-        rss_proxy_token=CONFIG.rss_proxy_token,
-        proxy_strategy=_proxy_strategy,
-    )
+    options = _proxy_helper.get_proxy_options()
+    client = RSSProxyClient(**options, proxy_strategy=_proxy_strategy)
     return client.request(method, url, **kwargs)

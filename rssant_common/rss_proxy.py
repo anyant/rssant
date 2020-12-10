@@ -5,6 +5,8 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
+from rssant_common import _proxy_helper
+
 
 LOG = logging.getLogger(__name__)
 
@@ -67,10 +69,12 @@ class ProxyStrategy(enum.Enum):
 class RSSProxyClient:
     def __init__(
         self,
+        proxy_url=None,
         rss_proxy_url=None,
         rss_proxy_token=None,
         proxy_strategy=None,
     ):
+        self.proxy_url = proxy_url
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
         self.proxy_strategy = self._get_proxy_strategy(proxy_strategy)
@@ -87,8 +91,8 @@ class RSSProxyClient:
         return strategy
 
     @property
-    def has_rss_proxy(self):
-        return bool(self.rss_proxy_url)
+    def has_proxy(self):
+        return bool(self.rss_proxy_url or self.proxy_url)
 
     def request_direct(self, method, url, timeout=None, **kwargs) -> requests.Response:
         if timeout is None:
@@ -97,9 +101,20 @@ class RSSProxyClient:
         response.close()
         return response
 
-    def request_by_proxy(self, method, url, timeout=None, **kwargs) -> requests.Response:
-        if not self.has_rss_proxy:
-            raise ValueError("rss_proxy_url not provided")
+    def request_by_proxy(self, *args, **kwargs) -> requests.Response:
+        use_rss_proxy = _proxy_helper.choice_proxy(
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
+        if use_rss_proxy:
+            if not self.rss_proxy_url:
+                raise ValueError("rss_proxy_url not provided")
+            return self._request_by_rss_proxy(*args, **kwargs)
+        else:
+            if not self.proxy_url:
+                raise ValueError("proxy_url not provided")
+            proxies = {'http': self.proxy_url, 'https': self.proxy_url}
+            return self.request_direct(*args, **kwargs, proxies=proxies)
+
+    def _request_by_rss_proxy(self, method, url, timeout=None, **kwargs) -> requests.Response:
         if timeout is None:
             timeout = _DEFAULT_TIMEOUT
         request: requests.PreparedRequest
@@ -132,7 +147,7 @@ class RSSProxyClient:
         return response
 
     def request(self, method, url, timeout=None, **kwargs) -> requests.Response:
-        if not self.has_rss_proxy:
+        if not self.has_proxy:
             return self.request_direct(method, url, timeout=timeout, **kwargs)
         request_first = request_second = None
         proxy_strategy = self.proxy_strategy(url)

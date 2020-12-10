@@ -85,18 +85,19 @@ def _do_find(url, max_trys, printer, rss_proxy_url, rss_proxy_token):
 
 def _do_parse(
     url: str, printer, checksum, save_checksum,
-    rss_proxy_url, rss_proxy_token,
+    proxy_url, rss_proxy_url, rss_proxy_token,
 ):
     if not url.startswith('http://') and not url.startswith('https://'):
         response_file = FeedResponseFile(url)
         response = response_file.read()
     else:
         reader = FeedReader(
+            proxy_url=proxy_url,
             rss_proxy_url=rss_proxy_url,
             rss_proxy_token=rss_proxy_token,
         )
         with reader:
-            response = reader.read(url, use_proxy=reader.has_rss_proxy)
+            response = reader.read(url, use_proxy=reader.has_proxy)
     print('-> {}'.format(response))
     if not response.ok:
         return
@@ -126,15 +127,16 @@ def _do_parse(
             f.write(data)
 
 
-def _do_save(url, output_dir, rss_proxy_url, rss_proxy_token):
+def _do_save(url, output_dir, proxy_url, rss_proxy_url, rss_proxy_token):
     if not output_dir:
         output_dir = os.getcwd()
     reader = FeedReader(
+        proxy_url=proxy_url,
         rss_proxy_url=rss_proxy_url,
         rss_proxy_token=rss_proxy_token,
     )
     with reader:
-        response = reader.read(url, use_proxy=reader.has_rss_proxy)
+        response = reader.read(url, use_proxy=reader.has_proxy)
         print(f'-> {response}')
         filename = os.path.join(output_dir, slugify.slugify(url))
         response_file = FeedResponseFile(filename)
@@ -147,16 +149,18 @@ def _do_save(url, output_dir, rss_proxy_url, rss_proxy_token):
 @click.option('--max-trys', type=int, default=10, help='Max trys')
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
+@click.option('--proxy-url', help='proxy url')
 @click.option('--rss-proxy-url', help='rss proxy url')
 @click.option('--rss-proxy-token', help='rss proxy token')
 def find(
     url, max_trys, no_content=False, profile=False,
-    rss_proxy_url=None, rss_proxy_token=None,
+    proxy_url=None, rss_proxy_url=None, rss_proxy_token=None,
 ):
     printer = Printer(profile or no_content)
     with ProfilerContext(profile):
         _do_find(
             url, max_trys, printer=printer,
+            proxy_url=proxy_url,
             rss_proxy_url=rss_proxy_url,
             rss_proxy_token=rss_proxy_token,
         )
@@ -166,15 +170,17 @@ def find(
 @click.argument('url')
 @click.option('--output-dir', help='output dir')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
+@click.option('--proxy-url', help='proxy url')
 @click.option('--rss-proxy-url', help='rss proxy url')
 @click.option('--rss-proxy-token', help='rss proxy token')
 def save(
     url, profile=False, output_dir=None,
-    rss_proxy_url=None, rss_proxy_token=None,
+    proxy_url=None, rss_proxy_url=None, rss_proxy_token=None,
 ):
     with ProfilerContext(profile):
         _do_save(
             url, output_dir=output_dir,
+            proxy_url=proxy_url,
             rss_proxy_url=rss_proxy_url,
             rss_proxy_token=rss_proxy_token,
         )
@@ -184,19 +190,21 @@ def save(
 @click.argument('url')
 @click.option('--no-content', is_flag=True, help='Do not print feed content')
 @click.option('--profile', is_flag=True, help='Run pyinstrument profile')
+@click.option('--proxy-url', help='proxy url')
 @click.option('--rss-proxy-url', help='rss proxy url')
 @click.option('--rss-proxy-token', help='rss proxy token')
 @click.option('--save-checksum', help='save checksum')
 @click.option('--checksum', help='feed checksum')
 def parse(
     url, no_content=False, profile=False,
-    rss_proxy_url=None, rss_proxy_token=None,
+    proxy_url=None, rss_proxy_url=None, rss_proxy_token=None,
     save_checksum=None, checksum=None,
 ):
     printer = Printer(profile or no_content)
     with ProfilerContext(profile):
         _do_parse(
             url, printer=printer,
+            proxy_url=proxy_url,
             rss_proxy_url=rss_proxy_url,
             rss_proxy_token=rss_proxy_token,
             save_checksum=save_checksum, checksum=checksum,

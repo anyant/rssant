@@ -7,6 +7,7 @@ from http import HTTPStatus
 
 import requests
 
+from rssant_common import _proxy_helper
 from rssant_common.dns_service import (
     DNSService, DNS_SERVICE,
     PrivateAddressError,
@@ -115,6 +116,7 @@ class FeedReader:
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
         allow_non_webpage=False,
+        proxy_url=None,
         rss_proxy_url=None,
         rss_proxy_token=None,
         dns_service: DNSService = DNS_SERVICE,
@@ -132,14 +134,20 @@ class FeedReader:
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_non_webpage = allow_non_webpage
+        self.proxy_url = proxy_url
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
+        self._use_rss_proxy = self._choice_proxy()
         self.dns_service = dns_service
         self._cacert = cacert.where()
 
     @property
-    def has_rss_proxy(self):
-        return bool(self.rss_proxy_url)
+    def has_proxy(self):
+        return bool(self.rss_proxy_url or self.proxy_url)
+
+    def _choice_proxy(self) -> bool:
+        return _proxy_helper.choice_proxy(
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
 
     def check_content_type(self, response):
         if self.allow_non_webpage:
@@ -187,10 +195,15 @@ class FeedReader:
             headers["If-Modified-Since"] = last_modified
         return headers
 
-    def _send_request(self, request, ignore_content):
+    def _send_request(self, request, ignore_content, proxies=None):
         # http://docs.python-requests.org/en/master/user/advanced/#timeouts
         response = self.session.send(
-            request, verify=self._cacert, timeout=(6.5, self.request_timeout), stream=True)
+            request,
+            verify=self._cacert,
+            timeout=self.request_timeout,
+            stream=True,
+            proxies=proxies,
+        )
         try:
             if not is_ok_status(response.status_code):
                 content = self._read_content(response)
@@ -205,16 +218,15 @@ class FeedReader:
             response.close()
         return response, content
 
-    def _read(self, url, etag=None, last_modified=None, ignore_content=False):
+    def _read(self, url, etag=None, last_modified=None, ignore_content=False, proxies=None):
         headers = self._prepare_headers(url, etag=etag, last_modified=last_modified)
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
-        response, content = self._send_request(prepared, ignore_content=ignore_content)
+        response, content = self._send_request(
+            prepared, ignore_content=ignore_content, proxies=proxies)
         return response.headers, content, response.url, response.status_code
 
-    def _read_by_proxy(self, url, etag=None, last_modified=None, ignore_content=False):
-        if not self.has_rss_proxy:
-            raise ValueError("rss_proxy_url not provided")
+    def _read_by_rss_proxy(self, url, etag=None, last_modified=None, ignore_content=False):
         headers = self._prepare_headers(url, etag=etag, last_modified=last_modified)
         data = dict(
             url=url,
@@ -235,6 +247,17 @@ class FeedReader:
             raise RSSProxyError(message)
         proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
         return response.headers, content, url, proxy_status
+
+    def _read_by_proxy(self, url, *args, **kwargs):
+        if self._use_rss_proxy:
+            if not self.rss_proxy_url:
+                raise ValueError("rss_proxy_url not provided")
+            return self._read_by_rss_proxy(url, *args, **kwargs)
+        else:
+            if not self.proxy_url:
+                raise ValueError("proxy_url not provided")
+            proxies = {'http': self.proxy_url, 'https': self.proxy_url}
+            return self._read(url, *args, **kwargs, proxies=proxies)
 
     def read(self, url, *args, use_proxy=False, **kwargs) -> FeedResponse:
         headers = content = None

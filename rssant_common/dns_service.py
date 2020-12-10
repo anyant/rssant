@@ -13,6 +13,7 @@ import aiohttp
 import requests.adapters
 
 from rssant_config import CONFIG
+from rssant_common import _proxy_helper
 from .rss_proxy import RSSProxyClient, ProxyStrategy
 from .helper import get_or_create_event_loop
 
@@ -73,7 +74,13 @@ class DNSService:
         self.allow_private_address = allow_private_address
 
     @staticmethod
-    def create(*, rss_proxy_url: str = None, rss_proxy_token: str = None, allow_private_address: bool = False):
+    def create(
+        *,
+        proxy_url: str = None,
+        rss_proxy_url: str = None,
+        rss_proxy_token: str = None,
+        allow_private_address: bool = False,
+    ):
 
         def proxy_strategy(url):
             if 'google.com' in url:
@@ -82,6 +89,7 @@ class DNSService:
                 return ProxyStrategy.DIRECT_FIRST
 
         _rss_proxy_client = RSSProxyClient(
+            proxy_url=proxy_url,
             rss_proxy_url=rss_proxy_url,
             rss_proxy_token=rss_proxy_token,
             proxy_strategy=proxy_strategy,
@@ -166,7 +174,7 @@ class DNSService:
         for host, ip_set in self.query_from_cloudflare().items():
             records[host].update(ip_set)
         LOG.info('resolved from cloudflare: %r', dict(records))
-        if self.client.has_rss_proxy:
+        if self.client.has_proxy:
             for host, ip_set in self.query_from_google().items():
                 records[host].update(ip_set)
             LOG.info('resolved from google: %r', dict(records))
@@ -278,7 +286,9 @@ class RssantHttpAdapter(requests.adapters.HTTPAdapter):
         self.dns_service = dns_service
         super().__init__(**kwargs)
 
-    def send(self, request, **kwargs):
+    def send(self, request: requests.Request, **kwargs):
+        if kwargs.get('proxies'):
+            return super().send(request, **kwargs)
         origin_request_url = request.url
         parsed_url = yarl.URL(request.url)
         hostname = parsed_url.raw_host
@@ -298,14 +308,9 @@ class RssantHttpAdapter(requests.adapters.HTTPAdapter):
 
 
 def _setup():
-    _rss_proxy_options = {}
-    if CONFIG.rss_proxy_enable:
-        _rss_proxy_options.update(
-            rss_proxy_url=CONFIG.rss_proxy_url,
-            rss_proxy_token=CONFIG.rss_proxy_token,
-        )
+    _proxy_options = _proxy_helper.get_proxy_options()
     service = DNSService.create(
-        **_rss_proxy_options,
+        **_proxy_options,
         allow_private_address=CONFIG.allow_private_address,
     )
     return service

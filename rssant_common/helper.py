@@ -8,6 +8,7 @@ import asyncio
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
+from aiohttp_socks import ProxyConnector
 from terminaltables import AsciiTable
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
@@ -97,7 +98,7 @@ def aiohttp_raise_for_status(response: aiohttp.ClientResponse):
         )
 
 
-def aiohttp_client_session(*, timeout=None, resolver=None, **kwargs):
+def aiohttp_client_session(*, timeout=None, resolver=None, proxy_url=None, **kwargs):
     """use aiodns and support number timeout"""
     if timeout is None:
         timeout = 30
@@ -106,8 +107,11 @@ def aiohttp_client_session(*, timeout=None, resolver=None, **kwargs):
     if resolver is None:
         resolver = aiohttp.AsyncResolver()
     # Fix: No route to host. https://github.com/saghul/aiodns/issues/22
-    family = socket.AF_INET
-    connector = aiohttp.TCPConnector(resolver=resolver, family=family)
+    conn_params = dict(resolver=resolver, family=socket.AF_INET)
+    if proxy_url:
+        connector = ProxyConnector.from_url(proxy_url, **conn_params)
+    else:
+        connector = aiohttp.TCPConnector(**conn_params)
     return aiohttp.ClientSession(connector=connector, timeout=timeout, **kwargs)
 
 

@@ -185,6 +185,7 @@ class FeedFinder:
         message_handler=None,
         max_trys=10,
         reader=None,
+        proxy_url=None,
         rss_proxy_url=None,
         rss_proxy_token=None,
         dns_service=DNS_SERVICE,
@@ -200,6 +201,7 @@ class FeedFinder:
         if reader is None:
             reader = FeedReader(
                 dns_service=dns_service,
+                proxy_url=proxy_url,
                 rss_proxy_url=rss_proxy_url,
                 rss_proxy_token=rss_proxy_token,
             )
@@ -212,8 +214,8 @@ class FeedFinder:
         self._guessed = False
 
     @property
-    def has_rss_proxy(self):
-        return self.reader.has_rss_proxy
+    def has_proxy(self):
+        return self.reader.has_proxy
 
     def _log(self, msg):
         if self.message_handler:
@@ -420,7 +422,7 @@ class FeedFinder:
                 break
             self._log(f"#{current_try} try {url}")
             res = self._read(url, current_try, use_proxy=use_proxy)
-            if self.has_rss_proxy and not use_proxy:
+            if self.has_proxy and not use_proxy:
                 if FeedResponseStatus.is_need_proxy(res.status):
                     current_try += 1
                     self._log(f'#{current_try} try use proxy')

@@ -28,6 +28,7 @@ sqlparse==0.2.4
 # feedlibs
 requests==2.22.0
 urllib3==1.25.8
+PySocks==1.7.1
 yarl==1.4.2
 certifi==2020.6.20
 chardet==3.0.4
@@ -51,6 +52,8 @@ aiodns==2.0.0
 aiohttp-devtools==0.13.1
 aiojobs==0.2.2
 aiocontextvars==0.2.2  # Python 3.6
+aiohttp-socks==0.5.5
+python-socks==1.1.1
 
 # metrics
 raven==6.10.0

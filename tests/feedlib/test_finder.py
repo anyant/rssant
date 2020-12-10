@@ -2,7 +2,7 @@ import pytest
 import requests
 from pytest_httpserver import HTTPServer
 
-from rssant_config import CONFIG
+from rssant_common import _proxy_helper
 from rssant_feedlib.finder import FeedFinder
 from rssant_common.dns_service import DNSService
 
@@ -160,7 +160,7 @@ real_urls = [
     "blog.guyskk.com",
     "http://www.zreading.cn/ican/2010/03/feed-subscribe/",
     "http://www.ruanyifeng.com/blog/",
-    "https://www.zhihu.com/question/19580096",
+    "https://www.v2ex.com/t/651250#reply63",
     "https://www.reddit.com/r/Python",
     "https://news.ycombinator.com/show",
     "https://ssshuos.com/",
@@ -172,8 +172,7 @@ real_urls = [
 def test_find_real(start_url: str):
     finder, messages = _create_finder(
         start_url,
-        rss_proxy_url=CONFIG.rss_proxy_url,
-        rss_proxy_token=CONFIG.rss_proxy_token,
+        **_proxy_helper.get_proxy_options(),
     )
     with finder:
         found = finder.find()

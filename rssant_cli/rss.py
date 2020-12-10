@@ -13,6 +13,7 @@ from django.contrib.auth import get_user_model
 import rssant_common.django_setup  # noqa:F401
 from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_api.helper import reverse_url
+from rssant_common import _proxy_helper
 from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
 from rssant_common.image_url import encode_image_url
 from rssant_feedlib.reader import FeedResponseStatus, FeedReader
@@ -335,10 +336,7 @@ def update_feed_use_proxy():
     """
     feeds = list(Feed.objects.raw(sql, [blacklist]))
     click.echo(f'{len(feeds)} feeds need check')
-    reader = FeedReader(
-        rss_proxy_url=CONFIG.rss_proxy_url,
-        rss_proxy_token=CONFIG.rss_proxy_token,
-    )
+    reader = FeedReader(**_proxy_helper.get_proxy_options())
     proxy_feeds = []
     with reader:
         for i, feed in enumerate(feeds):

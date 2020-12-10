@@ -64,6 +64,9 @@ class EnvConfig(ConfigModel):
     rss_proxy_url: str = T.url.optional
     rss_proxy_token: str = T.str.optional
     rss_proxy_enable: bool = T.bool.default(False)
+    # http proxy or socks proxy
+    proxy_url: str = T.url.scheme('http https socks5').optional
+    proxy_enable: bool = T.bool.default(False)
     # analytics matomo
     analytics_matomo_enable: bool = T.bool.default(False)
     analytics_matomo_url: str = T.str.optional

@@ -27,9 +27,9 @@ from rssant_feedlib.fulltext import is_fulltext_content, split_sentences
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
+from rssant_common import _proxy_helper
 from rssant_common.validator import compiler
 from rssant_common.dns_service import DNS_SERVICE
-from rssant_config import CONFIG
 
 
 LOG = logging.getLogger(__name__)
@@ -110,16 +110,6 @@ def validate_feed(feed):
     return feed_data
 
 
-def _get_proxy_options():
-    options = dict(dns_service=DNS_SERVICE)
-    if CONFIG.rss_proxy_enable:
-        options.update(
-            rss_proxy_url=CONFIG.rss_proxy_url,
-            rss_proxy_token=CONFIG.rss_proxy_token,
-        )
-    return options
-
-
 @actor('worker_rss.find_feed')
 def do_find_feed(
     ctx: ActorContext,
@@ -138,7 +128,7 @@ def do_find_feed(
         LOG.info(msg)
         messages.append(msg)
 
-    options = dict(message_handler=message_handler, **_get_proxy_options())
+    options = dict(message_handler=message_handler, **_proxy_helper.get_proxy_options())
     options.update(dns_service=DNS_SERVICE)
     with FeedFinder(url, **options) as finder:
         found = finder.find()
@@ -170,18 +160,18 @@ def do_sync_feed(
     params = {}
     if not is_refresh:
         params = dict(etag=etag, last_modified=last_modified)
-    options = _get_proxy_options()
+    options = _proxy_helper.get_proxy_options()
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     switch_prob = 0.25  # the prob of switch from use proxy to not use proxy
     with FeedReader(**options) as reader:
-        use_proxy = reader.has_rss_proxy and use_proxy
+        use_proxy = reader.has_proxy and use_proxy
         if use_proxy and random.random() < switch_prob:
             use_proxy = False
         response = reader.read(url, **params, use_proxy=use_proxy)
         LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
         need_proxy = FeedResponseStatus.is_need_proxy(response.status)
-        if (not use_proxy) and reader.has_rss_proxy and need_proxy:
+        if (not use_proxy) and reader.has_proxy and need_proxy:
             LOG.info(f'try use proxy read feed#{feed_id} url={unquote(url)}')
             proxy_response = reader.read(url, **params, use_proxy=True)
             LOG.info(f'proxy read feed#{feed_id} url={unquote(url)} status={proxy_response.status}')
@@ -264,11 +254,11 @@ async def do_fetch_story(
     num_sub_sentences: T.int.optional,
 ):
     LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
-    options = _get_proxy_options()
+    options = _proxy_helper.get_proxy_options()
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     async with AsyncFeedReader(**options) as reader:
-        use_proxy = use_proxy and reader.has_rss_proxy
+        use_proxy = use_proxy and reader.has_proxy
         url_content = await _fetch_story(reader, feed_id, offset, url, use_proxy=use_proxy)
     if not url_content:
         return

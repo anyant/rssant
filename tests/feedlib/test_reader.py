@@ -24,8 +24,8 @@ class SyncAsyncFeedReader:
         self._reader = AsyncFeedReader(*args, **kwargs)
 
     @property
-    def has_rss_proxy(self):
-        return self._reader.has_rss_proxy
+    def has_proxy(self):
+        return self._reader.has_proxy
 
     def read(self, *args, **kwargs):
         return self._loop_run(self._reader.read(*args, **kwargs))
@@ -41,17 +41,36 @@ class SyncAsyncFeedReader:
         return self._loop_run(self._reader.close())
 
 
+def _build_proxy_options():
+    if CONFIG.proxy_enable:
+        yield 'proxy', dict(
+            proxy_url=CONFIG.proxy_url,
+        )
+    if CONFIG.rss_proxy_enable:
+        yield 'rss_proxy', dict(
+            rss_proxy_url=CONFIG.rss_proxy_url,
+            rss_proxy_token=CONFIG.rss_proxy_token,
+        )
+    if CONFIG.proxy_enable and CONFIG.rss_proxy_enable:
+        yield 'proxy_and_rss_proxy', dict(
+            proxy_url=CONFIG.proxy_url,
+            rss_proxy_url=CONFIG.rss_proxy_url,
+            rss_proxy_token=CONFIG.rss_proxy_token,
+        )
+
+
+_PROXY_OPTION_IDS, _PROXY_OPTIONS = zip(*list(_build_proxy_options()))
+
+
 @pytest.mark.xfail(run=False, reason='depends on test network')
 @pytest.mark.parametrize('url', [
     'https://www.reddit.com/r/Python.rss',
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCBcRF18a7Qf58cCRy5xuWwQ',
 ])
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
-def test_read_by_proxy(reader_class: Type[FeedReader], url):
-    with reader_class(
-        rss_proxy_url=CONFIG.rss_proxy_url,
-        rss_proxy_token=CONFIG.rss_proxy_token,
-    ) as reader:
+@pytest.mark.parametrize('proxy_config', _PROXY_OPTIONS, ids=_PROXY_OPTION_IDS)
+def test_read_by_proxy(reader_class: Type[FeedReader], url, proxy_config):
+    with reader_class(**proxy_config) as reader:
         response = reader.read(url, use_proxy=True)
     assert response.ok
     assert response.url == url

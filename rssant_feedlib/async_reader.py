@@ -8,6 +8,7 @@ from http import HTTPStatus
 import aiodns
 import aiohttp
 
+from rssant_common import _proxy_helper
 from rssant_common.helper import aiohttp_client_session
 from rssant_common.dns_service import (
     DNSService, DNS_SERVICE,
@@ -34,30 +35,34 @@ LOG = logging.getLogger(__name__)
 class AsyncFeedReader:
     def __init__(
         self,
-        session=None,
         user_agent=DEFAULT_USER_AGENT,
         request_timeout=30,
         max_content_length=10 * 1024 * 1024,
         allow_non_webpage=False,
+        proxy_url=None,
         rss_proxy_url=None,
         rss_proxy_token=None,
         dns_service: DNSService = DNS_SERVICE,
     ):
-        self._close_session = session is None
-        self.session = session
         self.resolver: aiohttp.AsyncResolver = None
         self.user_agent = user_agent
         self.request_timeout = request_timeout
         self.max_content_length = max_content_length
         self.allow_non_webpage = allow_non_webpage
+        self.proxy_url = proxy_url
         self.rss_proxy_url = rss_proxy_url
         self.rss_proxy_token = rss_proxy_token
+        self._use_rss_proxy = self._choice_proxy()
         self.dns_service = dns_service
         self._sslcontext = ssl.create_default_context(cafile=cacert.where())
 
     @property
-    def has_rss_proxy(self):
-        return bool(self.rss_proxy_url)
+    def has_proxy(self):
+        return bool(self.rss_proxy_url or self.proxy_url)
+
+    def _choice_proxy(self) -> bool:
+        return _proxy_helper.choice_proxy(
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
 
     async def _async_init(self):
         if self.resolver is None:
@@ -66,9 +71,13 @@ class AsyncFeedReader:
                 self.resolver = aiohttp.AsyncResolver(loop=loop)
             else:
                 self.resolver = self.dns_service.aiohttp_resolver(loop=loop)
-        if self.session is None:
-            self.session = aiohttp_client_session(
-                resolver=self.resolver, timeout=self.request_timeout)
+
+    def _create_session(self, proxy_url: str = None):
+        return aiohttp_client_session(
+            resolver=self.resolver,
+            proxy_url=proxy_url,
+            timeout=self.request_timeout,
+        )
 
     def check_content_type(self, response):
         if self.allow_non_webpage:
@@ -120,7 +129,7 @@ class AsyncFeedReader:
 
     async def _read(
             self, url, etag=None, last_modified=None, referer=None,
-            headers=None, ignore_content=False
+            headers=None, ignore_content=False, proxy_url=None,
     ) -> aiohttp.ClientResponse:
         headers = self._prepare_headers(
             url,
@@ -130,21 +139,20 @@ class AsyncFeedReader:
             headers=headers,
         )
         await self._async_init()
-        async with self.session.get(url, headers=headers, ssl=self._sslcontext) as response:
-            content = None
-            if not is_ok_status(response.status) or not ignore_content:
-                content = await self._read_content(response)
-            if not is_ok_status(response.status):
-                return response.headers, content, url, response.status
-            self.check_content_type(response)
+        async with self._create_session(proxy_url=proxy_url) as session:
+            async with session.get(url, headers=headers, ssl=self._sslcontext) as response:
+                content = None
+                if not is_ok_status(response.status) or not ignore_content:
+                    content = await self._read_content(response)
+                if not is_ok_status(response.status):
+                    return response.headers, content, url, response.status
+                self.check_content_type(response)
         return response.headers, content, str(response.url), response.status
 
-    async def _read_by_proxy(
+    async def _read_by_rss_proxy(
         self, url, etag=None, last_modified=None, referer=None,
         headers=None, ignore_content=False
     ):
-        if not self.has_rss_proxy:
-            raise ValueError("rss_proxy_url not provided")
         headers = self._prepare_headers(
             url,
             etag=etag,
@@ -158,25 +166,36 @@ class AsyncFeedReader:
             headers=headers,
         )
         await self._async_init()
-        async with self.session.post(self.rss_proxy_url, json=data) as response:
-            response: aiohttp.ClientResponse
-            if not is_ok_status(response.status):
-                body = await self._read_text(response)
-                message = f'status={response.status} body={body!r}'
-                raise RSSProxyError(message)
-            proxy_status = response.headers.get('x-rss-proxy-status', None)
-            if proxy_status and proxy_status.upper() == 'ERROR':
-                body = await self._read_text(response)
-                message = f'status={response.status} body={body!r}'
-                raise RSSProxyError(message)
-            proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
-            content = None
-            if not is_ok_status(proxy_status) or not ignore_content:
-                content = await self._read_content(response)
-            if not is_ok_status(proxy_status):
-                return response.headers, content, url, proxy_status
-            self.check_content_type(response)
-        return response.headers, content, url, proxy_status
+        async with self._create_session() as session:
+            async with session.post(self.rss_proxy_url, json=data) as response:
+                response: aiohttp.ClientResponse
+                if not is_ok_status(response.status):
+                    body = await self._read_text(response)
+                    message = f'status={response.status} body={body!r}'
+                    raise RSSProxyError(message)
+                proxy_status = response.headers.get('x-rss-proxy-status', None)
+                if proxy_status and proxy_status.upper() == 'ERROR':
+                    body = await self._read_text(response)
+                    message = f'status={response.status} body={body!r}'
+                    raise RSSProxyError(message)
+                proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
+                content = None
+                if not is_ok_status(proxy_status) or not ignore_content:
+                    content = await self._read_content(response)
+                if not is_ok_status(proxy_status):
+                    return response.headers, content, url, proxy_status
+                self.check_content_type(response)
+            return response.headers, content, url, proxy_status
+
+    async def _read_by_proxy(self, url, *args, **kwargs):
+        if self._use_rss_proxy:
+            if not self.rss_proxy_url:
+                raise ValueError("rss_proxy_url not provided")
+            return await self._read_by_rss_proxy(url, *args, **kwargs)
+        else:
+            if not self.proxy_url:
+                raise ValueError("proxy_url not provided")
+            return await self._read(url, *args, **kwargs, proxy_url=self.proxy_url)
 
     async def read(self, url, *args, use_proxy=False, **kwargs) -> FeedResponse:
         headers = content = None
@@ -234,5 +253,6 @@ class AsyncFeedReader:
         await self.close()
 
     async def close(self):
-        if self._close_session and self.session is not None:
-            await self.session.close()
+        if self.resolver is not None:
+            await self.resolver.close()
+            self.resolver = None
