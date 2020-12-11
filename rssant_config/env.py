@@ -61,11 +61,11 @@ class EnvConfig(ConfigModel):
     smtp_password: str = T.str.optional
     smtp_use_ssl: bool = T.bool.default(False)
     # rss proxy
-    rss_proxy_url: str = T.url.optional
+    rss_proxy_url: str = T.url.relaxed.optional
     rss_proxy_token: str = T.str.optional
     rss_proxy_enable: bool = T.bool.default(False)
     # http proxy or socks proxy
-    proxy_url: str = T.url.scheme('http https socks5').optional
+    proxy_url: str = T.url.relaxed.scheme('http https socks5').optional
     proxy_enable: bool = T.bool.default(False)
     # analytics matomo
     analytics_matomo_enable: bool = T.bool.default(False)
@@ -82,7 +82,7 @@ class EnvConfig(ConfigModel):
     shopant_enable: bool = T.bool.default(False)
     shopant_product_id: int = T.int.optional
     shopant_product_secret: str = T.str.optional
-    shopant_url: str = T.url.optional
+    shopant_url: str = T.url.relaxed.optional
     # image token
     image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('12h')
