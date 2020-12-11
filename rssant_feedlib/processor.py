@@ -208,12 +208,17 @@ def normalize_url(url: str, base_url: str = None):
             pre_len = 1 + len(top_domain)
             match_text = match_text[:pre_len] + '/' + match_text[pre_len:]
         url = url[:match.start()] + match_text + url[match.end():]
-    scheme, netloc, path, query, fragment = urlsplit(url)
+    try:
+        scheme, netloc, path, query, fragment = urlsplit(url)
+    except ValueError as ex:
+        # fix: http://example%5B.]com/x.php?age=23
+        LOG.info(f'normalize failed: {ex} url={url!r}', exc_info=ex)
+        return url
     # remove needless port
     if scheme == 'http' and netloc.endswith(':80'):
-        netloc = netloc.split(':')[0]
+        netloc = netloc.rsplit(':', 1)[0]
     if scheme == 'https' and netloc.endswith(':443'):
-        netloc = netloc.split(':')[0]
+        netloc = netloc.rsplit(':', 1)[0]
     # fix: http://example.com//blog
     path = re.sub(r'^\/\/+', '/', path)
     # quote is not idempotent, can not quote multiple times

@@ -54,6 +54,20 @@ def test_normalize_url():
         ('http%3A//www.example.com', 'http://www.example.com'),
         ('http://www.example.com:80', 'http://www.example.com'),
         ('https://www.example.com:443', 'https://www.example.com'),
+        ('http://example%5B.]com/x.php?age=23', 'http://example%5B.]com/x.php?age=23'),
+        ('http://example%5B.]com', 'http://example%5B.]com'),
+        (
+            'http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:80/',
+            'http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]/'
+        ),
+        (
+            'http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443/',
+            'http://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443/'
+        ),
+        (
+            'https://[2001:db8:85a3:8d3:1319:8a2e:370:7348]:443/',
+            'https://[2001:db8:85a3:8d3:1319:8a2e:370:7348]/'
+        ),
         (
             'http://www.example.comhttp://www.example.com/hello',
             'http://www.example.com/hello'
