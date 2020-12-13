@@ -201,6 +201,19 @@ def feed_set_group(
     return feed.to_dict()
 
 
+@FeedView.put('feed/set-all-group')
+def feed_set_all_group(
+    request,
+    ids: T.list(T.feed_unionid.object),
+    group: T.str.maxlen(50),
+) -> T.dict(num_updated=T.int):
+    check_unionid(request, ids)
+    feed_ids = [x.feed_id for x in ids]
+    num_updated = UnionFeed.set_all_group(
+        user_id=request.user.id, feed_ids=feed_ids, group=group)
+    return dict(num_updated=num_updated)
+
+
 @FeedView.put('feed/<slug:feed_unionid>/offset')
 def feed_set_offset(request, feed_unionid: T.feed_unionid.object, offset: T.int.min(0).optional) -> FeedSchema:
     check_unionid(request, feed_unionid)
@@ -212,7 +225,10 @@ def feed_set_offset(request, feed_unionid: T.feed_unionid.object, offset: T.int.
 
 
 @FeedView.put('feed/all/readed')
-def feed_set_all_readed(request, ids: T.list(T.feed_unionid.object).optional) -> T.dict(num_updated=T.int):
+def feed_set_all_readed(
+    request,
+    ids: T.list(T.feed_unionid.object).optional,
+) -> T.dict(num_updated=T.int):
     check_unionid(request, ids)
     num_updated = UnionFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
     return dict(num_updated=num_updated)

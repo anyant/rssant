@@ -274,6 +274,14 @@ class UnionFeed:
         return union_feed
 
     @staticmethod
+    def set_all_group(user_id: int, feed_ids: list, *, group: str) -> int:
+        q = UserFeed.objects.filter(user_id=user_id).filter(feed_id__in=feed_ids)
+        return q.update(
+            group=group,
+            dt_updated=timezone.now(),
+        )
+
+    @staticmethod
     def set_all_readed_by_user(user_id, ids=None) -> int:
         if ids is not None and not ids:
             return 0
