@@ -4,7 +4,7 @@ from rssant_config import CONFIG
 
 def choice_proxy(*, proxy_url, rss_proxy_url) -> bool:
     if proxy_url and rss_proxy_url:
-        use_rss_proxy = random.random() > 0.333
+        use_rss_proxy = random.random() > 0.1
     else:
         use_rss_proxy = bool(rss_proxy_url)
     return use_rss_proxy
