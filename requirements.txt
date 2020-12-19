@@ -31,14 +31,14 @@ configobj==5.0.6          # via cli-helpers, pgcli
 coreapi==2.3.3            # via django-rest-swagger, openapi-codec
 coreschema==0.0.4         # via coreapi
 coverage==4.5.4           # via -r requirements.in, pytest-cov
-cryptography==3.2         # via -r requirements.in, pyopenssl
+cryptography==3.2         # via -r requirements.in, pyjwt, pyopenssl
 cssselect==1.1.0          # via readability-lxml
 cssutils==1.0.2           # via pynliner
 decorator==4.4.0          # via validators
 defusedxml==0.6.0         # via atoma, python3-openid
 devtools==0.5.1           # via aiohttp-devtools
 distlib==0.3.0            # via virtualenv
-django-allauth==0.41.0    # via -r requirements.in
+django-allauth==0.44.0    # via -r requirements.in
 django-debug-toolbar==2.2  # via -r requirements.in
 django-extensions==2.2.9  # via -r requirements.in
 django-optimistic-lock==1.0.0  # via -r requirements.in
@@ -104,7 +104,7 @@ pyflakes==2.1.1           # via flake8
 pygments==2.4.2           # via aiohttp-devtools, cli-helpers, pgcli
 pyinstrument-cext==0.2.2  # via -r requirements.in, pyinstrument
 pyinstrument==3.1.3       # via -r requirements.in
-pyjwt==1.7.1              # via -r requirements.in, shopant-sdk
+pyjwt[crypto]==1.7.1      # via -r requirements.in, django-allauth, shopant-sdk
 pynliner==0.8.0           # via -r requirements.in
 pyopenssl==19.1.0         # via -r requirements.in
 pyparsing==2.4.2          # via packaging, validr
