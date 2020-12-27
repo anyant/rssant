@@ -1,3 +1,5 @@
+import typing
+from collections import namedtuple
 
 from django.utils import timezone
 from django.db import transaction
@@ -8,6 +10,9 @@ from rssant_common.detail import Detail
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .feed import UserFeed, Feed, FeedStatus, FeedDetailSchema, FEED_DETAIL_FIELDS
 from .feed_creation import FeedCreation, FeedCreateResult, FeedUrlMap
+
+
+FeedImportItem = namedtuple('FeedImportItem', 'url, title, group')
 
 
 class UnionFeed:
@@ -335,17 +340,28 @@ class UnionFeed:
             return None, feed_creation
 
     @staticmethod
-    def create_by_url_s(*, user_id, urls, batch_size=500, is_from_bookmark=False):
+    def create_by_imports(
+        *,
+        user_id: int,
+        imports: typing.List[FeedImportItem],
+        batch_size: int = 500,
+        is_from_bookmark: bool = False,
+    ) -> FeedCreateResult:
         # 批量预查询，减少SQL查询数量，显著提高性能
-        if not urls:
+        if not imports:
             return FeedCreateResult.empty()
-        urls = set(urls)
+        import_map = {x.url: x for x in imports}
+        urls = set(import_map.keys())
         url_map = {}
         for url, target in FeedUrlMap.find_all_target(urls).items():
             if target == FeedUrlMap.NOT_FOUND:
                 urls.discard(url)
             else:
                 url_map[url] = target
+        # url not existed in url_map: url_map outdated or new url
+        for url in (urls - set(url_map.keys())):
+            url_map[url] = url
+        rev_url_map = {v: k for k, v in url_map.items()}
         found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
         feed_id_map = {x.id: x for x in found_feeds}
         feed_map = {x.url: x for x in found_feeds}
@@ -367,12 +383,27 @@ class UnionFeed:
                 if feed.freeze_level and feed.freeze_level > 1:
                     unfreeze_feed_ids.add(feed.id)
             else:
+                import_item = import_map.get(url)
                 feed_creation = FeedCreation(
-                    user_id=user_id, url=url, is_from_bookmark=is_from_bookmark)
+                    user_id=user_id, url=url,
+                    title=import_item.title if import_item else None,
+                    group=import_item.group if import_item else None,
+                    is_from_bookmark=is_from_bookmark,
+                )
                 feed_creations.append(feed_creation)
         new_user_feeds = []
         for feed_id in new_user_feed_ids:
-            user_feed = UserFeed(user_id=user_id, feed=feed_id_map[feed_id])
+            feed = feed_id_map[feed_id]
+            import_item = import_map.get(rev_url_map.get(feed.url))
+            # only set UserFeed.title when import title not equal feed title
+            title = None
+            if import_item and import_item.title and import_item.title != feed.title:
+                title = import_item.title
+            user_feed = UserFeed(
+                user_id=user_id, feed=feed,
+                title=title,
+                group=import_item.group if import_item else None,
+            )
             new_user_feeds.append(user_feed)
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)

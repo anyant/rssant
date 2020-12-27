@@ -1,17 +1,18 @@
 import re
+import io
+import typing
 import logging
 from pathlib import Path
 from collections import namedtuple
 from urllib.parse import urlsplit, urlunsplit
-from xml.etree import ElementTree
 
+import listparser
 from validr import T, Invalid
 
 from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
 from .schema import validate_opml
 from .blacklist import compile_url_blacklist
-from .helper import lxml_call, LXMLError
 
 LOG = logging.getLogger(__name__)
 
@@ -117,23 +118,30 @@ def is_in_blacklist(url: str):
 def parse_opml(text):
     result = {}
     result['items'] = items = []
-    root = lxml_call(ElementTree.fromstring, text)
-    title = root.find('./head/title')
-    if title is not None:
-        title = title.text
-    else:
-        title = ''
-    result['title'] = title
-    for node in root.findall('./body//outline'):
-        url = node.attrib.get('xmlUrl')
+    raw = listparser.parse(io.StringIO(text))
+    bozo_exception = raw.get('bozo_exception')
+    if bozo_exception:
+        LOG.warning(f'Parse OPML {bozo_exception}')
+    result['title'] = (raw['meta'] or {}).get('title')
+    for feed in (raw['feeds'] or []):
+        url = feed.get('url')
+        title = feed.get('title')
+        # eg: {'url': '...', 'title': '...', 'categories': [['设计']], 'tags': ['设计']}
+        categories = feed.get('categories')
+        group = categories[0] if categories else None
+        if group and isinstance(group, list):
+            group = group[0]
+        group = str(group) if group is not None else None
         if not url:
             continue
-        items.append({
-            'title': node.attrib.get('title'),
-            'type': node.attrib.get('type'),
-            'url': url,
-        })
+        url = remove_url_fragment(url)
+        items.append(dict(
+            title=title,
+            group=group,
+            url=url,
+        ))
     result = validate_opml(result)
+    result['items'] = [x for x in result['items'] if x['url']]
     return result
 
 
@@ -175,8 +183,7 @@ def parse_text(text):
         except Invalid:
             pass  # ignore
         else:
-            urls.append(url)
-    urls = list(sorted(urls))
+            urls.append(remove_url_fragment(url))
     return urls
 
 
@@ -193,38 +200,41 @@ def import_one_line_text(text):
     return url
 
 
-def import_feed_from_text(text, filename=None) -> [str]:
+def import_feed_from_text(text, filename=None) -> typing.List[dict]:
     """
     >>> text = "<opml> https://blog.guyskk.com/blog/1 https://blog.anyant.com"
     >>> expect = set(['https://blog.guyskk.com/blog/1', 'https://blog.anyant.com'])
-    >>> set(import_feed_from_text(text)) == expect
+    >>> items = import_feed_from_text(text)
+    >>> set(x['url'] for x in items) == expect
     True
-    >>> set(import_feed_from_text(text, filename='aaa.txt')) == expect
+    >>> items = import_feed_from_text(text, filename='aaa.txt')
+    >>> set(x['url'] for x in items) == expect
     True
-    >>> import_feed_from_text('blog.guyskk.com ')
+    >>> items = import_feed_from_text('blog.guyskk.com ')
+    >>> [x['url'] for x in items]
     ['http://blog.guyskk.com']
     """
     url = import_one_line_text(text)
     if url is not None:
-        return [url]
+        return [dict(url=url)]
     if filename and RE_OPML_FILENAME.match(filename):
         maybe_opml = True
     elif '<opml' in text[:1000] or '<?xml' in text[:1000]:
         maybe_opml = True
     else:
         maybe_opml = False
-    result = set()
+    result = {}
     if maybe_opml:
         LOG.info('import text maybe OPML/XML, try parse it by OPML/XML parser')
         try:
             opml_result = parse_opml(text)
-        except (Invalid, LXMLError) as ex:
+        except Invalid as ex:
             LOG.warning('parse opml failed, will fallback to general text parser', exc_info=ex)
         else:
             for item in opml_result['items']:
-                result.add(remove_url_fragment(item['url']))
+                result[item['url']] = item
     if not result:
         urls = parse_text(text)
         for url in urls:
-            result.add(remove_url_fragment(url))
-    return list(result)
+            result[url] = dict(url=url)
+    return list(sorted(result.values(), key=lambda x: x['url']))

@@ -4,6 +4,7 @@
     <title>Subscriptions from Inoreader [https://www.inoreader.com]</title>
   </head>
   <body>
+    <outline text="Guyskk的博客" title="Guyskk的博客" type="rss" xmlUrl="http://blog.guyskk.com/feed.xml" htmlUrl="http://blog.guyskk.com/"/>
     <outline text="设计" title="设计">
       <outline text="腾讯CDC" title="腾讯CDC" type="rss" xmlUrl="http://cdc.tencent.com/feed/" htmlUrl="http://cdc.tencent.com/"/>
       <outline text="Rologo 标志共和国" title="Rologo 标志共和国" type="rss" xmlUrl="http://www.rologo.com/feed" htmlUrl="http://www.rologo.com/"/>

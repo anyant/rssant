@@ -27,6 +27,8 @@ class FeedCreation(Model):
     status = models.CharField(
         max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
     message = models.TextField(help_text="查找订阅的日志信息")
+    title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
+    group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
@@ -42,6 +44,8 @@ class FeedCreation(Model):
             url=self.url,
             is_from_bookmark=self.is_from_bookmark,
             status=self.status,
+            title=self.title,
+            group=self.group,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
             feed_unionid=None,

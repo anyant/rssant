@@ -157,9 +157,15 @@ def do_save_feed_creation_result(
                 user_feed.id, feed_creation.user_id, feed.id
             ))
         else:
+            # only set UserFeed.title when import title not equal feed title
+            title = None
+            if feed_creation.title and feed_creation.title != feed.title:
+                title = feed_creation.title
             user_feed = UserFeed(
                 user_id=feed_creation.user_id,
                 feed_id=feed.id,
+                title=title,
+                group=feed_creation.group,
                 is_from_bookmark=feed_creation.is_from_bookmark,
             )
             user_feed.save()

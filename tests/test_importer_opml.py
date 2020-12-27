@@ -24,17 +24,23 @@ def test_parse_opml_stringer():
     assert data['title'] == 'Feeds from Stringer'
     assert len(data['items']) == 5
     for item in data['items']:
-        assert item == expect_items[item['url']]
+        expect = expect_items[item['url']]
+        assert item['url'] == expect['url']
+        assert item['title'] == expect['title']
 
 
 def test_parse_opml_inoreader():
     expect_items = [
-        {'title': "腾讯CDC", 'type': 'rss', 'url': 'http://cdc.tencent.com/feed/'},
-        {'title': 'Rologo 标志共和国', 'type': 'rss', 'url': 'http://www.rologo.com/feed'},
+        {'title': "Guyskk的博客", 'group': '', 'url': 'http://blog.guyskk.com/feed.xml'},
+        {'title': "腾讯CDC", 'group': '设计', 'url': 'http://cdc.tencent.com/feed/'},
+        {'title': 'Rologo 标志共和国', 'group': '设计', 'url': 'http://www.rologo.com/feed'},
     ]
     expect_items = {x['url']: x for x in expect_items}
     data = parse_opml(SAMPLE_INOREADER)
     assert data['title'] == 'Subscriptions from Inoreader [https://www.inoreader.com]'
-    assert len(data['items']) == 2
+    assert len(data['items']) == 3
     for item in data['items']:
-        assert item == expect_items[item['url']]
+        expect = expect_items[item['url']]
+        assert item['url'] == expect['url']
+        assert item['title'] == expect['title']
+        assert item['group'] == expect['group']

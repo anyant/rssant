@@ -45,6 +45,7 @@ readability-lxml==0.7.1
 fake-useragent==0.1.11
 pyOpenSSL==19.1.0
 cryptography==3.2
+listparser==0.18
 
 # aiolibs
 aiohttp==3.6.2

@@ -11,8 +11,8 @@ from mako.template import Template
 from rssant_feedlib.importer import import_feed_from_text
 from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
 from rssant_api.models.errors import FeedNotFoundError
-from rssant_api.models.feed import FeedDetailSchema
-from rssant_api.models import UnionFeed, FeedCreation
+from rssant_api.models.feed import FeedDetailSchema, FEED_GROUP_ID_MAP
+from rssant_api.models import UnionFeed, FeedCreation, FeedImportItem
 from rssant.settings import BASE_DIR
 from rssant_common.actor_client import scheduler
 from rssant_common.helper import timer
@@ -68,6 +68,7 @@ FeedCreationSchema = T.dict(
     is_ready=T.bool,
     feed_id=T.feed_unionid.optional,
     status=T.str,
+    group=T.str.maxlen(50).optional,
     url=T.url,
     message=T.str.optional,
     dt_updated=T.datetime.object.optional,
@@ -263,8 +264,17 @@ def _read_request_file(request, name='file'):
     return text, fileobj.name
 
 
-def _create_feeds_by_urls(user, urls, is_from_bookmark=False):
-    result = UnionFeed.create_by_url_s(urls=urls, user_id=user.id)
+def _create_feeds_by_imports(user, imports: list, group: str = None, is_from_bookmark=False):
+    import_items = []
+    for raw_item in imports:
+        item_group = group
+        if not item_group:
+            item_group = raw_item.get('group')
+        item_group = FEED_GROUP_ID_MAP.get(item_group, item_group)
+        title = raw_item.get('title')
+        item = FeedImportItem(url=raw_item['url'], title=title, group=item_group)
+        import_items.append(item)
+    result = UnionFeed.create_by_imports(imports=import_items, user_id=user.id)
     find_feed_tasks = []
     for feed_creation in result.feed_creations:
         find_feed_tasks.append(dict(
@@ -299,7 +309,7 @@ FeedImportResultSchema = T.dict(
 
 @FeedView.post('feed/opml')
 def feed_import_opml(request) -> FeedImportResultSchema:
-    """import feeds from OPML file"""
+    """Deprecated. import feeds from OPML file"""
     return feed_import_file(request)
 
 
@@ -322,23 +332,24 @@ def feed_export_opml(request, download: T.bool.default(False)):
 
 @FeedView.post('feed/bookmark')
 def feed_import_bookmark(request) -> FeedImportResultSchema:
-    """import feeds from bookmark file"""
+    """Deprecated. import feeds from bookmark file"""
     return feed_import_file(request)
 
 
 @FeedView.post('feed/import')
-def feed_import(request, text: T.str) -> FeedImportResultSchema:
+def feed_import(request, text: T.str, group: T.str.optional) -> FeedImportResultSchema:
     """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
     with timer('Import-Feed-From-Text'):
-        urls = import_feed_from_text(text)
-    if len(urls) > 2000:
+        import_feeds = import_feed_from_text(text)
+    if len(import_feeds) > 2000:
         return Response({"message": "订阅数超过限制"}, status=400)
-    is_from_bookmark = len(urls) > 100
-    return _create_feeds_by_urls(request.user, urls, is_from_bookmark=is_from_bookmark)
+    is_from_bookmark = len(import_feeds) > 100
+    return _create_feeds_by_imports(request.user, import_feeds, group=group, is_from_bookmark=is_from_bookmark)
 
 
 @FeedView.post('feed/import/file')
 def feed_import_file(request) -> FeedImportResultSchema:
     """从OPML/XML/浏览器书签/含有链接的HTML或文本文件导入订阅"""
     text, filename = _read_request_file(request)
-    return feed_import(request, text)
+    group = request.GET.get('group')
+    return feed_import(request, text, group=group)
