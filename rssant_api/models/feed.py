@@ -506,11 +506,3 @@ class UserFeed(Model):
             q = q.filter(user_id=user_id)
         user_feed = q.get(pk=pk)
         return user_feed
-
-
-FEED_GROUP_NAME_MAP = {
-    'SYS:SOLO': '无分组',
-    'SYS:MUSHROOM': '品读',
-}
-
-FEED_GROUP_ID_MAP = {v: k for k, v in FEED_GROUP_NAME_MAP.items()}

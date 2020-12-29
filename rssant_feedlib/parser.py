@@ -4,10 +4,10 @@ from typing import List
 from validr import Invalid, T, mark_index
 
 from rssant_common.validator import compiler
+from rssant_api.helper import shorten
 
 from .raw_parser import RawFeedResult, FeedParserError
 from .feed_checksum import FeedChecksum
-from rssant_api.helper import shorten
 from .processor import (
     story_html_to_text, story_html_clean, story_extract_attach,
     story_has_mathjax, process_story_links, normalize_url, validate_url,

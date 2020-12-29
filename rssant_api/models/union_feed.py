@@ -48,6 +48,10 @@ class UnionFeed:
         return self._feed.title
 
     @property
+    def origin_title(self):
+        return self._feed.title
+
+    @property
     def group(self):
         return self._user_feed.group
 

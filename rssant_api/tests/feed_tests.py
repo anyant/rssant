@@ -4,6 +4,8 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 
 from rssant_api.models import Feed, FeedStatus, UnionFeed, FeedUrlMap, FeedCreation, FeedImportItem, UserFeed
+from rssant_api.feed_helper import render_opml
+from rssant_feedlib.importer import import_feed_from_text
 
 
 @pytest.mark.dbtest
@@ -59,6 +61,10 @@ class FeedImportTestCase(TestCase):
             FeedUrlMap(source=creation.url + '.c', target=feed.url).save()
         return result
 
+    def _query_user_feeds(self):
+        _, feeds, _ = UnionFeed.query_by_user(self._tester.id)
+        return feeds
+
     def test_import_feeds(self):
         imports = [
             FeedImportItem(title='测试1', group=None, url='https://blog.example.com/feed1.xml'),
@@ -75,7 +81,7 @@ class FeedImportTestCase(TestCase):
         self.assertEqual(result.num_feed_creations, 0, msg)
         self.assertEqual(Feed.objects.count(), 1, msg)
 
-        user_feed_count = UserFeed.objects.filter(user_id=self._tester.id).count()
+        user_feed_count = len(self._query_user_feeds())
         self.assertEqual(user_feed_count, 1, 'after subscribe 1 feeds')
 
         result = self._import_feeds(imports)
@@ -85,7 +91,7 @@ class FeedImportTestCase(TestCase):
         self.assertEqual(result.num_feed_creations, 3, msg)
         self.assertEqual(Feed.objects.count(), 4, msg)
 
-        user_feed_count = UserFeed.objects.filter(user_id=self._tester.id).count()
+        user_feed_count = len(self._query_user_feeds())
         self.assertEqual(user_feed_count, 4, 'after subscribe 4 unique feeds')
 
         duplicate_imports = [
@@ -101,5 +107,21 @@ class FeedImportTestCase(TestCase):
         self.assertEqual(result.num_feed_creations, 0, msg)
         self.assertEqual(Feed.objects.count(), 4, msg)
 
-        user_feed_count = UserFeed.objects.filter(user_id=self._tester.id).count()
+        user_feed_count = len(self._query_user_feeds())
         self.assertEqual(user_feed_count, 4, 'after subscribe 4 duplicate feeds')
+
+    def test_export_opml(self):
+        imports = [
+            FeedImportItem(title='测试1', group=None, url='https://blog.example.com/feed1.xml'),
+            FeedImportItem(title='测试2', group='', url='https://blog.example.com/feed2.xml'),
+            FeedImportItem(title='测试3', group='品读', url='https://blog.example.com/feed3.xml'),
+            FeedImportItem(title='测试4', group='设计', url='https://blog.example.com/feed4.xml'),
+        ]
+        self._import_feeds(imports)
+        self.assertEqual(Feed.objects.count(), 4)
+
+        feeds = self._query_user_feeds()
+        self.assertEqual(len(feeds), 4)
+        content = render_opml(feeds)
+        raw_imports = import_feed_from_text(content)
+        self.assertEqual(len(raw_imports), 4)

@@ -1,5 +1,5 @@
 import os.path
-from rssant_feedlib.importer import parse_opml
+from rssant_feedlib.importer import import_feed_from_text
 
 
 def _read_sample(filename):
@@ -20,10 +20,9 @@ def test_parse_opml_stringer():
         {'title': 'Hacker News', 'type': 'rss', 'url': 'https://news.ycombinator.com/rss'},
     ]
     expect_items = {x['url']: x for x in expect_items}
-    data = parse_opml(SAMPLE_STRINGER)
-    assert data['title'] == 'Feeds from Stringer'
-    assert len(data['items']) == 5
-    for item in data['items']:
+    feed_items = import_feed_from_text(SAMPLE_STRINGER)
+    assert len(feed_items) == 5
+    for item in feed_items:
         expect = expect_items[item['url']]
         assert item['url'] == expect['url']
         assert item['title'] == expect['title']
@@ -36,10 +35,9 @@ def test_parse_opml_inoreader():
         {'title': 'Rologo 标志共和国', 'group': '设计', 'url': 'http://www.rologo.com/feed'},
     ]
     expect_items = {x['url']: x for x in expect_items}
-    data = parse_opml(SAMPLE_INOREADER)
-    assert data['title'] == 'Subscriptions from Inoreader [https://www.inoreader.com]'
-    assert len(data['items']) == 3
-    for item in data['items']:
+    feed_items = import_feed_from_text(SAMPLE_INOREADER)
+    assert len(feed_items) == 3
+    for item in feed_items:
         expect = expect_items[item['url']]
         assert item['url'] == expect['url']
         assert item['title'] == expect['title']

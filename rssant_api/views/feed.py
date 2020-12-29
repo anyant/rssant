@@ -1,26 +1,19 @@
 import logging
-import os.path
 
 from django.http.response import HttpResponse
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
-from xml.sax.saxutils import escape as xml_escape
-from xml.sax.saxutils import quoteattr as xml_quote
-from mako.template import Template
 
 from rssant_feedlib.importer import import_feed_from_text
 from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
 from rssant_api.models.errors import FeedNotFoundError
-from rssant_api.models.feed import FeedDetailSchema, FEED_GROUP_ID_MAP
+from rssant_api.models.feed import FeedDetailSchema
 from rssant_api.models import UnionFeed, FeedCreation, FeedImportItem
-from rssant.settings import BASE_DIR
+from rssant_api.feed_helper import group_id_of, render_opml
 from rssant_common.actor_client import scheduler
 from rssant_common.helper import timer
 from .helper import check_unionid
 from .errors import RssantAPIException
-
-
-OPML_TEMPLATE_PATH = os.path.join(BASE_DIR, 'rssant_api', 'resources', 'opml.mako')
 
 
 LOG = logging.getLogger(__name__)
@@ -270,7 +263,7 @@ def _create_feeds_by_imports(user, imports: list, group: str = None, is_from_boo
         item_group = group
         if not item_group:
             item_group = raw_item.get('group')
-        item_group = FEED_GROUP_ID_MAP.get(item_group, item_group)
+        item_group = group_id_of(item_group)
         title = raw_item.get('title')
         item = FeedImportItem(url=raw_item['url'], title=title, group=item_group)
         import_items.append(item)
@@ -317,13 +310,8 @@ def feed_import_opml(request) -> FeedImportResultSchema:
 @FeedView.get('feed/export/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
-    total, feeds, __ = UnionFeed.query_by_user(request.user.id)
-    feeds = [x.to_dict() for x in feeds]
-    for user_feed in feeds:
-        for field in ['title', 'link', 'url', 'version']:
-            user_feed[field] = xml_quote(xml_escape(user_feed[field] or ''))
-    tmpl = Template(filename=OPML_TEMPLATE_PATH)
-    content = tmpl.render(feeds=feeds)
+    total, user_feeds, __ = UnionFeed.query_by_user(request.user.id)
+    content = render_opml(user_feeds)
     response = HttpResponse(content, content_type='text/xml')
     if download:
         response['Content-Disposition'] = 'attachment;filename="rssant.opml"'

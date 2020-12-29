@@ -15,8 +15,7 @@ from validr import T, Invalid
 
 from rssant_common.validator import compiler
 
-from .importer import RE_URL
-from .helper import lxml_call, LXMLError
+from .helper import RE_URL, lxml_call, LXMLError
 
 
 LOG = logging.getLogger(__name__)

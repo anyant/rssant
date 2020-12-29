@@ -3,7 +3,6 @@ import io
 import typing
 import logging
 from pathlib import Path
-from collections import namedtuple
 from urllib.parse import urlsplit, urlunsplit
 
 import listparser
@@ -13,18 +12,16 @@ from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
 from .schema import validate_opml
 from .blacklist import compile_url_blacklist
+from .helper import RE_URL
+
 
 LOG = logging.getLogger(__name__)
 
-FeedItem = namedtuple('FeedItem', 'url, title')
-RE_OPML_FILENAME = re.compile(r'^.*\.(opml|xml)$', re.I)
-RE_URL = re.compile(
-    r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)"  # noqa
-)
-validate_url = compiler.compile(T.url)
+_RE_OPML_FILENAME = re.compile(r'^.*\.(opml|xml)$', re.I)
+_validate_url = compiler.compile(T.url)
 
 
-BLACKLIST_CONTENT = """
+_BLACKLIST_CONTENT = """
 youtube.com
 facebook.com
 amazon.com
@@ -82,10 +79,10 @@ toutiao.com
 """
 
 
-is_in_url_blacklist = compile_url_blacklist(BLACKLIST_CONTENT)
+_is_in_url_blacklist = compile_url_blacklist(_BLACKLIST_CONTENT)
 
 
-def load_dotwhat_blacklist() -> set:
+def _load_dotwhat_blacklist() -> set:
     """
     http://dotwhat.net/
     """
@@ -100,11 +97,11 @@ def load_dotwhat_blacklist() -> set:
     return blacklist
 
 
-DOTWHAT_BLACKLIST = load_dotwhat_blacklist()
+_DOTWHAT_BLACKLIST = _load_dotwhat_blacklist()
 
 
-def is_in_blacklist(url: str):
-    if is_in_url_blacklist(url):
+def _is_in_blacklist(url: str):
+    if _is_in_url_blacklist(url):
         return True
     scheme, netloc, path, query, fragment = urlsplit(url)
     path: str
@@ -112,10 +109,10 @@ def is_in_blacklist(url: str):
     if len(parts) < 2:
         return False
     ext = parts[1].lower()
-    return ext in DOTWHAT_BLACKLIST
+    return ext in _DOTWHAT_BLACKLIST
 
 
-def parse_opml(text):
+def _parse_opml(text):
     result = {}
     result['items'] = items = []
     raw = listparser.parse(io.StringIO(text))
@@ -134,7 +131,7 @@ def parse_opml(text):
         group = str(group) if group is not None else None
         if not url:
             continue
-        url = remove_url_fragment(url)
+        url = _remove_url_fragment(url)
         items.append(dict(
             title=title,
             group=group,
@@ -145,56 +142,56 @@ def parse_opml(text):
     return result
 
 
-def remove_url_fragment(url):
+def _remove_url_fragment(url):
     """
-    >>> remove_url_fragment('https://blog.guyskk.com/blog/1#title')
+    >>> _remove_url_fragment('https://blog.guyskk.com/blog/1#title')
     'https://blog.guyskk.com/blog/1'
     """
     scheme, netloc, path, query, fragment = urlsplit(url)
     return urlunsplit((scheme, netloc, path, query, None))
 
 
-def parse_text(text):
+def _parse_text(text):
     """
-    >>> parse_text('https://www.example.com/aaa.bbb.JPG')
+    >>> _parse_text('https://www.example.com/aaa.bbb.JPG')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.JPEG')
+    >>> _parse_text('https://www.example.com/aaa.bbb.JPEG')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.TTF')
+    >>> _parse_text('https://www.example.com/aaa.bbb.TTF')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.js')
+    >>> _parse_text('https://www.example.com/aaa.bbb.js')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.mp3')
+    >>> _parse_text('https://www.example.com/aaa.bbb.mp3')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.avi')
+    >>> _parse_text('https://www.example.com/aaa.bbb.avi')
     []
-    >>> parse_text('https://www.example.com/aaa.bbb.tar.gz')
+    >>> _parse_text('https://www.example.com/aaa.bbb.tar.gz')
     []
     """
     tmp_urls = set()
     for match in RE_URL.finditer(text):
         url = match.group(0).strip()
-        if not is_in_blacklist(url):
+        if not _is_in_blacklist(url):
             tmp_urls.add(url)
     urls = []
     for url in tmp_urls:
         try:
-            url = validate_url(url)
+            url = _validate_url(url)
         except Invalid:
             pass  # ignore
         else:
-            urls.append(remove_url_fragment(url))
+            urls.append(_remove_url_fragment(url))
     return urls
 
 
-def import_one_line_text(text):
+def _import_one_line_text(text):
     text = text.strip()
     parts = text.split(maxsplit=2)
     if len(parts) != 1:
         return None
     url = coerce_url(parts[0])
     try:
-        validate_url(url)
+        _validate_url(url)
     except Invalid:
         return None
     return url
@@ -214,10 +211,10 @@ def import_feed_from_text(text, filename=None) -> typing.List[dict]:
     >>> [x['url'] for x in items]
     ['http://blog.guyskk.com']
     """
-    url = import_one_line_text(text)
+    url = _import_one_line_text(text)
     if url is not None:
         return [dict(url=url)]
-    if filename and RE_OPML_FILENAME.match(filename):
+    if filename and _RE_OPML_FILENAME.match(filename):
         maybe_opml = True
     elif '<opml' in text[:1000] or '<?xml' in text[:1000]:
         maybe_opml = True
@@ -227,14 +224,14 @@ def import_feed_from_text(text, filename=None) -> typing.List[dict]:
     if maybe_opml:
         LOG.info('import text maybe OPML/XML, try parse it by OPML/XML parser')
         try:
-            opml_result = parse_opml(text)
+            opml_result = _parse_opml(text)
         except Invalid as ex:
             LOG.warning('parse opml failed, will fallback to general text parser', exc_info=ex)
         else:
             for item in opml_result['items']:
                 result[item['url']] = item
     if not result:
-        urls = parse_text(text)
+        urls = _parse_text(text)
         for url in urls:
             result[url] = dict(url=url)
     return list(sorted(result.values(), key=lambda x: x['url']))
