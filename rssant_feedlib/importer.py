@@ -123,6 +123,9 @@ def _parse_opml(text):
     for feed in (raw['feeds'] or []):
         url = feed.get('url')
         title = feed.get('title')
+        # ignore title if it's url. eg: rssant before v1.8 export text(title) field with feed link
+        if title and RE_URL.match(title):
+            title = None
         # eg: {'url': '...', 'title': '...', 'categories': [['设计']], 'tags': ['设计']}
         categories = feed.get('categories')
         group = categories[0] if categories else None
