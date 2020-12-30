@@ -59,7 +59,7 @@ def _build_proxy_options():
         )
 
 
-_PROXY_OPTION_IDS, _PROXY_OPTIONS = zip(*list(_build_proxy_options()))
+_PROXY_OPTION_IDS, _PROXY_OPTIONS = tuple(zip(*list(_build_proxy_options()))) or ([], [])
 
 
 @pytest.mark.xfail(run=False, reason='depends on test network')
