@@ -159,24 +159,27 @@ def compute_report(snapshot1, snapshot2):
                 key = f'other:10-99'
             else:
                 key = f'other:100+'
-        domain_report = report_records[key]
-        domain_report['total'] += dr.total
-        values1 = compute_record_values(dr.snapshot1)
-        for k, v in values1.items():
-            domain_report['base'][k] += v
-        values2 = compute_record_values(dr.snapshot2)
-        deltas = _compute_record_deltas(values1, values2)
-        for k, v in deltas.items():
-            domain_report['delta'][k] += v
+        for key in (key, 'ALL'):
+            domain_report = report_records[key]
+            domain_report['total'] += dr.total
+            values1 = compute_record_values(dr.snapshot1)
+            for k, v in values1.items():
+                domain_report['base'][k] += v
+            values2 = compute_record_values(dr.snapshot2)
+            deltas = _compute_record_deltas(values1, values2)
+            for k, v in deltas.items():
+                domain_report['delta'][k] += v
     for domain, domain_report in report_records.items():
         domain_report['domain'] = domain
 
     def record_sort_key(x):
+        if x['domain'] == 'ALL':
+            return (3, 0, x['domain'])
         if x['domain'].startswith('other:'):
             count = int(x['domain'][len('other:'):].strip('+').split('-')[0])
-            return (False, -count, x['domain'])
+            return (1, -count, x['domain'])
         else:
-            return (True, x['total'], x['domain'])
+            return (2, x['total'], x['domain'])
     report_records = list(sorted(report_records.values(), key=record_sort_key, reverse=True))
 
     response_status_headers = ['ok', 'neterr', 'deny', '4xx', '5xx', 'other']
