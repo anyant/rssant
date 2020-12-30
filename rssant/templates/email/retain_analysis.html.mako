@@ -42,26 +42,26 @@
             <th class="count">date</th>
             <th class="count">+</th>
             <th class="count">@</th>
-            {% for p in periods %}
-            <th class="count">{{ p }}</th>
-            {% endfor %}
-            {% for p in periods %}
-            <th class="count">{{ p }}</th>
-            {% endfor %}
+            % for p in periods:
+            <th class="count">${ p }</th>
+            % endfor
+            % for p in periods:
+            <th class="count">${ p }</th>
+            % endfor
         </tr>
-        {% for dt, total, ratios, activated, activated_ratios in rows %}
+        % for max_period, (dt, total, ratios, activated, activated_ratios) in zip(max_periods, rows):
         <tr>
-            <td class="count">{{ dt }}</td>
-            <td class="count">{{ total }}</td>
-            <td class="count">{{ activated }}</td>
-            {% for value in ratios %}
-            <td style="background:rgba(102,187,106,{{ value }})">{{ value|floatformat:2 }}</td>
-            {% endfor %}
-            {% for value in activated_ratios %}
-            <td style="background:rgba(102,187,106,{{ value }})">{{ value|floatformat:2 }}</td>
-            {% endfor %}
+            <td class="count">${ dt }</td>
+            <td class="count">${ total }</td>
+            <td class="count">${ activated }</td>
+            % for period, value in zip(periods, ratios):
+            <td style="background:rgba(102,187,106,${ value })">${ '{:.2f}'.format(value) if period <= max_period else '' }</td>
+            % endfor
+            % for period, value in zip(periods, activated_ratios):
+            <td style="background:rgba(102,187,106,${ value })">${ '{:.2f}'.format(value) if period <= max_period else '' }</td>
+            % endfor
         </tr>
-        {% endfor %}
+        % endfor
     </table>
 </body>
 

@@ -109,9 +109,23 @@ def analysis(users: typing.List[User], periods: typing.List[int], by='day') -> l
     return list(reversed(rows))
 
 
-def render_html(rows: list, periods: typing.List[int]) -> str:
-    template = EmailTemplate(filename='retain_analysis.html')
-    context = dict(rows=rows, periods=periods)
+def compute_max_periods(rows: list, dt_end: timezone.datetime) -> list:
+    end_date = to_timezone_cst(dt_end).date()
+    for row in rows:
+        dt_joined = row[0]
+        if len(dt_joined) == len('yyyy-mm'):
+            dt_joined = timezone.datetime.strptime(dt_joined, '%Y-%m')
+        else:
+            dt_joined = timezone.datetime.strptime(dt_joined, '%Y-%m-%d')
+        join_date = dt_joined.date()
+        max_retain_period = max(0, (end_date - join_date).days - 1)
+        yield max_retain_period
+
+
+def render_html(rows: list, periods: typing.List[int], dt_end: timezone.datetime) -> str:
+    template = EmailTemplate(filename='retain_analysis.html.mako')
+    max_periods = list(compute_max_periods(rows, dt_end=dt_end))
+    context = dict(rows=rows, periods=periods, max_periods=max_periods)
     return template.render_html(**context)
 
 
@@ -119,14 +133,15 @@ def render_and_send_email(rows: list, periods: typing.List[int], dt_end: timezon
     date = to_timezone_cst(dt_end).strftime('%Y-%m-%d')
     template = EmailTemplate(
         subject=f'蚁阅用户留存 {date}',
-        filename='retain_analysis.html',
+        filename='retain_analysis.html.mako',
     )
-    context = dict(rows=rows, periods=periods)
+    max_periods = list(compute_max_periods(rows, dt_end=dt_end))
+    context = dict(rows=rows, periods=periods, max_periods=max_periods)
     sender = CONFIG.smtp_username
     return template.send(sender=sender, receiver=receiver, context=context)
 
 
-def render_csv(rows: list, periods: typing.List[int]) -> str:
+def render_csv(rows: list, periods: typing.List[int], **ignore) -> str:
     periods_header = ','.join(map(str, periods))
     header = f'date,joined,{periods_header},activated,{periods_header}'
     lines = [header + '\n']
@@ -169,7 +184,7 @@ def main(output: str, output_type: str, days: int, dt_end=None, by=None):
     rows = analysis(users, periods=periods, by=by)
     if output_type in ('csv', 'html'):
         render = {'csv': render_csv, 'html': render_html}[output_type]
-        content = render(rows, periods=periods)
+        content = render(rows, periods=periods, dt_end=dt_end)
         output = os.path.abspath(os.path.expanduser(output))
         click.echo(f'save to {output}')
         with open(output, 'w') as f:
