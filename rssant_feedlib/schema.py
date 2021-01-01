@@ -128,6 +128,8 @@ FeedSchema = T.dict(
     ).optional.desc("Details about the feed generator"),
 )
 
+# user feed count limit should less than below number
+IMPORT_ITEMS_LIMIT = 20000
 
 OPMLSchema = T.dict(
     title=T.str.optional,
@@ -138,7 +140,7 @@ OPMLSchema = T.dict(
             type=T.str.maxlen(50).strip.truncated.optional,
             group=T.str.maxlen(50).strip.truncated.optional,
         )
-    )
+    ).maxlen(IMPORT_ITEMS_LIMIT)
 )
 
 

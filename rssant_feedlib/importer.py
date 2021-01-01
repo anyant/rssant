@@ -10,7 +10,7 @@ from validr import T, Invalid
 
 from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
-from .schema import validate_opml
+from .schema import validate_opml, IMPORT_ITEMS_LIMIT
 from .blacklist import compile_url_blacklist
 from .helper import RE_URL
 
@@ -140,6 +140,10 @@ def _parse_opml(text):
             group=group,
             url=url,
         ))
+    total = len(result['items'])
+    if total > IMPORT_ITEMS_LIMIT:
+        LOG.warning(f'import {total} OPML feeds exceed limit {IMPORT_ITEMS_LIMIT}, will discard!')
+        result['items'] = result['items'][:IMPORT_ITEMS_LIMIT]
     result = validate_opml(result)
     result['items'] = [x for x in result['items'] if x['url']]
     return result
@@ -184,6 +188,10 @@ def _parse_text(text):
             pass  # ignore
         else:
             urls.append(_remove_url_fragment(url))
+    total = len(urls)
+    if total > IMPORT_ITEMS_LIMIT:
+        LOG.warning(f'import {total} feed urls exceed limit {IMPORT_ITEMS_LIMIT}, will discard!')
+        urls = urls[:IMPORT_ITEMS_LIMIT]
     return urls
 
 
@@ -201,7 +209,7 @@ def _import_one_line_text(text):
 
 
 def import_feed_from_text(text, filename=None) -> typing.List[dict]:
-    """
+    r"""
     >>> text = "<opml> https://blog.guyskk.com/blog/1 https://blog.anyant.com"
     >>> expect = set(['https://blog.guyskk.com/blog/1', 'https://blog.anyant.com'])
     >>> items = import_feed_from_text(text)
@@ -213,6 +221,11 @@ def import_feed_from_text(text, filename=None) -> typing.List[dict]:
     >>> items = import_feed_from_text('blog.guyskk.com ')
     >>> [x['url'] for x in items]
     ['http://blog.guyskk.com']
+    >>> text = '\n'.join(f'http://feed.com/{i}' for i in range(IMPORT_ITEMS_LIMIT + 10))
+    >>> len(import_feed_from_text(text)) == IMPORT_ITEMS_LIMIT
+    True
+    >>> len(import_feed_from_text('<opml>\n' + text)) == IMPORT_ITEMS_LIMIT
+    True
     """
     url = _import_one_line_text(text)
     if url is not None:

@@ -1,3 +1,1 @@
-from .env import CONFIG
-
-__all__ = ('CONFIG', )
+from .env import CONFIG, MAX_FEED_COUNT

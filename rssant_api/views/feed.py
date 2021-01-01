@@ -10,6 +10,7 @@ from rssant_api.models.errors import FeedNotFoundError
 from rssant_api.models.feed import FeedDetailSchema
 from rssant_api.models import UnionFeed, FeedCreation, FeedImportItem
 from rssant_api.feed_helper import group_id_of, render_opml
+from rssant_config import MAX_FEED_COUNT
 from rssant_common.actor_client import scheduler
 from rssant_common.helper import timer
 from .helper import check_unionid
@@ -76,17 +77,22 @@ FeedView = RestRouter()
 @FeedView.post('feed/query')
 def feed_query(
     request,
-    hints: T.list(T.dict(id=T.feed_unionid.object, dt_updated=T.datetime.object)).maxlen(5000).optional,
+    hints: T.list(T.dict(
+        id=T.feed_unionid.object,
+        dt_updated=T.datetime.object,
+    )).maxlen(MAX_FEED_COUNT * 10).optional,
     detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.optional,
     size=T.int.optional,
-    feeds=T.list(FeedSchema).maxlen(5000),
+    feeds=T.list(FeedSchema).maxlen(MAX_FEED_COUNT),
     deleted_size=T.int.optional,
-    deleted_ids=T.list(T.feed_unionid),
+    deleted_ids=T.list(T.feed_unionid).maxlen(MAX_FEED_COUNT),
 ):
-    """Feed query"""
+    """Feed query, if user feed count exceed limit, only return limit feeds."""
     if hints:
+        # allow hints schema exceed feed count limit, but discard exceeded
+        hints = hints[:MAX_FEED_COUNT]
         check_unionid(request, [x['id'] for x in hints])
     total, feeds, deleted_ids = UnionFeed.query_by_user(
         user_id=request.user.id, hints=hints, detail=detail)
@@ -101,7 +107,11 @@ def feed_query(
 
 
 @FeedView.get('feed/<slug:feed_unionid>')
-def feed_get(request, feed_unionid: T.feed_unionid.object, detail: FeedDetailSchema) -> FeedSchema:
+def feed_get(
+    request,
+    feed_unionid: T.feed_unionid.object,
+    detail: FeedDetailSchema,
+) -> FeedSchema:
     """Feed detail"""
     check_unionid(request, feed_unionid)
     try:
@@ -117,6 +127,7 @@ def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
     feed=FeedSchema.optional,
     feed_creation=FeedCreationSchema.optional,
 ):
+    """Deprecated, use feed_import instead."""
     try:
         feed, feed_creation = UnionFeed.create_by_url(url=url, user_id=request.user.id)
     except FeedExistError:
@@ -145,12 +156,12 @@ def feed_get_creation(request, pk: T.int, detail: FeedDetailSchema) -> FeedCreat
 @FeedView.get('feed/creation')
 def feed_query_creation(
     request,
-    limit: T.int.min(10).max(2000).default(500),
+    limit: T.int.min(10).max(MAX_FEED_COUNT).default(500),
     detail: FeedDetailSchema
 ) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
-    feed_creations=T.list(FeedCreationSchema).maxlen(2000),
+    feed_creations=T.list(FeedCreationSchema).maxlen(MAX_FEED_COUNT),
 ):
     feed_creations = FeedCreation.query_by_user(request.user.id, limit=limit, detail=detail)
     feed_creations = [x.to_dict() for x in feed_creations]
@@ -198,7 +209,7 @@ def feed_set_group(
 @FeedView.put('feed/set-all-group')
 def feed_set_all_group(
     request,
-    ids: T.list(T.feed_unionid.object),
+    ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT),
     group: T.str.maxlen(50),
 ) -> T.dict(num_updated=T.int):
     check_unionid(request, ids)
@@ -209,7 +220,11 @@ def feed_set_all_group(
 
 
 @FeedView.put('feed/<slug:feed_unionid>/offset')
-def feed_set_offset(request, feed_unionid: T.feed_unionid.object, offset: T.int.min(0).optional) -> FeedSchema:
+def feed_set_offset(
+    request,
+    feed_unionid: T.feed_unionid.object,
+    offset: T.int.min(0).optional,
+) -> FeedSchema:
     check_unionid(request, feed_unionid)
     try:
         feed = UnionFeed.set_story_offset(feed_unionid, offset)
@@ -221,7 +236,7 @@ def feed_set_offset(request, feed_unionid: T.feed_unionid.object, offset: T.int.
 @FeedView.put('feed/all/readed')
 def feed_set_all_readed(
     request,
-    ids: T.list(T.feed_unionid.object).optional,
+    ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
 ) -> T.dict(num_updated=T.int):
     check_unionid(request, ids)
     num_updated = UnionFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
@@ -238,7 +253,10 @@ def feed_delete(request, feed_unionid: T.feed_unionid.object):
 
 
 @FeedView.post('feed/all/delete')
-def feed_delete_all(request, ids: T.list(T.feed_unionid.object).optional) -> T.dict(num_deleted=T.int):
+def feed_delete_all(
+    request,
+    ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
+) -> T.dict(num_deleted=T.int):
     check_unionid(request, ids)
     num_deleted = UnionFeed.delete_all(user_id=request.user.id, ids=ids)
     return dict(num_deleted=num_deleted)
@@ -257,7 +275,12 @@ def _read_request_file(request, name='file'):
     return text, fileobj.name
 
 
-def _create_feeds_by_imports(user, imports: list, group: str = None, is_from_bookmark=False):
+def _create_feeds_by_imports(
+    user,
+    imports: list,
+    group: str = None,
+    is_from_bookmark=False,
+):
     import_items = []
     for raw_item in imports:
         item_group = group
@@ -295,8 +318,8 @@ FeedImportResultSchema = T.dict(
     num_created_feeds=T.int.min(0),
     num_existed_feeds=T.int.min(0),
     num_feed_creations=T.int.min(0),
-    created_feeds=T.list(FeedSchema).maxlen(5000),
-    feed_creations=T.list(FeedCreationSchema).maxlen(5000),
+    created_feeds=T.list(FeedSchema).maxlen(MAX_FEED_COUNT),
+    feed_creations=T.list(FeedCreationSchema).maxlen(MAX_FEED_COUNT),
 )
 
 
@@ -329,10 +352,12 @@ def feed_import(request, text: T.str, group: T.str.optional) -> FeedImportResult
     """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
     with timer('Import-Feed-From-Text'):
         import_feeds = import_feed_from_text(text)
-    if len(import_feeds) > 2000:
+    if len(import_feeds) > MAX_FEED_COUNT:
         return Response({"message": "订阅数超过限制"}, status=400)
     is_from_bookmark = len(import_feeds) > 100
-    return _create_feeds_by_imports(request.user, import_feeds, group=group, is_from_bookmark=is_from_bookmark)
+    return _create_feeds_by_imports(
+        request.user, import_feeds, group=group,
+        is_from_bookmark=is_from_bookmark)
 
 
 @FeedView.post('feed/import/file')

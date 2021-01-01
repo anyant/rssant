@@ -8,6 +8,9 @@ from rssant_common.validator import compiler
 from actorlib.network_helper import LOCAL_NODE_NAME
 
 
+MAX_FEED_COUNT = 5000
+
+
 validate_extra_networks = compiler.compile(T.list(T.dict(
     name=T.str,
     url=T.url.relaxed,

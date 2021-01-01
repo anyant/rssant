@@ -7,6 +7,7 @@ from cached_property import cached_property
 
 from rssant_common.validator import FeedUnionId
 from rssant_common.detail import Detail
+from rssant_config import MAX_FEED_COUNT
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .feed import UserFeed, Feed, FeedStatus, FeedDetailSchema, FEED_DETAIL_FIELDS
 from .feed_creation import FeedCreation, FeedCreateResult, FeedUrlMap
@@ -221,7 +222,7 @@ class UnionFeed:
         hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
         q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
         q = q.only("id", 'feed_id', 'dt_updated', 'feed__dt_updated')
-        user_feeds = list(q.all())
+        user_feeds = list(q[:MAX_FEED_COUNT])
         total = len(user_feeds)
         feed_ids = {user_feed.feed_id for user_feed in user_feeds}
         deteted_ids = []
@@ -409,6 +410,13 @@ class UnionFeed:
                 group=import_item.group if import_item else None,
             )
             new_user_feeds.append(user_feed)
+        # 尽量确保用户订阅数不超过限制
+        user_feed_count = UserFeed.objects.filter(user_id=user_id).count()
+        free_count = max(0, MAX_FEED_COUNT - user_feed_count)
+        new_user_feeds = new_user_feeds[:free_count]
+        free_count = max(0, free_count - len(new_user_feeds))
+        feed_creations = feed_creations[:free_count]
+        # 执行写入数据
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
         if unfreeze_feed_ids:
