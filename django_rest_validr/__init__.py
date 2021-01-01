@@ -155,21 +155,21 @@ class RestRouter:
                     maps.append(request.query_params)
                 else:
                     maps.append(request.data)
-                t_begin = time.time()
+                t_begin = time.monotonic()
                 try:
                     kwargs = params(ChainMap(*maps))
                 except Invalid as ex:
                     ret = RestRouter._response_from_invalid(ex)
-                validr_cost += time.time() - t_begin
-            t_begin = time.time()
+                validr_cost += time.monotonic() - t_begin
+            t_begin = time.monotonic()
             if ret is None:
                 ret = f(request, **kwargs)
-            api_cost = time.time() - t_begin
+            api_cost = time.monotonic() - t_begin
             if returns is not None:
                 if not isinstance(ret, (Response, HttpResponse)):
-                    t_begin = time.time()
+                    t_begin = time.monotonic()
                     ret = returns(ret)
-                    validr_cost += time.time() - t_begin
+                    validr_cost += time.monotonic() - t_begin
                     ret = cls._json_response(ret)
             elif ret is None:
                 ret = HttpResponse(status=204, content_type=JSON_TYPE)

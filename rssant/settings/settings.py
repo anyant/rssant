@@ -69,6 +69,8 @@ def _gen_middleware():
         yield 'rssant.middleware.profiler.RssantProfilerMiddleware'
     if ENV_CONFIG.debug_toolbar_enable:
         yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
+    else:
+        yield 'rssant.middleware.timer.RssantTimerMiddleware'
     yield 'django.middleware.security.SecurityMiddleware'
     yield 'whitenoise.middleware.WhiteNoiseMiddleware'
     yield 'django.contrib.sessions.middleware.SessionMiddleware'
