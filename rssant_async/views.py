@@ -25,6 +25,10 @@ async def image_proxy_view_v2(request, token: T.str, url: T.url):
 
 @routes.get('/image/{image}')
 async def proxy_story_image(request, image: T.str):
+    """
+    在v1.8之前，后端会检测图片是否需要代理，然后替换图片链接。
+    之后改为了前端动态代理，去掉了后端处理步骤。这里的逻辑是为了兼容历史数据。
+    """
     try:
         image_url = decode_image_url(image)
     except ImageUrlDecodeError as ex:

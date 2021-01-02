@@ -120,6 +120,9 @@ RSSANT_IMAGE_TAG = 'rssant=1'
 
 def is_replaced_image(url):
     """
+    在v1.8之前，后端会检测图片是否需要代理，然后替换图片链接。
+    之后改为了前端动态代理，去掉了后端处理步骤。这里的逻辑是为了兼容历史数据。
+
     >>> is_replaced_image('https://rss.anyant.com/123.jpg?rssant=1')
     True
     """

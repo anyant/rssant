@@ -1,9 +1,6 @@
 import logging
-import asyncio
-import time
 import random
 from urllib.parse import unquote
-import concurrent.futures
 
 from validr import T, Invalid
 from attrdict import AttrDict
@@ -21,9 +18,7 @@ from rssant_feedlib.processor import (
     story_readability, story_html_to_text, story_html_clean,
     process_story_links, get_html_redirect_url,
 )
-from rssant_feedlib.blacklist import compile_url_blacklist
 from rssant_feedlib.fulltext import is_fulltext_content, split_sentences
-
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
@@ -38,14 +33,6 @@ LOG = logging.getLogger(__name__)
 _MAX_STORY_HTML_LENGTH = 5 * 1000 * 1024
 _MAX_STORY_CONTENT_LENGTH = 1000 * 1024
 _MAX_STORY_SUMMARY_LENGTH = 300
-
-
-REFERER_DENY_LIST = """
-qpic.cn
-qlogo.cn
-qq.com
-"""
-is_referer_deny_url = compile_url_blacklist(REFERER_DENY_LIST)
 
 
 StorySchema = T.dict(
@@ -322,57 +309,6 @@ def do_process_story_webpage(
         summary=summary,
         url=url,
         sentence_count=num_sentences,
-    ))
-
-
-@actor('worker_rss.detect_story_images')
-async def do_detect_story_images(
-    ctx: ActorContext,
-    feed_id: T.int,
-    offset: T.int,
-    story_url: T.url,
-    image_urls: T.list(T.url).unique,
-):
-    LOG.info(f'detect story images story={feed_id},{offset} num_images={len(image_urls)} begin')
-    options = dict(
-        allow_non_webpage=True,
-        dns_service=DNS_SERVICE,
-    )
-    async with AsyncFeedReader(**options) as reader:
-        async def _read(url):
-            if is_referer_deny_url(url):
-                return url, FeedResponseStatus.REFERER_DENY.value
-            response = await reader.read(
-                url,
-                referer="https://rss.anyant.com/",
-                ignore_content=True
-            )
-            return url, response.status
-        futs = []
-        for url in image_urls:
-            futs.append(asyncio.ensure_future(_read(url)))
-        t_begin = time.time()
-        try:
-            results = await asyncio.gather(*futs)
-        except (TimeoutError, concurrent.futures.TimeoutError):
-            results = [fut.result() for fut in futs if fut.done()]
-        cost_ms = (time.time() - t_begin) * 1000
-    num_ok = num_error = 0
-    images = []
-    for url, status in results:
-        if status == 200:
-            num_ok += 1
-        else:
-            num_error += 1
-        images.append(dict(url=url, status=status))
-    LOG.info(f'detect story images story={feed_id},{offset} '
-             f'num_images={len(image_urls)} finished, '
-             f'ok={num_ok} error={num_error} cost={cost_ms:.0f}ms')
-    await ctx.hope('harbor_rss.update_story_images', dict(
-        feed_id=feed_id,
-        offset=offset,
-        story_url=story_url,
-        images=images,
     ))
 
 

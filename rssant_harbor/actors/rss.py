@@ -1,21 +1,16 @@
 import logging
 import time
 import random
-from collections import defaultdict
 
-import yarl
 from validr import T
 from django.db import transaction
 from django.utils import timezone
 from actorlib import actor, ActorContext
 
 from rssant_feedlib import processor
-from rssant_feedlib.reader import FeedResponseStatus
-from rssant_feedlib.processor import StoryImageProcessor, RSSANT_IMAGE_TAG, is_replaced_image
 from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_content
-from rssant_api.models import UserFeed, Feed, STORY_SERVICE, FeedUrlMap, FeedStatus, FeedCreation, ImageInfo
+from rssant_api.models import UserFeed, Feed, STORY_SERVICE, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_api.helper import reverse_url
-from rssant_common.image_url import encode_image_url
 from rssant_common.actor_helper import django_context, profile_django_context
 from rssant_common.validator import compiler
 from rssant_config import CONFIG
@@ -249,8 +244,6 @@ def do_update_feed(
                 offset=story.offset,
                 num_sub_sentences=num_sub_sentences,
             ))
-        else:
-            _detect_story_images(ctx, story)
 
 
 @actor('harbor_rss.update_feed_info')
@@ -306,68 +299,6 @@ def _is_feed_need_fetch_storys(feed, modified_storys):
     return True
 
 
-def _normalize_url(url):
-    """
-    >>> print(_normalize_url('https://rss.anyant.com/^_^'))
-    https://rss.anyant.com/%5E_%5E
-    >>> print(_normalize_url('https://www.rfa.org/../../../resolveuid/6be5'))
-    None
-    """
-    try:
-        return str(yarl.URL(url))
-    except ValueError as ex:
-        LOG.warning('normalize image url %r failed: %s', url, ex)
-        return None
-
-
-def _image_urls_of_indexs(image_indexs):
-    image_urls = []
-    for x in image_indexs:
-        url = _normalize_url(x.value)
-        if url and not is_replaced_image(url):
-            image_urls.append(url)
-    return image_urls
-
-
-def _detect_story_images(ctx, story):
-    # TODO: deprecate detect_story_images
-    if not CONFIG.detect_story_image_enable:
-        return
-    image_processor = StoryImageProcessor(story.link, story.content)
-    image_urls = _image_urls_of_indexs(image_processor.parse())
-    if not image_urls:
-        return
-    image_statuses = ImageInfo.batch_detect_images(image_urls)
-    num_todo_image_urls = 0
-    todo_url_roots = defaultdict(list)
-    for url in image_urls:
-        status = image_statuses.get(url)
-        if status is None:
-            num_todo_image_urls += 1
-            url_root = ImageInfo.extract_url_root(url)
-            todo_url_roots[url_root].append(url)
-    LOG.info(
-        f'story#{story.feed_id},{story.offset} {story.link} has {len(image_urls)} images, '
-        f'need detect {num_todo_image_urls} images '
-        f'from {len(todo_url_roots)} url_roots'
-    )
-    if todo_url_roots:
-        todo_urls = []
-        for items in todo_url_roots.values():
-            if len(items) > 3:
-                todo_urls.extend(random.sample(items, 3))
-            else:
-                todo_urls.extend(items)
-        ctx.hope('worker_rss.detect_story_images', dict(
-            feed_id=story.feed_id,
-            offset=story.offset,
-            story_url=story.link,
-            image_urls=list(set(todo_urls)),
-        ))
-    else:
-        _replace_story_images(feed_id=story.feed_id, offset=story.offset)
-
-
 @actor('harbor_rss.update_story')
 @django_context
 @profile_django_context
@@ -400,71 +331,6 @@ def do_update_story(
         sentence_count=sentence_count,
     )
     STORY_SERVICE.update_story(feed_id, offset, data)
-    _detect_story_images(ctx, story)
-
-
-IMAGE_REFERER_DENY_STATUS = set([
-    400, 401, 403, 404,
-    FeedResponseStatus.REFERER_DENY.value,
-    FeedResponseStatus.REFERER_NOT_ALLOWED.value,
-])
-
-
-@actor('harbor_rss.update_story_images')
-@django_context
-@profile_django_context
-def do_update_story_images(
-    ctx: ActorContext,
-    feed_id: T.int,
-    offset: T.int,
-    story_url: T.url,
-    images: T.list(T.dict(
-        url=T.url,
-        status=T.int,
-    ))
-):
-    # save image info
-    url_root_status = {}
-    for img in images:
-        url_root = ImageInfo.extract_url_root(img['url'])
-        value = (img['status'], img['url'])
-        if url_root in url_root_status:
-            url_root_status[url_root] = max(value, url_root_status[url_root])
-        else:
-            url_root_status[url_root] = value
-    with transaction.atomic():
-        image_info_objects = []
-        for url_root, (status, url) in url_root_status.items():
-            image_info_objects.append(ImageInfo(
-                url_root=url_root,
-                sample_url=url,
-                referer=story_url,
-                status_code=status,
-            ))
-        LOG.info(f'bulk create {len(image_info_objects)} ImageInfo objects')
-        ImageInfo.objects.bulk_create(image_info_objects)
-    _replace_story_images(feed_id, offset)
-
-
-def _replace_story_images(feed_id, offset):
-    story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
-    image_processor = StoryImageProcessor(story.link, story.content)
-    image_indexs = image_processor.parse()
-    image_urls = _image_urls_of_indexs(image_indexs)
-    if not image_urls:
-        return
-    image_statuses = ImageInfo.batch_detect_images(image_urls)
-    image_replaces = {}
-    for url, status in image_statuses.items():
-        if status in IMAGE_REFERER_DENY_STATUS:
-            new_url_data = encode_image_url(url, story.link)
-            image_replaces[url] = '/api/v1/image/{}?{}'.format(new_url_data, RSSANT_IMAGE_TAG)
-    LOG.info(f'story#{feed_id},{offset} {story.link} '
-             f'replace {len(image_replaces)} referer deny images')
-    # image_processor.process will (1) fix relative url (2) replace image url
-    # call image_processor.process regardless of image_replaces is empty or not
-    content = image_processor.process(image_indexs, image_replaces)
-    STORY_SERVICE.update_story(feed_id, offset, {'content': content})
 
 
 @actor('harbor_rss.check_feed')
@@ -533,15 +399,6 @@ def do_clean_by_retention(ctx: ActorContext):
         url = feed['url']
         n = STORY_SERVICE.delete_by_retention(feed_id, retention=retention)
         LOG.info(f'deleted {n} storys of feed#{feed_id} {url} by retention')
-
-
-@actor('harbor_rss.clean_image_info_by_retention')
-@django_context
-def do_clean_image_info_by_retention(ctx: ActorContext):
-    if not CONFIG.detect_story_image_enable:
-        return
-    num_rows = ImageInfo.delete_by_retention()
-    LOG.info('delete {} outdated imageinfos'.format(num_rows))
 
 
 @actor('harbor_rss.clean_feedurlmap_by_retention')

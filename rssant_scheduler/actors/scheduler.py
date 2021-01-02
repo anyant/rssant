@@ -44,11 +44,6 @@ async def do_schedule_clean_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_by_retention', expire_at=time.time() + 180)
 
 
-@actor('scheduler.schedule_clean_image_info_by_retention', timer='1m')
-async def do_schedule_clean_image_info_by_retention(ctx: ActorContext):
-    await ctx.tell('harbor_rss.clean_image_info_by_retention', expire_at=time.time() + 180)
-
-
 @actor('scheduler.schedule_clean_feedurlmap_by_retention', timer='30m')
 async def do_schedule_clean_feedurlmap_by_retention(ctx: ActorContext):
     await ctx.tell('harbor_rss.clean_feedurlmap_by_retention', expire_at=time.time() + 180)
