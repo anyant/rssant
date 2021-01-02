@@ -57,27 +57,29 @@ def user_login(
     password: T.str.optional,
 ) -> UserSchema:
     deactive_message = {'message': '账户状态异常，请联系作者'}
-    error_message = {'message': '账号或密码错误'}
+    email_error_message = {'message': '此邮箱未注册'}
+    password_error_message = {'message': '账号密码错误'}
+    token_error_message = {'message': '未提供Token或Token无效'}
     if not (account or password):
         if request.user.is_authenticated:
             if not request.user.is_active:
                 return Response(deactive_message, status=403)
             return serialize_user(request.user)
-        return Response(error_message, status=401)
+        return Response(token_error_message, status=401)
     if '@' in account:
         tmp_user = User.objects.filter(email=account).first()
         if tmp_user:
             username = tmp_user.username
         else:
-            return Response(error_message, status=401)
+            return Response(email_error_message, status=401)
     else:
         username = account
     try:
         user = django_auth.authenticate(username=username, password=password)
     except AuthenticationFailed:
-        return Response(error_message, status=401)
+        return Response(password_error_message, status=401)
     if not user or not user.is_authenticated:
-        return Response(error_message, status=401)
+        return Response(password_error_message, status=401)
     if not user.is_active:
         return Response(deactive_message, status=403)
     django_auth.login(request, user=user)
