@@ -18,11 +18,21 @@ class FeedSimpleTestCase(TestCase):
             dt_updated=timezone.now(),
         )
         feed.save()
+        self._feed = feed
 
     def test_get_feed_by_url(self):
         url = 'https://blog.example.com/feed.xml'
         got = Feed.get_first_by_url(url)
         self.assertEqual(got.title, 'test feed')
+
+    def test_take_outdated(self):
+        self.assertFalse(Feed.get_by_pk(self._feed.id).dt_checked)
+        outdated1 = Feed.take_outdated_feeds()
+        self.assertEqual(len(outdated1), 1)
+        self.assertEqual(outdated1[0]['feed_id'], self._feed.id)
+        self.assertTrue(Feed.get_by_pk(self._feed.id).dt_checked)
+        outdated2 = Feed.take_outdated_feeds()
+        self.assertEqual(len(outdated2), 0)
 
 
 @pytest.mark.dbtest

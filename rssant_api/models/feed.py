@@ -192,48 +192,50 @@ class Feed(Model, ContentHashMixin):
         if not timeout_seconds:
             timeout_seconds = 3 * outdate_seconds
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
-        sql_check = f"""
-        SELECT id, url, etag, last_modified, use_proxy, checksum_data
-        FROM rssant_api_feed AS feed
-        WHERE
-            (status != '{FeedStatus.DISCARD}') AND (
-            (
-                dt_checked IS NULL
-            )
-            OR
-            (
-                (freeze_level IS NULL OR freeze_level < 1) AND (
-                    (status=ANY(%s) AND NOW() - dt_checked > %s * '1s'::interval)
-                    OR
-                    (NOW() - dt_checked > %s * '1s'::interval)
+        # 单个SQL实现查询并更新，再加上 _version 字段乐观锁，可避免并发情况下重复读
+        sql_check_update = f"""
+        WITH t AS (
+            SELECT id, _version
+            FROM rssant_api_feed AS feed
+            WHERE
+                (status != '{FeedStatus.DISCARD}') AND (
+                (
+                    dt_checked IS NULL
                 )
-            )
-            OR
-            (
-                (status=ANY(%s) AND NOW() - dt_checked > %s * freeze_level * '1s'::interval)
                 OR
-                (NOW() - dt_checked > %s * freeze_level * '1s'::interval)
-            ))
-        ORDER BY id LIMIT %s
-        """
-        sql_update_status = """
-        UPDATE rssant_api_feed
-        SET status=%s, dt_checked=%s
-        WHERE id=ANY(%s)
+                (
+                    (freeze_level IS NULL OR freeze_level < 1) AND (
+                        (status=ANY(%s) AND NOW() - dt_checked > %s * '1s'::interval)
+                        OR
+                        (NOW() - dt_checked > %s * '1s'::interval)
+                    )
+                )
+                OR
+                (
+                    (status=ANY(%s) AND NOW() - dt_checked > %s * freeze_level * '1s'::interval)
+                    OR
+                    (NOW() - dt_checked > %s * freeze_level * '1s'::interval)
+                ))
+            ORDER BY id LIMIT %s
+        )
+        UPDATE rssant_api_feed AS feed
+        SET status=%s, dt_checked=%s, _version=t._version+1
+        FROM t
+        WHERE feed.id=t.id AND feed._version=t._version
+        RETURNING feed.id, url, etag, last_modified, use_proxy, checksum_data
+        ;
         """
         params = [
             statuses, outdate_seconds, timeout_seconds,
-            statuses, outdate_seconds, timeout_seconds, limit
+            statuses, outdate_seconds, timeout_seconds, limit,
+            FeedStatus.PENDING, timezone.now(),
         ]
         feeds = []
-        now = timezone.now()
         columns = ['feed_id', 'url', 'etag', 'last_modified', 'use_proxy', 'checksum_data']
         with connection.cursor() as cursor:
-            cursor.execute(sql_check, params)
+            cursor.execute(sql_check_update, params)
             for row in cursor.fetchall():
                 feeds.append(dict(zip(columns, row)))
-            feed_ids = [x['feed_id'] for x in feeds]
-            cursor.execute(sql_update_status, [FeedStatus.PENDING, now, feed_ids])
         return feeds
 
     @classmethod
