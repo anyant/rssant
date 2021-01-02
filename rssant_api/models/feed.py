@@ -32,18 +32,19 @@ FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
 FeedDetailSchema = T.detail.fields("""
-    icon
     title
     group,
-    author
-    version
-    link
     dryness
+    response_status
     freeze_level
     use_proxy
     dt_first_story_published
     dt_latest_story_published
 """).extra_fields("""
+    icon
+    author
+    version
+    link
     description
     warnings
     encoding
@@ -51,7 +52,6 @@ FeedDetailSchema = T.detail.fields("""
     last_modified
     content_length
     content_hash_base64
-    response_status
     dt_checked
     dt_synced
 """).default(False)
@@ -155,37 +155,6 @@ class Feed(Model, ContentHashMixin):
         UserFeed.objects.bulk_update(updates, ['feed_id', 'story_offset'])
         other.status = FeedStatus.DISCARD
         other.save()
-
-    def to_dict(self, detail=False):
-        ret = dict(
-            status=self.status,
-            url=self.url,
-            title=self.title,
-            link=self.link,
-            author=self.author,
-            icon=self.icon,
-            version=self.version,
-            total_storys=self.total_storys,
-            dt_updated=self.dt_updated,
-            dt_created=self.dt_created,
-            dt_first_story_published=self.dt_first_story_published,
-            dt_latest_story_published=self.dt_latest_story_published,
-        )
-        if detail:
-            ret.update(
-                dryness=self.dryness,
-                freeze_level=self.freeze_level,
-                use_proxy=self.use_proxy,
-                description=self.description,
-                encoding=self.encoding,
-                etag=self.etag,
-                last_modified=self.last_modified,
-                content_length=self.content_length,
-                content_hash_base64=self.content_hash_base64,
-                dt_checked=self.dt_checked,
-                dt_synced=self.dt_synced,
-            )
-        return ret
 
     @property
     def monthly_story_count(self):

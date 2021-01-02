@@ -8,6 +8,7 @@ from cached_property import cached_property
 from rssant_common.validator import FeedUnionId
 from rssant_common.detail import Detail
 from rssant_config import MAX_FEED_COUNT
+from rssant_feedlib import FeedResponseStatus
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
 from .feed import UserFeed, Feed, FeedStatus, FeedDetailSchema, FEED_DETAIL_FIELDS
 from .feed_creation import FeedCreation, FeedCreateResult, FeedUrlMap
@@ -143,8 +144,14 @@ class UnionFeed:
         return self._feed.last_modified
 
     @property
-    def response_status(self):
+    def response_status(self) -> int:
         return self._feed.response_status
+
+    @property
+    def response_status_name(self) -> str:
+        if self.response_status is None:
+            return None
+        return FeedResponseStatus.name_of(self.response_status)
 
     @property
     def content_length(self):
@@ -178,6 +185,8 @@ class UnionFeed:
         detail = Detail.from_schema(self._detail, FeedDetailSchema)
         for k in detail.include_fields:
             ret[k] = getattr(self, k)
+        if self._detail:
+            ret['response_status_name'] = self.response_status_name
         return ret
 
     @staticmethod
