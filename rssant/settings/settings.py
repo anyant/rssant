@@ -105,6 +105,10 @@ TEMPLATES = [
     },
 ]
 
+# disable django.contrib.messages
+MESSAGE_STORAGE = 'rssant.middleware.message_storage.FakeMessageStorage'
+
+
 WSGI_APPLICATION = 'rssant.wsgi.application'
 
 
