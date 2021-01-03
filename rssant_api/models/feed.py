@@ -178,13 +178,13 @@ class Feed(Model, ContentHashMixin):
         return Feed.objects.filter(url=url).first()
 
     @staticmethod
-    def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=100):
+    def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=300):
         feeds = Feed.take_outdated_feeds(
             outdate_seconds=outdate_seconds, timeout_seconds=timeout_seconds, limit=limit)
         return [x['feed_id'] for x in feeds]
 
     @staticmethod
-    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=100):
+    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=300):
         """
         outdate_seconds: 正常检查时间间隔
         timeout_seconds: 异常检查时间间隔

@@ -29,19 +29,19 @@ async def do_healthcheck(ctx: ActorContext):
             await ctx.hope('scheduler.unregister', content=dict(node_name=name))
 
 
-@actor('scheduler.schedule_check_feed', timer='10s')
+@actor('scheduler.schedule_check_feed', timer='30s')
 async def do_schedule_check_feed(ctx: ActorContext):
     await ctx.tell('harbor_rss.check_feed', expire_at=time.time() + 30)
 
 
-@actor('scheduler.schedule_clean_feed_creation', timer='10s')
+@actor('scheduler.schedule_clean_feed_creation', timer='1m')
 async def do_schedule_clean_feed_creation(ctx: ActorContext):
-    await ctx.tell('harbor_rss.clean_feed_creation', expire_at=time.time() + 30)
+    await ctx.tell('harbor_rss.clean_feed_creation', expire_at=time.time() + 60)
 
 
 @actor('scheduler.schedule_clean_by_retention', timer='1m')
 async def do_schedule_clean_by_retention(ctx: ActorContext):
-    await ctx.tell('harbor_rss.clean_by_retention', expire_at=time.time() + 180)
+    await ctx.tell('harbor_rss.clean_by_retention', expire_at=time.time() + 60)
 
 
 @actor('scheduler.schedule_clean_feedurlmap_by_retention', timer='30m')
