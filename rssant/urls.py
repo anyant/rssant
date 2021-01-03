@@ -23,6 +23,7 @@ from rest_framework_swagger.views import get_swagger_view
 from . import views
 from . import auth
 from .allauth_providers.github import urls as github_urls
+from .middleware.prometheus import django_metrics_view
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
@@ -35,6 +36,7 @@ urlpatterns = [
     path('', views.index),
     path('changelog', views.changelog_html),
     path('changelog.atom', views.changelog_atom),
+    path('admin/metrics', django_metrics_view),
     path('admin/', admin.site.urls),
     path('docs/v1/', docs_view),
     path('docs/v1/', include('rest_framework.urls', namespace='rest_framework')),

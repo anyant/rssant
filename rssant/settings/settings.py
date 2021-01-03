@@ -71,6 +71,7 @@ def _gen_middleware():
         yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
     else:
         yield 'rssant.middleware.timer.RssantTimerMiddleware'
+    yield 'rssant.middleware.prometheus.RssantPrometheusMiddleware'
     yield 'django.middleware.security.SecurityMiddleware'
     yield 'whitenoise.middleware.WhiteNoiseMiddleware'
     yield 'django.contrib.sessions.middleware.SessionMiddleware'
