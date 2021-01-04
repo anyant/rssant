@@ -1,6 +1,6 @@
 # django
-django==2.2.13
-djangorestframework==3.11.0
+django==2.2.17
+djangorestframework==3.12.2
 django-debug-toolbar==2.2
 django-extensions==2.2.9
 django-allauth==0.44.0
@@ -10,7 +10,7 @@ django-timezone-field==4.0
 django-optimistic-lock==1.0.0
 django-seal==1.2.3
 jsonfield==3.1.0
-pytest-django==3.9.0
+pytest-django==3.10.0
 
 # wsgi
 whitenoise==5.0.1

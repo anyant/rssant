@@ -47,8 +47,8 @@ django-rest-auth==0.9.5   # via -r requirements.in
 django-rest-swagger==2.2.0  # via -r requirements.in
 django-seal==1.2.3        # via -r requirements.in
 django-timezone-field==4.0  # via -r requirements.in
-django==2.2.13            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
-djangorestframework==3.11.0  # via -r requirements.in, django-rest-auth, django-rest-swagger
+django==2.2.17            # via -r requirements.in, django-allauth, django-debug-toolbar, django-optimistic-lock, django-postgrespool2, django-rest-auth, django-seal, django-timezone-field, djangorestframework, jsonfield
+djangorestframework==3.12.2  # via -r requirements.in, django-rest-auth, django-rest-swagger
 entrypoints==0.3          # via flake8
 fake-useragent==0.1.11    # via -r requirements.in
 feedparser==6.0.0b3       # via -r requirements.in
@@ -111,7 +111,7 @@ pyopenssl==19.1.0         # via -r requirements.in
 pyparsing==2.4.2          # via packaging, validr
 pysocks==1.7.1            # via -r requirements.in
 pytest-cov==2.8.1         # via -r requirements.in
-pytest-django==3.9.0      # via -r requirements.in
+pytest-django==3.10.0     # via -r requirements.in
 pytest-httpserver==0.3.4  # via -r requirements.in
 pytest==5.4.1             # via -r requirements.in, pytest-cov, pytest-django
 python-dateutil==2.8.1    # via -r requirements.in, atoma
