@@ -45,9 +45,9 @@ def id_of_month(year, month) -> int:
 
 def _check_year_month(year, month):
     if not (1970 <= year <= 9999):
-        raise ValueError(f'year must between 1970 and 9999')
+        raise ValueError('year must between 1970 and 9999')
     if not (1 <= month <= 12):
-        raise ValueError(f'month must between 1 and 12')
+        raise ValueError('month must between 1 and 12')
 
 
 def is_valid_year_month(year, month):

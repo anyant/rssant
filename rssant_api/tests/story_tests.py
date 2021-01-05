@@ -186,8 +186,8 @@ class StoryTestCase(TransactionTestCase):
     def test_story_dt_and_content_length(self):
         dt = timezone.datetime(2019, 6, 1, 12, 12, 12, tzinfo=timezone.utc)
         story = {
-            'unique_id': f'blog.example.com/1',
-            'title': f'test story 1',
+            'unique_id': 'blog.example.com/1',
+            'title': 'test story 1',
             'dt_published': dt,
             'dt_updated': dt,
         }

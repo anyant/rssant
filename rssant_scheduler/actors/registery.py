@@ -47,7 +47,7 @@ async def do_register(ctx: ActorContext, node: NodeSpecSchema) -> T.dict(nodes=T
         LOG.info(f'register node {node["name"]} already existed and no changes')
     else:
         ctx.registery.add(node)
-        LOG.info(f'current registery info:\n' + pretty_format_json(ctx.registery.to_spec()))
+        LOG.info('current registery info:\n' + pretty_format_json(ctx.registery.to_spec()))
         await ctx.tell('scheduler.save_registery')
     return dict(nodes=ctx.registery.to_spec())
 

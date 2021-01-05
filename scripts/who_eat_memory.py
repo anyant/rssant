@@ -9,10 +9,10 @@ if IS_GEN and __name__ == "__main__":
     module_graph.setup_hooker(save_to=INPUT_FILEPATH, verbose=True)
 
 
-import rssant_common.django_setup  # noqa: F401,F402
-from rssant_common.logger import configure_logging  # noqa: F402
-from module_graph.traveler import ModuleTraveler  # noqa: F402
-from module_graph.render import render_graph  # noqa: F402
+import rssant_common.django_setup  # noqa: F401,E402
+from rssant_common.logger import configure_logging  # noqa: E402
+from module_graph.traveler import ModuleTraveler  # noqa: E402
+from module_graph.render import render_graph  # noqa: E402
 
 
 IGNORE = """

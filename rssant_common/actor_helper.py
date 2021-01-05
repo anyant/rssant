@@ -74,7 +74,7 @@ def do_update_registery(ctx, nodes: T.list(NodeSpecSchema)):
     LOG.info(f'update registery {ctx.message}')
     ctx.registery.update(nodes)
     nodes = pretty_format_json(ctx.registery.to_spec())
-    LOG.info(f'current registery:\n' + nodes)
+    LOG.info('current registery:\n' + nodes)
 
 
 @actor('actor.dns_service_update')
@@ -104,7 +104,7 @@ def on_startup(app):
             app.registery.update(r['nodes'])
             break
     nodes = pretty_format_json(app.registery.to_spec())
-    LOG.info(f'current registery:\n' + nodes)
+    LOG.info('current registery:\n' + nodes)
     if app.kong_client:
         LOG.info(f'kong register {app.name} url={app.kong_actor_url}')
         while True:

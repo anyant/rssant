@@ -379,7 +379,7 @@ class ActorState:
         outbox_state.update(status=OUTBOX, retry_at=None)
 
     def apply_restart(self):
-        LOG.debug(f'apply_restart')
+        LOG.debug('apply_restart')
         execute_message_ids = []
         inbox_message_ids = []
         for message_id, state in self.state.items():
