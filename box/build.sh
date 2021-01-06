@@ -17,7 +17,8 @@ fi
 pushd box/web || exit 1
 git fetch
 git checkout master
-git pull
+git pull --ff-only
 popd || exit 1
 
+# shellcheck disable=SC2068
 docker build -f box/Dockerfile -t guyskk/rssant:latest . $@

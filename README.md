@@ -178,7 +178,7 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 git clone git@gitee.com:anyant/rssant.git
 cd rssant
-pyenv virtualenv -p python3.7 3.7.7 rssant
+pyenv virtualenv -p python3.8 3.8.6 rssant
 pyenv local rssant
 pip install -r requirements.txt
 ```
