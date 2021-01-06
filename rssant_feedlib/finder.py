@@ -405,7 +405,7 @@ class FeedFinder:
 
     def _try_guess_links(self):
         if not self._links and not self._guessed:
-            msg = f'guess some links from start_url'
+            msg = 'guess some links from start_url'
             self._log(msg)
             self._guess_links()
             self._guessed = True
@@ -418,7 +418,7 @@ class FeedFinder:
             current_try += 1
             url = self._pop_candidate()
             if not url:
-                self._log(f"No more candidate url")
+                self._log("No more candidate url")
                 break
             self._log(f"#{current_try} try {url}")
             res = self._read(url, current_try, use_proxy=use_proxy)

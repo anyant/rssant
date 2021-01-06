@@ -4,7 +4,9 @@ docker volume create rssant-data || true
 docker volume create rssant-postgres-data || true
 docker volume create rssant-postgres-logs || true
 
+docker stop -t 3 rssant || true
 docker rm -f rssant || true
+# shellcheck disable=SC2068
 docker run -ti --name rssant -d \
     -p 6789:80 \
     --env-file box/rssant.env \

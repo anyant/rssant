@@ -122,8 +122,13 @@ def feed_get(
     return feed.to_dict()
 
 
+# TODO: fix flake8 check F821 in typing
+# https://www.flake8rules.com/rules/F821.html
+_SCHEMA_FEED_CREATE_URL = T.url.default_schema('http')
+
+
 @FeedView.post('feed/creation')
-def feed_create(request, url: T.url.default_schema('http')) -> T.dict(
+def feed_create(request, url: _SCHEMA_FEED_CREATE_URL) -> T.dict(
     is_ready=T.bool,
     feed=FeedSchema.optional,
     feed_creation=FeedCreationSchema.optional,

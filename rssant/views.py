@@ -17,7 +17,7 @@ def accounts_profile(request):
     if user.is_authenticated:
         msg = f"Hi, {user.username}!"
     else:
-        msg = f'Hi, welcome!'
+        msg = 'Hi, welcome!'
     return HttpResponse(msg)
 
 

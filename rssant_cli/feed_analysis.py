@@ -154,11 +154,11 @@ def compute_report(snapshot1, snapshot2):
             if dr.total <= 3:
                 key = f'other:{dr.total}'
             elif dr.total <= 9:
-                key = f'other:4-9'
+                key = 'other:4-9'
             elif dr.total <= 99:
-                key = f'other:10-99'
+                key = 'other:10-99'
             else:
-                key = f'other:100+'
+                key = 'other:100+'
         for key in (key, 'ALL'):
             domain_report = report_records[key]
             domain_report['total'] += dr.total

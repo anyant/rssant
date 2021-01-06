@@ -5,6 +5,7 @@
 /static/
 /box/data/
 /box/logs/
+/box/web/.git/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -71,10 +71,13 @@ class BackdoorServer:
         sys.stderr = BackdoorOutput(self._sys_stderr)
         self._init_sock()
         LOG.info(f'backdoor server listen at {self.socket_path}!')
-        while True:
-            cli_sock, cli_addr = self.sock.accept()
-            t = Thread(target=self.handler, args=(cli_sock, cli_addr), name='backdoor_handler')
-            t.start()
+        try:
+            while True:
+                cli_sock, cli_addr = self.sock.accept()
+                t = Thread(target=self.handler, args=(cli_sock, cli_addr), name='backdoor_handler')
+                t.start()
+        except ConnectionError as ex:
+            LOG.info(f'backdoor server {type(ex).__name__} {ex}')
 
     def start(self):
         self.thread.start()

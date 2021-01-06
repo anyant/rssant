@@ -18,18 +18,16 @@ gunicorn==20.0.4
 supervisor==4.1.0
 
 # postgres
-psycopg2==2.7.7
-psycopg2-binary==2.7.7
+psycopg2==2.8.6
 SQLAlchemy==1.3.15
 django-postgrespool2==1.0.1
-pgcli==2.0.2
-sqlparse==0.2.4
+pgcli==3.1.0
 
 # feedlibs
 requests==2.22.0
 urllib3==1.25.8
 PySocks==1.7.1
-yarl==1.4.2
+yarl==1.6.3
 certifi==2020.6.20
 chardet==3.0.4
 cchardet==2.1.6
@@ -48,10 +46,10 @@ cryptography==3.2
 listparser==0.18
 
 # aiolibs
-aiohttp==3.6.2
+aiohttp==3.7.3
 aiodns==2.0.0
 aiohttp-devtools==0.13.1
-aiojobs==0.2.2
+aiojobs==0.3.0
 aiocontextvars==0.2.2  # Python 3.6
 aiohttp-socks==0.5.5
 python-socks==1.1.1
@@ -63,7 +61,7 @@ prometheus-client==0.7.1
 
 # helpers
 Brotli==1.0.7
-validr==1.2.0b2
+validr==1.2.0
 attrdict==2.0.1
 msgpack==1.0.0
 loguru==0.3.1
@@ -96,7 +94,7 @@ autopep8==1.5
 pre-commit==2.3.0
 
 # package
-pip-tools==4.5.1
+pip-tools==5.5.0
 pipdeptree==0.13.2
 shiv==0.1.1
 
