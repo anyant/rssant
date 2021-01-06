@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 import logging
 import requests
+from .requests_helper import requests_check_incomplete_response
 
 
 LOG = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class KongClient:
     def _check_status(self, response):
         try:
             response.raise_for_status()
+            requests_check_incomplete_response(response)
         except requests.RequestException as ex:
             LOG.warning(f'{ex}: response={response.text}')
             raise

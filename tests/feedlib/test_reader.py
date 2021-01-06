@@ -12,6 +12,7 @@ from rssant_config import CONFIG
 from rssant_feedlib.reader import FeedReader, FeedResponseStatus
 from rssant_feedlib.async_reader import AsyncFeedReader
 from rssant_common.dns_service import DNSService
+from tests.socket_http_server import SocketHttpServer
 
 
 LOG = logging.getLogger(__name__)
@@ -121,7 +122,7 @@ def test_read_non_webpage(reader_class: Type[FeedReader], httpserver: HTTPServer
 
 
 @pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
-def test_read_private_addres(reader_class: Type[FeedReader], httpserver: HTTPServer):
+def test_read_private_address(reader_class: Type[FeedReader], httpserver: HTTPServer):
     httpserver.expect_request("/private-address").respond_with_json(0)
     url = httpserver.url_for("/private-address")
     dns_service = DNSService.create(allow_private_address=False)
@@ -129,6 +130,24 @@ def test_read_private_addres(reader_class: Type[FeedReader], httpserver: HTTPSer
         response = reader.read(url)
         assert response.status == FeedResponseStatus.PRIVATE_ADDRESS_ERROR
         assert not response.content
+
+
+@pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
+def test_read_incomplete_response(reader_class: Type[FeedReader]):
+    dns_service = DNSService.create(allow_private_address=True)
+    with SocketHttpServer.incomplete_text() as server:
+        with reader_class(dns_service=dns_service) as reader:
+            response = reader.read(server.url)
+            assert response.status == FeedResponseStatus.CHUNKED_ENCODING_ERROR
+
+
+@pytest.mark.parametrize('reader_class', [FeedReader, SyncAsyncFeedReader])
+def test_read_incomplete_response_gzip(reader_class: Type[FeedReader], httpserver: HTTPServer):
+    dns_service = DNSService.create(allow_private_address=True)
+    with SocketHttpServer.incomplete_gzip() as server:
+        with reader_class(dns_service=dns_service) as reader:
+            response = reader.read(server.url)
+            assert response.status == FeedResponseStatus.CHUNKED_ENCODING_ERROR
 
 
 _data_dir = Path(__file__).parent / 'testdata'

@@ -8,6 +8,7 @@ import aiohttp
 import requests
 
 from rssant_common.helper import aiohttp_raise_for_status, aiohttp_client_session
+from rssant_common.requests_helper import requests_check_incomplete_response
 
 from .message import ActorMessage, ContentEncoding
 from .registery import ActorRegistery
@@ -123,6 +124,7 @@ class ActorClient(ActorClientBase):
             try:
                 r = self.session.post(
                     dst_url, data=data, headers=self.headers, timeout=self.timeout)
+                requests_check_incomplete_response(r)
             except requests.ConnectionError as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 return
@@ -146,6 +148,7 @@ class ActorClient(ActorClientBase):
                 r = self.session.post(
                     dst_url, data=data,
                     headers=headers, timeout=self.timeout)
+                requests_check_incomplete_response(r)
             except requests.RequestException as ex:
                 LOG.warning(f'failed to send message to {dst_url}: {ex}')
                 raise

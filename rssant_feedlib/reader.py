@@ -13,6 +13,7 @@ from rssant_common.dns_service import (
     PrivateAddressError,
     NameNotResolvedError,
 )
+from rssant_common.requests_helper import requests_check_incomplete_response
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
@@ -176,6 +177,7 @@ class FeedReader:
                     self.max_content_length)
                 raise ContentTooLargeError(msg)
             content.extend(data)
+        requests_check_incomplete_response(response)
         return content
 
     def _decode_content(self, content: bytes):

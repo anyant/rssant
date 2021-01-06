@@ -6,6 +6,7 @@ from urllib.parse import urlsplit, urlunsplit
 import requests
 
 from rssant_common import _proxy_helper
+from rssant_common.requests_helper import requests_check_incomplete_response
 
 
 LOG = logging.getLogger(__name__)
@@ -99,6 +100,7 @@ class RSSProxyClient:
             timeout = _DEFAULT_TIMEOUT
         response = requests.request(method, url, **kwargs, timeout=timeout)
         response.close()
+        requests_check_incomplete_response(response)
         return response
 
     def request_by_proxy(self, *args, **kwargs) -> requests.Response:
@@ -139,6 +141,7 @@ class RSSProxyClient:
         }
         response = requests.post(self.rss_proxy_url, json=proxy_data, timeout=timeout)
         response.close()
+        requests_check_incomplete_response(response)
         proxy_status = response.headers.get('x-rss-proxy-status', None)
         if response.status_code != 200 or proxy_status == 'ERROR':
             msg = 'status={} {}'.format(response.status_code, response.text)
