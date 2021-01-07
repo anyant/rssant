@@ -164,6 +164,8 @@ graphviz==0.13
     #   objgraph
 gunicorn==20.0.4
     # via -r requirements.in
+hashids==1.3.1
+    # via -r requirements.in
 html2text==2020.1.16
     # via -r requirements.in
 identify==1.4.15

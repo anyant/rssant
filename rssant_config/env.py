@@ -90,6 +90,8 @@ class EnvConfig(ConfigModel):
     image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('12h')
     detect_story_image_enable: bool = T.bool.default(False)
+    # hashid salt
+    hashid_salt: str = T.str.default('rssant')
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:

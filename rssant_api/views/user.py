@@ -8,10 +8,11 @@ from rest_framework.exceptions import AuthenticationFailed
 from allauth.socialaccount.models import SocialAccount
 
 from rssant_config import CONFIG
+from rssant_common.hashid import HASH_ID
 
 
 UserSchema = T.dict(
-    id=T.int,
+    id=T.str,
     username=T.str,
     has_usable_password=T.bool.optional,
     avatar_url=T.str.optional,
@@ -40,7 +41,7 @@ def serialize_user(user):
     token, created = Token.objects.get_or_create(user=user)
     has_usable_password = user.password and user.has_usable_password()
     return dict(
-        id=user.id,
+        id=HASH_ID.encode(user.id),
         username=user.username,
         has_usable_password=has_usable_password,
         avatar_url=avatar_url,
