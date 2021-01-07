@@ -14,19 +14,19 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "6.0.2"
+      "version": "6.6.2"
     },
     {
       "type": "panel",
       "id": "graph",
       "name": "Graph",
-      "version": "5.0.0"
+      "version": ""
     },
     {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
-      "version": "5.0.0"
+      "version": "1.0.0"
     }
   ],
   "annotations": {
@@ -46,7 +46,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1571153089756,
+  "iteration": 1610022916912,
   "links": [],
   "panels": [
     {
@@ -56,12 +56,14 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 0,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
         "y": 0
       },
+      "hiddenSeries": false,
       "id": 20,
       "legend": {
         "alignAsTable": true,
@@ -81,18 +83,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "paceLength": 10,
       "percentage": false,
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
+      "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
           "expr": "process_resident_memory_bytes",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{job}}",
           "refId": "A"
@@ -148,12 +155,14 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
         "y": 7
       },
+      "hiddenSeries": false,
       "id": 3,
       "legend": {
         "alignAsTable": true,
@@ -172,18 +181,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "paceLength": 10,
       "percentage": false,
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
+      "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(actor_queue_inbox_size{job=\"$job\"}[1m])",
+          "expr": "avg_over_time(actor_queue_inbox_size{job=\"$job\"}[$interval])",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{ dst }}",
           "refId": "A"
@@ -240,12 +254,14 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
         "y": 13
       },
+      "hiddenSeries": false,
       "id": 2,
       "legend": {
         "alignAsTable": true,
@@ -264,18 +280,23 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "paceLength": 10,
       "percentage": false,
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
+      "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(actor_queue_outbox_size{job=\"$job\"}[1m])",
+          "expr": "avg_over_time(actor_queue_outbox_size{job=\"$job\"}[$interval])",
           "format": "time_series",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{ dst }}",
           "refId": "A"
@@ -330,13 +351,16 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
         "y": 19
       },
+      "hiddenSeries": false,
       "id": 13,
       "legend": {
         "alignAsTable": true,
@@ -357,12 +381,16 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "paceLength": 10,
       "percentage": false,
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
+      "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
@@ -371,7 +399,7 @@
           "format": "time_series",
           "hide": false,
           "instant": false,
-          "interval": "",
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{dst}}",
           "refId": "A"
@@ -425,12 +453,14 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
         "y": 25
       },
+      "hiddenSeries": false,
       "id": 6,
       "legend": {
         "alignAsTable": true,
@@ -449,6 +479,9 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
       "paceLength": 10,
       "percentage": false,
       "pointradius": 2,
@@ -457,6 +490,7 @@
       "repeat": "op_type",
       "repeatDirection": "v",
       "seriesOverrides": [],
+      "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
       "targets": [
@@ -464,6 +498,7 @@
           "expr": "sum(rate(actor_queue_op_total{op=\"$op_type\", job=\"$job\"}[$interval]) * 60) by (dst)",
           "format": "time_series",
           "instant": false,
+          "interval": "1m",
           "intervalFactor": 1,
           "legendFormat": "{{dst}}",
           "refId": "A"
@@ -512,8 +547,8 @@
       }
     }
   ],
-  "refresh": "10s",
-  "schemaVersion": 18,
+  "refresh": "15m",
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -521,12 +556,8 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
-          "tags": [],
           "text": "All",
-          "value": [
-            "$__all"
-          ]
+          "value": ["$__all"]
         },
         "hide": 0,
         "includeAll": true,
@@ -601,8 +632,9 @@
         "auto_count": 30,
         "auto_min": "10s",
         "current": {
-          "text": "1m",
-          "value": "1m"
+          "selected": false,
+          "text": "1h",
+          "value": "1h"
         },
         "hide": 0,
         "label": "Interval",
@@ -614,7 +646,7 @@
             "value": "10s"
           },
           {
-            "selected": true,
+            "selected": false,
             "text": "1m",
             "value": "1m"
           },
@@ -629,7 +661,7 @@
             "value": "30m"
           },
           {
-            "selected": false,
+            "selected": true,
             "text": "1h",
             "value": "1h"
           }
@@ -642,34 +674,15 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": [
-      "5s",
-      "10s",
-      "30s",
-      "1m",
-      "5m",
-      "15m",
-      "30m",
-      "1h"
-    ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
   },
   "timezone": "",
   "title": "RSSAnt-Actor",
   "uid": "zlLbjW2Wk",
-  "version": 7
+  "version": 3
 }
