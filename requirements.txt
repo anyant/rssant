@@ -354,7 +354,7 @@ sgmllib3k==1.0.0
     # via feedparser
 shiv==0.1.1
     # via -r requirements.in
-shopant-sdk==0.0.2
+shopant-sdk==0.0.3
     # via -r requirements.in
 simplejson==3.16.0
     # via django-rest-swagger
