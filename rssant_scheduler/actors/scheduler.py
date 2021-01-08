@@ -59,6 +59,11 @@ async def do_schedule_feed_detect_and_merge_duplicate(ctx: ActorContext):
     await ctx.tell('harbor_rss.feed_detect_and_merge_duplicate', expire_at=time.time() + 600)
 
 
+@actor('scheduler.schedule_django_clear_expired_sessions', timer='6h')
+async def do_schedule_django_clear_expired_sessions(ctx: ActorContext):
+    await ctx.tell('harbor_django.clear_expired_sessions', expire_at=time.time() + 600)
+
+
 @actor('scheduler.dns_service_refresh', timer='4h')
 def do_dns_service_refresh(ctx: ActorContext):
     DNS_SERVICE.refresh()
