@@ -368,9 +368,9 @@ def process_story_links(content, story_link):
 
 def story_readability(content):
     """
-    >>> content = '<p>hello <b>world</b><br/>你好<i>世界</i></p>'
+    >>> content = '<p>hello <b>world</b><br>你好<i>世界</i></p>'
     >>> print(story_readability(content))
-    <body id="readabilityBody"><p>hello <b>world</b><br/>你好<i>世界</i></p></body>
+    <body id="readabilityBody"><p>hello <b>world</b><br>你好<i>世界</i></p></body>
     """
     if (not content) or (not content.strip()):
         return ""
