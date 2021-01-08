@@ -15,10 +15,18 @@ LOG = logging.getLogger(__name__)
 
 
 class EmailTemplate:
-    def __init__(self, filename, subject=None):
+    def __init__(self, filename, subject=None, pre_inline_css=False):
+        """
+        Params:
+            pre_inline_css: 预处理CSS内联，提高HTML渲染速度。要求模板不能含有任何循环和条件样式。
+        """
         filepath = os.path.join(BASE_DIR, 'rssant/templates/email', filename)
+        self.filepath = filepath
         with open(filepath) as f:
             html = f.read()
+        self.pre_inline_css = pre_inline_css
+        if pre_inline_css:
+            html = pynliner.fromString(html)
         if filename.endswith('.mako'):
             self.is_mako = True
             self.html_template = MakoTemplate(html)
@@ -32,7 +40,8 @@ class EmailTemplate:
             html = self.html_template.render(**kwargs)
         else:
             html = self.html_template.render(Context(kwargs))
-        html = pynliner.fromString(html)
+        if not self.pre_inline_css:
+            html = pynliner.fromString(html)
         return html
 
     def send(self, sender, receiver, context):
@@ -53,9 +62,11 @@ class EmailTemplate:
 EMAIL_CONFIRM_TEMPLATE = EmailTemplate(
     subject='[蚁阅] 请验证您的邮箱',
     filename='confirm.html',
+    pre_inline_css=True,
 )
 
 RESET_PASSWORD_TEMPLATE = EmailTemplate(
     subject='[蚁阅] 重置密码',
     filename='reset_password.html',
+    pre_inline_css=True,
 )
