@@ -187,7 +187,7 @@ listparser==0.18
     # via -r requirements.in
 loguru==0.3.1
     # via -r requirements.in
-lxml==4.3.3
+lxml==4.6.2
     # via
     #   -r requirements.in
     #   readability-lxml
@@ -335,7 +335,7 @@ pyyaml==5.3.1
     #   pre-commit
 raven==6.10.0
     # via -r requirements.in
-readability-lxml==0.7.1
+readability-lxml==0.8.1
     # via -r requirements.in
 requests-oauthlib==1.2.0
     # via django-allauth
