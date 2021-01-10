@@ -376,7 +376,12 @@ class UnionFeed:
         for url in (urls - set(url_map.keys())):
             url_map[url] = url
         rev_url_map = {v: k for k, v in url_map.items()}
-        found_feeds = list(Feed.objects.filter(url__in=set(url_map.values())).all())
+        detail = Detail.from_schema(False, FeedDetailSchema)
+        found_feeds = list(
+            Feed.objects
+            .filter(url__in=set(url_map.values()))
+            .defer(*detail.exclude_fields).all()
+        )
         feed_id_map = {x.id: x for x in found_feeds}
         feed_map = {x.url: x for x in found_feeds}
         q = UserFeed.objects.filter(user_id=user_id, feed__in=found_feeds).all()

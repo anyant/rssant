@@ -309,11 +309,15 @@ def _create_feeds_by_imports(
     scheduler.batch_tell(find_feed_tasks)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
+    first_existed_feed = None
+    if result.existed_feeds:
+        first_existed_feed = result.existed_feeds[0].to_dict()
     return dict(
         total=result.total,
         num_created_feeds=len(result.created_feeds),
         num_existed_feeds=len(result.existed_feeds),
         num_feed_creations=len(result.feed_creations),
+        first_existed_feed=first_existed_feed,
         created_feeds=created_feeds,
         feed_creations=feed_creations,
     )
@@ -324,6 +328,7 @@ FeedImportResultSchema = T.dict(
     num_created_feeds=T.int.min(0),
     num_existed_feeds=T.int.min(0),
     num_feed_creations=T.int.min(0),
+    first_existed_feed=FeedSchema.optional,
     created_feeds=T.list(FeedSchema).maxlen(MAX_FEED_COUNT),
     feed_creations=T.list(FeedCreationSchema).maxlen(MAX_FEED_COUNT),
 )
