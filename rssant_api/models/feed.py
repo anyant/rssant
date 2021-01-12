@@ -56,9 +56,8 @@ FeedDetailSchema = T.detail.fields("""
     dt_synced
 """).default(False)
 
-FEED_DETAIL_FIELDS = [
-    f'feed__{x}' for x in Detail.from_schema(False, FeedDetailSchema).exclude_fields
-]
+FEED_DETAIL_FIELDS = Detail.from_schema(False, FeedDetailSchema).exclude_fields
+USER_FEED_DETAIL_FIELDS = [f'feed__{x}' for x in FEED_DETAIL_FIELDS]
 
 
 class Feed(Model, ContentHashMixin):
@@ -170,12 +169,16 @@ class Feed(Model, ContentHashMixin):
             self.dryness = value.dryness()
 
     @staticmethod
-    def get_by_pk(feed_id) -> 'Feed':
-        return Feed.objects.get(pk=feed_id)
+    def get_by_pk(feed_id, detail=True) -> 'Feed':
+        detail = Detail.from_schema(detail, FeedDetailSchema)
+        q = Feed.objects.seal().defer(*detail.exclude_fields)
+        return q.get(pk=feed_id)
 
     @staticmethod
-    def get_first_by_url(url) -> 'Feed':
-        return Feed.objects.filter(url=url).first()
+    def get_first_by_url(url, detail=True) -> 'Feed':
+        detail = Detail.from_schema(detail, FeedDetailSchema)
+        q = Feed.objects.seal().defer(*detail.exclude_fields)
+        return q.filter(url=url).first()
 
     @staticmethod
     def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=300):
@@ -472,8 +475,8 @@ class UserFeed(Model):
     def get_by_pk(pk, user_id=None, detail=False):
         q = UserFeed.objects.select_related('feed')
         if not detail:
-            q = q.defer(*FEED_DETAIL_FIELDS)
+            q = q.defer(*USER_FEED_DETAIL_FIELDS)
         if user_id is not None:
             q = q.filter(user_id=user_id)
-        user_feed = q.get(pk=pk)
+        user_feed = q.seal().get(pk=pk)
         return user_feed
