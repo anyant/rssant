@@ -42,6 +42,30 @@ async def do_pong(ctx: ActorContext, message: T.str) -> T.dict(message=T.str):
     return dict(message=message)
 
 
+@actor('worker.local_ask')
+def do_local_ask(ctx: ActorContext) -> T.dict(message=T.str):
+    LOG.info(ctx.message)
+    r = ctx.ask('worker.async_local_ask')
+    LOG.info(r)
+    return r
+
+
+@actor('worker.async_local_ask')
+async def do_async_local_ask(ctx: ActorContext) -> T.dict(message=T.str):
+    LOG.info(ctx.message)
+    r = await ctx.ask('worker.sync_local_ask')
+    LOG.info(r)
+    return r
+
+
+@actor('worker.sync_local_ask')
+def do_sync_local_ask(ctx: ActorContext) -> T.dict(message=T.str):
+    LOG.info(ctx.message)
+    r = dict(message='local_ask OK')
+    LOG.info(r)
+    return r
+
+
 ACTORS = collect_actors(__name__)
 
 

@@ -164,6 +164,7 @@ class ActorContext:
         if msg.is_local:
             future = ThreadFuture()
             msg.future = future
+            self._queue.op_inbox(msg)
             if self.actor.is_async:
                 return asyncio.wrap_future(future)
             else:
