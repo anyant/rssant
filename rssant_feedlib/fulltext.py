@@ -27,6 +27,7 @@ def split_sentences(text: str, keep_short: bool = False) -> List[str]:
     if not text:
         return []
     sentences = RE_SENTENCE_SEP.split(text)
+    sentences = list(filter(None, (x.strip() for x in sentences)))
     if sentences and not sentences[0]:
         sentences = sentences[1:]
     if sentences and not sentences[-1]:
@@ -73,12 +74,14 @@ def is_summary_prob(subtext: str, fulltext: str) -> float:
     prev_value = 0
     for delta in difflib.ndiff(sub_sentences, full_sentences[:max_check]):
         diff_type = delta[0]
-        if diff_type == ' ' or diff_type == '+':
+        if diff_type == ' ':
             value = 1
+        elif diff_type == '+':
+            value = 0.9
         elif diff_type == '-':
             value = -2.5
         elif diff_type == '?':
-            value = 0.5 - prev_value
+            value = 1.5 - prev_value * 0.5
         else:
             value = 0
         num_positive += value
@@ -151,18 +154,13 @@ class FulltextAcceptStrategy(enum.Enum):
 def decide_accept_fulltext(new_info: StoryContentInfo, old_info: StoryContentInfo) -> FulltextAcceptStrategy:
     if not new_info:
         return FulltextAcceptStrategy.REJECT
-    is_basic_accept = (
-        new_info.length > old_info.length
-        and new_info.image_count >= old_info.image_count
-        and new_info.link_count >= old_info.link_count
-        and new_info.url_count >= old_info.url_count
-    )
-    if not is_basic_accept:
-        return FulltextAcceptStrategy.REJECT
     if is_fulltext_content(old_info):
         is_accept = (
             is_fulltext_content(new_info)
             and new_info.sentence_count > old_info.sentence_count
+            and new_info.image_count >= old_info.image_count
+            and new_info.link_count >= old_info.link_count
+            and new_info.url_count >= old_info.url_count
         )
         if is_accept:
             return FulltextAcceptStrategy.REPLACE
@@ -176,6 +174,12 @@ def decide_accept_fulltext(new_info: StoryContentInfo, old_info: StoryContentInf
                 old_url = old_url_match.group(0)
                 if old_url not in new_info.html:
                     return FulltextAcceptStrategy.APPEND
+            if not (
+                new_info.image_count >= old_info.image_count
+                and new_info.link_count >= old_info.link_count
+                and new_info.url_count >= old_info.url_count
+            ):
+                return FulltextAcceptStrategy.APPEND
             return FulltextAcceptStrategy.REPLACE
         elif is_fulltext_content(new_info):
             return FulltextAcceptStrategy.APPEND

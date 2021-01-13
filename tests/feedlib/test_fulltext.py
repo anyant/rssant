@@ -134,6 +134,7 @@ def _clean_story_html(text, *, readability=False):
     ('juejin2', True),
     ('woshipm', False),
     ('xkcd', True),
+    ('martinfowler', True),
 ])
 def test_rss_is_summary(name, expect_is_summary):
     rss_html = (_data_dir / f'{name}_rss.html').read_text()
@@ -157,6 +158,8 @@ def test_rss_is_summary(name, expect_is_summary):
     ('woshipm_web', True),
     ('xkcd_rss', False),
     ('xkcd_web', False),
+    ('martinfowler_rss', False),
+    ('martinfowler_web', True),
 ])
 def test_is_fulltext_content(name, expect_is_fulltext):
     html = (_data_dir / f'{name}.html').read_text()
@@ -172,7 +175,8 @@ def test_is_fulltext_content(name, expect_is_fulltext):
     ('juejin1', FulltextAcceptStrategy.REPLACE),
     ('juejin2', FulltextAcceptStrategy.REPLACE),
     ('woshipm', FulltextAcceptStrategy.REJECT),
-    ('xkcd', FulltextAcceptStrategy.REJECT),
+    ('xkcd', FulltextAcceptStrategy.APPEND),
+    ('martinfowler', FulltextAcceptStrategy.APPEND),
 ])
 def test_decide_accept_fulltext(name, expect_accept):
     rss_html = (_data_dir / f'{name}_rss.html').read_text()
