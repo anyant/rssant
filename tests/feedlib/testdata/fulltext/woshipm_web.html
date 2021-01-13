@@ -1,0 +1,818 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui">
+    <title>你为用户做总结了吗？ | 人人都是产品经理</title>
+    <meta name="keywords" content="1年, 初级, 用户总结, "><meta name="description" content="编辑导语：每到年末之际，各大APP的年度报告、账单也纷纷出炉。对于用户来说，很多人其实并不了解自己这一年的行为都产生了什么数据，而年终总结能通过这一年来收集的数据，为用户展示一个非常直观的自己。于是，不少用户也纷纷在朋友圈晒出自己的总结，你为用户做总结了吗？"><link type="image/vnd.microsoft.icon" href="//image.woshipm.com/favicon.ico" rel="shortcut icon"><link rel='dns-prefetch' href='//image.woshipm.com' />
+<link rel='stylesheet' id='ui-css'  href='//image.woshipm.com/fp/css/ui.css?ver=1.1.10' type='text/css' media='screen' />
+<link rel='stylesheet' id='misc-css'  href='//image.woshipm.com/fp/css/app.min.css?ver=1.1.10' type='text/css' media='screen' />
+<link rel='stylesheet' id='fa-css'  href='//image.woshipm.com/kan/css/font-awesome.min.css?ver=4.0.8' type='text/css' media='screen' />
+<link rel="canonical" href="http://www.woshipm.com/user-research/4331957.html" />
+</head>
+
+<body class="single u-backgroundColorLightBlue is-fixedHeader">
+    <div id="app" class="surface--content">
+        <el-backtop></el-backtop>
+        <header class="pm--metabar">
+            <div class="container u-flex">
+                <a href="/" class="u-flex u-relative"><img class="logo" src="//image.woshipm.com/fp/images/logo.png" alt="人人都是产品经理"></a>
+                <nav class="header-nav">
+                    <ul class="subnav-ul">
+                        <li class="menu-item"><a href="http://www.woshipm.com/">首页</a></li>
+                        <li class="menu-item menu-item-has-children"><a href="javascript:;">BAT大师课</a><svg width="14" height="14" viewBox="0 0 19 19" class="svgIcon">
+                                <path d="M3.9 6.77l5.2 5.76.43.47.43-.47 5.15-5.7-.85-.77-4.73 5.25L4.75 6z" fill-rule="evenodd"></path>
+                            </svg>
+                            <div class="sub--menuWidth">
+                                <div class="container dropCard--list">
+                                    <a href="https://www.qidianla.com/course/pminstitute.html" data-id="38" data-adid="41" target="_blank" class="dropCard--item overlayAdlink">
+                                        <img alt="产品学院" src="//image.woshipm.com/wp-files/2020/06/nWETsU6b5WKxfilW2srO.jpg">
+                                        <div class="title">产品学院</div>
+                                        <div class="des">系统学习BAT产品体系，成为靠谱产品经理。</div>
+                                    </a>
+                                    <a href="https://www.qidianla.com/course/omistitute.html" data-id="39" data-adid="41" target="_blank" class="dropCard--item overlayAdlink">
+                                        <img alt="运营学院" src="//image.woshipm.com/wp-files/2020/06/tu5hxT67tyIzoGOuKuYq.jpg">
+                                        <div class="title">运营学院</div>
+                                        <div class="des">内容运营、用户运营、活动运营…成为全栈运营专家。</div>
+                                    </a>
+                                    <a href="https://vip.qidianla.com/studyClass.html" data-id="41" data-adid="41" target="_blank" class="dropCard--item overlayAdlink">
+                                        <img alt="专项技能提升" src="//image.woshipm.com/wp-files/2020/06/cNEtmaULYlC5d8H4VmjX.jpg">
+                                        <div class="title">专项技能提升</div>
+                                        <div class="des">提升单点技能、扩展横向技能，塑造T型人才。</div>
+                                    </a>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="menu-item menu-item-has-children">
+                            <a href="javascript:;">分类浏览</a>
+                            <svg width="14" height="14" viewBox="0 0 19 19" class="svgIcon">
+                                <path d="M3.9 6.77l5.2 5.76.43.47.43-.47 5.15-5.7-.85-.77-4.73 5.25L4.75 6z" fill-rule="evenodd"></path>
+                            </svg>
+                            <div class="sub--menuWidth">
+                                <div class="container dropCard--list">
+                                    <div class="pm--category">
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/it" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">业界动态</div>
+                                                        <div class="count">18979篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/pd" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">产品设计</div>
+                                                        <div class="count">13092篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/operate" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">产品运营</div>
+                                                        <div class="count">10521篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/pmd" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">产品经理</div>
+                                                        <div class="count">8656篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/zhichang" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">职场攻略</div>
+                                                        <div class="count">3518篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/ucd" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">交互体验</div>
+                                                        <div class="count">3299篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/evaluating" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">分析评测</div>
+                                                        <div class="count">2423篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/marketing" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">营销推广</div>
+                                                        <div class="count">2130篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/chuangye" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">创业学院</div>
+                                                        <div class="count">1690篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/rp" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">原型设计</div>
+                                                        <div class="count">1176篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/user-research" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">用户研究</div>
+                                                        <div class="count">1053篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                                    <div class="pm--categoryItem">
+                                                <a href="http://www.woshipm.com/category/data-analysis" class="u-flex" target="_blank">
+                                                    <div class="content">
+                                                        <div class="name">数据分析</div>
+                                                        <div class="count">1027篇文章</div>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                                                            </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="menu-item"><a target="_blank" class="overlayAdlink" data-id="37" data-adid="41" href="/category/active">活动讲座</a></li>
+                        <li class="menu-item"><a target="_blank" class="overlayAdlink" data-id="35" data-adid="41" href="http://wen.woshipm.com/">问答</a></li>
+                        <li class="menu-item"><a target="_blank" class="overlayAdlink" data-id="36" data-adid="41" href="http://996.pm/7b1Zr">会员</a></li>
+                        <li class="menu-item"><a target="_blank" class="overlayAdlink" data-id="34" data-adid="41" href="https://daxue.qidianla.com/">企业培训</a>
+                        </li>
+                        <li class="menu-item"><a target="_blank" class="overlayAdlink" data-id="32" data-adid="41" href="/fish/">摸鱼</a>
+                        </li>
+                    </ul>
+                </nav>
+                <div class="pm--metabar__right u-flex">
+                    <div class="pm--metabarItem u-flex"><a href="/writing" class="u-flex" title="投稿" @click="showLoginForm">
+                            <svg class="svgIcon-use" width="18" height="17" viewBox="0 0 18 17">
+                                <path d="M17.831,3.950 L9.184,12.519 C9.113,12.590 9.024,12.641 8.927,12.667 L4.754,13.785 C4.705,13.798 4.655,13.805 4.603,13.805 C4.450,13.805 4.301,13.743 4.193,13.635 C4.047,13.489 3.992,13.275 4.048,13.078 L5.219,8.984 C5.246,8.891 5.296,8.805 5.366,8.736 L14.013,0.165 C14.122,0.058 14.267,-0.002 14.421,-0.002 C14.575,-0.002 14.720,0.058 14.829,0.165 L17.831,3.141 C17.940,3.249 18.000,3.393 18.000,3.545 C18.000,3.698 17.940,3.842 17.831,3.950 ZM8.156,11.689 L6.199,9.750 L5.436,12.419 L8.156,11.689 ZM14.421,1.378 L6.902,8.830 L9.088,10.997 L16.607,3.546 L14.421,1.378 ZM1.153,2.286 L1.153,14.895 C1.153,15.425 1.588,15.855 2.122,15.855 L14.732,15.855 C15.267,15.855 15.701,15.425 15.701,14.895 L15.701,10.476 L16.855,10.476 L16.855,14.895 C16.855,16.055 15.902,16.998 14.732,16.998 L2.122,16.998 C0.952,16.998 -0.000,16.055 -0.000,14.895 L-0.000,2.286 C-0.000,1.126 0.952,0.183 2.122,0.183 L9.326,0.183 L9.326,1.326 L2.122,1.326 C1.588,1.326 1.153,1.756 1.153,2.286 Z"></path>
+                            </svg>投稿</a>
+                    </div>
+                    <div class="pm--metabarItem u-flex u-cursorPointer" v-on:click="switchSearch" v-bind:class="{ active:searchActive }">
+                        <svg class="svgIcon-use" width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M15.800,14.481 L12.519,11.200 C12.504,11.184 12.487,11.170 12.471,11.156 C13.361,9.988 13.890,8.529 13.890,6.947 C13.890,3.110 10.780,-0.000 6.945,-0.000 C3.109,-0.000 -0.000,3.110 -0.000,6.947 C-0.000,10.785 3.109,13.895 6.945,13.895 C8.529,13.895 9.990,13.364 11.159,12.471 C11.172,12.487 11.186,12.503 11.201,12.518 L14.483,15.800 C14.786,16.104 15.329,16.056 15.693,15.692 C16.056,15.328 16.104,14.786 15.800,14.481 L15.800,14.481 ZM0.772,6.947 C0.772,3.537 3.535,0.771 6.945,0.771 C10.354,0.771 13.118,3.537 13.118,6.947 C13.118,8.621 12.453,10.138 11.373,11.250 C11.351,11.269 11.330,11.288 11.310,11.308 C11.289,11.329 11.269,11.351 11.250,11.373 C10.138,12.456 8.619,13.123 6.945,13.123 C3.535,13.123 0.772,10.358 0.772,6.947 L0.772,6.947 Z" class="cls-1"></path>
+                        </svg>搜索
+                    </div>
+                    <div class="pm--metabarItem pm--metabar__dropdown u-flex u-relative"><svg class="svgIcon-use" width="12" height="18" viewBox="0 0 12 18">
+                            <path d="M10.599,17.999 L1.401,17.999 C0.626,17.999 -0.000,17.381 -0.000,16.616 L-0.000,1.382 C-0.000,0.617 0.626,-0.001 1.401,-0.001 L10.599,-0.001 C11.374,-0.001 12.000,0.627 12.000,1.382 L12.000,16.616 C12.000,17.381 11.374,17.999 10.599,17.999 ZM11.066,1.382 C11.066,1.128 10.857,0.922 10.599,0.922 L1.401,0.922 C1.142,0.922 0.934,1.128 0.934,1.382 L0.934,12.800 L11.066,12.800 L11.066,1.382 ZM11.066,13.811 L0.934,13.811 L0.934,16.626 C0.934,16.881 1.142,17.087 1.401,17.087 L10.599,17.087 C10.857,17.087 11.066,16.881 11.066,16.626 L11.066,13.811 ZM6.000,16.283 C5.483,16.283 5.066,15.871 5.066,15.361 C5.066,14.851 5.483,14.439 6.000,14.439 C6.516,14.439 6.934,14.851 6.934,15.361 C6.934,15.871 6.516,16.283 6.000,16.283 Z"></path>
+                        </svg>APP<div class="pm--qrcodeCard__dropdown">
+                            <img class="app-qrcode-img" src="http://image.woshipm.com/build/img/footer-appdownload.png">
+                        </div>
+                    </div>
+                    <metabar-notice v-bind:noticenum="noticeNum" v-bind:islogin="islogin"></metabar-notice>
+                                            <div class="pm--metabarItem u-flex u-paddingLeft20">
+                            <span class="" @click="showLoginForm">注册 | 登录</span>
+                        </div>
+                                    </div>
+            </div>
+        </header><div class="main-content">
+    <div class="container">
+        <div class="article--heroAd js-aladdin js-aladdin-26" data-id="26"></div>
+        <div class="home-block">
+            <div class="u-width850">
+                <div class="article--wrapper u-backgroundColorWhite u-rounded u-shadowed">
+                    <h2 class="article--title"> 你为用户做总结了吗？</h2>
+                    <div class="stream-list-meta artilce--meta2">
+                        <div class="u-flex0">
+                            <a target="_blank" class="u-flex" href="http://www.woshipm.com/u/317763"><img src="http://image.woshipm.com/wp-files/2019/08/VCwHHl6S9irV8rAaSwRV.png!/both/72x72" alt="" height="36" width="36" class="avatar"></a>
+                        </div>
+                        <div class="u-flex1">
+                            <div class="author u-flex" data-id="317763">
+                                <a target="_blank" class="ui-captionStrong" href="http://www.woshipm.com/u/317763">十里村</a>
+                                <el-tooltip class="item" effect="dark" content="专栏作家" placement="top"><svg viewBox="0 0 1024 1024" width="12" height="12" class="icon" ><path d="M736.834783 26.713043 496.417391 436.313043c-8.904348 13.356522-31.165217 55.652174-69.008696 124.66087-37.843478 69.008696-57.878261 106.852174-62.330435 117.982609-4.452174-37.843478-15.582609-113.530435-33.391304-227.06087l-69.008696-422.956522L4.452174 28.93913l193.669565 968.347826L422.956522 997.286957 1019.547826 26.713043 736.834783 26.713043z" p-id="2759" fill="#ffa500"></path></svg></el-tooltip><el-tooltip class="item" effect="dark" content="2019年度优秀作者" placement="top">
+        <img src="//image.woshipm.com/fp/images/author.svg" class="award-icon icon" width=16></el-tooltip>                                <sub-button v-bind:author="317763" v-bind:status="isFollowing" @subauthorchild="subauthor"></sub-button>
+                            </div>
+                            <div class="meta--sup">
+                                <time>2021-01-09</time>
+                                <div class="meta--sup__right">
+                                    0 评论
+                                    <span class="dot"></span>
+                                    7113 浏览
+                                    <span class="dot"></span>
+                                    2 收藏
+                                    <span class="dot"></span>
+                                    <el-tooltip class="item" effect="dark" content="预计阅读时间 10 分钟" placement="top">
+                                        <span>10 分钟</span>
+                                    </el-tooltip>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="article-topAd js-aladdin js-aladdin-25" data-id="25"></div>
+                                            <div id="postAudio" class="jp-jplayer"></div>
+                        <div id="jp_container_1" class="jp-audio" role="application" aria-label="media player">
+                            <div class="jp-type-single">
+                                <div class="jp-gui jp-interface">
+                                    <div class="jp-controls">
+                                        <button class="jp-play" role="button" tabindex="0"><svg class="svgIcon-use" width="25" height="25" viewBox="0 0 25 25">
+                                                <path d="M7 4v17.03a.5.5 0 0 0 .795.404l11.1-8.111a1 1 0 0 0 0-1.615l-11.1-8.112A.5.5 0 0 0 7 4z"></path>
+                                            </svg></button>
+                                        <button class="jp-pause" role="button" tabindex="0" style="display: none;"><svg class="svgIcon-use" width="25" height="25" viewBox="0 0 25 25">
+                                                <g transform="translate(5 4)" fill-rule="evenodd">
+                                                    <rect width="6" height="17" rx="2"></rect>
+                                                    <rect x="9" width="6" height="17" rx="2"></rect>
+                                                </g>
+                                            </svg></button>
+                                    </div>
+                                    <div class="u-flex1">
+                                        <div>释放双眼，带上耳机，听听看~！</div>
+                                        <div class="u-flexCenter">
+                                            <div class="u-flex0 u-marginRight10 jp-current-time js-currentTime" style="width:34px">00:00</div>
+                                            <div class="u-flex1">
+                                                <div class="js-progress" data-action="seek-audioPlayer">
+                                                    <div class="js-progressBar">
+                                                        <div class="js-play-bar"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="u-flex0 u-marginLeft10 jp-duration">00:00</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                                        <div class="article--content grap">
+                        <blockquote><p>编辑导语：每到年末之际，各大APP的年度报告、账单也纷纷出炉。对于用户来说，很多人其实并不了解自己这一年的行为都产生了什么数据，而年终总结能通过这一年来收集的数据，为用户展示一个非常直观的自己。于是，不少用户也纷纷在朋友圈晒出自己的总结，你为用户做总结了吗？</p></blockquote>
+<p><img data-action="zoom" class="aligncenter size-full wp-image-4331994" src="http://image.woshipm.com/wp-files/2021/01/13dOYgXW4yPoPYgK7aZG.jpg" alt="" width="900" height="420" /></p>
+<p>每到年末的时候，许多平台都会给自己的用户出一份年度报告，比如大家熟知的支付宝账单。那么大家是否有考虑过为什么要给用户一份年度总结？它有什么作用？需要注意什么？</p>
+<p>因为村长负责的几个项目中，都有做过相关的案例，所以今天把其中的一些思考和大家来分享。</p>
+<h2  id="toc-1">一、为什么要为用户做年度总结</h2>
+<p>因为不同平台的业务出发点不同，需要关注用户行为的角度不同，所以为用户做总结的目的性也不一样，我在这里把它归结为以下四点。</p>
+<h3>1. 肯定用户付出</h3>
+<p>无论你给用户的是一份账单还是一份报告，首先我们要感谢和肯定用户在这个平台上做出的努力。比如用户一年走了多少路，一年发布了多少条动态，捐了多少钱、消费了多少金额等等。</p>
+<p>记住，每个用户都需要被鼓励和关心的。</p>
+<h3>2. 突出平台作用</h3>
+<p>除了肯定用户的付出，自然要告诉用户，他通过这个平台获得了什么？比如用户一年读了多少书，获得了什么称号，得到了多少个赞，赚了多少钱？</p>
+<p>用户得到的越多，平台的价值才越大，用户对平台才会越忠诚。</p>
+<h3>3. 强化用户关系</h3>
+<p>用户在平台上贡献越多或者平台为用户提供的帮助越大，通过多个维度的数据来让用户加深印象。从而帮助用户做回顾，每一次的回顾都会在用户脑海里面强化双方利益绑定关系。</p>
+<h3>4. 激发用户分享</h3>
+<p>帮助用户做总结并非只想让用户悄悄的自己看，最核心的还是希望通过这些数字和荣誉，激发用户分享。</p>
+<p>用户通过分享满足了自身潜在炫耀的需求，而平台也获得了用户朋友圈种草的机会，引发其他人的关注。一份有意义的总结，能够带来巨大的曝光甚至是拉新转化。</p>
+<h2  id="toc-2">二、哪些产品适合给用户做总结</h2>
+<p>并非所有的产品、平台都适合给用户做一份年度总结，村长个人认为给用户做总结必须满足以下几个条件。</p>
+<h3>1. 行为高频</h3>
+<p>我们以平台卖车为例，你今年通过某平台买了一辆新能源汽车。如果这个平台给你出了一份报告，这些数据其实是很单调的，用户也几乎没有任何分享的动机在里面。</p>
+<p>只有用户使用、消费、行动等行为越高频，得到的数据才越多，可挖掘的数据角度也就越有价值。比如一款运动软件，在年底的时候给用户出了一份年度运动账单。如用户一年累计跑了1000公里，这个数据就比较有冲击力。</p>
+<p>另外这些数据就有可延展性的地方，比如击败了多少人，相当于跑了多少圈，可以从哪里跑到哪里。而刚才我们说汽车平台给用户出报告没啥意义，但是对于一款智能的新能源汽车给车主出一份总结是有意义的。</p>
+<p>比如车主一年行驶了多少公里，去了哪些地方，为车主节省了多少钱，以及车主做了多少节能减排的贡献，因为开车的行为是高频的。</p>
+<h3>2. 有荣誉感</h3>
+<p>用户通过使用你的产品/平台，它得到了好处了。</p>
+<p>比如理财app，你今年帮助用户赚到了多少钱？运动app，你今年帮助用户减肥了多少斤？学习app，你今年帮助用户提升了认知？另一种是用户通过平台做出了什么贡献？比如各大爱心平台和项目中，用户帮助了多少人？还有电商平台中，用户参与了多少次扶贫助农的电商项目？</p>
+<p>只有当用户有所获，才能突出平台的价值，用户才有分享传播的动力。</p>
+<h3>3. 引发关注</h3>
+<p>为什么支付宝改版前后的账单，影响差距这么大？</p>
+<p>因为改版后的账单几乎无法引起其他用户的好奇和关注，也无法激发大家相互比拼的欲望。早期的支付宝账单核心强调的是用户收了多少钱，花了多少钱，这是能极大调动朋友圈窥探欲的。</p>
+<p>那现在有很多app，比如抖音、小红书等产品，正常的角度来说，分享的内容无法引起用户关注。另外还有一些产品，比如我们日常去买裤子、鞋子、手机等类似的单品，做总结意义也不大。</p>
+<p>举个例子：你经常在一些服装店卖衣服，年底给你出了一份报告。</p>
+<ol>
+<li>数据比较单调</li>
+<li>金额不够多</li>
+<li>收获感冲击不强</li>
+<li>数据太个性化无法引起共鸣</li>
+</ol>
+<h3>4. 哪些平台可以给用户做总结</h3>
+<p>其实我刚才在举例中已经提及了很多，我个人总结为六大类，希望对大家有启发。</p>
+<ol>
+<li>电商类：要是针对综合类电商平台来说的，因为用户的消费频次会稍微高频点，核心要强调的数据是你帮用户节省了多少钱；</li>
+<li>学习类：一种是纯读书类的app，第二种类似得到、产品经理这种垂直型的学习平台，核心强调用户的学习收货；</li>
+<li>运动类：不论是智能手环、健身器材、健身app，只要有数据记录就可以；</li>
+<li>赚钱类：从社交电商、淘客代理app、理财、自媒体等等，用户赚钱越多，越值得强调；</li>
+<li>爱心类：可以是爱心类的app，也可以是平台上面发起的某个持续性的公益项目，强调用户的爱心付出及产生的效果；</li>
+<li>娱乐类：吃鸡游戏、音乐app、斗地主，大多数娱乐类的app核心突出用户的胜利次数，更容易激发用户分享。无论以上哪种类型的平台，都可以在总结的最后给用户一个称号或者关键词。</li>
+</ol>
+<h2  id="toc-3">三、四个注意要点</h2>
+<p>一份年度总结报告，对于数据的提取能力要求是极高的，这其中还包括运营、设计的内容深度参与。所以我们费时费力做的这样一次营销活动，我们需要注意以下四个方面的内容。</p>
+<h3>1. 用户有关</h3>
+<p>我最怕的就是运营做活动自嗨，做用户的总结也是如此。无论你把数据写的多大，文案写的多好，如果和用户毫无关系，那会极大降低参与活动和传播欲望。</p>
+<p>所以第一原则就是要和用户紧密相关，一定是从用户个人出发的。</p>
+<h3>2. 数据突出</h3>
+<p>能用具体数字户表达的内容，就尽量不要用图画和文字。正相关的数据越大，效果越突出，对用户的冲击越强。</p>
+<h3>3. 引导用户分享</h3>
+<p>村长把用户的年度总结定性为一次营销活动，所以我们不是让自己自嗨，而是要引导用户做分享。对于用户来说分享越简单越好，我们最好是为用户提前准备好文案、分享的图片样式和编辑的分享流程。</p>
+<p>同时，为了用户能够主动分享，我们最好给用户一些福利。比如用户分享报告之后可以得到优惠券、限时会员等等。记住，营销的目的是为了产生转化。</p>
+<h3>4. 为用户做点什么</h3>
+<p>年度总结仅仅是我们在年终和用户互动的方式之一，虽然有些产品不能为用户做总结，但其实还有很多方式能强化平台与用户之间的关系。</p>
+<p>比如年底给核心用户发次短信、打个电话、送份礼物，亦或是邀请核心用户来参加年会，让用户觉得备受关注，有归属感和荣誉感。</p>
+<h3>#专栏作家#</h3>
+<p>十里村，微信公众号：十里村（ID：shilipxl），人人都是产品经理专栏作家。偶尔分享生活，关注电商、科技，新事物。</p>
+<p>本文原创发布于人人都是产品经理。未经许可，禁止转载</p>
+<p>题图来自 <a href="https://unsplash.com/">Unsplash</a>，基于 CC0 协议</p>
+<div class="support-author"><div class="support-title">给作者打赏，鼓励TA抓紧创作！</div><button class="button--pay" data-post-id="4331957" data-author="317763" data-avatar="http://image.woshipm.com/wp-files/2019/08/VCwHHl6S9irV8rAaSwRV.png"><svg width="13" height="16" class="svgIcon--use" viewBox="0 0 13 16"><path d="M9.113,4.571 C9.951,3.771 10.895,2.742 10.685,2.057 C10.475,1.485 10.056,0.799 9.427,0.571 C8.903,0.342 8.379,0.456 7.750,0.799 C7.540,0.342 7.016,0.114 6.596,-0.001 C5.863,-0.001 5.234,0.228 4.814,0.914 C4.080,0.571 3.451,0.685 2.927,1.028 C2.613,1.256 2.298,1.713 2.298,2.628 C2.298,3.542 3.137,4.228 3.766,4.685 C2.508,5.599 -0.218,7.885 -0.008,12.228 C-0.218,15.656 2.613,15.999 2.613,15.999 L10.371,15.999 C11.314,15.885 12.991,14.971 12.991,12.571 L12.991,12.228 C13.201,7.771 10.371,5.371 9.113,4.571 L9.113,4.571 ZM8.932,11.835 L6.940,11.835 L6.940,13.207 C6.940,13.435 6.731,13.549 6.521,13.549 C6.311,13.549 6.102,13.435 6.102,13.207 L6.102,11.835 L4.110,11.835 C3.900,11.835 3.795,11.606 3.795,11.378 C3.795,11.149 3.900,10.921 4.110,10.921 L6.102,10.921 L6.102,10.121 L4.949,10.121 C4.739,10.121 4.634,9.892 4.634,9.664 C4.634,9.435 4.739,9.206 4.949,9.206 L5.892,9.206 L4.739,7.950 C4.634,7.835 4.739,7.606 4.949,7.492 C5.158,7.378 5.368,7.264 5.473,7.378 L6.521,8.635 L7.674,7.264 C7.779,7.149 7.989,7.264 8.198,7.378 C8.408,7.492 8.408,7.721 8.408,7.835 L7.150,9.321 L8.094,9.321 C8.303,9.321 8.408,9.549 8.408,9.778 C8.408,10.007 8.303,10.235 8.094,10.235 L6.940,10.235 L6.940,11.035 L8.932,11.035 C9.142,11.035 9.247,11.264 9.247,11.493 C9.247,11.606 9.037,11.835 8.932,11.835 L8.932,11.835 Z" /></svg>
+赞赏</button></div>                    </div>
+                    <section class="pm-adTitle">更多精彩内容，请关注人人都是产品经理微信公众号或下载App</section>
+                    <div class="article-bottomAd js-aladdin js-aladdin-29" data-id="29"></div>
+                    <div class="article--actions">
+                        <div class="taglist"><a href="http://www.woshipm.com/tag/1%e5%b9%b4" rel="tag">1年</a><a href="http://www.woshipm.com/tag/%e5%88%9d%e7%ba%a7" rel="tag">初级</a><a href="http://www.woshipm.com/tag/%e7%94%a8%e6%88%b7%e6%80%bb%e7%bb%93" rel="tag">用户总结</a></div>                        <div class="article--actions__right">
+                            <button class="button button--toggle" @click="bookmark" v-bind:class="{ active:isMarked }"><span class="default">收藏</span><span class="active">已收藏</span> | {{ postmeta.bookmark }}</button>
+                            <button class="button button--toggle" @click="postlike" v-bind:class="{ active:isLiked }"><span class="default">点赞</span><span class="active">已赞</span> | <span>{{ postmeta.postlike }}</span></button>
+                            <share-button link="http://www.woshipm.com/user-research/4331957.html" title="你为用户做总结了吗？" image="http://image.woshipm.com/wp-files/2021/01/13dOYgXW4yPoPYgK7aZG.jpg"></share-button>
+                        </div>
+                    </div>
+                </div>
+                <div class="postFooterInfo u-marginTop30 u-backgroundColorWhite u-rounded u-shadowed">
+    <div class="u-flex">
+        <div class="u-flex0">
+            <a href="http://www.woshipm.com/u/317763" target="_blank"><img src="http://image.woshipm.com/wp-files/2019/08/VCwHHl6S9irV8rAaSwRV.png!/both/150x150" alt="" height="75" width="75" class="avatar"></a>
+        </div>
+        <div class="u-flex1 u-paddingLeft15 u-overflowHidden">
+            <div class="authorCard--content">
+                <span class="authorCard--title u-flex">
+                    <a href="http://www.woshipm.com/u/317763" target="_blank">十里村</a>
+                    <el-tooltip class="item" effect="dark" content="专栏作家" placement="top"><svg viewBox="0 0 1024 1024" width="16" height="16" class="icon" ><path d="M736.834783 26.713043 496.417391 436.313043c-8.904348 13.356522-31.165217 55.652174-69.008696 124.66087-37.843478 69.008696-57.878261 106.852174-62.330435 117.982609-4.452174-37.843478-15.582609-113.530435-33.391304-227.06087l-69.008696-422.956522L4.452174 28.93913l193.669565 968.347826L422.956522 997.286957 1019.547826 26.713043 736.834783 26.713043z" p-id="2759" fill="#ffa500"></path></svg></el-tooltip><el-tooltip class="item" effect="dark" content="2019年度优秀作者" placement="top">
+        <img src="//image.woshipm.com/fp/images/author.svg" class="award-icon icon" width=18></el-tooltip>                    <sub-button v-bind:author="317763" v-bind:status="isFollowing" @subauthorchild="subauthor"></sub-button>
+
+                </span>
+            </div>
+            <div class="authorCard--description">创业公司核心成员 公众号：十里村</div>
+            <div class="authorCard--meta">
+                <span class="authorInfo-item">99篇作品</span>
+                <span class="dot"></span>
+                <span class="authorInfo-item">73.5万总阅读量</span>
+            </div>
+        </div>
+
+    </div>
+</div>                <div class="relate-text u-shadowed u-rounded">
+    <nav class="stream-video--title"><span class="title">为你推荐</span></nav>
+    <div class="relate-text__list">
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/operate/4087959.html" target="_blank" title="直播真香，陌陌无闻">直播真香，陌陌无闻</a></div>
+                    <div class="meta">07-16</div>
+                </div>
+                <a href="http://www.woshipm.com/operate/4087959.html" target="_blank" class="img-link" title="直播真香，陌陌无闻"><img src="http://image.woshipm.com/wp-files/2020/07/niFZsHg1V39O0PLu4176.jpg!/both/120x80" alt="直播真香，陌陌无闻"></a>
+            </div>
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/it/4218115.html" target="_blank" title="发力视频能“拯救”知乎吗？">发力视频能“拯救”知乎吗？</a></div>
+                    <div class="meta">10-15</div>
+                </div>
+                <a href="http://www.woshipm.com/it/4218115.html" target="_blank" class="img-link" title="发力视频能“拯救”知乎吗？"><img src="http://image.woshipm.com/wp-files/2020/10/dxTYJlTqoPJxxBeSwda5.jpg!/both/120x80" alt="发力视频能“拯救”知乎吗？"></a>
+            </div>
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/evaluating/3655815.html" target="_blank" title="TapTap产品分析：发现好游戏">TapTap产品分析：发现好游戏</a></div>
+                    <div class="meta">04-16</div>
+                </div>
+                <a href="http://www.woshipm.com/evaluating/3655815.html" target="_blank" class="img-link" title="TapTap产品分析：发现好游戏"><img src="http://image.woshipm.com/wp-files/2020/04/UFjd9K8s6oZ2Qh7Ap9kM.jpg!/both/120x80" alt="TapTap产品分析：发现好游戏"></a>
+            </div>
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/it/4008039.html" target="_blank" title="金融科技离我们很远吗？不，我们天天使用">金融科技离我们很远吗？不，我们天天使用</a></div>
+                    <div class="meta">06-13</div>
+                </div>
+                <a href="http://www.woshipm.com/it/4008039.html" target="_blank" class="img-link" title="金融科技离我们很远吗？不，我们天天使用"><img src="http://image.woshipm.com/wp-files/2020/06/hJigzGfNtUynT1tkTOPD.jpg!/both/120x80" alt="金融科技离我们很远吗？不，我们天天使用"></a>
+            </div>
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/pd/3632144.html" target="_blank" title="任务体系设计要点：既让用户玩起来、平台也不亏本">任务体系设计要点：既让用户玩起来、平台也不亏本</a></div>
+                    <div class="meta">04-02</div>
+                </div>
+                <a href="http://www.woshipm.com/pd/3632144.html" target="_blank" class="img-link" title="任务体系设计要点：既让用户玩起来、平台也不亏本"><img src="http://image.woshipm.com/wp-files/2020/04/Feyt9Us3UKeLeWSYAlbz.jpg!/both/120x80" alt="任务体系设计要点：既让用户玩起来、平台也不亏本"></a>
+            </div>
+                    <div class="relate-text__item">
+                <div class="content">
+                    <div class="title"><a href="http://www.woshipm.com/pd/3608536.html" target="_blank" title="如何搭建一个「再保险」平台？">如何搭建一个「再保险」平台？</a></div>
+                    <div class="meta">03-31</div>
+                </div>
+                <a href="http://www.woshipm.com/pd/3608536.html" target="_blank" class="img-link" title="如何搭建一个「再保险」平台？"><img src="http://image.woshipm.com/wp-files/2020/03/ymk9YnbfYekgQynt1NC2.jpg!/both/120x80" alt="如何搭建一个「再保险」平台？"></a>
+            </div>
+            </div>
+</div>                <div class="u-backgroundColorWhite comments-area u-shadowed u-rounded">
+    <div class="comment-list-header"><span class="title">评论</span></div>
+    <div id="respond" class="respond respond-4331957" role="form">
+        <form action="http://www.woshipm.com/wp-comments-post.php" method="post" id="commentform" data-post="4331957" class="comment-form u-clearfix">
+                            <div class="textarea--unlogin" @click="showLoginForm">评论请登录</div>
+                <div class="comment-form-bottom u-clearfix">
+                    <input class="comment-submit u-floatRight" type="submit" value="发布" @click="showLoginForm">
+                </div>
+                    </form>
+    </div>
+            <div class="commentshow">
+            <ol class="comment-list">
+                <li class="no-comment">目前还没评论，等你发挥！</li>
+            </ol>
+        </div>
+    </div>                <div class="relatedPosts u-backgroundColorWhite u-rounded u-marginTop30 u-shadowed">
+    <nav class="stream-video--title">
+        <span class="title">为你推荐</span>
+    </nav>
+        <div class="relatedPosts--list">
+        <div class="relatedPosts--half js-aladdin js-aladdin-38" data-id="38">
+        </div>
+        <div class="relatedPosts--half">
+            <ul class="relatedPosts--group">
+                                    <li class="relatedPosts--item__small">
+                        <div class="img">
+                            <a href="http://www.woshipm.com/pd/4205243.html" target="_blank">
+                                <img src="http://image.woshipm.com/wp-files/2020/10/bMTevouDwEX82K39mxag.jpg!/both/130x88" width="130" height="88" alt="数据可视化大屏不得不说的设计奥秘——颜色">
+                            </a>
+                        </div>
+                        <div class="content">
+                            <div class="title"><a href="http://www.woshipm.com/pd/4205243.html" target="_blank">数据可视化大屏不得不说的设计奥秘——颜色</a></div>
+                        </div>
+                    </li>
+                                    <li class="relatedPosts--item__small">
+                        <div class="img">
+                            <a href="http://www.woshipm.com/it/3766302.html" target="_blank">
+                                <img src="http://image.woshipm.com/wp-files/2020/04/vfxgTK5XlKp22JMmplKa.jpg!/both/130x88" width="130" height="88" alt="教育的供给侧改革，为什么重点是老师？">
+                            </a>
+                        </div>
+                        <div class="content">
+                            <div class="title"><a href="http://www.woshipm.com/it/3766302.html" target="_blank">教育的供给侧改革，为什么重点是老师？</a></div>
+                        </div>
+                    </li>
+                                    <li class="relatedPosts--item__small">
+                        <div class="img">
+                            <a href="http://www.woshipm.com/it/3419947.html" target="_blank">
+                                <img src="http://image.woshipm.com/wp-files/2020/02/l1CkDZHaLCkgHPZbUSht.jpg!/both/130x88" width="130" height="88" alt="“被冲锋”的在线医疗，未来该如何定位？">
+                            </a>
+                        </div>
+                        <div class="content">
+                            <div class="title"><a href="http://www.woshipm.com/it/3419947.html" target="_blank">“被冲锋”的在线医疗，未来该如何定位？</a></div>
+                        </div>
+                    </li>
+                            </ul>
+        </div>
+    </div>
+</div>                <index-topic-card></index-topic-card>
+            </div>
+            <div class="u-width335 sidebar">
+    <div class="js-sidebar">
+            <div class="widget u-backgroundColorWhite">
+        <div class="inner">
+            <div class="widget-title"><span>圈子</span>
+                <div class="tab"><a v-on:click="qqq" class="tabItem" v-bind:class="{ 'is-active':qq }">QQ群</a> | <a v-on:click="qwechat" class="tabItem" v-bind:class="{ 'is-active':wechat }">微信群</a></div>
+            </div>
+            <div class="widget-content">
+                <transition name="component-fade" mode="out-in">
+                    <ul v-if="qq" class="code-ul">
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a1.svg" alt="icon"><span class="text">私域流量交流群</span><a target="_blank" href="https://jq.qq.com/?_wv=1027&k=RHQpvvDO">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a2.svg" alt="icon"><span class="text">数据产品经理群</span><a target="_blank" href="https://jq.qq.com/?_wv=1027&k=nlCQC688">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a3.svg" alt="icon"><span class="text">文案学习交流群</span><a target="_blank" href="https://jq.qq.com/?_wv=1027&k=QB8ovkk1">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a4.svg" alt="icon"><span class="text">短视频学习交流</span><a target="_blank" href="https://jq.qq.com/?_wv=1027&k=F2ljxnRA">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a5.svg" alt="icon"><span class="text">营销增长学习群</span><a target="_blank" href="https://jq.qq.com/?_wv=1027&k=YHxImPVH">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a6.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a7.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a8.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a9.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a10.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a11.svg" alt="icon"><span class="text"></span><a target="_blank" href="">加入</a></li>
+                                            </ul>
+                    <div v-else="wechat">
+                    <ul  class="code-ul cold-wechat">
+                    
+                            <li><img src="//image.woshipm.com/fp/images/a1.svg" alt="icon"><span class="text">运营交流群</span><el-popover
+                            style="margin-left:auto;cursor:pointer;"
+  placement="left"
+  width="300"
+  trigger="hover">
+  <div class="widget-wechat">
+  <div class="img">
+  <img src="https://wework.qpic.cn/wwpic/50224_j6f-WRI8QYKm2c5_1608910911/0">
+  </div>
+                        <div class="content">
+                            <div class="title">扫码加我拉你进群</div>
+                            <p>请注明：姓名-公司-职位</p>
+                            <p>以便审核进群资格，未注明则拒绝</p>
+                        </div>
+                        </div>
+  <a slot="reference">加入</a>
+</el-popover>
+</li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a2.svg" alt="icon"><span class="text">产品交流群</span><el-popover
+                            style="margin-left:auto;cursor:pointer;"
+  placement="left"
+  width="300"
+  trigger="hover">
+  <div class="widget-wechat">
+  <div class="img">
+  <img src="https://wework.qpic.cn/wwpic/650082_LgsiEFzZSRud3ez_1608911110/0">
+  </div>
+                        <div class="content">
+                            <div class="title">扫码加我拉你进群</div>
+                            <p>请注明：姓名-公司-职位</p>
+                            <p>以便审核进群资格，未注明则拒绝</p>
+                        </div>
+                        </div>
+  <a slot="reference">加入</a>
+</el-popover>
+</li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a3.svg" alt="icon"><span class="text">短视频交流群</span><el-popover
+                            style="margin-left:auto;cursor:pointer;"
+  placement="left"
+  width="300"
+  trigger="hover">
+  <div class="widget-wechat">
+  <div class="img">
+  <img src="https://wework.qpic.cn/wwpic/387179_-TxXhQKUTPqKr3A_1608946970/0">
+  </div>
+                        <div class="content">
+                            <div class="title">扫码加我拉你进群</div>
+                            <p>请注明：姓名-公司-职位</p>
+                            <p>以便审核进群资格，未注明则拒绝</p>
+                        </div>
+                        </div>
+  <a slot="reference">加入</a>
+</el-popover>
+</li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a4.svg" alt="icon"><span class="text">起点学院课程白piao</span><el-popover
+                            style="margin-left:auto;cursor:pointer;"
+  placement="left"
+  width="300"
+  trigger="hover">
+  <div class="widget-wechat">
+  <div class="img">
+  <img src="https://wework.qpic.cn/wwpic/648104_Yy5d2TOeTbGEjF1_1608947032/0">
+  </div>
+                        <div class="content">
+                            <div class="title">扫码加我拉你进群</div>
+                            <p>请注明：姓名-公司-职位</p>
+                            <p>以便审核进群资格，未注明则拒绝</p>
+                        </div>
+                        </div>
+  <a slot="reference">加入</a>
+</el-popover>
+</li>
+                        
+                            <li><img src="//image.woshipm.com/fp/images/a5.svg" alt="icon"><span class="text">大学生实习就业群</span><el-popover
+                            style="margin-left:auto;cursor:pointer;"
+  placement="left"
+  width="300"
+  trigger="hover">
+  <div class="widget-wechat">
+  <div class="img">
+  <img src="https://wework.qpic.cn/wwpic/378320_OdVITdcWQWCIotO_1608946848/0">
+  </div>
+                        <div class="content">
+                            <div class="title">扫码加我拉你进群</div>
+                            <p>请注明：姓名-公司-职位</p>
+                            <p>以便审核进群资格，未注明则拒绝</p>
+                        </div>
+                        </div>
+  <a slot="reference">加入</a>
+</el-popover>
+</li>
+                                            </ul>
+    </div>
+                                    </transition>
+            </div>
+        </div>
+    </div>
+
+        <div class="widget u-backgroundColorWhite">
+            <div class="inner">
+                <div class="widget-title"><span>热门文章</span></div>
+                <ul class="widget-post-list--withImage">
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/4189974.html" target="_blank" title="App用户增长归因方式全解析，附实操框架设计">
+                                    <img alt="App用户增长归因方式全解析，附实操框架设计" src="http://image.woshipm.com/wp-files/2020/09/0cRIDGaD2MRzwEw4TZdo.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/4189974.html" target="_blank" title="App用户增长归因方式全解析，附实操框架设计">App用户增长归因方式全解析，附实操框架设计</a></div>
+                                <div class="meta">09-21</div>
+                            </div>
+                        </li>
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/3908404.html" target="_blank" title="项目不同阶段，设计师如何推进高效协作？">
+                                    <img alt="项目不同阶段，设计师如何推进高效协作？" src="http://image.woshipm.com/wp-files/2020/06/yaA2bdRapN662p2Kgr8v.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/3908404.html" target="_blank" title="项目不同阶段，设计师如何推进高效协作？">项目不同阶段，设计师如何推进高效协作？</a></div>
+                                <div class="meta">06-02</div>
+                            </div>
+                        </li>
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/3192806.html" target="_blank" title="深度剖析微信小程序搜索的排名机制">
+                                    <img alt="深度剖析微信小程序搜索的排名机制" src="http://image.woshipm.com/wp-files/2020/11/fIOVzM9TKjU9ybzgF7LK.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/3192806.html" target="_blank" title="深度剖析微信小程序搜索的排名机制">深度剖析微信小程序搜索的排名机制</a></div>
+                                <div class="meta">11-24</div>
+                            </div>
+                        </li>
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/4052181.html" target="_blank" title="从虎牙网课被央视批评，聊聊产品设计避坑技巧">
+                                    <img alt="从虎牙网课被央视批评，聊聊产品设计避坑技巧" src="http://image.woshipm.com/wp-files/2020/06/cXyrCoZlpA5Usn1Yh4LU.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/4052181.html" target="_blank" title="从虎牙网课被央视批评，聊聊产品设计避坑技巧">从虎牙网课被央视批评，聊聊产品设计避坑技巧</a></div>
+                                <div class="meta">06-27</div>
+                            </div>
+                        </li>
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/4279151.html" target="_blank" title="附件上传方案设计">
+                                    <img alt="附件上传方案设计" src="http://image.woshipm.com/wp-files/2020/11/S2CG6MG2f6CzqhsYT4EA.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/4279151.html" target="_blank" title="附件上传方案设计">附件上传方案设计</a></div>
+                                <div class="meta">11-30</div>
+                            </div>
+                        </li>
+                                            <li class="widget-post-item--withImage">
+                            <div class="img">
+                                <a href="http://www.woshipm.com/pd/3853531.html" target="_blank" title="想快速提升设计能力，设计师需要怎么做？">
+                                    <img alt="想快速提升设计能力，设计师需要怎么做？" src="http://image.woshipm.com/wp-files/2020/05/e7vfDBuoKRMBiccpMeNB.jpg!/both/100x60">
+                                </a>
+                            </div>
+                            <div class="content">
+                                <div class="title"><a href="http://www.woshipm.com/pd/3853531.html" target="_blank" title="想快速提升设计能力，设计师需要怎么做？">想快速提升设计能力，设计师需要怎么做？</a></div>
+                                <div class="meta">05-13</div>
+                            </div>
+                        </li>
+                                    </ul>
+            </div>
+        </div>
+        <div class="widget u-backgroundColorWhite">
+            <div class="widget--question--hero">
+                <img class="img" src="//image.woshipm.com/wp-files/2020/06/qgEa9DwE5Xshp2Q7EbAx.png" alt="产品经理这个职业是吃“青春饭”吗？">
+                <div class="content">
+                    <div class="title">产品经理这个职业是吃“青春饭”吗？</div>
+                    <div class="des">听到很多言论说在中国程序员是吃青春饭的，那么产品经理呢，也吃青春饭吗？</div>
+                    <div class="meta">
+                        <div class="avatar-list">
+                            <img src="https://static.woshipm.com/WX_U_202001_20200121114005_5237.jpg?imageView2/2/w/80/size-limit/5k!" height="24" width="24" class="avatar">
+                            <img src="https://static.woshipm.com/WX_U_201805_20180531185421_8464.jpg?imageView2/2/w/80/size-limit/5k!" height="24" width="24" class="avatar">
+                            <img src="https://image.woshipm.com//wp-files/2015/10/touxiang-5.jpg!avatar" height="24" width="24" class="avatar">
+                            <span class="c">11.8k 点击<span class="dot"></span>14 回答</span>
+                        </div>
+                        <a href="https://wen.woshipm.com/question/detail/8d25m9.html" target="_blank" class="btn">进入回答</a>
+                    </div>
+                </div>
+            </div>
+            <div class="inner">
+                <div class="js-hot-qlist">
+                    <widget-question v-for="question in randomQuestions" v-bind:key="question.id" v-bind:question="question"></widget-question>
+                </div>
+            </div>
+        </div>
+        <div class="widget widget-ad fixed-sidebar-id js-aladdin js-aladdin-27" data-id="27"></div>
+                        <div class="widget u-backgroundColorWhite">
+                    <div class="inner">
+                        <div class="widget--tocTitle">文章导航</div>
+                        <div class="widget--content">
+                            <ul class="widget--toc">
+<li class="current"><a href="#toc-1">一、为什么要为用户做年度总结</a></li>
+<li class="current"><a href="#toc-2">二、哪些产品适合给用户做总结</a></li>
+<li class="current"><a href="#toc-3">三、四个注意要点</a></li>
+</ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+</div>        </div>
+    </div>
+</div>
+    <footer class="site-footer">
+        <div class="container u-flex footer-sections">
+            <section class="info-section">
+                <div class="footer-title">关于</div>
+                人人都是产品经理（woshipm.com）是以产品经理、运营为核心的学习、交流、分享平台，集媒体、培训、社群为一体，全方位服务产品人和运营人，成立9年举办在线讲座500+期，线下分享会300+场，产品经理大会、运营大会20+场，覆盖北上广深杭成都等15个城市，在行业有较高的影响力和知名度。平台聚集了众多BAT美团京东滴滴360小米网易等知名互联网公司产品总监和运营总监，他们在这里与你一起成长。
+            </section>
+            <section class="partner-section">
+                <div class="footer-title">合作伙伴</div>
+                <ul class="blue-pic-ul">
+                    <li><a href="https://www.qidianla.com?woshipm" title="起点学院" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/JLwqGNx6xvDFD8pkwKNK.png" alt="起点学院" title="起点学院"></a></li>
+                    <li><a href="http://www.cyzone.cn/?woshipm" title="创业邦" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/1ws2u7Wrw4D56l45Bcqc.png" alt="创业邦" title="创业邦"></a></li>
+                    <li><a href="http://ke.qq.com/?from=95" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/jvf2w0Uno9M0EZisL4Zs.png" alt="腾讯课堂"></a></li>
+                    <li><a href="http://www.geetest.com/?woshipm" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/zHiqREB7rkGZsC6rFerJ.png" alt="极验验证"></a></li>
+                    <li><a href="http://www.zhisheji.com/?woshipm" title="致设计" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/k7Gf25a7GdaoRNLLogCo.png" alt="致设计" title="致设计"></a></li>
+                    <li><a href="https://www.polyv.net/?-cpjl" target="_blank"><img src="http://image.woshipm.com/wp-files/2020/05/KZTBx2R2UyR2k96mHpa4.png" alt="保利威"></a></li>
+                </ul>
+                <div class="footer-title">链接</div>
+                <nav class="footer-nav">
+                    <ul>
+                        <li><a href="https://www.lagou.com/gongsi/90420.html" target="_blank">加入我们</a></li>
+                        <li><a href="/it/1010671.html" target="_blank">投稿须知</a></li>
+                        <li><a href="https://wen.woshipm.com/question/detail/omkf.html" target="_blank">意见反馈</a></li>
+                        <li><a href="/disclaimer" target="_blank">免责声明</a></li>
+                    </ul>
+                </nav>
+            </section>
+            <section class="qr-section">
+                <div class="qr-section--item">
+                    <img src="//image.woshipm.com/wp-files/2020/06/cKMzCQWucvwdFhHVeoib.jpeg" alt="公众号">
+                    <p>公众号</p>
+                </div>
+                <div class="qr-section--item">
+                    <img src="//image.woshipm.com/wp-files/2020/06/PAVQDSOr3b6NRnHyqAVy.jpeg" alt="视频号">
+                    <p>视频号</p>
+                </div>
+            </section>
+        </div>
+        <div class="copyright">
+            <div class="container">
+                <ul class="footer--links">
+                    <li>友情链接</li>
+                    <li><a href="http://pm265.com" target="_blank">PM265</a></li>
+<li><a href="http://dh.woshipm.com" target="_blank">阿猫阿狗导航</a></li>
+<li><a href="http://www.qidianla.com/" target="_blank">起点学院</a></li>
+<li><a href="http://uxc.360.cn" target="_blank">360UXC</a></li>
+<li><a href="http://www.zhaopins.com/" target="_blank">产品经理招聘</a></li>
+<li><a href="http://www.yanj.cn" target="_blank">演界网PPT模板</a></li>
+<li><a href="http://www.lagou.com/" target="_blank">拉勾网</a></li>
+<li><a href="http://www.tuicool.com" target="_blank">推酷</a></li>
+<li><a href="http://www.zbj.com/" target="_blank">猪八戒网</a></li>
+<li><a href="http://www.paidai.com/" target="_blank">派代网</a></li>
+<li><a href="http://www.boxui.com/" target="_blank">盒子UI</a></li>
+<li><a href="http://www.eventdove.com" target="_blank">会鸽</a></li>
+<li><a href="http://www.shichangbu.com" target="_blank">市场部网</a></li>
+<li><a href="http://www.uimaker.com" target="_blank">UI设计</a></li>
+<li><a href="http://www.25xt.com" target="_blank">25学堂</a></li>
+<li><a href="http://www.jiguang.cn" target="_blank">极光推送</a></li>
+<li><a href="http://www.yixieshi.com/" target="_blank">互联网的一些事</a></li>
+<li><a href="http://www.cjol.com/" target="_blank">找工作</a></li>
+<li><a href="http://www.huoban.com" target="_blank">伙伴云表格</a></li>
+<li><a href="http://www.xueui.cn/?woshipm" title="学UI网" target="_blank">学UI网</a></li>
+<li><a href="http://xg.qq.com/" target="_blank">腾讯信鸽</a></li>
+<li><a href="http://mta.qq.com/" target="_blank">腾讯移动分析</a></li>
+<li><a href="http://yaq.qq.com?woshipm" target="_blank">腾讯御安全</a></li>
+<li><a href="https://yunxin.163.com/" target="_blank">网易云信</a></li>
+<li><a href="https://dun.163.com/" target="_blank">网易易盾</a></li>
+<li><a href="https://www.getui.com/cn/" target="_blank">个推</a></li>
+<li><a href="https://www.umeng.com/" target="_blank">友盟+</a></li>
+                </ul>
+            </div>
+            <div class="container u-flex">
+                <div class="infoleft">
+                    旗下品牌: <a target="_blank" href="https://www.qidianla.com/">起点学院</a> | <a target="_blank" href="https://www.yunyingpai.com/">运营派</a> | <a target="_blank" href="http://www.zhaopins.com/">秒聘网</a>
+                    <br>
+                    ©2010-2020 - 人人都是产品经理 - <a target="_blank" href="https://beian.miit.gov.cn">粤ICP备14037330号</a>-<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44030502001309">粤公网安备 44030502001309号</a>
+                    <br>
+                    <a target="_blank" href="http://image.woshipm.com/wp-files/2019/03/vR6mPdp9uXiiRjZedOBX.jpg">广播电视节目制作经营许可证（粤）字第03109号</a> 版权所有 © 深圳聚力创想信息科技有限公司
+                </div>
+                <div class="inforight">
+                    企业内训/课程咨询和合作: 18682011582
+                    <br>
+                    其他合作/投诉/意见反馈: 18123776760
+                </div>
+            </div>
+        </div>
+    </footer>
+    <transition name="component-fade">
+        <overlay-search v-if="searchActive"></overlay-search>
+    </transition>
+    <login-overlay v-if="showLogin" v-bind:showLogin="showLogin" @closeloginchild="closelogin"></login-overlay>
+    <event-overlay v-if="eventOverlay" v-bind:overlay="overlay" @eventclose="eventOverlayClose"></event-overlay>
+    <online-overlay v-if="onlineOverlay" v-bind:overlay="online" @eventclose="onlineOverlayClose"></online-overlay>
+    </div>
+    <script type='text/javascript' src='//image.woshipm.com/fp/js/require-v1.0.5.js?ver=1.1.10'></script>
+<script type='text/javascript' src='//image.woshipm.com/kan/js/comment-reply.min.js?ver=4.0.8'></script>
+<script type='text/javascript'>
+/* <![CDATA[ */
+var PURE = {"ajax_url":"http:\/\/www.woshipm.com\/wp-admin\/admin-ajax.php","restapi":"http:\/\/www.woshipm.com\/__api\/","nonce":"8ee02803ab","home_url":"http:\/\/www.woshipm.com","is_user_logged_in":"","is_singular":"1","is_home":"","is_author":"","id":"4331957","is_bookmark":"","is_posts":"","is_reward":"","is_comment":"","is_answer":"","is_event":"","is_subposts":"","is_sub":"","is_writing":"","token":"","secret":"","user_id":"0","is_recuser":"","is_hotposts":"","is_setting":"","logout":"http:\/\/passport.woshipm.com\/user\/exit.html?FS=PM&REDIRECT=http:\/\/www.woshipm.com\/user-research\/4331957.html&_protocol=http","production":"1","is_views":""};
+/* ]]> */
+</script>
+<script type='text/javascript' src='//image.woshipm.com/fp/js/all.bundle.js?ver=1.1.10'></script>
+        <div class="u-hide"><script type="text/javascript">
+var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3Fb85cbcc76e92e3fd79be8f2fed0f504f' type='text/javascript'%3E%3C/script%3E"));
+</script></div>
+    </body>
+
+    </html>

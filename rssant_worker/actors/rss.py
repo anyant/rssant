@@ -18,7 +18,7 @@ from rssant_feedlib.processor import (
     story_readability, story_html_to_text, story_html_clean,
     process_story_links, get_html_redirect_url,
 )
-from rssant_feedlib.fulltext import is_fulltext_content, split_sentences
+from rssant_feedlib.fulltext import is_fulltext_content, StoryContentInfo, split_sentences
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
@@ -209,7 +209,7 @@ def _update_feed_info(ctx, feed_id, response: FeedResponse, status: str = None, 
     ))
 
 
-async def _fetch_story(reader, feed_id, offset, url, use_proxy):
+async def _fetch_story(reader: AsyncFeedReader, feed_id, offset, url, use_proxy) -> tuple:
     for i in range(2):
         response = await reader.read(url, use_proxy=use_proxy)
         if response and response.url:
@@ -217,7 +217,7 @@ async def _fetch_story(reader, feed_id, offset, url, use_proxy):
         LOG.info(
             f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished')
         if not (response and response.ok and response.content):
-            return None
+            return url, None, response
         try:
             content = response.content.decode(response.encoding)
         except UnicodeDecodeError as ex:
@@ -225,44 +225,65 @@ async def _fetch_story(reader, feed_id, offset, url, use_proxy):
             content = response.content.decode(response.encoding, errors='ignore')
         html_redirect = get_html_redirect_url(content)
         if (not html_redirect) or html_redirect == url:
-            return url, content
+            return url, content, response
         LOG.info('story#%s,%s resolve html redirect to %r', feed_id, offset, html_redirect)
         url = html_redirect
-    return url, content
+    return url, content, response
+
+
+SCHEMA_FETCH_STORY_RESULT = T.dict(
+    feed_id=T.int,
+    offset=T.int.min(0),
+    url=T.url,
+    response_status=T.int.optional,
+    use_proxy=T.bool.optional,
+    content=T.str.maxlen(_MAX_STORY_HTML_LENGTH).optional,
+    summary=T.str.optional,
+    sentence_count=T.int.optional,
+)
 
 
 @actor('worker_rss.fetch_story')
 async def do_fetch_story(
     ctx: ActorContext,
     feed_id: T.int,
-    offset: T.int,
+    offset: T.int.min(0),
     url: T.url,
     use_proxy: T.bool.default(False),
     num_sub_sentences: T.int.optional,
-):
+) -> SCHEMA_FETCH_STORY_RESULT:
     LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
     options = _proxy_helper.get_proxy_options()
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
+    # make timeout less than actor default 30s to avoid ask timeout
+    options.update(request_timeout=25)
     async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_proxy
-        url_content = await _fetch_story(reader, feed_id, offset, url, use_proxy=use_proxy)
-    if not url_content:
-        return
-    url, content = url_content
+        url, content, response = await _fetch_story(reader, feed_id, offset, url, use_proxy=use_proxy)
+    DEFAULT_RESULT = dict(
+        feed_id=feed_id, offset=offset, url=url,
+        response_status=response.status, use_proxy=response.use_proxy)
+    if not content:
+        return DEFAULT_RESULT
     if len(content) >= _MAX_STORY_HTML_LENGTH:
         content = story_html_clean(content)
         if len(content) >= _MAX_STORY_HTML_LENGTH:
             msg = 'too large story#%s,%s size=%s url=%r'
             LOG.warning(msg, feed_id, offset, len(content), url)
             content = story_html_to_text(content)[:_MAX_STORY_HTML_LENGTH]
-    await ctx.hope('worker_rss.process_story_webpage', dict(
+    msg_func = ctx.ask if ctx.message.is_ask else ctx.hope
+    result = await msg_func('worker_rss.process_story_webpage', dict(
         feed_id=feed_id,
         offset=offset,
         url=url,
         text=content,
         num_sub_sentences=num_sub_sentences,
     ))
+    if not ctx.message.is_ask:
+        return DEFAULT_RESULT
+    result.update(DEFAULT_RESULT)
+    return result
 
 
 @actor('worker_rss.process_story_webpage')
@@ -273,20 +294,22 @@ def do_process_story_webpage(
     url: T.url,
     text: T.str.maxlen(_MAX_STORY_HTML_LENGTH),
     num_sub_sentences: T.int.optional,
-):
+) -> SCHEMA_FETCH_STORY_RESULT:
     # https://github.com/dragnet-org/dragnet
     # https://github.com/misja/python-boilerpipe
     # https://github.com/dalab/web2text
     # https://github.com/grangier/python-goose
     # https://github.com/buriy/python-readability
     # https://github.com/codelucas/newspaper
+    DEFAULT_RESULT = dict(feed_id=feed_id, offset=offset, url=url)
     text = text.strip()
     if not text:
-        return
+        return DEFAULT_RESULT
     text = story_html_clean(text)
     content = story_readability(text)
     content = process_story_links(content, url)
-    text_content = shorten(story_html_to_text(content), width=_MAX_STORY_CONTENT_LENGTH)
+    content_info = StoryContentInfo(content)
+    text_content = shorten(content_info.text, width=_MAX_STORY_CONTENT_LENGTH)
     num_sentences = len(split_sentences(text_content))
     if len(content) > _MAX_STORY_CONTENT_LENGTH:
         msg = 'too large story#%s,%s size=%s url=%r, will only save plain text'
@@ -294,22 +317,23 @@ def do_process_story_webpage(
         content = text_content
     # 如果取回的内容比RSS内容更短，就不是正确的全文
     if num_sub_sentences is not None:
-        if not is_fulltext_content(content):
+        if not is_fulltext_content(content_info):
             if num_sentences <= num_sub_sentences:
                 msg = 'fetched story#%s,%s url=%s num_sentences=%s less than num_sub_sentences=%s'
                 LOG.info(msg, feed_id, offset, url, num_sentences, num_sub_sentences)
-                return
+                return DEFAULT_RESULT
     summary = shorten(text_content, width=_MAX_STORY_SUMMARY_LENGTH)
     if not summary:
-        return
-    ctx.hope('harbor_rss.update_story', dict(
-        feed_id=feed_id,
-        offset=offset,
+        return DEFAULT_RESULT
+    result = dict(
+        **DEFAULT_RESULT,
         content=content,
         summary=summary,
-        url=url,
         sentence_count=num_sentences,
-    ))
+    )
+    if not ctx.message.is_ask:
+        ctx.hope('harbor_rss.update_story', result)
+    return result
 
 
 def _parse_found(found, checksum_data=None, is_refresh=False):

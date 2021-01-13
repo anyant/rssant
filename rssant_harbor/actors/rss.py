@@ -1,17 +1,24 @@
 import logging
 import time
 import random
+import socket
 
+import requests
 from validr import T
 from django.db import transaction
 from django.utils import timezone
 from actorlib import actor, ActorContext
 
 from rssant_feedlib import processor
-from rssant_feedlib.fulltext import split_sentences, is_summary, is_fulltext_content
-from rssant_api.models import UserFeed, Feed, STORY_SERVICE, FeedUrlMap, FeedStatus, FeedCreation
+from rssant_feedlib import FeedResponseStatus
+from rssant_feedlib.fulltext import (
+    split_sentences, is_fulltext_content, StoryContentInfo,
+    decide_accept_fulltext, FulltextAcceptStrategy,
+)
+from rssant_api.models import UserFeed, Feed, STORY_SERVICE, CommonStory, FeedUrlMap, FeedStatus, FeedCreation
 from rssant_api.helper import reverse_url
-from rssant_common.actor_helper import django_context, profile_django_context
+from rssant_common.actor_helper import (
+    django_context, profile_django_context, log_django_context_metric)
 from rssant_common.validator import compiler
 from rssant_config import CONFIG
 
@@ -234,7 +241,7 @@ def do_update_feed(
     for story in modified_storys:
         if not story.link:
             continue
-        if need_fetch_story and (not is_fulltext_story(story)):
+        if need_fetch_story and (not _is_fulltext_story(story)):
             text = processor.story_html_to_text(story.content)
             num_sub_sentences = len(split_sentences(text))
             ctx.tell('worker_rss.fetch_story', dict(
@@ -244,6 +251,73 @@ def do_update_feed(
                 offset=story.offset,
                 num_sub_sentences=num_sub_sentences,
             ))
+
+
+def _is_fulltext_story(story):
+    if story.iframe_url or story.audio_url or story.image_url:
+        return True
+    return is_fulltext_content(StoryContentInfo(story.content))
+
+
+T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+
+
+@actor('harbor_rss.sync_story_fulltext')
+def do_sync_story_fulltext(
+    ctx: ActorContext,
+    feed_id: T.int,
+    offset: T.int,
+) -> T.dict(
+    feed_id=T.int,
+    offset=T.int.min(0),
+    use_proxy=T.bool,
+    url=T.url,
+    response_status=T.int,
+    accept=T_ACCEPT,
+):
+    with log_django_context_metric('harbor_rss.sync_story_fulltext:read'):
+        feed = Feed.get_by_pk(feed_id, detail='+use_proxy')
+        story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
+    assert story, f'story#{feed_id},{offset} not found'
+    story_content_info = StoryContentInfo(story.content)
+    num_sub_sentences = len(split_sentences(story_content_info.text))
+    ret = dict(
+        feed_id=feed_id,
+        offset=offset,
+        url=story.link,
+        use_proxy=feed.use_proxy,
+        accept=FulltextAcceptStrategy.REJECT.value,
+    )
+    try:
+        result = ctx.ask('worker_rss.fetch_story', dict(
+            url=story.link,
+            use_proxy=feed.use_proxy,
+            feed_id=feed_id,
+            offset=offset,
+            num_sub_sentences=num_sub_sentences,
+        ))
+    except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout) as ex:
+        LOG.error(f'Ask worker_rss.fetch_story timeout: {ex}', exc_info=ex)
+        ret.update(response_status=FeedResponseStatus.CONNECTION_TIMEOUT)
+        return ret
+    else:
+        ret.update(
+            response_status=result['response_status'],
+            use_proxy=result['use_proxy'],
+        )
+        if not result['content']:
+            return ret
+    with log_django_context_metric('harbor_rss.sync_story_fulltext:write'):
+        accept = _update_story(
+            story=story,
+            story_content_info=story_content_info,
+            content=result['content'],
+            summary=None,  # not need update summary
+            url=result['url'],
+            sentence_count=result['sentence_count'],
+        )
+        ret.update(accept=accept.value)
+    return ret
 
 
 @actor('harbor_rss.update_feed_info')
@@ -260,12 +334,6 @@ def do_update_feed_info(
             setattr(feed, k, v)
         feed.dt_updated = timezone.now()
         feed.save()
-
-
-def is_fulltext_story(story):
-    if story.iframe_url or story.audio_url or story.image_url:
-        return True
-    return is_fulltext_content(story.content)
 
 
 def is_rssant_changelog(url: str):
@@ -310,19 +378,41 @@ def do_update_story(
     summary: T.str,
     has_mathjax: T.bool.optional,
     url: T.url,
+    response_status: T.int.optional,
     sentence_count: T.int.min(0).optional
 ):
     story = STORY_SERVICE.get_by_offset(feed_id, offset, detail=True)
     if not story:
         LOG.error('story#%s,%s not found', feed_id, offset)
         return
-    if not is_fulltext_content(content):
-        story_text = processor.story_html_to_text(story.content)
-        text = processor.story_html_to_text(content)
-        if not is_summary(story_text, text):
-            msg = 'fetched story#%s,%s url=%r is not fulltext of feed story content'
-            LOG.info(msg, feed_id, offset, url)
-            return
+    _update_story(
+        story=story,
+        story_content_info=StoryContentInfo(story.content),
+        content=content,
+        summary=summary,
+        url=url,
+        has_mathjax=has_mathjax,
+        sentence_count=sentence_count,
+    )
+
+
+def _update_story(
+    story: CommonStory,
+    story_content_info: StoryContentInfo,
+    content: str,
+    summary: str,
+    url: str,
+    has_mathjax: bool = None,
+    sentence_count: int = None
+) -> FulltextAcceptStrategy:
+    new_info = StoryContentInfo(content)
+    accept = decide_accept_fulltext(new_info, story_content_info)
+    if accept == FulltextAcceptStrategy.REJECT:
+        msg = 'fetched story#%s,%s url=%r is not fulltext of feed story content'
+        LOG.info(msg, story.feed_id, story.offset, url)
+        return accept
+    if accept == FulltextAcceptStrategy.APPEND:
+        content = (story.content or '') + '\n<hr/>\n' + (content or '')
     data = dict(
         link=url,
         content=content,
@@ -330,7 +420,8 @@ def do_update_story(
         has_mathjax=has_mathjax,
         sentence_count=sentence_count,
     )
-    STORY_SERVICE.update_story(feed_id, offset, data)
+    STORY_SERVICE.update_story(story.feed_id, story.offset, data)
+    return accept
 
 
 @actor('harbor_rss.check_feed')

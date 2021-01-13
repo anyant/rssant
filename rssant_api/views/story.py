@@ -1,12 +1,24 @@
+import time
+import socket
+import logging
+
+import requests
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 
 from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
 from rssant_api.models import UnionStory
 from rssant_api.models.story import StoryDetailSchema
+from rssant_feedlib import FeedResponseStatus
+from rssant_feedlib.fulltext import FulltextAcceptStrategy
 from rssant_common.image_token import ImageToken
+from rssant_common.actor_client import scheduler
 from rssant_config import CONFIG
 from .helper import check_unionid
+
+
+LOG = logging.getLogger(__name__)
+
 
 StorySchema = T.dict(
     id=T.story_unionid,
@@ -195,3 +207,52 @@ def story_set_favorited(
     check_unionid(request, feed_unionid)
     story = UnionStory.set_favorited_by_feed_offset(feed_unionid, offset, is_favorited=is_favorited)
     return story.to_dict()
+
+
+T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+
+
+@StoryView.post('story/fetch-fulltext')
+def story_fetch_fulltext(
+    request,
+    feed_id: T.feed_unionid.object,
+    offset: T.int.min(0),
+) -> T.dict(
+    feed_id=T.feed_unionid,
+    offset=T.int.min(0),
+    response_status=T.int,
+    response_status_name=T.str,
+    use_proxy=T.bool.optional,
+    accept=T_ACCEPT,
+    story=StorySchema.optional,
+):
+    feed_unionid = feed_id
+    check_unionid(request, feed_unionid)
+    user_id, feed_id = feed_unionid
+    content = dict(feed_id=feed_id, offset=offset)
+    expire_at = int(time.time() + 60)
+    use_proxy = None
+    accept = None
+    try:
+        result = scheduler.ask('harbor_rss.sync_story_fulltext', content, expire_at=expire_at)
+    except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout) as ex:
+        LOG.error(f'Ask harbor_rss.sync_story_fulltext timeout: {ex}', exc_info=ex)
+        response_status = FeedResponseStatus.CONNECTION_TIMEOUT
+    else:
+        response_status = result['response_status']
+        use_proxy = result['use_proxy']
+        accept = result['accept']
+    story = None
+    if accept != FulltextAcceptStrategy.REJECT.value:
+        story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=True)
+        story = story.to_dict()
+    response_status_name = FeedResponseStatus.name_of(response_status)
+    return dict(
+        feed_id=feed_unionid,
+        offset=offset,
+        response_status=response_status,
+        response_status_name=response_status_name,
+        use_proxy=use_proxy,
+        accept=accept,
+        story=story,
+    )

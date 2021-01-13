@@ -1,7 +1,14 @@
 from pathlib import Path
 
-from rssant_feedlib.fulltext import split_sentences, is_summary
-
+import pytest
+from rssant_feedlib.fulltext import (
+    split_sentences, is_summary,
+    decide_accept_fulltext, FulltextAcceptStrategy,
+    is_fulltext_content, StoryContentInfo,
+)
+from rssant_feedlib.processor import (
+    story_readability, story_html_clean, process_story_links,
+)
 
 _data_dir = Path(__file__).parent / 'testdata/fulltext'
 
@@ -24,6 +31,29 @@ def test_split_sentences():
     assert len(sentences) == 17, sentences
 
 
+def test_split_link_sentences():
+    text = (
+        '这是一个 Google 的链接https://www.google.com和一个蚁阅的链接'
+        'https://rss.anyant.com/feed?id=1234。\n'
+        'I like read RSS!'
+    )
+    sentences = split_sentences(text)
+    assert len(sentences) == 3, sentences
+    assert sentences[0] == '这是一个 Google 的链接'
+    assert sentences[1] == '和一个蚁阅的链接'
+    assert sentences[2] == 'I like read RSS'
+
+
+def test_split_number_sentences():
+    text = (
+        '中国移动的号码是10086，短信价格是0.1元/条'
+    )
+    sentences = split_sentences(text)
+    assert len(sentences) == 2, sentences
+    assert sentences[0] == '中国移动的号码是'
+    assert sentences[1] == '短信价格是'
+
+
 def test_split_short_sentences():
     text = (
         '这是一句话。'
@@ -34,6 +64,8 @@ def test_split_short_sentences():
     )
     sentences = split_sentences(text)
     assert len(sentences) == 2, sentences
+    assert sentences[0] == '这是一句话'
+    assert sentences[1] == 'I like read RSS'
     assert split_sentences('hello') == []
     assert split_sentences('你好，世界') == []
 
@@ -49,6 +81,7 @@ thoughtworks_fulltext = (_data_dir / 'thoughtworks.txt').read_text()
 def test_is_summary():
     assert not is_summary('', '')
     assert is_summary('', 'hello world')
+    assert not is_summary('hello world', 'hello')
     assert is_summary(thoughtworks_subtext, thoughtworks_fulltext)
     assert not is_summary(thoughtworks_subtext, thoughtworks_subtext)
     assert not is_summary(thoughtworks_fulltext, thoughtworks_subtext)
@@ -80,3 +113,72 @@ rssant_subtext_2 = """
 def test_is_not_summary():
     assert not is_summary(rssant_subtext_1, rssant_fulltext)
     assert not is_summary(rssant_subtext_2, rssant_fulltext)
+    assert not is_summary(rssant_fulltext, rssant_subtext_1)
+    assert not is_summary(rssant_fulltext, rssant_subtext_2)
+
+
+def _clean_story_html(text, *, readability=False):
+    text = story_html_clean(text)
+    if readability:
+        text = story_readability(text)
+    url = 'https://rss.anyant.com/'
+    text = process_story_links(text, url)
+    return text
+
+
+@pytest.mark.parametrize('name, expect_is_summary', [
+    ('hackernews1', False),
+    ('hackernews2', True),
+    ('haibaomanhua', False),
+    ('juejin1', True),
+    ('juejin2', True),
+    ('woshipm', False),
+    ('xkcd', True),
+])
+def test_rss_is_summary(name, expect_is_summary):
+    rss_html = (_data_dir / f'{name}_rss.html').read_text()
+    rss_html = _clean_story_html(rss_html)
+    web_html = (_data_dir / f'{name}_web.html').read_text()
+    web_html = _clean_story_html(web_html, readability=True)
+    rss_text = StoryContentInfo(rss_html).text
+    web_text = StoryContentInfo(web_html).text
+    got = is_summary(rss_text, web_text)
+    assert got == expect_is_summary
+
+
+@pytest.mark.parametrize('name, expect_is_fulltext', [
+    ('hackernews1_rss', False),
+    ('hackernews1_web', True),
+    ('haibaomanhua_rss', True),
+    ('haibaomanhua_web', False),
+    ('juejin1_rss', False),
+    ('juejin1_web', True),
+    ('woshipm_rss', True),
+    ('woshipm_web', True),
+    ('xkcd_rss', False),
+    ('xkcd_web', False),
+])
+def test_is_fulltext_content(name, expect_is_fulltext):
+    html = (_data_dir / f'{name}.html').read_text()
+    html = _clean_story_html(html, readability=name.endswith('web'))
+    got = is_fulltext_content(StoryContentInfo(html))
+    assert got == expect_is_fulltext
+
+
+@pytest.mark.parametrize('name, expect_accept', [
+    ('hackernews1', FulltextAcceptStrategy.APPEND),
+    ('hackernews2', FulltextAcceptStrategy.APPEND),
+    ('haibaomanhua', FulltextAcceptStrategy.REJECT),
+    ('juejin1', FulltextAcceptStrategy.REPLACE),
+    ('juejin2', FulltextAcceptStrategy.REPLACE),
+    ('woshipm', FulltextAcceptStrategy.REJECT),
+    ('xkcd', FulltextAcceptStrategy.REJECT),
+])
+def test_decide_accept_fulltext(name, expect_accept):
+    rss_html = (_data_dir / f'{name}_rss.html').read_text()
+    rss_html = _clean_story_html(rss_html)
+    web_html = (_data_dir / f'{name}_web.html').read_text()
+    web_html = _clean_story_html(web_html, readability=True)
+    got_accept = decide_accept_fulltext(
+        StoryContentInfo(web_html), StoryContentInfo(rss_html))
+    assert got_accept == expect_accept
