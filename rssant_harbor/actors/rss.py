@@ -260,6 +260,7 @@ def _is_fulltext_story(story):
 
 
 T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+_TIMEOUT_ERRORS = (socket.timeout, TimeoutError, requests.exceptions.Timeout)
 
 
 @actor('harbor_rss.sync_story_fulltext')
@@ -296,8 +297,8 @@ def do_sync_story_fulltext(
             offset=offset,
             num_sub_sentences=num_sub_sentences,
         ))
-    except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout) as ex:
-        LOG.error(f'Ask worker_rss.fetch_story timeout: {ex}', exc_info=ex)
+    except _TIMEOUT_ERRORS as ex:
+        LOG.error(f'Ask worker_rss.fetch_story timeout: {ex}')
         ret.update(response_status=FeedResponseStatus.CONNECTION_TIMEOUT)
         return ret
     else:

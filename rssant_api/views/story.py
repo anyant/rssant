@@ -210,6 +210,7 @@ def story_set_favorited(
 
 
 T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+_TIMEOUT_ERRORS = (socket.timeout, TimeoutError, requests.exceptions.Timeout)
 
 
 @StoryView.post('story/fetch-fulltext')
@@ -223,7 +224,7 @@ def story_fetch_fulltext(
     response_status=T.int,
     response_status_name=T.str,
     use_proxy=T.bool.optional,
-    accept=T_ACCEPT,
+    accept=T_ACCEPT.optional,
     story=StorySchema.optional,
 ):
     feed_unionid = feed_id
@@ -235,8 +236,8 @@ def story_fetch_fulltext(
     accept = None
     try:
         result = scheduler.ask('harbor_rss.sync_story_fulltext', content, expire_at=expire_at)
-    except (socket.timeout, TimeoutError, requests.exceptions.ConnectTimeout) as ex:
-        LOG.error(f'Ask harbor_rss.sync_story_fulltext timeout: {ex}', exc_info=ex)
+    except _TIMEOUT_ERRORS as ex:
+        LOG.error(f'Ask harbor_rss.sync_story_fulltext timeout: {ex}')
         response_status = FeedResponseStatus.CONNECTION_TIMEOUT
     else:
         response_status = result['response_status']
