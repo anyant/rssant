@@ -20,6 +20,10 @@ async def do_check(ctx: ActorContext):
     for node in ctx.registery.remote_nodes:
         LOG.info('ping node {}'.format(node.name))
         await ctx.tell('worker.ping', {'message': 'ping'}, dst_node=node.name)
+    for node in ctx.registery.remote_nodes:
+        LOG.info('ask node {} begin'.format(node.name))
+        r = await ctx.ask('worker.local_ask', {'message': 'ping'}, dst_node=node.name)
+        LOG.info('ask node {} done: {}'.format(node.name, r))
 
 
 @actor('registery.query')

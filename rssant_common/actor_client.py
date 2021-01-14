@@ -37,10 +37,11 @@ class SchedulerActorClient:
             content=dict(tasks=tasks),
         ))
 
-    def ask(self, dst, content):
+    def ask(self, dst, content, expire_at=None):
         return self.client.ask(self.registery.create_message(
             dst='scheduler.proxy_ask',
             content=dict(dst=dst, content=content),
+            expire_at=expire_at,
         ))
 
 

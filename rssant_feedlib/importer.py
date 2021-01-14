@@ -3,8 +3,9 @@ import io
 import typing
 import logging
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urlsplit
 
+import yarl
 import listparser
 from validr import T, Invalid
 
@@ -134,7 +135,7 @@ def _parse_opml(text):
         group = str(group) if group is not None else None
         if not url:
             continue
-        url = _remove_url_fragment(url)
+        url = _normalize_url(url)
         items.append(dict(
             title=title,
             group=group,
@@ -149,13 +150,14 @@ def _parse_opml(text):
     return result
 
 
-def _remove_url_fragment(url):
+def _normalize_url(url):
     """
-    >>> _remove_url_fragment('https://blog.guyskk.com/blog/1#title')
+    >>> _normalize_url('https://blog.guyskk.com/blog/1#title')
     'https://blog.guyskk.com/blog/1'
+    >>> _normalize_url('HTTPS://t.cn/123ABC?q=1')
+    'https://t.cn/123ABC?q=1'
     """
-    scheme, netloc, path, query, fragment = urlsplit(url)
-    return urlunsplit((scheme, netloc, path, query, None))
+    return str(yarl.URL(url).with_fragment(None))
 
 
 def _parse_text(text):
@@ -187,7 +189,7 @@ def _parse_text(text):
         except Invalid:
             pass  # ignore
         else:
-            urls.append(_remove_url_fragment(url))
+            urls.append(_normalize_url(url))
     total = len(urls)
     if total > IMPORT_ITEMS_LIMIT:
         LOG.warning(f'import {total} feed urls exceed limit {IMPORT_ITEMS_LIMIT}, will discard!')

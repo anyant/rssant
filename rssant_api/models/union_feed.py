@@ -10,7 +10,10 @@ from rssant_common.detail import Detail
 from rssant_config import MAX_FEED_COUNT
 from rssant_feedlib import FeedResponseStatus
 from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
-from .feed import UserFeed, Feed, FeedStatus, FeedDetailSchema, FEED_DETAIL_FIELDS
+from .feed import (
+    UserFeed, Feed, FeedStatus, FeedDetailSchema,
+    FEED_DETAIL_FIELDS, USER_FEED_DETAIL_FIELDS,
+)
 from .feed_creation import FeedCreation, FeedCreateResult, FeedUrlMap
 
 
@@ -192,10 +195,10 @@ class UnionFeed:
     @staticmethod
     def get_by_id(feed_unionid, detail=False):
         user_id, feed_id = feed_unionid
-        q = UserFeed.objects.select_related('feed')
+        q = UserFeed.objects.select_related('feed').seal()
         q = q.filter(user_id=user_id, feed_id=feed_id)
         if not detail:
-            q = q.defer(*FEED_DETAIL_FIELDS)
+            q = q.defer(*USER_FEED_DETAIL_FIELDS)
         try:
             user_feed = q.get()
         except UserFeed.DoesNotExist as ex:
@@ -376,11 +379,10 @@ class UnionFeed:
         for url in (urls - set(url_map.keys())):
             url_map[url] = url
         rev_url_map = {v: k for k, v in url_map.items()}
-        detail = Detail.from_schema(False, FeedDetailSchema)
         found_feeds = list(
-            Feed.objects
+            Feed.objects.seal()
             .filter(url__in=set(url_map.values()))
-            .defer(*detail.exclude_fields).all()
+            .defer(*FEED_DETAIL_FIELDS).all()
         )
         feed_id_map = {x.id: x for x in found_feeds}
         feed_map = {x.url: x for x in found_feeds}

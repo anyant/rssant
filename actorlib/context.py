@@ -94,7 +94,11 @@ class ActorContext:
             LOG.exception(f'actor {self.message.dst} handle {self.message} failed: {error}')
             self._queue.op_done(message_id=self.message.id, status=ERROR)
             if self.message.future:
-                self.message.future.set_exception(error)
+                if self.message.future.cancelled():
+                    msg = f'actor {self.message.dst} message {self.message.id} cancelled'
+                    LOG.warning(msg)
+                else:
+                    self.message.future.set_exception(error)
         else:
             if not self._outbox_messages:
                 self._queue.op_done(message_id=self.message.id, status=OK)
@@ -102,7 +106,11 @@ class ActorContext:
                 self._queue.op_outbox(message_id=self.message.id,
                                       outbox_messages=self._outbox_messages)
             if self.message.future:
-                self.message.future.set_result(result)
+                if self.message.future.cancelled():
+                    msg = f'actor {self.message.dst} message {self.message.id} cancelled'
+                    LOG.warning(msg)
+                else:
+                    self.message.future.set_result(result)
 
     def _append_message(self, dst, content=None, dst_node=None, priority=None, require_ack=False, expire_at=None):
         if priority is None and (not self.message.is_ask):
@@ -164,6 +172,7 @@ class ActorContext:
         if msg.is_local:
             future = ThreadFuture()
             msg.future = future
+            self._queue.op_inbox(msg)
             if self.actor.is_async:
                 return asyncio.wrap_future(future)
             else:

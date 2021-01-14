@@ -1,0 +1,453 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+<meta content = 'uft-8' name = 'charset'></meta>
+
+<title>The Death of Goldman Sachs</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+<meta content = 'summary_large_image' name = 'twitter:card'></meta>
+
+<meta content = '16665197' name = 'twitter:site:id'></meta>
+
+<meta content = '@martinfowler' name = 'twitter:site'></meta>
+
+<meta content = 'The Death of Goldman Sachs' property = 'og:title'></meta>
+
+<meta content = 'https://martinfowler.com/articles/202010-death-goldman.html' property = 'og:url'></meta>
+
+<meta content = 'A misleading title to draw readers into an occasionally true story' property = 'og:description'></meta>
+
+<meta content = 'https://martinfowler.com/articles/202010-death-goldman/card.png' property = 'og:image'></meta>
+
+<meta content = 'martinfowler.com' property = 'og:site_name'></meta>
+
+<meta content = 'article' property = 'og:type'></meta>
+
+<meta content = '2020-11-01' property = 'og:article:modified_time'></meta>
+
+<meta content = 'width=device-width, initial-scale=1' name = 'viewport'></meta>
+
+<link href = 'article.css' rel = 'stylesheet' type = 'text/css'></link>
+</head>
+
+<body><header id = 'banner' style = 'background-image: url("/banner.png"); background-repeat: no-repeat'>
+
+<div class = 'name-logo'><a href = 'https://martinfowler.com'><img src = '/mf-name-white.png'></img></a></div>
+  <div class = 'search'>
+    <!-- SiteSearch Google -->
+    <form method='GET' action="https://www.google.com/search">
+      <input type='hidden' name='ie' value='UTF-8'/>
+      <input type='hidden' name='oe' value='UTF-8'/>
+      <input class = 'field' type='text' 
+             name='q' size='15' maxlength='255' value=""/>
+      <button class = 'button' type='submit' 
+             name='btnG' value=" " title = "Search"/>
+      <input type='hidden' name='domains' value="martinfowler.com"/>
+      <input type='hidden' name='sitesearch' value=""/> 
+      <input
+          type='hidden' name='sitesearch' value="martinfowler.com"/>
+    </form>
+  </div>
+
+<div class = 'menu-button navmenu-button'><a class = 'icon icon-bars' href = '#navmenu-bottom'></a></div>
+
+<nav class = 'top-menu'>
+<ul>
+<li><a class = '' href = 'https://refactoring.com'>Refactoring</a></li>
+
+<li><a class = '' href = '/agile.html'>Agile</a></li>
+
+<li><a class = '' href = '/architecture'>Architecture</a></li>
+
+<li><a class = '' href = '/aboutMe.html'>About</a></li>
+
+<li><a class = 'tw' href = 'https://www.thoughtworks.com'>ThoughtWorks</a></li>
+
+<li><a class = 'icon icon-rss' href = '/feed.atom' title = 'feed'></a></li>
+
+<li><a class = 'icon icon-twitter' href = 'https://www.twitter.com/martinfowler' title = 'twitter stream'></a></li>
+</ul>
+</nav>
+</header>
+<nav id = 'top-navmenu'>
+<nav class = 'navmenu'>
+<div class = 'nav-head'>  <div class = 'search'>
+    <!-- SiteSearch Google -->
+    <form method='GET' action="https://www.google.com/search">
+      <input type='hidden' name='ie' value='UTF-8'/>
+      <input type='hidden' name='oe' value='UTF-8'/>
+      <input class = 'field' type='text' 
+             name='q' size='15' maxlength='255' value=""/>
+      <button class = 'button' type='submit' 
+             name='btnG' value=" " title = "Search"/>
+      <input type='hidden' name='domains' value="martinfowler.com"/>
+      <input type='hidden' name='sitesearch' value=""/> 
+      <input
+          type='hidden' name='sitesearch' value="martinfowler.com"/>
+    </form>
+  </div>
+
+<div class = 'closediv'>
+<span class = 'close' title = 'close'></span>
+</div>
+</div>
+
+<div class = 'nav-body'>
+<div class = 'topics'>
+<h2>Topics</h2>
+
+<p><a href = '/architecture'>Architecture</a></p>
+
+<p><a href = 'https://refactoring.com'>Refactoring</a></p>
+
+<p><a href = '/agile.html'>Agile</a></p>
+
+<p><a href = '/delivery.html'>Delivery</a></p>
+
+<p><a href = '/microservices'>Microservices</a></p>
+
+<p><a href = '/data'>Data</a></p>
+
+<p><a href = '/testing'>Testing</a></p>
+
+<p><a href = '/dsl.html'>DSL</a></p>
+</div>
+
+<div class = 'about'>
+<h2>about me</h2>
+
+<p><a href = '/aboutMe.html'>About</a></p>
+
+<p><a href = '/books'>Books</a></p>
+
+<p><a href = '/faq.html'>FAQ</a></p>
+</div>
+
+<div class = 'content'>
+<h2>content</h2>
+
+<p><a href = '/videos.html'>Videos</a></p>
+
+<p><a href = '/tags'>Content Index</a></p>
+
+<p><a href = '/articles/eurogames'>Board Games</a></p>
+
+<p><a href = '/photos'>Photography</a></p>
+</div>
+
+<div class = 'tw'>
+<h2>ThoughtWorks</h2>
+
+<p><a href = 'https://thoughtworks.com/insights'>Insights</a></p>
+
+<p><a href = 'https://thoughtworks.com/careers'>Careers</a></p>
+
+<p><a href = 'https://thoughtworks.com/products'>Products</a></p>
+</div>
+
+<div class = 'feeds'>
+<h2>follow</h2>
+
+<p><a href = 'https://www.twitter.com/martinfowler'>Twitter</a></p>
+
+<p><a href = '/feed.atom'>RSS</a></p>
+</div>
+</div>
+</nav>
+</nav>
+
+<main>
+<h1>The Death of Goldman Sachs</h1>
+
+<p class = 'subtitle'>A misleading title to draw readers into an occasionally true
+  story</p>
+
+<div class = 'short-front'>
+<div class = 'author-list'>
+<div class = 'author'><a href = '/'><img alt = 'Photo of Martin Fowler' src = '/mf.jpg' width = '80'></img></a>
+<p class = 'name'><a href = '/'>Martin Fowler</a></p>
+</div>
+</div>
+
+<p class = 'date'>01 November 2020</p>
+</div>
+
+<div class = 'tags'>
+<p class = 'tag-link'><a href = /tags/diversions.html>diversions</a></p>
+</div>
+
+<div class = 'paperBody shallow'>
+<p>A couple of weeks ago Cindy was woken in the wee hours by sounds of
+    animals fighting in our garden. As she investigated, she saw two coyotes run
+    off, leaving our cat's body behind. A state of nature is a state of
+    violence, and our feline predator was quickly turned into prey. Yet our garden has
+    high fences all around, making it an unlikely spot for coyotes to explore.
+    So is there more to that night than a simple act of nature?</p>
+
+<div class = 'photo '><img src = '202010-death-goldman/goldman-2.jpg'></img>
+<p class = 'photoCaption'></p>
+</div>
+
+<p class = 'final'>But first let me say more about cats. I've never been a pet owner, didn't
+    have anything as a child, and never felt the urge as I grew. I can put it
+    down to the frequent travel that came with my job in pre-covid times, but
+    it's probably due to me being too selfish to look after an animal. Cindy,
+    however, came complete with cats, and for several years I knew I could never
+    rise above #2 in her affections.</p>
+
+<p>In time my rival died, and we were catless. Cindy seemed happy with the
+    state of affairs, then her brother told her about two kittens that turned up at
+    his house in Vermont. We took them on, although these wildlings never showed much sign
+    of domestication. They turned up for their food, and promptly left with nary
+    an opportunity for a stroke. They didn't last long, one caught a car on a
+    busy road, the other just disappeared.</p>
+
+<p>It seemed that such surly animals had put us off cat-keeping, then we
+    were told of an old lady who had to go into nursing home, and needed someone
+    to take care of her cat. Her old name was something boring, and being a cat she never
+    deigned to recognize it. Since she was the fattest cat we'd ever seen (some nineteen
+    pounds) we naturally re-christened her &#x201C;Goldman Sachs&#x201D;, or &#x201C;Goldie&#x201D; to her
+    friends.</p>
+
+<div class = 'photo '><img src = '202010-death-goldman/goldman-1.jpg'></img>
+<p class = 'photoCaption'>Can you see how she got her name?</p>
+</div>
+
+<p>She was more friendly, at least to Cindy,
+    probably because she fed her. Goldie had a habit of over-eating and then
+    throwing up, so Cindy used a timed bowl to feed her small amounts several
+    times a day. Goldie would sit impatiently watching for the bowl to rotate.
+    But our portion control worked, and she got down to a much more respectable
+    weight after a couple of years.</p>
+
+<p class = 'final'>In her previous life, she'd stayed in her keeper's apartment, but our
+    house isn't set up for an indoor cat, so she soon learned to roam outside.
+    Unlike the wildlings, she didn't go far, sticking mostly to our garden and
+    those of our neighbors. When we did a major house renovation she got a
+    cat-door built into the wall, with a granite step to ease her travels. She
+    soon learned that outdoors was a great source of toys, which she could bring
+    into the house and play with, although their batteries soon ran out and
+    she would leave them for the staff to clean up.</p>
+
+<p>Cindy designed our garden as a woodland, not for her are the lawns that
+    dominate so much of American suburbia. Several trees have grown tall since
+    we moved in, and we enjoy seeing the birds among the leaves. Since we live
+    in a thickly settled suburb, we don't get many exotic birds - although I
+    would hardly be a judge of that. But two favorite birds we did get regularly
+    were a pair of cardinals. Mr Cardinal, in particular, was one I liked as we
+    don't have such a striking red bird where I grew up. Cardinals are a loyal
+    pair of mates, so the two were always together, just a few branches away.
+    It's wrong to anthropomorphize wild animals, but we couldn't help being
+    happy at the sight of a loving couple.</p>
+
+<p>The last two paragraphs should suggest the tragedy. One evening Goldie
+    sauntered into the house, a lifeless Mrs Cardinal in her mouth. The next day
+    we were now sad to see Mr Cardinal, chirping futilely for his beloved.</p>
+
+<p class = 'final'>We weren't the only ones to see Mr Cardinal searching for
+    his now lost mate. The chipmunks had lost many of their kin to Goldie, and
+    they sadly told Mr Cardinal of his mate's fate.
+    But while the chipmunks had become accustomed to their frequent loss,
+    Mr Cardinal was made of sterner
+    stuff. He had loved Mrs Cardinal for many years, and enjoyed dancing with
+    her among the trees too much to let this stand.</p>
+
+<div class = 'photo '><img src = '202010-death-goldman/cardinal.jpg'></img>
+<p class = 'photoCaption'>Almost certainly not Mr Cardinal,
+    as I shot this in South Carolina, but to this human all cardinals look the same.</p>
+</div>
+
+<p>But how does a cardinal carry out revenge on a cat? He could turn Goldie
+    into a beetle and then eat her, but he knew neither the spells nor any
+    friendly wizards in our quiet suburb. He could run her over with a car, but
+    he wasn't tall enough to reach the pedals. However one thing he did have was his
+    airborne knowledge of the neighborhood. He'd noticed a young couple of
+    coyotes setting up a starter den in the nearby woodlands, perhaps he could
+    lead them towards a fresh feline breakfast?</p>
+
+<p>There aren't many humans awake at summer's dawn in the suburbs, but the
+    coyotes were still wary of the two-legged infestation on the land. But Mr
+    Cardinal is as persuasive as he is red, and demonstrated his usefulness by
+    leading them to some closer dining opportunities. He wasn't too happy with
+    his role as a canine yelp, as he prefers to steer clear of nature's violence on
+    the ground. But when his doubts rose, he remembered Mrs Cardinal harmonizing on
+    the sweetgum tree, and reaffirmed his resolve. Soon he was able to persuade
+    the coyote couple to partake of that very specific cat.</p>
+
+<p>To cement his plan, however, Mr Cardinal needed more help on the ground,
+    someone to lead the coyotes to the right route into the garden. It required
+    all his diplomatic skills to persuade the chipmunks to take part in the
+    plan. The chipmunks were, of course, delighted at the prospect of Goldie
+    becoming a dish rather than the diner. They were less keen on the chosen
+    means of their deliverance. After all, the coyotes were just as likely to treat
+    one of them as an appetizer. There was a tense and heartfelt discussion in
+    the burrow network, as the rodents weighed the choice between fear and fear.
+    In the end they decided to go with Mr Cardinal's plan, reasoning that even
+    if one of them ended in a coyote's belly, the coyotes weren't the
+    ever-present danger that was Goldie's toy habit.</p>
+
+<p class = 'final'>So came the fateful morning. Goldie walked up to her private enterence,
+    her staff still asleep, and a couple of hours to go before the rotation of
+    the feeding bowl. She pushed the flap and slipped into the dawn, enjoying an
+    early morning prowl before facing the difficult decision of which chair to
+    snooze in for the next few hours. Maybe she started to think about her
+    staff's breakfast and whether their offering of the empty yogurt bowl would
+    be worthy enough of her tongue. She probably fancied a good scratch on the
+    oak tree at the bottom of the garden. But as she prowled, the message got
+    out through the woods, and the coyotes made their approach through the gap
+    in the fence that the staff hadn't yet fixed. The resulting fight was short
+    but noisy enough call the humans, so the coyote couple had to flee before
+    they even had chance to pull out some coffee to go with their warm breakfast.</p>
+
+<p>The coyotes returned the following night, but left only footprints to
+    mark the reappearance. They searched for Goldie's body in vain, as she was
+    now lying in state in her residence. True to their word, they didn't grab
+    any chipmunks as a consolation prize. Mr Cardinal expressed his
+    disappointment, but privately felt it was the coyotes' fault for a sloppy
+    hit job. Not that he minded, as his wife's killer was now ready for a
+    burial, although one that was more decorous than how his wife was laid to
+    rest. We marked Goldie's grave with a stone generously painted by our
+    neighbors' children, who would cat sit while we were away from home.</p>
+
+<div class = 'photo '><img src = '202010-death-goldman/stone.jpg'></img>
+<p class = 'photoCaption'></p>
+</div>
+
+<p>The chipmunks were very happy with how things turned out, and the
+    following night they held a raucous celebration, but not loud enough to wake
+    the humans. That might have been different had they been able to follow
+    their wishes to let off fireworks, but fireworks are illegal in
+    Massachusetts. We still see Mr Cardinal in the trees, and we hope he finds a
+    new mate.</p>
+
+<hr class = 'bodySep'></hr>
+</div>
+
+<div class = 'appendix'>
+<details id = 'SignificantRevisions'>
+<summary>Significant Revisions</summary>
+
+<p><i>01 November 2020: </i>Published</p>
+
+<p><i>27 September 2020: </i>Started drafting</p>
+</details>
+</div>
+</main>
+
+<nav id = 'bottom-navmenu'>
+<nav class = 'navmenu'>
+<div class = 'nav-head'>  <div class = 'search'>
+    <!-- SiteSearch Google -->
+    <form method='GET' action="https://www.google.com/search">
+      <input type='hidden' name='ie' value='UTF-8'/>
+      <input type='hidden' name='oe' value='UTF-8'/>
+      <input class = 'field' type='text' 
+             name='q' size='15' maxlength='255' value=""/>
+      <button class = 'button' type='submit' 
+             name='btnG' value=" " title = "Search"/>
+      <input type='hidden' name='domains' value="martinfowler.com"/>
+      <input type='hidden' name='sitesearch' value=""/> 
+      <input
+          type='hidden' name='sitesearch' value="martinfowler.com"/>
+    </form>
+  </div>
+
+<div class = 'closediv'>
+<span class = 'close' title = 'close'></span>
+</div>
+</div>
+
+<div class = 'nav-body'>
+<div class = 'topics'>
+<h2>Topics</h2>
+
+<p><a href = '/architecture'>Architecture</a></p>
+
+<p><a href = 'https://refactoring.com'>Refactoring</a></p>
+
+<p><a href = '/agile.html'>Agile</a></p>
+
+<p><a href = '/delivery.html'>Delivery</a></p>
+
+<p><a href = '/microservices'>Microservices</a></p>
+
+<p><a href = '/data'>Data</a></p>
+
+<p><a href = '/testing'>Testing</a></p>
+
+<p><a href = '/dsl.html'>DSL</a></p>
+</div>
+
+<div class = 'about'>
+<h2>about me</h2>
+
+<p><a href = '/aboutMe.html'>About</a></p>
+
+<p><a href = '/books'>Books</a></p>
+
+<p><a href = '/faq.html'>FAQ</a></p>
+</div>
+
+<div class = 'content'>
+<h2>content</h2>
+
+<p><a href = '/videos.html'>Videos</a></p>
+
+<p><a href = '/tags'>Content Index</a></p>
+
+<p><a href = '/articles/eurogames'>Board Games</a></p>
+
+<p><a href = '/photos'>Photography</a></p>
+</div>
+
+<div class = 'tw'>
+<h2>ThoughtWorks</h2>
+
+<p><a href = 'https://thoughtworks.com/insights'>Insights</a></p>
+
+<p><a href = 'https://thoughtworks.com/careers'>Careers</a></p>
+
+<p><a href = 'https://thoughtworks.com/products'>Products</a></p>
+</div>
+
+<div class = 'feeds'>
+<h2>follow</h2>
+
+<p><a href = 'https://www.twitter.com/martinfowler'>Twitter</a></p>
+
+<p><a href = '/feed.atom'>RSS</a></p>
+</div>
+</div>
+</nav>
+</nav>
+<footer id='page-footer'>
+<div class='tw-logo'>
+<a href='http://www.thoughtworks.com'>
+<img src='/tw-white-300.png'>
+</a>
+</div>
+<div class='menu-button'>
+<div class='icon-bars navmenu-button'></div>
+</div>
+<div class='copyright'>
+<p>© Martin Fowler | <a href="http://www.thoughtworks.com/privacy-policy">Privacy Policy</a> | <a href="/aboutMe.html#disclosures">Disclosures</a></p>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'UA-17005812-1', 'auto');
+ga('send', 'pageview');
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<!-- End Google Analytics -->
+
+
+
+<script src = '/jquery-1.11.3.min.js' type = 'text/javascript'></script>
+
+<script src = '/mfcom.js' type = 'text/javascript'></script>
+</body>
+</html>
