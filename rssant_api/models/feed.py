@@ -290,7 +290,7 @@ class Feed(Model, ContentHashMixin):
         sql_check = """
         SELECT id, url FROM rssant_api_feed
         WHERE total_storys - retention_offset > %s
-        ORDER BY RANDOM() LIMIT %s
+        LIMIT %s
         """
         params = [retention, limit]
         with connection.cursor() as cursor:

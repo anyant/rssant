@@ -484,7 +484,7 @@ def _retry_feed_creations(ctx: ActorContext, feed_creation_id_urls):
 @django_context
 def do_clean_by_retention(ctx: ActorContext):
     retention = CONFIG.feed_story_retention
-    feeds = Feed.take_retention_feeds(retention=retention)
+    feeds = Feed.take_retention_feeds(retention=retention, limit=50)
     LOG.info('found {} feeds need clean by retention'.format(len(feeds)))
     for feed in feeds:
         feed_id = feed['feed_id']
