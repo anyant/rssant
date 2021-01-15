@@ -54,8 +54,8 @@ def serialize_user(user):
 @UserView.post('user/login/')
 def user_login(
     request,
-    account: T.str.optional,
-    password: T.str.optional,
+    account: T.str.maxlen(80).optional,
+    password: T.str.maxlen(80).optional,
 ) -> UserSchema:
     deactive_message = {'message': '账户状态异常，请联系作者'}
     email_error_message = {'message': '此邮箱未注册'}
