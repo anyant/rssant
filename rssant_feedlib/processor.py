@@ -9,6 +9,7 @@ import lxml.html
 from lxml.html import soupparser
 from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from lxml.html.clean import Cleaner
+import readability.cleaners
 from readability import Document as ReadabilityDocument
 from django.utils.html import escape as html_escape
 from validr import T, Invalid
@@ -19,6 +20,29 @@ from .helper import RE_URL, lxml_call, LXMLError
 
 
 LOG = logging.getLogger(__name__)
+
+
+def _patch_readability_cleaner():
+    """
+    image width and height is important for emoji or small icons,
+    but python-readability will remove them.
+    """
+    # patch bad_attrs
+    bad_attrs = readability.cleaners.bad_attrs
+    for attr in ["width", "height"]:
+        try:
+            bad_attrs.remove(attr)
+        except ValueError:
+            pass  # ignore
+    # patch htmlstrip
+    htmlstrip_pattern = readability.cleaners.htmlstrip.pattern
+    for attr in ["width", "height"]:
+        htmlstrip_pattern = htmlstrip_pattern.replace(attr, '')
+    htmlstrip = re.compile(htmlstrip_pattern, re.I)
+    readability.cleaners.htmlstrip = htmlstrip
+
+
+_patch_readability_cleaner()
 
 
 validate_url = compiler.compile(T.url)
@@ -371,6 +395,9 @@ def story_readability(content):
     >>> content = '<p>hello <b>world</b><br>你好<i>世界</i></p>'
     >>> print(story_readability(content))
     <body id="readabilityBody"><p>hello <b>world</b><br>你好<i>世界</i></p></body>
+    >>> content = '<svg height="16" width="16" class="octicon octicon-search"></svg>'
+    >>> content in story_readability(content)
+    True
     """
     if (not content) or (not content.strip()):
         return ""
@@ -587,6 +614,9 @@ def story_html_clean(content, loose=False):
     >>> content = '<embed src="https://example.com/movie.mp4">'
     >>> story_html_clean(content, loose=True)
     '<div></div>'
+    >>> content = '<svg height="16" width="16" class="octicon octicon-search"></svg>'
+    >>> story_html_clean(content) == content
+    True
     """
     if (not content) or (not content.strip()):
         return ""
