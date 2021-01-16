@@ -53,6 +53,7 @@ cchardet==2.1.6
 certifi==2020.6.20
     # via
     #   -r requirements.in
+    #   geventhttpclient
     #   requests
     #   sentry-sdk
 cffi==1.13.0
@@ -78,6 +79,8 @@ click==7.1.1
     #   pgspecial
     #   pip-tools
     #   shiv
+configargparse==1.2.3
+    # via locust
 configobj==5.0.6
     # via
     #   cli-helpers
@@ -156,12 +159,25 @@ filelock==3.0.12
     # via virtualenv
 flake8==3.7.9
     # via -r requirements.in
-flask==1.1.1
-    # via -r requirements.in
+flask-basicauth==0.2.0
+    # via locust
+flask==1.1.2
+    # via
+    #   -r requirements.in
+    #   flask-basicauth
+    #   locust
+gevent==21.1.0
+    # via
+    #   geventhttpclient
+    #   locust
+geventhttpclient==1.4.5
+    # via locust
 graphviz==0.13
     # via
     #   -r requirements.in
     #   objgraph
+greenlet==1.0.0
+    # via gevent
 gunicorn==20.0.4
     # via -r requirements.in
 hashids==1.3.1
@@ -184,6 +200,8 @@ jinja2==2.10.3
 jsonfield==3.1.0
     # via -r requirements.in
 listparser==0.18
+    # via -r requirements.in
+locust==1.4.1
     # via -r requirements.in
 loguru==0.3.1
     # via -r requirements.in
@@ -210,7 +228,9 @@ module-graph==0.0.1
 more-itertools==7.2.0
     # via pytest
 msgpack==1.0.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   locust
 multidict==4.5.2
     # via
     #   aiohttp
@@ -247,9 +267,10 @@ prometheus-client==0.7.1
     # via -r requirements.in
 prompt-toolkit==2.0.10
     # via pgcli
-psutil==5.6.6
+psutil==5.6.7
     # via
     #   -r requirements.in
+    #   locust
     #   memory-profiler
 psycopg2==2.8.6
     # via
@@ -333,6 +354,8 @@ pyyaml==5.3.1
     # via
     #   -r requirements.in
     #   pre-commit
+pyzmq==21.0.1
+    # via locust
 raven==6.10.0
     # via -r requirements.in
 readability-lxml==0.8.1
@@ -344,6 +367,7 @@ requests==2.22.0
     #   -r requirements.in
     #   coreapi
     #   django-allauth
+    #   locust
     #   requests-oauthlib
     #   shopant-sdk
 sentry-sdk==0.9.0
@@ -365,6 +389,7 @@ six==1.12.0
     #   cryptography
     #   django-extensions
     #   django-rest-auth
+    #   geventhttpclient
     #   packaging
     #   prompt-toolkit
     #   pyopenssl
@@ -419,9 +444,10 @@ wcwidth==0.1.7
     #   -r requirements.in
     #   prompt-toolkit
     #   pytest
-werkzeug==0.16.0
+werkzeug==1.0.1
     # via
     #   flask
+    #   locust
     #   pytest-httpserver
 whitenoise==5.0.1
     # via -r requirements.in
@@ -429,6 +455,10 @@ yarl==1.6.3
     # via
     #   -r requirements.in
     #   aiohttp
+zope.event==4.5.0
+    # via gevent
+zope.interface==5.2.0
+    # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
