@@ -94,6 +94,7 @@ flask==1.1.2
 autopep8==1.5
 pre-commit==2.3.0
 locust==1.4.1
+pyzmq==20.0.0
 
 # package
 pip-tools==5.5.0
