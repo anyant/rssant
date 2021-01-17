@@ -266,15 +266,19 @@ class UnionFeed:
 
     @staticmethod
     def set_story_offset(feed_unionid, offset):
+        """更新故事阅读位置，注意offset只增不减，较小的offset会被忽略"""
         union_feed = UnionFeed.get_by_id(feed_unionid)
         if not offset:
             offset = union_feed.total_storys
         if offset > union_feed.total_storys:
             raise FeedStoryOffsetError('offset too large')
-        user_feed = union_feed._user_feed
-        user_feed.story_offset = offset
-        user_feed.dt_updated = timezone.now()
-        user_feed.save()
+        # only update if story not readed
+        if offset > union_feed.story_offset:
+            user_feed = union_feed._user_feed
+            user_feed.story_offset
+            user_feed.story_offset = offset
+            user_feed.dt_updated = timezone.now()
+            user_feed.save()
         return union_feed
 
     @classmethod

@@ -6,8 +6,9 @@ import requests
 from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 
-from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError
-from rssant_api.models import UnionStory
+from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError, FeedStoryOffsetError
+from rssant_api.models.helper import ConcurrentUpdateError
+from rssant_api.models import UnionStory, UnionFeed
 from rssant_api.models.story import StoryDetailSchema
 from rssant_feedlib import FeedResponseStatus
 from rssant_feedlib.fulltext import FulltextAcceptStrategy
@@ -141,6 +142,7 @@ def story_get_by_offset(
     feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     detail: StoryDetailSchema,
+    set_readed: T.bool.default(False),
 ) -> StorySchema:
     """Story detail"""
     check_unionid(request, feed_unionid)
@@ -148,6 +150,13 @@ def story_get_by_offset(
         story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=detail)
     except StoryNotFoundError:
         return Response({"message": "does not exist"}, status=400)
+    if set_readed:
+        try:
+            UnionFeed.set_story_offset(feed_unionid, offset + 1)
+        except FeedStoryOffsetError as ex:
+            return Response({'message': str(ex)}, status=400)
+        except ConcurrentUpdateError as ex:
+            LOG.error(f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex)
     image_token = ImageToken(referrer=story.link)\
         .encode(secret=CONFIG.image_token_secret)
     ret = story.to_dict()
