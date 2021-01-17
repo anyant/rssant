@@ -51,7 +51,5 @@ class WebsiteUser(HttpUser):
         min_offset = max(0, feed['total_storys'] - 100)
         max_offset = max(0, feed['total_storys'] - 1)
         offset = random.randint(min_offset, max_offset)
-        url = '/api/v1/story/{}-{}?detail=true'.format(feed['id'], offset)
+        url = '/api/v1/story/{}-{}?detail=true&set_readed=true'.format(feed['id'], offset)
         self.client.get(url, name='/api/v1/story/[feed_id]:[offset]')
-        url = '/api/v1/feed/{}/offset'.format(feed['id'])
-        self.client.put(url, json=dict(offset=offset), name='/api/v1/feed/[feed_id]/offset')
