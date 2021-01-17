@@ -12,8 +12,8 @@ from .errors import FeedNotFoundError, StoryNotFoundError
 from .story_service import STORY_SERVICE
 
 
-def convert_summary(summary):
-    return story_html_to_text(summary)
+# 旧的数据里有些 summary 是 html 格式，需要转成 text 给页面展示
+_DATE_LAST_HTML_SUMMARY = timezone.datetime(2020, 8, 1, tzinfo=timezone.utc)
 
 
 class UnionStory:
@@ -124,7 +124,9 @@ class UnionStory:
 
     @cached_property
     def summary(self):
-        return convert_summary(self._story.summary)
+        if self.dt_created < _DATE_LAST_HTML_SUMMARY:
+            return story_html_to_text(self._story.summary)
+        return self._story.summary
 
     @property
     def content(self):
