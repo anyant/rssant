@@ -130,7 +130,7 @@ DATABASES = {
 # https://github.com/heroku-python/django-postgrespool
 DATABASE_POOL_ARGS = {
     'max_overflow': 20,
-    'pool_size': 5,
+    'pool_size': 15,
     'recycle': 300
 }
 

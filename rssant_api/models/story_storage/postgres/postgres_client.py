@@ -8,9 +8,10 @@ LOG = logging.getLogger(__name__)
 
 
 class PostgresClient:
-    def __init__(self, volumes: dict, pool_size=5, pool_recycle=600):
+    def __init__(self, volumes: dict, pool_size=5, pool_max_overflow=10, pool_recycle=600):
         self._volumes = volumes
         self._pool_size = pool_size
+        self._pool_max_overflow = pool_max_overflow
         self._pool_recycle = pool_recycle
         self._dsn_s = {}
         self._table_s = {}
@@ -43,7 +44,7 @@ class PostgresClient:
         engine: Engine = create_engine(
             self._dsn_s[volume],
             pool_size=self._pool_size,
-            max_overflow=0,
+            max_overflow=self._pool_max_overflow,
             pool_pre_ping=False,
             pool_recycle=self._pool_recycle,
         )
