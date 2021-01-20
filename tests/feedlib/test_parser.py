@@ -20,6 +20,7 @@ from rssant_feedlib.parser import _MAX_STORYS
 
 LOG = logging.getLogger(__name__)
 
+UTC = datetime.timezone.utc
 
 _data_dir = Path(__file__).parent / 'testdata/parser'
 
@@ -78,14 +79,32 @@ def test_raw_parse_failed(filename):
 
 def test_raw_parse_bad_encoding():
     content = os.urandom(16 * 1024)
-    builder = FeedResponseBuilder()
-    builder.url('https://blog.example.com/feed')
-    builder.content(content)
-    response = builder.build()
+    response = _create_builder(content=content).build()
     parser = RawFeedParser()
     with pytest.raises(FeedParserError) as ex:
         parser.parse(response)
     assert ex
+
+
+def test_raw_parse_date_timestamp():
+    content = '''
+    <rss version="2.0">
+    <channel>
+    <title>博客中国</title>
+    <generator>http://www.blogchina.com</generator>
+    <item>
+        <title><![CDATA[ 新能源车崛起，传统汽车如何避免诺基亚式危机？ ]]></title>
+        <link>http://jianghulaoliu.blogchina.com/956463775.html</link>
+        <description><![CDATA[ 近日，特斯拉降价16万使得特斯拉消费激增 ]]></description>
+        <source></source>
+        <pubDate>1611146768</pubDate>
+    </item>
+    '''.encode('utf-8')
+    response = _create_builder(content=content).build()
+    result = RawFeedParser().parse(response)
+    assert len(result.storys) == 1
+    dt: datetime.datetime = result.storys[0]['dt_published']
+    assert dt == datetime.datetime.fromtimestamp(1611146768, tz=UTC)
 
 
 def test_parse_story_no_id_no_summary_no_url():

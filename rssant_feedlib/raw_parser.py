@@ -170,6 +170,8 @@ class RawFeedParser:
         if not value:
             return None
         try:
+            if isinstance(value, str) and value.isnumeric():
+                value = datetime.datetime.fromtimestamp(int(value), tz=UTC)
             if isinstance(value, list) and len(value) == 9:
                 value = tuple(value)
             if isinstance(value, tuple):
@@ -338,8 +340,8 @@ class RawFeedParser:
         url = self._strip_string(item.get("link"))
         title = self._strip_string(item.get("title"))
         guid = self._strip_string(item.get('id'))
-        dt_published = self._get_date(item, 'published_parsed')
-        dt_updated = self._get_date(item, 'updated_parsed')
+        dt_published = self._get_date(item, 'published')
+        dt_updated = self._get_date(item, 'updated')
         ident_func = self._get_story_ident_func(
             dt_published or dt_updated, is_json_feed=False)
         ident = ident_func(guid, title, url)
@@ -365,9 +367,16 @@ class RawFeedParser:
             a temporary mapping has been created if `updated_parsed` doesn't exist.
             This fallback will be removed in a future version of feedparser.
         """
-        if name not in item:
-            return None
-        return self._normalize_date(item.get(name))
+        value = None
+        if f'{name}_parsed' in item:
+            value = item.get(f'{name}_parsed')
+        if (not value) and name in item:
+            # support some feed which use unix timestamp date string
+            # eg: http://tuijian.blogchina.com/home/headline
+            value = item.get(name)
+            if (not value) or (not value.isnumeric()):
+                value = None
+        return self._normalize_date(value)
 
     def _get_json_feed_author(self, author):
         name = url = avatar = None
@@ -504,8 +513,8 @@ class RawFeedParser:
         # extract feed info
         icon_url = feed.feed.get("icon") or feed.feed.get("logo")
         description = feed.feed.get("description") or feed.feed.get("subtitle")
-        dt_updated = self._get_date(feed.feed, 'dt_updated') or \
-            self._get_date(feed.feed, 'dt_published')
+        dt_updated = self._get_date(feed.feed, 'updated') or \
+            self._get_date(feed.feed, 'published')
         feed_info = dict(
             version=feed_version,
             title=feed_title,
