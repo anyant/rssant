@@ -40,7 +40,7 @@ PLAUSIBLE_SCRIPT = Template(r'''
 
 class AnalyticsScript:
 
-    def generate(self):
+    def generate(self, request_domain=None):
         if CONFIG.analytics_matomo_enable:
             return self.generate_matomo(
                 url=CONFIG.analytics_matomo_url,
@@ -54,6 +54,7 @@ class AnalyticsScript:
             return self.generate_plausible(
                 url=CONFIG.analytics_plausible_url,
                 domain=CONFIG.analytics_plausible_domain,
+                request_domain=request_domain,
             )
         return None
 
@@ -73,9 +74,11 @@ class AnalyticsScript:
         return GOOGLE_SCRIPT.render(tracking_id=tracking_id)
 
     @staticmethod
-    def generate_plausible(url, domain):
+    def generate_plausible(url, domain, request_domain=None):
         """
         >>> assert AnalyticsScript.generate_plausible('https://p.anyant.com', 'rss.anyant.com')
         """
         url = url.rstrip('/') + '/'
+        if request_domain:
+            domain = request_domain
         return PLAUSIBLE_SCRIPT.render(url=url, domain=domain)

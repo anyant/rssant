@@ -1,5 +1,7 @@
 import os.path
 import re
+from functools import cached_property
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from validr import T, modelclass, fields, Invalid
@@ -28,6 +30,7 @@ class EnvConfig(ConfigModel):
     debug_toolbar_enable: bool = T.bool.default(False).desc('enable debug toolbar or not')
     log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url: str = T.url.relaxed.default('http://localhost:6789')
+    standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
     scheduler_url: str = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
     scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
@@ -175,6 +178,14 @@ class EnvConfig(ConfigModel):
                 table='story_volume_0',
             )}
         self.pg_story_volumes_parsed = volumes
+
+    @cached_property
+    def root_domain(self) -> str:
+        return urlparse(self.root_url).hostname
+
+    @cached_property
+    def standby_domain_set(self) -> set:
+        return set((self.standby_domains or '').strip().split(','))
 
 
 def load_env_config() -> EnvConfig:
