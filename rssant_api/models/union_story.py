@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.db import transaction
-from cached_property import cached_property
+from functools import cached_property
 
 from rssant_feedlib.processor import story_html_to_text
 from rssant_common.validator import StoryUnionId, FeedUnionId

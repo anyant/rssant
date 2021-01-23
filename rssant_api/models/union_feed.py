@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from django.utils import timezone
 from django.db import transaction
-from cached_property import cached_property
+from functools import cached_property
 
 from rssant_common.validator import FeedUnionId
 from rssant_common.detail import Detail

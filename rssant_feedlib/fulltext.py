@@ -3,7 +3,7 @@ import difflib
 import enum
 from typing import List
 
-from cached_property import cached_property
+from functools import cached_property
 from wcwidth import wcswidth
 from . import processor
 from .helper import RE_URL

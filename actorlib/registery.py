@@ -5,7 +5,7 @@ from collections import defaultdict
 from threading import RLock
 
 from validr import T
-from cached_property import cached_property
+from functools import cached_property
 
 from .actor import Actor
 from .network_helper import LOCAL_NODE_NAME
