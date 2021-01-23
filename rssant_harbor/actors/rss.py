@@ -343,12 +343,14 @@ def is_rssant_changelog(url: str):
     True
     >>> is_rssant_changelog('https://rss.anyant.com/changelog.atom')
     True
+    >>> is_rssant_changelog('https://rss.anyant.xyz/changelog.atom')
+    True
     >>> is_rssant_changelog('https://rss.qa.anyant.com/changelog.atom')
     True
     >>> is_rssant_changelog('https://www.anyant.com/')
     False
     """
-    is_rssant = 'rss' in url and 'anyant.com' in url
+    is_rssant = 'rss' in url and 'anyant' in url
     is_local_rssant = url.startswith(CONFIG.root_url)
     return (is_rssant or is_local_rssant) and 'changelog' in url
 

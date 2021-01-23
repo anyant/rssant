@@ -46,10 +46,8 @@ class EmailTemplate:
 
     def send(self, sender, receiver, context):
         LOG.info(f'send email subject={self.subject!r} to {receiver}')
-        context.update(
-            rssant_url=ENV_CONFIG.root_url,
-            rssant_email=ENV_CONFIG.smtp_username,
-        )
+        context.setdefault('rssant_url', ENV_CONFIG.root_url)
+        context.setdefault('rssant_email', ENV_CONFIG.smtp_username)
         html = self.render_html(**context)
         text = html2text(html)
         try:

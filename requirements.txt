@@ -46,8 +46,6 @@ brotli==1.0.7
     # via -r requirements.in
 bs4==0.0.1
     # via -r requirements.in
-cached-property==1.5.1
-    # via -r requirements.in
 cchardet==2.1.6
     # via -r requirements.in
 certifi==2020.6.20

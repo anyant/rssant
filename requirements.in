@@ -72,7 +72,6 @@ Click==7.1.1
 PyYAML==5.3.1
 Mako==1.1.2
 tqdm==4.44.1
-cached-property==1.5.1
 python-dotenv==0.12.0
 markdown==3.2.1
 packaging==19.2
