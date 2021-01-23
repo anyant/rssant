@@ -1,6 +1,8 @@
 from allauth.socialaccount import app_settings
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 
+import yarl
+from rssant_common.standby_domain import get_request_domain
 from ..helper import oauth_api_request
 from ..oauth2.views import RssantOAuth2CallbackView, RssantOAuth2LoginView
 
@@ -12,6 +14,12 @@ class RssantGitHubOAuth2Adapter(GitHubOAuth2Adapter):
 
     TODO: avoid copy code from GitHubOAuth2Adapter
     """
+
+    def get_callback_url(self, request, app):
+        url = super().get_callback_url(request, app)
+        domain = get_request_domain(request)
+        url = str(yarl.URL(url).with_host(domain))
+        return url
 
     def complete_login(self, request, app, token, **kwargs):
         headers = {'Authorization': 'token {}'.format(token.token)}
