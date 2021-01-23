@@ -370,12 +370,14 @@ class RawFeedParser:
         value = None
         if f'{name}_parsed' in item:
             value = item.get(f'{name}_parsed')
-        if (not value) and name in item:
+        raw_value = None
+        if name in item:
+            raw_value = item.get(name)
+        if raw_value and raw_value.isnumeric():
             # support some feed which use unix timestamp date string
             # eg: http://tuijian.blogchina.com/home/headline
-            value = item.get(name)
-            if (not value) or (not value.isnumeric()):
-                value = None
+            if len(raw_value) == 10:
+                value = raw_value
         return self._normalize_date(value)
 
     def _get_json_feed_author(self, author):
