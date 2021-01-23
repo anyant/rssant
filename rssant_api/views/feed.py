@@ -26,7 +26,8 @@ FeedSchema = T.dict(
         id=T.int,
     ),
     status=T.str,
-    url=T.url.maxlen(1024).relaxed,
+    # TODO: limit url length in rssant-worker
+    url=T.url.maxlen(4096).relaxed,
     link=T.str.optional,
     author=T.str.optional,
     icon=T.str.optional,

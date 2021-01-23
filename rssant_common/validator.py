@@ -45,14 +45,14 @@ def cursor_validator(compiler, keys=None, output_object=False, base64=False):
 
 
 @validator(accept=str, output=str)
-def url_validator(compiler, scheme='http https', default_schema=None, relaxed=False):
+def url_validator(compiler, scheme='http https', default_schema=None, maxlen=1024, relaxed=False):
     """
     Args:
         default_schema: 接受没有scheme的url并尝试修正
         relaxed: accept not strict url
     """
     if relaxed:
-        return Compiler().compile(T.url.scheme(scheme))
+        return Compiler().compile(T.url.maxlen(maxlen).scheme(scheme))
     schemes = set(scheme.replace(',', ' ').split(' '))
     if default_schema and default_schema not in schemes:
         raise SchemaError('invalid default_schema {}'.format(default_schema))
@@ -68,6 +68,8 @@ def url_validator(compiler, scheme='http https', default_schema=None, relaxed=Fa
             # django/i18n not setup, maybe use validators package instead
             # raise Invalid(','.join(ex.messages).rstrip('.'))
             raise Invalid('invalid or incorrect url format')
+        if len(value) > maxlen:
+            raise Invalid(f'url length must <= {maxlen}')
         return value
 
     return validate
