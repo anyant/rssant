@@ -26,7 +26,7 @@ FeedSchema = T.dict(
         id=T.int,
     ),
     status=T.str,
-    url=T.url.relaxed,
+    url=T.url.maxlen(1024).relaxed,
     link=T.str.optional,
     author=T.str.optional,
     icon=T.str.optional,
