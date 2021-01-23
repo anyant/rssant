@@ -24,6 +24,12 @@ class ConfigModel:
     pass
 
 
+class GitHubConfigModel(ConfigModel):
+    domain: str = T.str
+    client_id: str = T.str
+    secret: str = T.str
+
+
 class EnvConfig(ConfigModel):
     debug: bool = T.bool.default(False).desc('debug')
     profiler_enable: bool = T.bool.default(False).desc('enable profiler or not')
@@ -55,6 +61,7 @@ class EnvConfig(ConfigModel):
     # github login
     github_client_id: str = T.str.optional
     github_secret: str = T.str.optional
+    github_standby_configs: str = T.str.optional.desc('domain,client_id,secret;')
     # sentry
     sentry_enable: bool = T.bool.default(False)
     sentry_dsn: str = T.str.optional
@@ -141,6 +148,18 @@ class EnvConfig(ConfigModel):
             )
         return volumes
 
+    def _parse_github_standby_configs(self):
+        configs = {}
+        items = (self.github_standby_configs or '').strip().split(';')
+        for item in filter(None, items):
+            parts = item.split(',')
+            if len(parts) != 3:
+                raise Invalid('invalid github standby configs')
+            domain, client_id, secret = parts
+            configs[domain] = GitHubConfigModel(
+                domain=domain, client_id=client_id, secret=secret)
+        return configs
+
     def __post_init__(self):
         if self.sentry_enable and not self.sentry_dsn:
             raise Invalid('sentry_dsn is required when sentry_enable=True')
@@ -178,6 +197,7 @@ class EnvConfig(ConfigModel):
                 table='story_volume_0',
             )}
         self.pg_story_volumes_parsed = volumes
+        self.github_standby_configs_parsed = self._parse_github_standby_configs()
 
     @cached_property
     def root_domain(self) -> str:
