@@ -28,7 +28,7 @@ class ImageTokenExpiredError(ImageTokenDecodeError):
 class ImageToken:
 
     def __init__(self, *, referrer: str = None, timestamp: int = None):
-        self.referrer = referrer
+        self.referrer = (referrer or '')[:255]
         self.timestamp = timestamp or int(time.time())
 
     def __repr__(self):
