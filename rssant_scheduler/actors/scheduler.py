@@ -7,6 +7,7 @@ from validr import T
 from actorlib import actor, ActorContext
 
 from rssant_common.dns_service import DNS_SERVICE
+from rssant_config import MAX_FEED_COUNT
 
 
 LOG = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ async def do_proxy_tell(
     tasks: T.list(T.dict(
         dst=T.str,
         content=T.dict.optional,
-    )).maxlen(2000)
+    )).maxlen(MAX_FEED_COUNT)
 ):
     for t in tasks:
         await ctx.tell(dst=t['dst'], content=t['content'], priority=10)
