@@ -93,7 +93,7 @@ coverage==4.5.4
     # via
     #   -r requirements.in
     #   pytest-cov
-cryptography==3.2
+cryptography==3.3.2
     # via
     #   -r requirements.in
     #   pyjwt
