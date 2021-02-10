@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 
 from rssant_feedlib import FeedResponseBuilder
+from rssant_feedlib.response_builder import detect_content_encoding
 
 
 _data_dir = Path(__file__).parent / 'testdata/encoding'
@@ -113,3 +114,10 @@ def test_mixed(filename, header, expect):
     builder.headers({'content-type': header})
     response = builder.build()
     assert response.encoding == expect
+
+
+def test_messy_encoding():
+    text = '[Netflix]晴雅集/阴阳师(上) Dream of Eternity.HD1080P.国语中字'
+    content = text.encode('utf-8')
+    for i in range(8, len(content)):
+        assert detect_content_encoding(content[:i]) == 'utf-8'

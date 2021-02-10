@@ -80,15 +80,20 @@ def _detect_json_encoding(content: bytes) -> str:
     return None
 
 
+def _is_messy_encoding(normalized_encoding: str) -> bool:
+    """判断经常导致乱码的 iso8859-* 和 windows-125* 编码"""
+    return normalized_encoding.startswith('iso8859') or normalized_encoding.startswith('cp125')
+
+
 def _detect_chardet_encoding(content: bytes) -> str:
     # chardet检测编码有些情况会非常慢，换成cchardet实现，性能可以提升100倍
     r = cchardet.detect(content)
     if not r or not r.get('encoding'):
         return None
-    encoding = r['encoding'].lower()
-    if r['confidence'] < 0.5:
+    encoding = _normalize_encoding(r['encoding'].lower())
+    if r['confidence'] < 0.6:
         # 解决常见的乱码问题，chardet没检测出来基本就是iso8859-*和windows-125*编码
-        if encoding.startswith('iso8859') or encoding.startswith('windows'):
+        if _is_messy_encoding(encoding):
             encoding = 'utf-8'
     return encoding
 
@@ -140,7 +145,7 @@ class EncodingChecker:
         if not encoding:
             return encoding
         # Since ISO-8859-1 is a 1 byte per character encoding, it will always work.
-        if '8859' in encoding or 'latin' in encoding:
+        if _is_messy_encoding(encoding):
             if self._check('utf-8'):
                 return 'utf-8'
         return encoding
