@@ -186,7 +186,7 @@ top
 xyz
 """.strip().split())
 
-RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/$]'.format('|'.join(TOP_DOMAINS)))
+RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/\.$]+'.format('|'.join(TOP_DOMAINS)))
 
 
 def normalize_url(url: str, base_url: str = None):
@@ -229,7 +229,8 @@ def normalize_url(url: str, base_url: str = None):
         match_text = match_text.replace('\\', '/')
         # fix: .comxxx -> .com/xxx
         stick_match = RE_STICK_DOMAIN.match(match_text[1:])
-        if stick_match:
+        # check match length to avoid break uncommon domain, eg: .dev
+        if stick_match and len(stick_match.group(0)) >= 5:
             top_domain = stick_match.group(1)
             pre_len = 1 + len(top_domain)
             match_text = match_text[:pre_len] + '/' + match_text[pre_len:]

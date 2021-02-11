@@ -76,6 +76,14 @@ def test_normalize_url():
             'http://www.example.com/white space',
             'http://www.example.com/white%20space'
         ),
+        (
+            'https://www.example.com.cn/test',
+            'https://www.example.com.cn/test'
+        ),
+        (
+            'https://www.bmpi.dev/dev/guide-to-serverless',
+            'https://www.bmpi.dev/dev/guide-to-serverless'
+        ),
     ]
     for url, expect in cases:
         norm = normalize_url(url)
