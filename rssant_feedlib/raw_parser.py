@@ -3,6 +3,7 @@ import json
 import logging
 import datetime
 import time
+import re
 from io import BytesIO
 
 import atoma
@@ -101,6 +102,9 @@ class RawFeedResult:
 
 class FeedParserError(Exception):
     """FeedParserError"""
+
+
+RE_UTM_TRACK = re.compile(r'&?utm_(source|campaign|medium)=[a-z0-9\$\-\~\_\.\+\!]+', re.I)
 
 
 class RawFeedParser:
@@ -299,6 +303,39 @@ class RawFeedParser:
         return (s or '').replace('\n', ' ').strip()
 
     @classmethod
+    def _strip_utm_track(cls, s) -> str:
+        r"""
+        >>> f = RawFeedParser._strip_utm_track
+        >>> f(None) is None
+        True
+        >>> f('') == ''
+        True
+        >>> f('2020-08-27T11:50:45.753232Z')
+        '2020-08-27T11:50:45.753232Z'
+        >>> f('tag:www.v2ex.com,2021-02-12:/t/753053')
+        'tag:www.v2ex.com,2021-02-12:/t/753053'
+        >>> f('https://www.v2ex.com/t/753053#reply2')
+        'https://www.v2ex.com/t/753053#reply2'
+        >>> f('http://x.com/app/title/SeaTable??utm_source=rss&utm_campaign=rss&utm_medium=flipboard')
+        'http://x.com/app/title/SeaTable??'
+        >>> f('?x=y&utm_source=rss1-2$4~5_+!ant.com&q=%E4%B8%AD%E6%96%87')
+        '?x=y&q=%E4%B8%AD%E6%96%87'
+        >>> f('https://www.v2ex.com/t/753053?utm_source=rss#reply2')
+        'https://www.v2ex.com/t/753053?#reply2'
+        >>> f('http://x.com/?utm_source=%E4%B8%AD%E6%96%87')
+        'http://x.com/?utm_source=%E4%B8%AD%E6%96%87'
+        >>> f('http://x.com/feed-detail?id=044162')
+        'http://x.com/feed-detail?id=044162'
+        >>> f('why?not?rss')
+        'why?not?rss'
+        """
+        parts = (s or '').split('?', 1)
+        if len(parts) != 2:
+            return s
+        qs = RE_UTM_TRACK.sub('', parts[1])
+        return parts[0] + '?' + qs
+
+    @classmethod
     def _get_story_ident_func(cls, dt: datetime.datetime, *, is_json_feed: bool) -> callable:
         """
         >>> RawFeedParser._get_story_ident_func(None, is_json_feed=False) \
@@ -337,9 +374,9 @@ class RawFeedParser:
 
     def _extract_story(self, item):
         story = {}
-        url = self._strip_string(item.get("link"))
+        url = self._strip_utm_track(self._strip_string(item.get("link")))
         title = self._strip_string(item.get("title"))
-        guid = self._strip_string(item.get('id'))
+        guid = self._strip_utm_track(self._strip_string(item.get('id')))
         dt_published = self._get_date(item, 'published')
         dt_updated = self._get_date(item, 'updated')
         ident_func = self._get_story_ident_func(
@@ -410,9 +447,9 @@ class RawFeedParser:
     def _get_json_feed_story(self, item: RawJSONFeedItem):
         dt_published = self._normalize_date(item.date_published)
         dt_updated = self._normalize_date(item.date_modified)
-        guid = self._strip_string(item.id_)
+        guid = self._strip_utm_track(self._strip_string(item.id_))
         title = self._strip_string(item.title)
-        url = self._strip_string(item.url)
+        url = self._strip_utm_track(self._strip_string(item.url))
         ident_func = self._get_story_ident_func(
             dt_published or dt_updated, is_json_feed=True)
         ident = ident_func(guid, title, url)
