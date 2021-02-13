@@ -337,7 +337,7 @@ class StoryImageProcessor:
         return ''.join(content_chunks)
 
 
-IMG_EXT_SRC_ATTRS = ['data-src', 'data-original', 'data-origin']
+IMG_EXT_SRC_ATTRS = ['data-src', 'data-original', 'data-origin', 'data-options']
 RE_IMAGE_URL = re.compile(
     '(img|image|pic|picture|photo|png|jpg|jpeg|webp|bpg|ico|exif|tiff|gif|svg|bmp)', re.I)
 
