@@ -432,7 +432,9 @@ class UnionFeed:
             new_user_feeds.append(user_feed)
         # 尽量确保用户订阅数不超过限制
         user_feed_count = UserFeed.objects.filter(user_id=user_id).count()
-        free_count = max(0, MAX_FEED_COUNT - user_feed_count)
+        user_feed_creation_count = FeedCreation.objects.filter(user_id=user_id).count()
+        user_total_feed = user_feed_count + user_feed_creation_count
+        free_count = max(0, MAX_FEED_COUNT - user_total_feed)
         new_user_feeds = new_user_feeds[:free_count]
         free_count = max(0, free_count - len(new_user_feeds))
         feed_creations = feed_creations[:free_count]
