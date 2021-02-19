@@ -20,6 +20,8 @@ from .errors import RssantAPIException
 LOG = logging.getLogger(__name__)
 
 
+MAX_GROUP_NAME_LENGTH = 50
+
 FeedSchema = T.dict(
     id=T.feed_unionid,
     user=T.dict(
@@ -34,7 +36,7 @@ FeedSchema = T.dict(
     description=T.str.optional,
     version=T.str.optional,
     title=T.str.maxlen(200).optional,
-    group=T.str.maxlen(50).optional,
+    group=T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
     warnings=T.str.optional,
     num_unread_storys=T.int.optional,
     total_storys=T.int.optional,
@@ -64,7 +66,7 @@ FeedCreationSchema = T.dict(
     is_ready=T.bool,
     feed_id=T.feed_unionid.optional,
     status=T.str,
-    group=T.str.maxlen(50).optional,
+    group=T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
     url=T.url,
     message=T.str.optional,
     dt_updated=T.datetime.object.optional,
@@ -206,7 +208,7 @@ def feed_set_title(
 def feed_set_group(
     request,
     id: T.feed_unionid.object,
-    group: T.str.maxlen(50).optional,
+    group: T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
 ) -> FeedSchema:
     check_unionid(request, id)
     feed = UnionFeed.set_group(id, group)
@@ -217,7 +219,7 @@ def feed_set_group(
 def feed_set_all_group(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT),
-    group: T.str.maxlen(50),
+    group: T.str.maxlen(MAX_GROUP_NAME_LENGTH),
 ) -> T.dict(num_updated=T.int):
     check_unionid(request, ids)
     feed_ids = [x.feed_id for x in ids]
@@ -360,7 +362,11 @@ def feed_import_bookmark(request) -> FeedImportResultSchema:
 
 
 @FeedView.post('feed/import')
-def feed_import(request, text: T.str, group: T.str.optional) -> FeedImportResultSchema:
+def feed_import(
+    request,
+    text: T.str,
+    group: T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
+) -> FeedImportResultSchema:
     """从OPML/XML内容或含有链接的HTML或文本内容导入订阅"""
     with timer('Import-Feed-From-Text'):
         import_feeds = import_feed_from_text(text)
@@ -377,4 +383,6 @@ def feed_import_file(request) -> FeedImportResultSchema:
     """从OPML/XML/浏览器书签/含有链接的HTML或文本文件导入订阅"""
     text, filename = _read_request_file(request)
     group = request.GET.get('group')
+    if group and len(group) > MAX_GROUP_NAME_LENGTH:
+        raise RssantAPIException(f'group name length must <= {MAX_GROUP_NAME_LENGTH}')
     return feed_import(request, text, group=group)
