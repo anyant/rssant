@@ -119,6 +119,7 @@ class AsyncFeedReader:
             headers['User-Agent'] = self.user_agent(url)
         else:
             headers['User-Agent'] = self.user_agent
+        headers['Accept-Encoding'] = 'gzip, deflate'
         if etag:
             headers["ETag"] = etag
         if last_modified:

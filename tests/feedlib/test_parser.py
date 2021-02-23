@@ -86,6 +86,20 @@ def test_raw_parse_bad_encoding():
     assert ex
 
 
+def test_raw_parser_incomplete_content():
+    response = _read_response(_data_dir / 'warn', 'https-tmioe-com-feed.xml')
+    parser = RawFeedParser()
+    result = parser.parse(response)
+    assert len(result.storys) == 5
+    assert result.feed['version'] == 'rss20'
+    assert result.feed['title'] == 'ZAPRO · 杂铺'
+    expect_title = "TikTok 抖音国际版 v18.6.2 解锁全部国家任意切换"
+    expect_url = "https://tmioe.com/1463.html"
+    got_storys = [x for x in result.storys if x['url'] == expect_url]
+    assert got_storys
+    assert got_storys[0]['title'] == expect_title
+
+
 def test_raw_parse_date_timestamp():
     content = '''
     <rss version="2.0">

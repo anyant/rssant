@@ -516,6 +516,15 @@ class RawFeedParser:
             raise FeedParserError(str(ex)) from ex
         return RawFeedResult(feed, storys, warnings=result.warnings)
 
+    @staticmethod
+    def _fix_response_content(response: FeedResponse) -> bytes:
+        # ensure encoding works to avoid feedparser use wrong encoding
+        # content.strip is required because feedparser not allow whitespace
+        return response.content\
+            .decode(response.encoding, errors='replace')\
+            .encode(response.encoding)\
+            .strip()
+
     def _parse(self, response: FeedResponse) -> RawFeedResult:
         assert response.ok and response.content
         if response.feed_type.is_json:
@@ -525,12 +534,9 @@ class RawFeedParser:
             warnings.append('feed content type is html')
         if response.feed_type.is_other:
             warnings.append('feed content type is not any feed type')
-        # content.strip is required because feedparser not allow whitespace
-        stream = BytesIO(response.content.strip())
+        stream = BytesIO(self._fix_response_content(response))
         # tell feedparser to use detected encoding
-        headers = {
-            'content-type': f'application/xml;charset={response.encoding}',
-        }
+        headers = {'content-type': f'application/xml;charset={response.encoding}'}
         feed = feedparser.parse(stream, response_headers=headers)
         if feed.bozo:
             ex = feed.get("bozo_exception")
