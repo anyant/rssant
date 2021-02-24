@@ -521,7 +521,7 @@ class RawFeedParser:
         # ensure encoding works to avoid feedparser use wrong encoding
         # content.strip is required because feedparser not allow whitespace
         return response.content\
-            .decode(response.encoding, errors='replace')\
+            .decode(response.encoding, errors='ignore')\
             .encode(response.encoding)\
             .strip()
 
