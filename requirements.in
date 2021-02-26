@@ -46,7 +46,7 @@ cryptography==3.3.2
 listparser==0.18
 
 # aiolibs
-aiohttp==3.7.3
+aiohttp==3.7.4
 aiodns==2.0.0
 aiohttp-devtools==0.13.1
 aiojobs==0.3.0

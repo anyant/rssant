@@ -12,7 +12,7 @@ aiohttp-devtools==0.13.1
     # via -r requirements.in
 aiohttp-socks==0.5.5
     # via -r requirements.in
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via
     #   -r requirements.in
     #   aiohttp-devtools
