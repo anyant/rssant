@@ -193,7 +193,7 @@ itsdangerous==1.1.0
     # via flask
 itypes==1.1.0
     # via coreapi
-jinja2==2.10.3
+jinja2==2.11.3
     # via flask
 jsonfield==3.1.0
     # via -r requirements.in
