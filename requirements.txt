@@ -348,7 +348,7 @@ pytz==2019.3
     #   django-timezone-field
 pytzdata==2020.1
     # via pendulum
-pyyaml==5.3.1
+pyyaml==5.4
     # via
     #   -r requirements.in
     #   pre-commit
