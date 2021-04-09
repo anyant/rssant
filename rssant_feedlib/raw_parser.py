@@ -286,6 +286,13 @@ class RawFeedParser:
         #       https://rsshub.app/coolapk/tuwen
         #       https://github.com/DIYgod/RSSHub/issues/4523
         #       https://github.com/DIYgod/RSSHub/issues/6015
+
+        # TODO: 评估对所有订阅都只取title作为ID的效果和影响，考虑基于内容相似度的算法
+        # CNKI文章链接每次访问都会变，只能取title
+        # eg: https://rss.cnki.net/kns/rss.aspx?Journal=ZNZX&Virtual=knavi
+        if link and 'cnki.net/' in link:
+            return title or link
+
         if guid:
             ident = guid + '::' + title
         else:
