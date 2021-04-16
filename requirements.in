@@ -1,7 +1,7 @@
 # django
 django==2.2.20
 djangorestframework==3.12.2
-django-debug-toolbar==2.2
+django-debug-toolbar==2.2.1
 django-extensions==2.2.9
 django-allauth==0.44.0
 django-rest-auth==0.9.5
