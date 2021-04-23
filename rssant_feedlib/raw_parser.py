@@ -260,6 +260,15 @@ class RawFeedParser:
         return ident
 
     @classmethod
+    def _extract_story_ident_cnki(cls, guid, title, link):
+        # strip link hash part to improve uniqueness
+        link = link.rsplit('#', 1)[0]
+        # TODO: 评估对所有订阅都只取title作为ID的效果和影响，考虑基于内容相似度的算法
+        # CNKI文章链接每次访问都会变，只能取title
+        # eg: https://rss.cnki.net/kns/rss.aspx?Journal=ZNZX&Virtual=knavi
+        return title or link
+
+    @classmethod
     def _extract_story_ident_v3(cls, guid, title, link) -> str:
         r"""
         >>> RawFeedParser._extract_story_ident_v3('', '', '')
@@ -286,13 +295,6 @@ class RawFeedParser:
         #       https://rsshub.app/coolapk/tuwen
         #       https://github.com/DIYgod/RSSHub/issues/4523
         #       https://github.com/DIYgod/RSSHub/issues/6015
-
-        # TODO: 评估对所有订阅都只取title作为ID的效果和影响，考虑基于内容相似度的算法
-        # CNKI文章链接每次访问都会变，只能取title
-        # eg: https://rss.cnki.net/kns/rss.aspx?Journal=ZNZX&Virtual=knavi
-        if link and 'cnki.net/' in link:
-            return title or link
-
         if guid:
             ident = guid + '::' + title
         else:
@@ -343,7 +345,11 @@ class RawFeedParser:
         return parts[0] + '?' + qs
 
     @classmethod
-    def _get_story_ident_func(cls, dt: datetime.datetime, *, is_json_feed: bool) -> callable:
+    def _get_story_ident_func(
+        cls, dt: datetime.datetime, *,
+        link: str = None,
+        is_json_feed: bool,
+    ) -> callable:
         """
         >>> RawFeedParser._get_story_ident_func(None, is_json_feed=False) \
             == RawFeedParser._extract_story_ident_v3
@@ -359,13 +365,20 @@ class RawFeedParser:
         True
         >>> RawFeedParser._get_story_ident_func(None, is_json_feed=True) == RawFeedParser._extract_story_ident_v3
         True
-        >>> RawFeedParser._get_story_ident_func(STORY_INDENT_V3_DATE, is_json_feed=True) \
-            == RawFeedParser._extract_story_ident_v3
+        >>> got = RawFeedParser._get_story_ident_func(STORY_INDENT_V3_DATE, is_json_feed=True)
+        >>> got == RawFeedParser._extract_story_ident_v3
         True
         >>> dt = STORY_INDENT_V3_DATE - datetime.timedelta(days=1)
-        >>> RawFeedParser._get_story_ident_func(dt, is_json_feed=True) == RawFeedParser._extract_story_ident_v1
+        >>> got = RawFeedParser._get_story_ident_func(dt, is_json_feed=True)
+        >>> got == RawFeedParser._extract_story_ident_v1
+        True
+        >>> cnki_link = 'https://nxgp.cnki.net/kcms/detail?v=xxx'
+        >>> got = RawFeedParser._get_story_ident_func(dt, link=cnki_link, is_json_feed=False)
+        >>> got == RawFeedParser._extract_story_ident_cnki
         True
         """
+        if link and 'cnki.net/' in link:
+            return cls._extract_story_ident_cnki
         if is_json_feed:
             if dt and dt < STORY_INDENT_V3_DATE:
                 return cls._extract_story_ident_v1
@@ -387,7 +400,7 @@ class RawFeedParser:
         dt_published = self._get_date(item, 'published')
         dt_updated = self._get_date(item, 'updated')
         ident_func = self._get_story_ident_func(
-            dt_published or dt_updated, is_json_feed=False)
+            dt_published or dt_updated, link=url, is_json_feed=False)
         ident = ident_func(guid, title, url)
         if not ident:
             return None
@@ -458,7 +471,7 @@ class RawFeedParser:
         title = self._strip_string(item.title)
         url = self._strip_utm_track(self._strip_string(item.url))
         ident_func = self._get_story_ident_func(
-            dt_published or dt_updated, is_json_feed=True)
+            dt_published or dt_updated, link=url, is_json_feed=True)
         ident = ident_func(guid, title, url)
         if not ident:
             return None
