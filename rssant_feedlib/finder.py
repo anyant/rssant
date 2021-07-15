@@ -185,6 +185,7 @@ class FeedFinder:
         message_handler=None,
         max_trys=10,
         reader=None,
+        request_timeout=30,
         proxy_url=None,
         rss_proxy_url=None,
         rss_proxy_token=None,
@@ -204,6 +205,7 @@ class FeedFinder:
                 proxy_url=proxy_url,
                 rss_proxy_url=rss_proxy_url,
                 rss_proxy_token=rss_proxy_token,
+                request_timeout=request_timeout,
             )
             self._close_reader = True
         else:

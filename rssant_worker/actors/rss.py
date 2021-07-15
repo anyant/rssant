@@ -22,6 +22,7 @@ from rssant_feedlib.fulltext import is_fulltext_content, StoryContentInfo, split
 from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
+from rssant_config import CONFIG
 from rssant_common import _proxy_helper
 from rssant_common.validator import compiler
 from rssant_common.dns_service import DNS_SERVICE
@@ -115,7 +116,9 @@ def do_find_feed(
         LOG.info(msg)
         messages.append(msg)
 
-    options = dict(message_handler=message_handler, **_proxy_helper.get_proxy_options())
+    options = _proxy_helper.get_proxy_options()
+    options.update(message_handler=message_handler)
+    options.update(request_timeout=CONFIG.feed_reader_request_timeout)
     options.update(dns_service=DNS_SERVICE)
     with FeedFinder(url, **options) as finder:
         found = finder.find()
@@ -148,6 +151,7 @@ def do_sync_feed(
     if not is_refresh:
         params = dict(etag=etag, last_modified=last_modified)
     options = _proxy_helper.get_proxy_options()
+    options.update(request_timeout=CONFIG.feed_reader_request_timeout)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     switch_prob = 0.25  # the prob of switch from use proxy to not use proxy

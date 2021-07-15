@@ -45,6 +45,7 @@ class EnvConfig(ConfigModel):
     check_feed_minutes: int = T.int.min(1).default(30)
     feed_story_retention: int = T.int.min(1).default(5000).desc('max storys to keep per feed')
     pg_story_volumes: str = T.str.optional
+    feed_reader_request_timeout: int = T.int.default(90).desc('feed reader request timeout')
     # actor
     actor_storage_path: str = T.str.default('data/actor_storage')
     actor_storage_compact_wal_delta: int = T.int.min(1).default(5000)
