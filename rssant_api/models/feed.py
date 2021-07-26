@@ -152,7 +152,8 @@ class Feed(Model, ContentHashMixin):
                     user_feed.story_offset = self.total_storys
                 updates.append(user_feed)
         UserFeed.objects.bulk_update(updates, ['feed_id', 'story_offset'])
-        other.status = FeedStatus.DISCARD
+        # TODO: correct implement DISCARD logic, feed creation and feedurlmap
+        # other.status = FeedStatus.DISCARD
         other.save()
 
     @property
@@ -273,6 +274,7 @@ class Feed(Model, ContentHashMixin):
         """
         detector = DuplicateFeedDetector()
         feeds = cls._query_feeds_by_reverse_url(begin=checkpoint, limit=limit)
+        rev_url = None
         for feed_id, rev_url in feeds:
             detector.push(feed_id, rev_url)
         if len(feeds) < limit:
