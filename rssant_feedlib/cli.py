@@ -56,13 +56,14 @@ def _normalize_path(p):
     return os.path.abspath(os.path.expanduser(p))
 
 
-def _do_find(url, max_trys, printer, rss_proxy_url, rss_proxy_token):
+def _do_find(url, max_trys, printer, proxy_url, rss_proxy_url, rss_proxy_token):
 
     def message_handler(msg):
         print(msg)
 
     finder = FeedFinder(
         url, max_trys=max_trys,
+        proxy_url=proxy_url,
         rss_proxy_url=rss_proxy_url,
         rss_proxy_token=rss_proxy_token,
         message_handler=message_handler,
