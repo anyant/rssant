@@ -277,7 +277,7 @@ psycopg2==2.8.6
     #   pgspecial
 py-spy==0.3.3
     # via -r requirements.in
-py==1.8.0
+py==1.10.0
     # via pytest
 pycares==3.0.0
     # via aiodns
