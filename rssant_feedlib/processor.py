@@ -4,6 +4,7 @@ import logging
 from collections import namedtuple
 from urllib.parse import urljoin, quote, unquote, urlsplit, urlunsplit
 
+import yarl
 import lxml.etree
 import lxml.html
 from lxml.html import soupparser
@@ -46,6 +47,14 @@ _patch_readability_cleaner()
 
 
 validate_url = compiler.compile(T.url)
+
+
+def _quote_path(path: str) -> str:
+    """urllib.parse.quote会转义冒号等字符，这是不对的"""
+    if not path:
+        return ''
+    return yarl.URL('https://rss.anyant.com/').with_path(path).raw_path
+
 
 RE_IMG = re.compile(
     r'(?:<img\s*[^<>]*?\s+src="([^"]+?)")|'
@@ -249,7 +258,7 @@ def normalize_url(url: str, base_url: str = None):
     # fix: http://example.com//blog
     path = re.sub(r'^\/\/+', '/', path)
     # quote is not idempotent, can not quote multiple times
-    path = quote(unquote(path))
+    path = _quote_path(unquote(path))
     url = urlunsplit((scheme, netloc, path, query, fragment))
     return url
 

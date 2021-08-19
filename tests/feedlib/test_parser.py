@@ -312,6 +312,14 @@ def test_parser_iframe():
         assert re.match(expect, story['iframe_url'])
 
 
+def test_parser_iframe_link():
+    result = _parse_well_feed('dapenti_blog_iframe.xml')
+    expect = r'https://video.h5.weibo.cn/1034:4671653473616001/4671655702434113'
+    assert len(result.storys) == 30
+    story = result.storys[1]
+    assert story['iframe_url'] == expect
+
+
 def test_parser_audio_typlog():
     result = _parse_well_feed('typlog_audio.xml')
     expect = r'https://chtbl\.com/track/6AGABB/r\.typlog\.com/.+\.mp3'

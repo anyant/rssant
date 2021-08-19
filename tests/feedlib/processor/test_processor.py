@@ -109,6 +109,7 @@ def test_normalize_quote():
     path_s = [
         '/post/2019-01-10-%E5%AF%BB%E6%89%BE-sourcetree-%E6%9B%BF%E4%BB%A3%E5%93%81/',
         '/notes/%E8%9A%81%E9%98%85%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E8%AE%B0%E5%BD%95',
+        '/1034:4671653473616001/4671655702434113',
     ]
     for p in path_s:
         r = normalize_url(p, base_url=base_url)
@@ -132,6 +133,13 @@ def test_story_extract_attach_iframe():
     html = _read_text('test_iframe.html')
     attach = story_extract_attach(html)
     expect = 'https://player.bilibili.com/player.html?aid=75057811'
+    assert attach.iframe_url == expect
+
+
+def test_story_extract_attach_iframe_link():
+    html = _read_text('test_iframe_link.html')
+    attach = story_extract_attach(html)
+    expect = 'https://video.h5.weibo.cn/1034:4671653473616001/4671655702434113'
     assert attach.iframe_url == expect
 
 
