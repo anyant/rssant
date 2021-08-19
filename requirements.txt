@@ -65,7 +65,8 @@ chardet==3.0.4
     #   -r requirements.in
     #   aiohttp
     #   readability-lxml
-    #   requests
+charset-normalizer==2.0.4
+    # via requests
 cli-helpers[styles]==2.1.0
     # via pgcli
 click==7.1.1
@@ -362,7 +363,7 @@ readability-lxml==0.8.1
     # via -r requirements.in
 requests-oauthlib==1.2.0
     # via django-allauth
-requests==2.22.0
+requests==2.26.0
     # via
     #   -r requirements.in
     #   coreapi
@@ -426,7 +427,7 @@ typing-extensions==3.7.4.3
     # via aiohttp
 uritemplate==3.0.0
     # via coreapi
-urllib3==1.25.8
+urllib3==1.26.6
     # via
     #   -r requirements.in
     #   requests
