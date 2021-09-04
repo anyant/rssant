@@ -73,10 +73,10 @@
 
 #### 第一步，准备配置文件
 
-配置文件保存为 `~/rssant/rssant.env` 。
+配置文件保存为 `~/rssant/rssant.env`，按照注释说明修改。
 
 ```bash
-# 关闭DEBUG，请勿在开发测试之外开启DEBUG
+# 默认关闭DEBUG，请勿在开发测试之外开启DEBUG
 RSSANT_DEBUG=0
 
 # 请随机生成一个字符串
@@ -143,7 +143,7 @@ docker run -ti --name rssant -d \
 docker logs --tail 1000 -f rssant
 ```
 
-启动服务 `bash ~/rssant/start.sh`, 当看到下面的日志时，服务就启动好了。
+先执行 `sed -i 's/\r//' ~/rssant/start.sh` 处理脚本换行符，再启动服务 `bash ~/rssant/start.sh`，当看到下面的日志时，服务就启动好了。
 
 ```bash
 # 初始化数据库的日志
