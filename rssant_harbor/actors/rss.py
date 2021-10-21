@@ -196,11 +196,18 @@ def do_update_feed(
         is_feed_url_changed = feed.url != feed_dict['url']
         if is_feed_url_changed:
             target_feed = Feed.get_first_by_url(feed_dict['url'])
+            # FIXME: feed merge 无法正确处理订阅重定向问题。
+            # 对于这种情况，暂时保留旧的订阅，以后再彻底解决。
+            # if target_feed:
+            #     LOG.info(f'merge feed#{feed.id} url={feed.url} into '
+            #              f'feed#{target_feed.id} url={target_feed.url}')
+            #     target_feed.merge(feed)
+            #     return
             if target_feed:
-                LOG.info(f'merge feed#{feed.id} url={feed.url} into '
-                         f'feed#{target_feed.id} url={target_feed.url}')
-                target_feed.merge(feed)
-                return
+                LOG.warning(
+                    f'FIXME: redirect feed#{feed.id} url={feed.url!r} into '
+                    f'feed#{target_feed.id} url={target_feed.url!r}')
+                feed_dict.pop('url')
         # only update dt_updated if has storys or feed fields updated
         is_feed_updated = bool(storys)
         for k, v in feed_dict.items():

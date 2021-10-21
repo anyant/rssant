@@ -27,7 +27,8 @@ class UnionStory:
 
     @cached_property
     def id(self):
-        return StoryUnionId(self._user_id, self._story.feed_id, self._story.offset)
+        story = self._user_story or self._story
+        return StoryUnionId(self._user_id, story.feed_id, story.offset)
 
     @property
     def user_id(self):
@@ -35,7 +36,8 @@ class UnionStory:
 
     @cached_property
     def feed_id(self):
-        return FeedUnionId(self._user_id, self._story.feed_id)
+        story = self._user_story or self._story
+        return FeedUnionId(self._user_id, story.feed_id)
 
     @property
     def offset(self):
@@ -193,6 +195,7 @@ class UnionStory:
     @staticmethod
     def _merge_storys(storys, user_storys, *, user_id, user_feeds=None, detail=False):
         user_storys_map = {(x.feed_id, x.offset): x for x in user_storys}
+        user_storys_map_fallback = {x.story_id: x for x in user_storys}
         if user_feeds:
             user_feeds_map = {x.feed_id: x.id for x in user_feeds}
         else:
@@ -200,6 +203,12 @@ class UnionStory:
         ret = []
         for story in storys:
             user_story = user_storys_map.get((story.feed_id, story.offset))
+            # FIXME: 旧版的story是根据id关联到user_story，由于feed merge问题，特殊处理
+            # 但是feed merge之后，新feed的offset可能不一致，还是会有story匹配错误
+            if not user_story:
+                story_id = getattr(story, 'id', None)
+                if story_id is not None:
+                    user_story = user_storys_map_fallback.get(story_id)
             user_feed_id = user_feeds_map.get(story.feed_id)
             ret.append(UnionStory(
                 story,
