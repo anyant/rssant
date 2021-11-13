@@ -43,7 +43,9 @@ beautifulsoup4==4.8.2
     #   bs4
     #   pynliner
 brotli==1.0.7
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   geventhttpclient
 bs4==0.0.1
     # via -r requirements.in
 cchardet==2.1.6
@@ -169,8 +171,10 @@ gevent==21.1.0
     # via
     #   geventhttpclient
     #   locust
-geventhttpclient==1.4.5
-    # via locust
+geventhttpclient==1.5.3
+    # via
+    #   -r requirements.in
+    #   locust
 graphviz==0.13
     # via
     #   -r requirements.in
