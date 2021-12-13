@@ -34,7 +34,7 @@ cchardet==2.1.6
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
 atoma==0.0.17
 python-dateutil==2.8.1
-lxml==4.6.3
+lxml==4.6.5
 bs4==0.0.1
 beautifulsoup4==4.8.2
 pynliner==0.8.0
