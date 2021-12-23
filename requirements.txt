@@ -115,7 +115,7 @@ devtools==0.5.1
     # via aiohttp-devtools
 distlib==0.3.0
     # via virtualenv
-django==2.2.24
+django==2.2.25
     # via
     #   -r requirements.in
     #   django-allauth
