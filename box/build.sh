@@ -21,4 +21,4 @@ git pull --ff-only
 popd || exit 1
 
 # shellcheck disable=SC2068
-docker build -f box/Dockerfile -t guyskk/rssant:latest . $@
+docker build -f box/Dockerfile . $@
