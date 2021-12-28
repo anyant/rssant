@@ -7,6 +7,7 @@ from aiohttp import HttpVersion11
 
 from rssant_common.dns_service import DNS_SERVICE, PrivateAddressError
 from rssant_common.helper import get_referer_of_url, aiohttp_client_session
+from rssant_config.env import CONFIG
 from rssant_feedlib.reader import DEFAULT_USER_AGENT
 from rssant_feedlib.blacklist import compile_url_blacklist
 
@@ -90,6 +91,8 @@ def _is_chunked_response(response) -> bool:
 
 
 async def image_proxy(request, url, referer=None):
+    if not CONFIG.image_proxy_enable:
+        return json_response({'message': '404 Not Found / disabled'}, status=404)
     handler = ImageProxyHandler(request, url=url, referer=referer)
     return await handler.proxy()
 

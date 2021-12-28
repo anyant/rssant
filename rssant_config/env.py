@@ -97,7 +97,8 @@ class EnvConfig(ConfigModel):
     shopant_product_id: int = T.int.optional
     shopant_product_secret: str = T.str.optional
     shopant_url: str = T.url.relaxed.optional
-    # image token
+    # image proxy
+    image_proxy_enable: bool = T.bool.default(True)
     image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('12h')
     detect_story_image_enable: bool = T.bool.default(False)
