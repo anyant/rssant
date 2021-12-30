@@ -4,7 +4,7 @@ ARG NPM_REGISTERY="--registry=https://registry.npmmirror.com"
 
 WORKDIR /app
 COPY box/web/package*.json ./
-RUN npm clean-install --loglevel info ${NPM_REGISTERY}
+RUN npm clean-install --no-audit --loglevel info ${NPM_REGISTERY}
 COPY box/web .
 RUN npm run build
 
