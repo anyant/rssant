@@ -14,8 +14,7 @@ import rssant_common.django_setup  # noqa:F401
 from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_api.helper import reverse_url
 from rssant_common import _proxy_helper
-from rssant_common.helper import format_table, get_referer_of_url, pretty_format_json
-from rssant_common.image_url import encode_image_url
+from rssant_common.helper import format_table, pretty_format_json
 from rssant_feedlib.reader import FeedResponseStatus, FeedReader
 from rssant_common import unionid
 from rssant_feedlib import processor
@@ -200,14 +199,6 @@ def decode_unionid(unionid_text):
         click.echo('user_id={} feed_id={}'.format(*numbers))
     else:
         click.echo(numbers)
-
-
-@main.command()
-@click.argument('url')
-def proxy_image(url):
-    referer = get_referer_of_url(url)
-    token = encode_image_url(url, referer)
-    click.echo(token)
 
 
 @main.command()
