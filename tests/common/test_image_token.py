@@ -10,10 +10,11 @@ referrer = 'https://www.example.com/page/1.html'
 
 
 def test_encode_decode():
-    token = ImageToken(referrer=referrer)
+    token = ImageToken(referrer=referrer, owner='test123')
     assert repr(token)
     got = ImageToken.decode(token.encode(secret='test'), secret='test')
     assert got.referrer == referrer
+    assert got.owner == 'test123'
     assert got.timestamp == token.timestamp
 
 
@@ -33,7 +34,10 @@ def test_decode_signature():
 def test_decode_expires():
     timestamp = 1600000000
     token = ImageToken(timestamp=timestamp).encode(secret='test')
-    def clock(): return 1600001000
+
+    def clock():
+        return 1600001000
+
     got = ImageToken.decode(token, secret='test', expires=1001, clock=clock)
     assert got.timestamp == timestamp
     with pytest.raises(ImageTokenExpiredError):
@@ -41,7 +45,7 @@ def test_decode_expires():
 
 
 def test_performance():
-    token = ImageToken(referrer=referrer)
+    token = ImageToken(referrer=referrer, owner='test123')
     t0 = time.time()
     for i in range(1000):
         ImageToken.decode(token.encode(secret='test'), secret='test')

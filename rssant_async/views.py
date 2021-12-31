@@ -1,5 +1,6 @@
 from validr import T
 from aiohttp.web import json_response
+from aiohttp.web_request import Request
 
 from rssant_common.image_url import decode_image_url, ImageUrlDecodeError
 from rssant_common.image_token import ImageToken, ImageTokenDecodeError
@@ -14,14 +15,18 @@ IMAGE_OWNER_COOKIE = 'rssant-image-owner'
 
 
 @routes.get('/image/proxy')
-async def image_proxy_view_v2(request, token: T.str, url: T.url):
+async def image_proxy_view_v2(request: Request, token: T.str, url: T.url):
     try:
-        token = ImageToken.decode(
+        image_token = ImageToken.decode(
             token, secret=CONFIG.image_token_secret,
             expires=CONFIG.image_token_expires)
     except ImageTokenDecodeError as ex:
         return json_response({'message': str(ex)}, status=400)
-    response = await image_proxy(request, url, token.referrer)
+    owner = request.cookies.get(IMAGE_OWNER_COOKIE)
+    if (not image_token.owner) or image_token.owner != owner:
+        err_msg = '403 Forbidden Access / not owner'
+        return json_response({'message': err_msg}, status=403)
+    response = await image_proxy(request, url, image_token.referrer)
     return response
 
 

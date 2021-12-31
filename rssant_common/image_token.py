@@ -10,6 +10,7 @@ from rssant_common.validator import compiler
 validate_image_token = compiler.compile(T.dict(
     timestamp=T.int,
     referrer=T.url.optional,
+    owner=T.str.optional,
 ))
 
 
@@ -27,12 +28,19 @@ class ImageTokenExpiredError(ImageTokenDecodeError):
 
 class ImageToken:
 
-    def __init__(self, *, referrer: str = None, timestamp: int = None):
+    def __init__(
+        self, *,
+        referrer: str = None,
+        timestamp: int = None,
+        owner: str = None,
+    ):
         self.referrer = (referrer or '')[:255]
         self.timestamp = timestamp or int(time.time())
+        self.owner = owner or ''
 
     def __repr__(self):
-        return '<{} referrer={!r} @{}>'.format(type(self).__name__, self.referrer, self.timestamp)
+        return '<{} referrer={!r} owner={!r} @{}>'.format(
+            type(self).__name__, self.referrer, self.owner, self.timestamp)
 
     @staticmethod
     def _b64encode(data: bytes) -> str:
@@ -63,6 +71,7 @@ class ImageToken:
             payload = validate_image_token(dict(
                 referrer=self.referrer,
                 timestamp=self.timestamp,
+                owner=self.owner,
             ))
             text = self._encode_payload(payload)
             return text + '.' + self._sign(text, secret=secret)
