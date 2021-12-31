@@ -22,6 +22,10 @@ UserSchema = T.dict(
         avatar_url=T.str.optional,
     )).optional,
     shopant_enable=T.bool.default(False),
+    image_proxy=T.dict(
+        enable=T.bool,
+        url_s=T.list(T.str).optional,
+    )
 )
 
 UserView = RestRouter(permission_classes=[AllowAny])
@@ -40,6 +44,9 @@ def serialize_user(user):
         ))
     token, created = Token.objects.get_or_create(user=user)
     has_usable_password = user.password and user.has_usable_password()
+    image_proxy = dict(enable=CONFIG.image_proxy_enable, url_s=None)
+    if CONFIG.image_proxy_enable:
+        image_proxy.update(url_s=CONFIG.image_proxy_url_list)
     return dict(
         id=HASH_ID.encode(user.id),
         username=user.username,
@@ -48,6 +55,7 @@ def serialize_user(user):
         token=token.key,
         social_accounts=social_accounts_info,
         shopant_enable=CONFIG.shopant_enable,
+        image_proxy=image_proxy
     )
 
 

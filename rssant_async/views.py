@@ -10,6 +10,8 @@ from .image_proxy import image_proxy
 
 routes = ValidrRouteTableDef()
 
+IMAGE_OWNER_COOKIE = 'rssant-image-owner'
+
 
 @routes.get('/image/proxy')
 async def image_proxy_view_v2(request, token: T.str, url: T.url):
@@ -20,6 +22,18 @@ async def image_proxy_view_v2(request, token: T.str, url: T.url):
     except ImageTokenDecodeError as ex:
         return json_response({'message': str(ex)}, status=400)
     response = await image_proxy(request, url, token.referrer)
+    return response
+
+
+@routes.get('/image/active-proxy')
+async def image_proxy_active(request, user_id: T.str.maxlen(32)):
+    response = json_response({'message': 'OK'})
+    response.set_cookie(
+        IMAGE_OWNER_COOKIE,
+        user_id,
+        path='/api/v1/image',
+        httponly=True,
+    )
     return response
 
 

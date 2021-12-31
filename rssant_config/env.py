@@ -99,6 +99,7 @@ class EnvConfig(ConfigModel):
     shopant_url: str = T.url.relaxed.optional
     # image proxy
     image_proxy_enable: bool = T.bool.default(True)
+    image_proxy_urls: bool = T.str.default('origin').desc('逗号分隔的URL列表')
     image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('12h')
     detect_story_image_enable: bool = T.bool.default(False)
@@ -208,6 +209,11 @@ class EnvConfig(ConfigModel):
     @cached_property
     def standby_domain_set(self) -> set:
         return set((self.standby_domains or '').strip().split(','))
+
+    @cached_property
+    def image_proxy_url_list(self) -> list:
+        url_s = (self.image_proxy_urls or '').strip().split(',')
+        return list(sorted(set(url_s)))
 
 
 def load_env_config() -> EnvConfig:
