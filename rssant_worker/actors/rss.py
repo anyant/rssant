@@ -23,8 +23,12 @@ from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.models import FeedStatus
 from rssant_api.helper import shorten
 from rssant_config import CONFIG
+from rssant_common.rss import (
+    validate_feed as _validate_feed,
+    validate_story as _validate_story,
+    get_story_of_feed_entry,
+)
 from rssant_common import _proxy_helper
-from rssant_common.validator import compiler
 from rssant_common.dns_service import DNS_SERVICE
 
 
@@ -34,48 +38,6 @@ LOG = logging.getLogger(__name__)
 _MAX_STORY_HTML_LENGTH = 5 * 1000 * 1024
 _MAX_STORY_CONTENT_LENGTH = 1000 * 1024
 _MAX_STORY_SUMMARY_LENGTH = 300
-
-
-StorySchema = T.dict(
-    unique_id=T.str,
-    title=T.str,
-    content_hash_base64=T.str,
-    author=T.str.optional,
-    link=T.url.optional,
-    image_url=T.url.optional,
-    iframe_url=T.url.optional,
-    audio_url=T.url.optional,
-    has_mathjax=T.bool.optional,
-    dt_published=T.datetime.optional,
-    dt_updated=T.datetime.optional,
-    summary=T.str.optional,
-    content=T.str.optional,
-    sentence_count=T.int.min(0).optional,
-)
-
-FeedSchema = T.dict(
-    url=T.url,
-    use_proxy=T.bool.default(False),
-    title=T.str,
-    content_length=T.int,
-    content_hash_base64=T.str,
-    link=T.url.optional,
-    author=T.str.optional,
-    icon=T.str.optional,
-    description=T.str.optional,
-    version=T.str.optional,
-    dt_updated=T.datetime.optional,
-    encoding=T.str.optional,
-    etag=T.str.optional,
-    last_modified=T.str.optional,
-    response_status=T.int.optional,
-    checksum_data=T.bytes.maxlen(4096).optional,
-    warnings=T.str.optional,
-    storys=T.list,
-)
-
-_validate_feed = compiler.compile(FeedSchema)
-_validate_story = compiler.compile(StorySchema)
 
 
 def validate_feed(feed):
@@ -390,30 +352,6 @@ def _get_storys(entries: list):
     storys = []
     now = timezone.now()
     for data in entries:
-        story = {}
-        content = data['content']
-        summary = data['summary']
-        title = data['title']
-        story['has_mathjax'] = data['has_mathjax']
-        story['link'] = data['url']
-        story['image_url'] = data['image_url']
-        story['audio_url'] = data['audio_url']
-        story['iframe_url'] = data['iframe_url']
-        story['summary'] = summary
-        story['content'] = content
-        story['sentence_count'] = _compute_sentence_count(content)
-        content_hash_base64 = compute_hash_base64(content, summary, title)
-        story['title'] = title
-        story['content_hash_base64'] = content_hash_base64
-        story['unique_id'] = data['ident']
-        story['author'] = data["author_name"]
-        dt_published = data['dt_published']
-        dt_updated = data['dt_updated']
-        story['dt_published'] = min(dt_published or dt_updated or now, now)
-        story['dt_updated'] = min(dt_updated or dt_published or now, now)
+        story = get_story_of_feed_entry(data, now=now)
         storys.append(story)
     return storys
-
-
-def _compute_sentence_count(content: str) -> int:
-    return len(split_sentences(story_html_to_text(content)))
