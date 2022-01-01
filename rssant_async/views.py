@@ -1,9 +1,12 @@
+import os
 from validr import T
 from aiohttp.web import json_response
 from aiohttp.web_request import Request
 
+from rssant_common import timezone
 from rssant_common.image_token import ImageToken, ImageTokenDecodeError
 from rssant_config import CONFIG
+
 from .rest_validr import ValidrRouteTableDef
 from .image_proxy import image_proxy
 
@@ -39,3 +42,16 @@ async def image_proxy_active(request, user_id: T.str.maxlen(32)):
         httponly=True,
     )
     return response
+
+
+@routes.get('/image/_health')
+async def get_health(request):
+    build_id = os.getenv('RSSANT_BUILD_ID')
+    commit_id = os.getenv('RSSANT_COMMIT_ID')
+    now = timezone.now().isoformat()
+    info = dict(
+        build_id=build_id,
+        commit_id=commit_id,
+        now=now,
+    )
+    return json_response(info)

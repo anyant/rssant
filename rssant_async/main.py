@@ -24,11 +24,13 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 @click.command()
 @click.option('--bind', type=str, default='0.0.0.0:6786')
 @click.option('--workers', type=int, default=1)
-def main(bind: str, workers: int):
+@click.option('--keep-alive', type=int, default=2)
+def main(bind: str, workers: int, keep_alive: int):
     """Run rssant async server."""
     options = {
         'bind': bind,
         'workers': workers,
+        'keepalive': keep_alive,
         'worker_class': 'aiohttp.GunicornWebWorker',
         'forwarded_allow_ips': '*',
         'accesslog': '-',
