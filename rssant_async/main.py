@@ -1,35 +1,44 @@
-from aiohttp import web
-from aiojobs.aiohttp import setup as setup_aiojobs
-import sentry_sdk
-from sentry_sdk.integrations.aiohttp import AioHttpIntegration
-import backdoor
+import click
+import gunicorn.app.base
 
-from rssant_config import CONFIG
-from rssant_common.logger import configure_logging
-from rssant_common.helper import is_main_or_wsgi
-
-from .views import routes
+from .app import create_app
 
 
-def create_app():
-    configure_logging(level=CONFIG.log_level)
-    backdoor.setup()
-    if CONFIG.sentry_enable:
-        sentry_sdk.init(
-            dsn=CONFIG.sentry_dsn,
-            integrations=[AioHttpIntegration()]
-        )
-    api = web.Application()
-    api.router.add_routes(routes)
-    app = web.Application()
-    app.add_subapp('/api/v1', api)
-    setup_aiojobs(app, limit=5000, pending_limit=5000)
-    return app
+class StandaloneApplication(gunicorn.app.base.BaseApplication):
+
+    def __init__(self, app, options=None):
+        self.options = options or {}
+        self.application = app
+        super().__init__()
+
+    def load_config(self):
+        for key, value in self.options.items():
+            if key not in self.cfg.settings:
+                raise ValueError(f'Unknown gunicorn option {key!r}')
+            self.cfg.set(key, value)
+
+    def load(self):
+        return self.application
 
 
-if is_main_or_wsgi(__name__):
-    app = create_app()
+@click.command()
+@click.option('--bind', type=str, default='0.0.0.0:6786')
+@click.option('--workers', type=int, default=1)
+def main(bind: str, workers: int):
+    """Run rssant async server."""
+    options = {
+        'bind': bind,
+        'workers': workers,
+        'worker_class': 'aiohttp.GunicornWebWorker',
+        'forwarded_allow_ips': '*',
+        'accesslog': '-',
+        'errorlog': '-',
+        'loglevel': 'info',
+    }
+    wsgi_app = create_app()
+    server = StandaloneApplication(wsgi_app, options)
+    server.run()
 
 
 if __name__ == "__main__":
-    web.run_app(app, port=6786)
+    main()

@@ -7,9 +7,9 @@ from aiohttp import HttpVersion11
 
 from rssant_common.dns_service import DNS_SERVICE, PrivateAddressError
 from rssant_common.helper import get_referer_of_url, aiohttp_client_session
+from rssant_common.useragent import DEFAULT_USER_AGENT
+from rssant_common.blacklist import compile_url_blacklist
 from rssant_config.env import CONFIG
-from rssant_feedlib.reader import DEFAULT_USER_AGENT
-from rssant_feedlib.blacklist import compile_url_blacklist
 
 
 LOG = logging.getLogger(__name__)

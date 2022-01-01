@@ -7,12 +7,12 @@ from validr import Compiler
 from prometheus_client import Info
 
 from rssant_common.helper import pretty_format_json
+from rssant_common.network_helper import get_localhost_network
 
 from .actor import Actor, collect_actors
 from .executor import ActorExecutor
 from .registery import ActorRegistery
 from .receiver import MessageReceiver
-from .network_helper import get_localhost_network
 from .queue import ActorMessageQueue
 from .storage import ActorLocalStorage
 from .client import ActorClient

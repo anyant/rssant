@@ -1,18 +1,17 @@
 import os
-import json
 import time
 import logging
 import socket
 import contextlib
 import asyncio
+import datetime
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from terminaltables import AsciiTable
-from django.core.serializers.json import DjangoJSONEncoder
-from django.utils import timezone
 
+from .json import pretty_format_json  # noqa
 
 LOG = logging.getLogger(__name__)
 
@@ -22,15 +21,6 @@ def is_main_or_wsgi(name):
     is_wsgi = bool(os.getenv('SERVER_WSGI'))
     is_run_main = bool(os.getenv('RUN_MAIN'))
     return name == '__main__' or is_gunicorn or is_wsgi or is_run_main
-
-
-def pretty_format_json(data):
-    """
-    >>> import datetime
-    >>> now = datetime.datetime.now()
-    >>> assert pretty_format_json({"key": 123, "date": now})
-    """
-    return json.dumps(data, ensure_ascii=False, indent=4, cls=DjangoJSONEncoder)
 
 
 def format_table(rows, *, header=None, border=True):
@@ -128,6 +118,6 @@ def timer(name, response=None):
                 response[f'X-{name}-Time'] = f'{cost:.0f}ms'
 
 
-def to_timezone_cst(dt: timezone.datetime) -> timezone.datetime:
-    delta = timezone.timedelta(hours=8)
-    return dt.astimezone(timezone.timezone(delta))
+def to_timezone_cst(dt: datetime.datetime) -> datetime.datetime:
+    delta = datetime.timedelta(hours=8)
+    return dt.astimezone(datetime.timezone(delta))

@@ -4,18 +4,18 @@ from functools import cached_property
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from validr import T, modelclass, fields, Invalid
+from validr import T, Compiler, modelclass, fields, Invalid
 
-from rssant_common.validator import compiler
-from actorlib.network_helper import LOCAL_NODE_NAME
+from rssant_common.network_helper import LOCAL_NODE_NAME
 
 
 MAX_FEED_COUNT = 5000
 
 
+compiler = Compiler()
 validate_extra_networks = compiler.compile(T.list(T.dict(
     name=T.str,
-    url=T.url.relaxed,
+    url=T.url,
 )))
 
 
@@ -35,10 +35,10 @@ class EnvConfig(ConfigModel):
     profiler_enable: bool = T.bool.default(False).desc('enable profiler or not')
     debug_toolbar_enable: bool = T.bool.default(False).desc('enable debug toolbar or not')
     log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
-    root_url: str = T.url.relaxed.default('http://localhost:6789')
+    root_url: str = T.url.default('http://localhost:6789')
     standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
-    scheduler_url: str = T.url.relaxed.default('http://localhost:6790/api/v1/scheduler')
+    scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')
     scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
     secret_key: str = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
     allow_private_address: bool = T.bool.default(False)
@@ -75,11 +75,11 @@ class EnvConfig(ConfigModel):
     smtp_password: str = T.str.optional
     smtp_use_ssl: bool = T.bool.default(False)
     # rss proxy
-    rss_proxy_url: str = T.url.relaxed.optional
+    rss_proxy_url: str = T.url.optional
     rss_proxy_token: str = T.str.optional
     rss_proxy_enable: bool = T.bool.default(False)
     # http proxy or socks proxy
-    proxy_url: str = T.url.relaxed.scheme('http https socks5').optional
+    proxy_url: str = T.url.scheme('http https socks5').optional
     proxy_enable: bool = T.bool.default(False)
     # analytics matomo
     analytics_matomo_enable: bool = T.bool.default(False)
@@ -96,7 +96,7 @@ class EnvConfig(ConfigModel):
     shopant_enable: bool = T.bool.default(False)
     shopant_product_id: int = T.int.optional
     shopant_product_secret: str = T.str.optional
-    shopant_url: str = T.url.relaxed.optional
+    shopant_url: str = T.url.optional
     # image proxy
     image_proxy_enable: bool = T.bool.default(True)
     image_proxy_urls: bool = T.str.default('origin').desc('逗号分隔的URL列表')

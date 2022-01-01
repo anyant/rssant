@@ -88,6 +88,7 @@ pytest-cov==2.8.1
 pytest-httpserver==0.3.4
 flake8==3.7.9
 pycodestyle==2.5.0
+isort==5.10.1
 coverage==4.5.4
 flask==1.1.2
 autopep8==1.5
@@ -99,7 +100,7 @@ pyzmq==20.0.0
 # package
 pip-tools==5.5.0
 pipdeptree==0.13.2
-shiv==0.1.1
+pyinstaller==4.7
 
 # backdoor
 psutil==5.6.7

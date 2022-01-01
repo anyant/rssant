@@ -5,7 +5,6 @@ from collections import ChainMap
 from validr import Compiler, Invalid
 from aiohttp.web import RouteTableDef, StreamResponse, Response, json_response
 
-from rssant_common.validator import VALIDATORS
 from rssant_common.signature import get_params, get_returns
 
 
@@ -13,7 +12,7 @@ class ValidrRouteTableDef(RouteTableDef):
 
     def __init__(self):
         super().__init__()
-        self._schema_compiler = Compiler(validators=VALIDATORS)
+        self._schema_compiler = Compiler()
 
     @staticmethod
     def _response_from_invalid(ex):

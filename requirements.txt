@@ -19,6 +19,10 @@ aiohttp==3.7.4
     #   aiohttp-socks
 aiojobs==0.3.0
     # via -r requirements.in
+altgraph==0.17.2
+    # via
+    #   macholib
+    #   pyinstaller
 appdirs==1.4.4
     # via virtualenv
 async-timeout==3.0.1
@@ -79,7 +83,6 @@ click==7.1.1
     #   pgcli
     #   pgspecial
     #   pip-tools
-    #   shiv
 configargparse==1.2.3
     # via locust
 configobj==5.0.6
@@ -194,6 +197,8 @@ idna==2.8
     #   requests
     #   validr
     #   yarl
+isort==5.10.1
+    # via -r requirements.in
 itsdangerous==1.1.0
     # via flask
 itypes==1.1.0
@@ -214,6 +219,8 @@ lxml==4.6.5
     #   readability-lxml
 lz4==3.1.0
     # via -r requirements.in
+macholib==1.15.2
+    # via pyinstaller
 mako==1.1.2
     # via -r requirements.in
 markdown==3.2.1
@@ -300,6 +307,10 @@ pygments==2.7.4
     #   aiohttp-devtools
     #   cli-helpers
     #   pgcli
+pyinstaller-hooks-contrib==2021.4
+    # via pyinstaller
+pyinstaller==4.7
+    # via -r requirements.in
 pyinstrument-cext==0.2.2
     # via
     #   -r requirements.in
@@ -381,8 +392,6 @@ setproctitle==1.1.10
     # via pgcli
 sgmllib3k==1.0.0
     # via feedparser
-shiv==0.1.1
-    # via -r requirements.in
 shopant-sdk==0.0.3
     # via -r requirements.in
 simplejson==3.16.0

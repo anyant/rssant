@@ -11,8 +11,8 @@ from validr import T, Invalid
 
 from rssant_common.helper import coerce_url
 from rssant_common.validator import compiler
+from rssant_common.blacklist import compile_url_blacklist
 from .schema import validate_opml, IMPORT_ITEMS_LIMIT
-from .blacklist import compile_url_blacklist
 from .helper import RE_URL
 
 

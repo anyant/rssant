@@ -7,8 +7,9 @@ from threading import RLock
 from validr import T
 from functools import cached_property
 
+from rssant_common.network_helper import LOCAL_NODE_NAME
+
 from .actor import Actor
-from .network_helper import LOCAL_NODE_NAME
 from .helper import generate_message_id
 from .message import ActorMessage
 

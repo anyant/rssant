@@ -3,11 +3,10 @@ import base64
 import json
 import hmac
 import brotli
-from validr import T, Invalid
-from rssant_common.validator import compiler
+from validr import T, Invalid, Compiler
 
 
-validate_image_token = compiler.compile(T.dict(
+validate_image_token = Compiler().compile(T.dict(
     timestamp=T.int,
     referrer=T.url.optional,
     owner=T.str.optional,
