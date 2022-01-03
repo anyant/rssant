@@ -17,7 +17,11 @@ IMAGE_OWNER_COOKIE = 'rssant-image-owner'
 
 
 @routes.get('/image/proxy')
-async def image_proxy_view_v2(request: Request, token: T.str, url: T.url):
+async def image_proxy_view_v2(
+    request: Request,
+    token: T.str,
+    url: T.url.maxlen(4096),
+):
     try:
         image_token = ImageToken.decode(
             token, secret=CONFIG.image_token_secret,
