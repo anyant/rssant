@@ -44,6 +44,8 @@ async def image_proxy_active(request, user_id: T.str.maxlen(32)):
         user_id,
         path='/api/v1/image',
         httponly=True,
+        samesite='None',
+        secure=True,
     )
     return response
 
