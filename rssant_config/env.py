@@ -101,7 +101,7 @@ class EnvConfig(ConfigModel):
     image_proxy_enable: bool = T.bool.default(True)
     image_proxy_urls: bool = T.str.default('origin').desc('逗号分隔的URL列表')
     image_token_secret: str = T.str.default('rssant')
-    image_token_expires: float = T.timedelta.min('1s').default('1h')
+    image_token_expires: float = T.timedelta.min('1s').default('30m')
     detect_story_image_enable: bool = T.bool.default(False)
     # hashid salt
     hashid_salt: str = T.str.default('rssant')

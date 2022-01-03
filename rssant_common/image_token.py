@@ -7,9 +7,10 @@ from validr import T, Invalid, Compiler
 
 
 validate_image_token = Compiler().compile(T.dict(
-    timestamp=T.int,
+    timestamp=T.int.min(0),
     referrer=T.url.optional,
-    owner=T.str.optional,
+    feed=T.int.min(0).optional.desc('feed id'),
+    offset=T.int.min(0).optional.desc('story offset'),
 ))
 
 
@@ -31,15 +32,20 @@ class ImageToken:
         self, *,
         referrer: str = None,
         timestamp: int = None,
-        owner: str = None,
+        feed: int = None,
+        offset: int = None,
     ):
         self.referrer = (referrer or '')[:255]
         self.timestamp = timestamp or int(time.time())
-        self.owner = owner or ''
+        self.feed = feed
+        self.offset = offset
 
     def __repr__(self):
-        return '<{} referrer={!r} owner={!r} @{}>'.format(
-            type(self).__name__, self.referrer, self.owner, self.timestamp)
+        type_name = type(self).__name__
+        feed = self.feed if self.feed is not None else '#'
+        offset = self.offset if self.offset is not None else '#'
+        return (f'<{type_name} referrer={self.referrer!r} '
+                f'story={feed}:{offset} @{self.timestamp}>')
 
     @staticmethod
     def _b64encode(data: bytes) -> str:
@@ -70,7 +76,8 @@ class ImageToken:
             payload = validate_image_token(dict(
                 referrer=self.referrer,
                 timestamp=self.timestamp,
-                owner=self.owner,
+                feed=self.feed,
+                offset=self.offset,
             ))
             text = self._encode_payload(payload)
             return text + '.' + self._sign(text, secret=secret)

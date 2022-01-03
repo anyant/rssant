@@ -2,7 +2,7 @@ import json
 import datetime
 
 
-def _is_aware(value):
+def _is_timezone_aware(value):
     """
     Determine if a given datetime.datetime is aware.
 
@@ -33,7 +33,7 @@ class RssantJSONEncoder(json.JSONEncoder):
         elif isinstance(o, datetime.date):
             return o.isoformat()
         elif isinstance(o, datetime.time):
-            if _is_aware(o):
+            if _is_timezone_aware(o):
                 raise ValueError("JSON can't represent timezone-aware times.")
             r = o.isoformat()
             if o.microsecond:

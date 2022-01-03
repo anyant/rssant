@@ -10,11 +10,20 @@ referrer = 'https://www.example.com/page/1.html'
 
 
 def test_encode_decode():
-    token = ImageToken(referrer=referrer, owner='test123')
+    token = ImageToken(referrer=referrer)
     assert repr(token)
     got = ImageToken.decode(token.encode(secret='test'), secret='test')
     assert got.referrer == referrer
-    assert got.owner == 'test123'
+    assert got.feed is None
+    assert got.offset is None
+    assert got.timestamp == token.timestamp
+
+    token = ImageToken(referrer=referrer, feed=123, offset=0)
+    assert repr(token)
+    got = ImageToken.decode(token.encode(secret='test'), secret='test')
+    assert got.referrer == referrer
+    assert got.feed == 123
+    assert got.offset == 0
     assert got.timestamp == token.timestamp
 
 
@@ -45,7 +54,7 @@ def test_decode_expires():
 
 
 def test_performance():
-    token = ImageToken(referrer=referrer, owner='test123')
+    token = ImageToken(referrer=referrer, feed=123, offset=0)
     t0 = time.time()
     for i in range(1000):
         ImageToken.decode(token.encode(secret='test'), secret='test')

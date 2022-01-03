@@ -13,8 +13,6 @@ from .image_proxy import image_proxy
 
 routes = ValidrRouteTableDef()
 
-IMAGE_OWNER_COOKIE = 'rssant-image-owner'
-
 
 @routes.get('/image/proxy')
 async def image_proxy_view_v2(

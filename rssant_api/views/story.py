@@ -10,7 +10,6 @@ from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError, Feed
 from rssant_api.models.helper import ConcurrentUpdateError
 from rssant_api.models import UnionStory, UnionFeed
 from rssant_api.models.story import StoryDetailSchema
-from rssant_common.hashid import HASH_ID
 from rssant_feedlib import FeedResponseStatus
 from rssant_feedlib.fulltext import FulltextAcceptStrategy
 from rssant_common.image_token import ImageToken
@@ -158,9 +157,11 @@ def story_get_by_offset(
             return Response({'message': str(ex)}, status=400)
         except ConcurrentUpdateError as ex:
             LOG.error(f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex)
-    image_owner = HASH_ID.encode(request.user.id)
-    image_token = ImageToken(referrer=story.link, owner=image_owner)\
-        .encode(secret=CONFIG.image_token_secret)
+    image_token = ImageToken(
+        referrer=story.link,
+        feed=feed_unionid.feed_id,
+        offset=offset,
+    ).encode(secret=CONFIG.image_token_secret)
     ret = story.to_dict()
     ret.update(image_token=image_token)
     return ret
