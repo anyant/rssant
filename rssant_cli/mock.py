@@ -45,7 +45,7 @@ def _create_test_story(
     )
     story_entry = validate_story(story_entry)
     story = get_story_of_feed_entry(story_entry)
-    STORY_SERVICE.bulk_save_by_feed(feed.id, [story])
+    STORY_SERVICE.bulk_save_by_feed(feed.id, [story], is_refresh=True)
 
 
 @click.group()
@@ -60,7 +60,8 @@ def main():
 @click.option('--content', type=str, required=False, help='story content')
 @click.option('--summary', type=str, required=False, help='story summary')
 @click.option('--title', type=str, required=False, help='story title')
-def story(ident: str, content: str, summary: str, title: str):
+@click.option('--image-url', type=str, required=False, help='story image url')
+def story(ident: str, content: str, summary: str, title: str, image_url: str):
     """创建测试Story"""
     if not ident:
         ident = timezone.now().strftime('%Y-%m%d-%H%M%S')
@@ -75,6 +76,7 @@ def story(ident: str, content: str, summary: str, title: str):
         content=content,
         summary=summary,
         title=title,
+        image_url=image_url,
     )
     click.echo(f'story created: {ident} {title}')
 
