@@ -12,6 +12,9 @@ RUN bash rssant_async_build.sh && \
 
 FROM --platform=linux/amd64 debian:buster-slim as runtime
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    update-ca-certificates
 
 FROM --platform=linux/amd64 runtime as check
 COPY --from=build /code/dist/rssant_async_main /usr/app
