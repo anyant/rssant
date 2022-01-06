@@ -2,7 +2,7 @@
 
 set -e
 
-IS_PUSH=$1
+IS_DEPLOY=$1
 RSSANT_BUILD_ID="$(date -u +%Y%m%d-%H%M%S)-$(openssl rand 2 -hex)"
 RSSANT_COMMIT_ID=$(git rev-parse --verify HEAD)
 echo "RSSANT_BUILD_ID=$RSSANT_BUILD_ID"
@@ -19,6 +19,7 @@ docker build \
 docker tag "$IMAGE_TAG" rssant/async-api:latest
 
 echo "Build Success! Push by: docker push $IMAGE_TAG"
-if [ "$IS_PUSH" == '--push' ]; then
+if [ "$IS_DEPLOY" == '--deploy' ]; then
     docker push "$IMAGE_TAG"
+    python deploy/rssant_async/aliyun_fc_deploy.py "$RSSANT_BUILD_ID"
 fi
