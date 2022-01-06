@@ -19,6 +19,8 @@ aiohttp==3.7.4
     #   aiohttp-socks
 aiojobs==0.3.0
     # via -r requirements.in
+aliyun-fc2==2.5.0
+    # via -r requirements.in
 altgraph==0.17.2
     # via
     #   macholib
@@ -381,6 +383,7 @@ requests-oauthlib==1.2.0
 requests==2.26.0
     # via
     #   -r requirements.in
+    #   aliyun-fc2
     #   coreapi
     #   django-allauth
     #   locust

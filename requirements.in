@@ -102,6 +102,9 @@ pip-tools==5.5.0
 pipdeptree==0.13.2
 pyinstaller==4.7
 
+# deploy
+aliyun-fc2==2.5.0
+
 # backdoor
 psutil==5.6.7
 objgraph==3.4.1
