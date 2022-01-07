@@ -27,15 +27,15 @@ altgraph==0.17.2
     #   pyinstaller
 anyio==3.4.0
     # via httpcore
-appdirs==1.4.4
-    # via virtualenv
+asttokens==2.0.5
+    # via devtools
 async-timeout==3.0.1
     # via
     #   aiohttp
     #   python-socks
 atoma==0.0.17
     # via -r requirements.in
-attrs==19.3.0
+attrs==21.4.0
     # via
     #   aiohttp
     #   aiohttp-socks
@@ -64,24 +64,24 @@ certifi==2020.6.20
     #   httpx
     #   requests
     #   sentry-sdk
-cffi==1.13.0
+cffi==1.15.0
     # via
     #   cryptography
     #   pycares
-cfgv==3.1.0
+cfgv==3.3.1
     # via pre-commit
 chardet==3.0.4
     # via
     #   -r requirements.in
     #   aiohttp
     #   readability-lxml
-charset-normalizer==2.0.4
+charset-normalizer==2.0.10
     # via
     #   httpx
     #   requests
-cli-helpers[styles]==2.1.0
+cli-helpers[styles]==2.2.0
     # via pgcli
-click==7.1.1
+click==7.1.2
     # via
     #   -r requirements.in
     #   aiohttp-devtools
@@ -89,7 +89,7 @@ click==7.1.1
     #   pgcli
     #   pgspecial
     #   pip-tools
-configargparse==1.2.3
+configargparse==1.5.3
     # via locust
 configobj==5.0.6
     # via
@@ -112,17 +112,17 @@ cryptography==3.3.2
     #   pyopenssl
 cssselect==1.1.0
     # via readability-lxml
-cssutils==1.0.2
+cssutils==2.3.0
     # via pynliner
-decorator==4.4.0
+decorator==5.1.0
     # via validators
-defusedxml==0.6.0
+defusedxml==0.7.1
     # via
     #   atoma
     #   python3-openid
-devtools==0.5.1
+devtools==0.8.0
     # via aiohttp-devtools
-distlib==0.3.0
+distlib==0.3.4
     # via virtualenv
 django-allauth==0.44.0
     # via -r requirements.in
@@ -142,7 +142,7 @@ django-seal==1.2.3
     # via -r requirements.in
 django-timezone-field==4.0
     # via -r requirements.in
-django==2.2.25
+django==2.2.26
     # via
     #   -r requirements.in
     #   django-allauth
@@ -161,22 +161,24 @@ djangorestframework==3.12.2
     #   django-rest-swagger
 entrypoints==0.3
     # via flake8
+executing==0.8.2
+    # via devtools
 fake-useragent==0.1.11
     # via -r requirements.in
 feedparser==6.0.0b3
     # via -r requirements.in
-filelock==3.0.12
+filelock==3.4.2
     # via virtualenv
 flake8==3.7.9
     # via -r requirements.in
 flask-basicauth==0.2.0
     # via locust
-flask==1.1.2
+flask==2.0.2
     # via
     #   -r requirements.in
     #   flask-basicauth
     #   locust
-gevent==21.1.0
+gevent==21.12.0
     # via
     #   geventhttpclient
     #   locust
@@ -188,7 +190,7 @@ graphviz==0.13
     # via
     #   -r requirements.in
     #   objgraph
-greenlet==1.0.0
+greenlet==1.1.2
     # via gevent
 gunicorn==20.0.4
     # via -r requirements.in
@@ -198,13 +200,13 @@ hashids==1.3.1
     # via -r requirements.in
 html2text==2020.1.16
     # via -r requirements.in
-httpcore==0.14.4
+httpcore==0.14.3
     # via httpx
 httpx==0.21.3
     # via -r requirements.in
-identify==1.4.15
+identify==2.4.1
     # via pre-commit
-idna==2.8
+idna==3.3
     # via
     #   anyio
     #   requests
@@ -213,11 +215,11 @@ idna==2.8
     #   yarl
 isort==5.10.1
     # via -r requirements.in
-itsdangerous==1.1.0
+itsdangerous==2.0.1
     # via flask
 itypes==1.2.0
     # via coreapi
-jinja2==2.11.3
+jinja2==3.0.3
     # via
     #   coreschema
     #   flask
@@ -241,7 +243,7 @@ mako==1.1.2
     # via -r requirements.in
 markdown==3.2.1
     # via -r requirements.in
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via
     #   jinja2
     #   mako
@@ -251,21 +253,21 @@ memory-profiler==0.57.0
     # via -r requirements.in
 module-graph==0.0.1
     # via -r requirements.in
-more-itertools==7.2.0
+more-itertools==8.12.0
     # via pytest
 msgpack==1.0.0
     # via
     #   -r requirements.in
     #   locust
-multidict==4.5.2
+multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
 netifaces==0.10.9
     # via -r requirements.in
-nodeenv==1.3.5
+nodeenv==1.6.0
     # via pre-commit
-oauthlib==3.1.0
+oauthlib==3.1.1
     # via requests-oauthlib
 objgraph==3.4.1
     # via -r requirements.in
@@ -279,19 +281,21 @@ pendulum==2.1.2
     # via pgcli
 pgcli==3.1.0
     # via -r requirements.in
-pgspecial==1.11.10
+pgspecial==1.13.0
     # via pgcli
 pip-tools==5.5.0
     # via -r requirements.in
 pipdeptree==0.13.2
     # via -r requirements.in
-pluggy==0.13.0
+platformdirs==2.4.1
+    # via virtualenv
+pluggy==0.13.1
     # via pytest
 pre-commit==2.3.0
     # via -r requirements.in
 prometheus-client==0.7.1
     # via -r requirements.in
-prompt-toolkit==2.0.10
+prompt-toolkit==3.0.24
     # via pgcli
 psutil==5.6.7
     # via
@@ -305,20 +309,20 @@ psycopg2==2.8.6
     #   pgspecial
 py-spy==0.3.3
     # via -r requirements.in
-py==1.10.0
+py==1.11.0
     # via pytest
-pycares==3.0.0
+pycares==4.1.2
     # via aiodns
 pycodestyle==2.5.0
     # via
     #   -r requirements.in
     #   autopep8
     #   flake8
-pycparser==2.19
+pycparser==2.21
     # via cffi
 pyflakes==2.1.1
     # via flake8
-pygments==2.7.4
+pygments==2.11.1
     # via
     #   aiohttp-devtools
     #   cli-helpers
@@ -342,7 +346,7 @@ pynliner==0.8.0
     # via -r requirements.in
 pyopenssl==19.1.0
     # via -r requirements.in
-pyparsing==2.4.2
+pyparsing==3.0.6
     # via
     #   packaging
     #   validr
@@ -372,9 +376,9 @@ python-socks[asyncio]==1.2.4
     # via
     #   -r requirements.in
     #   aiohttp-socks
-python3-openid==3.1.0
+python3-openid==3.2.0
     # via django-allauth
-pytz==2019.3
+pytz==2021.3
     # via
     #   django
     #   django-timezone-field
@@ -392,7 +396,7 @@ raven==6.10.0
     # via -r requirements.in
 readability-lxml==0.8.1
     # via -r requirements.in
-requests-oauthlib==1.2.0
+requests-oauthlib==1.3.0
     # via django-allauth
 requests==2.26.0
     # via
@@ -407,23 +411,23 @@ rfc3986[idna2008]==1.5.0
     # via httpx
 sentry-sdk==0.9.0
     # via -r requirements.in
-setproctitle==1.1.10
+setproctitle==1.2.2
     # via pgcli
 sgmllib3k==1.0.0
     # via feedparser
 shopant-sdk==0.0.3
     # via -r requirements.in
-simplejson==3.16.0
+simplejson==3.17.6
     # via django-rest-swagger
-six==1.12.0
+six==1.16.0
     # via
+    #   asttokens
     #   configobj
     #   cryptography
     #   django-extensions
     #   django-rest-auth
     #   geventhttpclient
     #   packaging
-    #   prompt-toolkit
     #   pyopenssl
     #   python-dateutil
     #   validators
@@ -433,7 +437,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-soupsieve==1.9.4
+soupsieve==2.3.1
     # via beautifulsoup4
 sqlalchemy==1.3.15
     # via
@@ -447,21 +451,19 @@ sqlparse==0.4.2
     #   pgspecial
 supervisor==4.1.0
     # via -r requirements.in
-tabulate[widechars]==0.8.5
+tabulate[widechars]==0.8.9
     # via cli-helpers
-terminaltables==3.1.0
-    # via
-    #   cli-helpers
-    #   validr
+terminaltables==3.1.10
+    # via validr
 text-unidecode==1.2
     # via python-slugify
-toml==0.10.0
+toml==0.10.2
     # via pre-commit
 tqdm==4.44.1
     # via -r requirements.in
-typing-extensions==3.7.4.3
+typing-extensions==4.0.1
     # via aiohttp
-uritemplate==3.0.0
+uritemplate==4.1.1
     # via coreapi
 urllib3==1.26.6
     # via
@@ -472,9 +474,9 @@ validators==0.14.0
     # via -r requirements.in
 validr==1.2.0
     # via -r requirements.in
-virtualenv==20.0.20
+virtualenv==20.13.0
     # via pre-commit
-watchgod==0.5
+watchgod==0.7
     # via aiohttp-devtools
 wcwidth==0.1.7
     # via
@@ -482,7 +484,7 @@ wcwidth==0.1.7
     #   prompt-toolkit
     #   pytest
     #   tabulate
-werkzeug==1.0.1
+werkzeug==2.0.2
     # via
     #   flask
     #   locust
@@ -495,7 +497,7 @@ yarl==1.6.3
     #   aiohttp
 zope.event==4.5.0
     # via gevent
-zope.interface==5.2.0
+zope.interface==5.4.0
     # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:

@@ -1,5 +1,5 @@
 # django
-django==2.2.25
+django==2.2.26
 djangorestframework==3.12.2
 django-debug-toolbar==2.2.1
 django-extensions==2.2.9
@@ -68,7 +68,7 @@ loguru==0.3.1
 netifaces==0.10.9
 python-slugify==3.0.2
 validators==0.14.0
-Click==7.1.1
+Click==7.1.2
 PyYAML==5.4
 Mako==1.1.2
 tqdm==4.44.1
@@ -90,7 +90,7 @@ flake8==3.7.9
 pycodestyle==2.5.0
 isort==5.10.1
 coverage==4.5.4
-flask==1.1.2
+flask==2.0.2
 autopep8==1.5
 pre-commit==2.3.0
 locust==1.4.1
