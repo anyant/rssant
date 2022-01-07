@@ -62,7 +62,6 @@ prometheus-client==0.7.1
 # helpers
 Brotli==1.0.7
 validr==1.2.0
-attrdict==2.0.1
 msgpack==1.0.0
 loguru==0.3.1
 netifaces==0.10.9

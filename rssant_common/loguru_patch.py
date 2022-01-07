@@ -3,15 +3,15 @@ Proper way to intercept stdlib logging:
     https://github.com/Delgan/loguru/issues/78
 """
 import io
-import sys
-import os.path
-import traceback
 import logging
-
-from attrdict import AttrDict
+import os.path
+import sys
+import traceback
 
 from loguru import logger
 from loguru._logger import parse_ansi
+
+from rssant_common.attrdict import AttrDict
 
 
 class InterceptHandler(logging.Handler):
@@ -21,7 +21,8 @@ class InterceptHandler(logging.Handler):
 
 
 if hasattr(sys, '_getframe'):
-    def currentframe(): return sys._getframe(3)
+    def currentframe():
+        return sys._getframe(3)
 else:  # pragma: no cover
     def currentframe():
         """Return the frame object for the caller's stack frame."""
@@ -99,7 +100,7 @@ def fixed_get_frame(depth=None):
 
 
 def loguru_patch():
-    import loguru._logger
     import loguru._get_frame
+    import loguru._logger
     loguru._get_frame.get_frame = fixed_get_frame
     loguru._logger.get_frame = fixed_get_frame

@@ -33,8 +33,6 @@ async-timeout==3.0.1
     #   python-socks
 atoma==0.0.17
     # via -r requirements.in
-attrdict==2.0.1
-    # via -r requirements.in
 attrs==19.3.0
     # via
     #   aiohttp
@@ -203,7 +201,7 @@ isort==5.10.1
     # via -r requirements.in
 itsdangerous==1.1.0
     # via flask
-itypes==1.1.0
+itypes==1.2.0
     # via coreapi
 jinja2==2.11.3
     # via flask
@@ -401,7 +399,6 @@ simplejson==3.16.0
     # via django-rest-swagger
 six==1.12.0
     # via
-    #   attrdict
     #   configobj
     #   cryptography
     #   django-extensions
