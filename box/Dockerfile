@@ -11,7 +11,7 @@ FROM python:3.8.6-buster as build-api
 RUN mkdir -p /app
 WORKDIR /app
 # install rssant
-ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
+ARG PYPI_MIRROR="https://pypi.doubanio.com/simple/"
 ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
 COPY requirements.txt .
 RUN python -m venv .venv && \

@@ -14,7 +14,7 @@ RUN apt-get update && \
     dnsutils iputils-ping iproute2 && \
     ln -s -f /usr/bin/nvim /usr/bin/vim && ln -s -f /usr/bin/nvim /usr/bin/vi
 
-ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
+ARG PYPI_MIRROR="https://pypi.doubanio.com/simple/"
 ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
 
 COPY requirements.txt .
