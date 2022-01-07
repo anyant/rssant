@@ -31,6 +31,7 @@ yarl==1.6.3
 certifi==2020.6.20
 chardet==3.0.4
 cchardet==2.1.6
+httpx==0.21.3
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
 atoma==0.0.17
 python-dateutil==2.8.1
