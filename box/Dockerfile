@@ -23,9 +23,7 @@ RUN mkdir -p /app
 WORKDIR /app
 # install ca-certificates, nginx and postgresql
 COPY etc/apt-sources.list /etc/apt/sources.list
-RUN echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf && \
-    echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y ca-certificates && \
     update-ca-certificates && \
     apt-get install -y nginx postgresql-11
