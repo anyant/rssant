@@ -11,6 +11,7 @@ from actorlib import actor, ActorContext
 
 from rssant_feedlib import processor
 from rssant_feedlib import FeedResponseStatus
+from rssant_feedlib.do_not_fetch_fulltext import is_not_fetch_fulltext
 from rssant_feedlib.fulltext import (
     split_sentences, is_fulltext_content, StoryContentInfo,
     decide_accept_fulltext, FulltextAcceptStrategy,
@@ -344,33 +345,9 @@ def do_update_feed_info(
         feed.save()
 
 
-def is_rssant_changelog(url: str):
-    """
-    >>> is_rssant_changelog('http://localhost:6789/changelog?version=1.0.0')
-    True
-    >>> is_rssant_changelog('https://rss.anyant.com/changelog.atom')
-    True
-    >>> is_rssant_changelog('https://rss.anyant.xyz/changelog.atom')
-    True
-    >>> is_rssant_changelog('https://rss.qa.anyant.com/changelog.atom')
-    True
-    >>> is_rssant_changelog('https://www.anyant.com/')
-    False
-    """
-    is_rssant = 'rss' in url and 'anyant' in url
-    is_local_rssant = url.startswith(CONFIG.root_url)
-    return (is_rssant or is_local_rssant) and 'changelog' in url
-
-
 def _is_feed_need_fetch_storys(feed, modified_storys):
-    checkers = [
-        processor.is_v2ex, processor.is_hacknews,
-        processor.is_github, processor.is_pypi,
-        is_rssant_changelog,
-    ]
-    for check in checkers:
-        if check(feed.url):
-            return False
+    if is_not_fetch_fulltext(feed.url):
+        return False
     # eg: news, forum, bbs, daily reports
     if feed.dryness is not None and feed.dryness < 500:
         return False

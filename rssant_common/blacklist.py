@@ -19,6 +19,6 @@ def compile_url_blacklist(text):
 
     def is_in_blacklist(url):
         url = urlparse(url)
-        return black_re.fullmatch(url.netloc)
+        return black_re.fullmatch(url.netloc) is not None
 
     return is_in_blacklist
