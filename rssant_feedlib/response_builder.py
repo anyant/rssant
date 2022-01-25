@@ -1,13 +1,12 @@
-import re
 import cgi
 import codecs
+import re
 import typing
 from http import HTTPStatus
 
 import cchardet
 
 from .response import FeedContentType, FeedResponse
-
 
 RE_CONTENT_XML = re.compile(rb'(<\?xml|<xml|<rss|<atom|<feed|<channel)')
 RE_CONTENT_HTML = re.compile(rb'(<!doctype html>|<html|<head|<body)')
@@ -134,7 +133,7 @@ class EncodingChecker:
         dec = codecs.getincrementaldecoder(encoding)()
         try:
             dec.decode(self._content)
-        except UnicodeDecodeError:
+        except UnicodeError:
             self._encodings[encoding] = False
             return None
         self._encodings[encoding] = True

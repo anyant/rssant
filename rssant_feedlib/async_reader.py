@@ -229,7 +229,7 @@ class AsyncFeedReader:
             status = FeedResponseStatus.CONNECTION_ERROR.value
         except aiohttp.ClientPayloadError:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
-        except UnicodeDecodeError:
+        except UnicodeError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
         except PrivateAddressError:
             status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value

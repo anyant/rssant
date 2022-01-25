@@ -1,11 +1,11 @@
-import re
 import codecs
-import pytest
+import re
 from pathlib import Path
+
+import pytest
 
 from rssant_feedlib import FeedResponseBuilder
 from rssant_feedlib.response_builder import detect_content_encoding
-
 
 _data_dir = Path(__file__).parent / 'testdata/encoding'
 

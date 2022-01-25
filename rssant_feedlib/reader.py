@@ -288,7 +288,7 @@ class FeedReader:
             status = FeedResponseStatus.CHUNKED_ENCODING_ERROR.value
         except requests.exceptions.ContentDecodingError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
-        except UnicodeDecodeError:
+        except UnicodeError:
             status = FeedResponseStatus.CONTENT_DECODING_ERROR.value
         except PrivateAddressError:
             status = FeedResponseStatus.PRIVATE_ADDRESS_ERROR.value

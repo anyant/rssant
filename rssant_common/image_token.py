@@ -96,7 +96,7 @@ class ImageToken:
         try:
             payload = cls._decode_payload(text)
             payload = validate_image_token(payload)
-        except (Invalid, json.JSONDecodeError, brotli.error, UnicodeDecodeError) as ex:
+        except (Invalid, json.JSONDecodeError, brotli.error, UnicodeError) as ex:
             raise ImageTokenDecodeError(str(ex)) from ex
         if expires is not None and expires > 0:
             is_expired = int(clock()) - payload['timestamp'] >= expires

@@ -262,7 +262,7 @@ class MsgpackUnpackerWrapper:
     def __next__(self):
         try:
             item = self._unpacker.__next__()
-        except UnicodeDecodeError as ex:
+        except UnicodeError as ex:
             raise DirtyMsgpackFile(f'dirty msgpack file {ex}') from ex
         else:
             if not isinstance(item, dict):

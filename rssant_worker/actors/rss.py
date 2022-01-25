@@ -195,7 +195,7 @@ async def _fetch_story(reader: AsyncFeedReader, feed_id, offset, url, use_proxy)
             return url, None, response
         try:
             content = response.content.decode(response.encoding)
-        except UnicodeDecodeError as ex:
+        except UnicodeError as ex:
             LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
             content = response.content.decode(response.encoding, errors='ignore')
         html_redirect = get_html_redirect_url(content)

@@ -32,7 +32,7 @@ def cursor_validator(compiler, keys=None, output_object=False, base64=False):
                 value = Cursor.from_string(value, keys)
             else:
                 value._check_missing_keys(keys)
-        except (UnicodeEncodeError, UnicodeDecodeError, ValueError) as ex:
+        except (UnicodeError, ValueError) as ex:
             raise Invalid(str(ex)) from None
         if output_object:
             return value

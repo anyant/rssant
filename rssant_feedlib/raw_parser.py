@@ -448,7 +448,7 @@ class RawFeedParser:
     def _load_json(self, response: FeedResponse) -> dict:
         try:
             text = response.content.decode(response.encoding)
-        except UnicodeDecodeError as ex:
+        except UnicodeError as ex:
             raise FeedParserError("Unicode decode error: {}".format(ex)) from ex
         try:
             data = json.loads(text)

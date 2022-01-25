@@ -279,7 +279,7 @@ def _read_request_file(request, name='file'):
     if not isinstance(text, str):
         try:
             text = text.decode('utf-8')
-        except UnicodeDecodeError:
+        except UnicodeError:
             raise RssantAPIException('file type or encoding invalid')
     return text, fileobj.name
 
