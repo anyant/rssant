@@ -32,8 +32,8 @@ async def image_proxy_view_v2(
 
 @routes.get('/image/_health')
 async def get_health(request):
-    build_id = os.getenv('RSSANT_BUILD_ID')
-    commit_id = os.getenv('RSSANT_COMMIT_ID')
+    build_id = os.getenv('EZFAAS_BUILD_ID')
+    commit_id = os.getenv('EZFAAS_COMMIT_ID')
     now = timezone.now().isoformat()
     info = dict(
         build_id=build_id,

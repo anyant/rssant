@@ -22,7 +22,7 @@ RUN /usr/app/rssant_async_main --help
 
 FROM --platform=linux/amd64 runtime
 COPY --from=check /usr/app /usr/app
-ARG RSSANT_BUILD_ID=''
-ARG RSSANT_COMMIT_ID=''
-ENV RSSANT_BUILD_ID=${RSSANT_BUILD_ID} RSSANT_COMMIT_ID=${RSSANT_COMMIT_ID}
+ARG EZFAAS_BUILD_ID=''
+ARG EZFAAS_COMMIT_ID=''
+ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
 CMD [ "/usr/app/rssant_async_main", "--bind=0.0.0.0:9000", "--keep-alive=7200" ]
