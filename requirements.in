@@ -1,5 +1,5 @@
 # django
-django==2.2.26
+django==2.2.27
 djangorestframework==3.12.2
 django-debug-toolbar==2.2.1
 django-extensions==2.2.9
