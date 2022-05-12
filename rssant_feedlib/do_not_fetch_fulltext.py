@@ -87,6 +87,7 @@ def is_rssant_changelog(url: str):
 
 NOT_FETCH_FULLTEXT_LIST = '''
 taoshu.in
+cnki.net
 '''
 
 _is_in_not_fetch_list = compile_url_blacklist(NOT_FETCH_FULLTEXT_LIST)
@@ -104,6 +105,8 @@ def is_not_fetch_fulltext(url: str):
     True
     >>> is_not_fetch_fulltext('https://blog.guyskk.com/feed.xml')
     False
+    >>> is_not_fetch_fulltext('https://t.cnki.net/kcms/detail')
+    True
     """
     checkers = [
         is_v2ex,
