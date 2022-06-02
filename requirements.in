@@ -1,5 +1,5 @@
 # django
-django==2.2.27
+django==2.2.28
 djangorestframework==3.12.2
 django-debug-toolbar==2.2.1
 django-extensions==2.2.9
@@ -31,7 +31,7 @@ yarl==1.6.3
 certifi==2020.6.20
 chardet==3.0.4
 cchardet==2.1.6
-httpx==0.21.3
+httpx==0.23.0
 feedparser==6.0.0b3  # TODO: https://github.com/kurtmckee/feedparser/issues/198
 atoma==0.0.17
 python-dateutil==2.8.1
