@@ -305,7 +305,7 @@ py==1.11.0
     # via pytest
 py-spy==0.3.3
     # via -r requirements.in
-pycares==4.1.2
+pycares==4.2.0
     # via aiodns
 pycodestyle==2.5.0
     # via
