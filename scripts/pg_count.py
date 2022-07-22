@@ -1,5 +1,5 @@
-import sys
 import json
+import sys
 
 import click
 import django.apps
@@ -18,9 +18,25 @@ SELECT relname as table_name, reltuples AS row_count
 FROM pg_class WHERE relname=ANY(%s);
 '''
 
-story_volume_tables = [
-    'story_volume_0',
-]
+# https://stackoverflow.com/questions/14730228/postgresql-query-to-list-all-table-names
+sql_select_tables = '''
+SELECT table_name FROM information_schema.tables
+WHERE table_schema='public' AND table_type='BASE TABLE';
+'''
+
+
+def get_all_tables():
+    table_s = []
+    with connection.cursor() as cursor:
+        cursor.execute(sql_select_tables)
+        for row in cursor.fetchall():
+            table_s.append(row[0])
+    return table_s
+
+
+def get_story_volume_tables():
+    all_tables = get_all_tables()
+    return [x for x in all_tables if x.startswith('story_volume_')]
 
 
 def pg_count_limit(tables, limit):
@@ -59,6 +75,7 @@ def pg_count():
     """
     models = django.apps.apps.get_models()
     tables = [m._meta.db_table for m in models]
+    story_volume_tables = get_story_volume_tables()
     tables.extend(story_volume_tables)
     result = pg_count_limit(tables, limit=10000)
     large_tables = list(set(tables) - set(result))
