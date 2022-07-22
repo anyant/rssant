@@ -227,7 +227,7 @@ locust==1.4.1
     # via -r requirements.in
 loguru==0.3.1
     # via -r requirements.in
-lxml==4.6.5
+lxml==4.9.1
     # via
     #   -r requirements.in
     #   readability-lxml
