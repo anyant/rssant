@@ -51,6 +51,8 @@ class FeedResponseStatus(enum.IntEnum):
         """
         >>> FeedResponseStatus.is_need_proxy(FeedResponseStatus.CONNECTION_TIMEOUT)
         True
+        >>> FeedResponseStatus.is_need_proxy(403)
+        True
         >>> FeedResponseStatus.is_need_proxy(404)
         False
         """
@@ -86,6 +88,8 @@ _NEED_PROXY_STATUS_SET = {x.value for x in [
     FeedResponseStatus.READ_TIMEOUT,
     FeedResponseStatus.CONNECTION_RESET,
     FeedResponseStatus.PRIVATE_ADDRESS_ERROR,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.FORBIDDEN,
 ]}
 
 
