@@ -331,7 +331,7 @@ pyinstrument-cext==0.2.2
     # via
     #   -r requirements.in
     #   pyinstrument
-pyjwt[crypto]==2.4.0
+pyjwt[crypto]==1.7.1
     # via
     #   -r requirements.in
     #   django-allauth

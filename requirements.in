@@ -76,7 +76,7 @@ python-dotenv==0.12.0
 markdown==3.2.1
 packaging==19.2
 lz4==3.1.0
-pyjwt==2.4.0
+pyjwt==1.7.1
 shopant-sdk==0.0.3
 wcwidth==0.1.7
 mako==1.1.2
