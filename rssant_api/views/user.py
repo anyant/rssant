@@ -1,15 +1,14 @@
-from django_rest_validr import RestRouter, T
+from allauth.socialaccount.models import SocialAccount
 from django.contrib import auth as django_auth
 from django.contrib.auth.models import User
-from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import AuthenticationFailed
-from allauth.socialaccount.models import SocialAccount
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
-from rssant_config import CONFIG
+from django_rest_validr import RestRouter, T
 from rssant_common.hashid import HASH_ID
-
+from rssant_config import CONFIG
 
 UserSchema = T.dict(
     id=T.str,
@@ -22,6 +21,8 @@ UserSchema = T.dict(
         avatar_url=T.str.optional,
     )).optional,
     shopant_enable=T.bool.default(False),
+    ezrevenue_enable=T.bool.default(False),
+    ezrevenue_vip_equity_id=T.str.optional,
     image_proxy=T.dict(
         enable=T.bool,
         url_s=T.list(T.str).optional,
@@ -55,6 +56,8 @@ def serialize_user(user):
         token=token.key,
         social_accounts=social_accounts_info,
         shopant_enable=CONFIG.shopant_enable,
+        ezrevenue_enable=CONFIG.ezrevenue_enable,
+        ezrevenue_vip_equity_id=CONFIG.ezrevenue_vip_equity_id,
         image_proxy=image_proxy
     )
 

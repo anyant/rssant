@@ -4,10 +4,9 @@ from functools import cached_property
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from validr import T, Compiler, modelclass, fields, Invalid
+from validr import Compiler, Invalid, T, fields, modelclass
 
 from rssant_common.network_helper import LOCAL_NODE_NAME
-
 
 MAX_FEED_COUNT = 5000
 
@@ -97,6 +96,13 @@ class EnvConfig(ConfigModel):
     shopant_product_id: int = T.int.optional
     shopant_product_secret: str = T.str.optional
     shopant_url: str = T.url.optional
+    # ezrevenue
+    ezrevenue_enable: bool = T.bool.default(False)
+    ezrevenue_project_id: str = T.str.optional
+    ezrevenue_project_secret: str = T.str.optional
+    ezrevenue_paywall_id: str = T.str.optional
+    ezrevenue_vip_equity_id: str = T.str.optional
+    ezrevenue_base_url: str = T.url.optional
     # image proxy
     image_proxy_enable: bool = T.bool.default(True)
     image_proxy_urls: bool = T.str.default('origin').desc('逗号分隔的URL列表')
