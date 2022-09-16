@@ -1,10 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 
-from .views import index, error
+from .views import error, index
+from .views.ezrevenue import EzrevenueView
 from .views.feed import FeedView
+from .views.shopant import ShopantView
 from .views.story import StoryView
 from .views.user import UserView
-from .views.shopant import ShopantView
 
 app_name = 'rssant_api'
 urlpatterns = [
@@ -14,4 +15,5 @@ urlpatterns = [
     path('', include(StoryView.urls)),
     path('', include(UserView.urls)),
     path('', include(ShopantView.urls)),
+    path('', include(EzrevenueView.urls)),
 ]
