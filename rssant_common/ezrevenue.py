@@ -4,6 +4,7 @@ import time
 
 import jwt
 import requests
+import six
 
 from rssant_config import CONFIG
 
@@ -44,13 +45,14 @@ class EzrevenueClient:
         exp = int(time.time()) + int(_TOKEN_EXPIRES_IN)
         nonce = secrets.token_urlsafe(10)
         payload = dict(payload, exp=exp, nonce=nonce)
-        token_bytes = jwt.encode(
+        token = jwt.encode(
             payload,
             key=self.project_secret,
             algorithm=_TOKEN_ALGORITHM,
             headers=dict(project_id=self.project_id),
         )
-        return token_bytes.decode('ascii')
+        # Note: pyjwt 2.0+ 返回 str 类型, 1.0+ 返回 bytes 类型
+        return six.ensure_str(token)
 
     def call(self, api: str, params: dict):
         payload = {"method": api, "params": params}
