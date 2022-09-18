@@ -1,24 +1,23 @@
-import typing
-import re
 import logging
+import re
+import typing
 from collections import namedtuple
-from urllib.parse import urljoin, quote, unquote, urlsplit, urlunsplit
+from urllib.parse import quote, unquote, urljoin, urlsplit, urlunsplit
 
-import yarl
 import lxml.etree
 import lxml.html
-from lxml.html import soupparser
-from lxml.html.defs import safe_attrs as lxml_safe_attrs
-from lxml.html.clean import Cleaner
 import readability.cleaners
-from readability import Document as ReadabilityDocument
+import yarl
 from django.utils.html import escape as html_escape
-from validr import T, Invalid
+from lxml.html import soupparser
+from lxml.html.clean import Cleaner
+from lxml.html.defs import safe_attrs as lxml_safe_attrs
+from readability import Document as ReadabilityDocument
+from validr import Invalid, T
 
 from rssant_common.validator import compiler
 
-from .helper import RE_URL, lxml_call, LXMLError
-
+from .helper import RE_URL, LXMLError, lxml_call
 
 LOG = logging.getLogger(__name__)
 
@@ -459,7 +458,10 @@ def story_extract_attach(html, base_url=None) -> StoryAttach:
 RE_BLANK_LINE = re.compile(r'(\n\s*)(\n\s*)+')
 
 lxml_html_parser = lxml.html.HTMLParser(
-    remove_blank_text=True, remove_comments=True, collect_ids=False)
+    remove_blank_text=True,
+    remove_comments=True,
+    collect_ids=False,
+)
 
 
 lxml_text_html_cleaner = Cleaner(
@@ -480,6 +482,19 @@ lxml_text_html_cleaner = Cleaner(
 )
 
 
+def _to_soup_text(content: str):
+    """
+    用 soupparser 可以处理不规范的 HTML 以及 CDATA 内容
+    """
+    content = '<div>' + content + '</div>'
+    dom = lxml_call(soupparser.fromstring, content)
+    return dom.text_content().strip()
+
+
+def _has_cdata(content: str):
+    return '<![CDATA[' in content and ']]' in content
+
+
 def story_html_to_text(content, clean=True):
     """
     >>> content = '''<html><body>
@@ -494,7 +509,7 @@ def story_html_to_text(content, clean=True):
     >>> print(story_html_to_text(content, clean=False))
     hello world
     happy day
-    >>> content = '<![CDATA[hello world]]>'
+    >>> content = '<p><![CDATA[hello world]]></p>'
     >>> print(story_html_to_text(content))
     hello world
     >>> print(story_html_to_text('<pre><code>hi</code></pre>'))
@@ -526,9 +541,11 @@ def story_html_to_text(content, clean=True):
             return ""
         r = lxml_call(lxml.html.fromstring, content, parser=lxml_html_parser)
         content = r.text_content().strip()
+        if _has_cdata(content):
+            content = _to_soup_text(content)
     except LXMLError:
         try:
-            content = lxml_call(soupparser.fromstring, content).text_content().strip()
+            content = _to_soup_text(content)
         except LXMLError as ex:
             LOG.info(f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex)
             content = html_escape(content)
