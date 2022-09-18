@@ -91,11 +91,6 @@ class EnvConfig(ConfigModel):
     analytics_plausible_enable: str = T.bool.default(False)
     analytics_plausible_url: str = T.str.optional
     analytics_plausible_domain: str = T.str.optional
-    # shopant
-    shopant_enable: bool = T.bool.default(False)
-    shopant_product_id: int = T.int.optional
-    shopant_product_secret: str = T.str.optional
-    shopant_url: str = T.url.optional
     # ezrevenue
     ezrevenue_enable: bool = T.bool.default(False)
     ezrevenue_project_id: str = T.str.optional

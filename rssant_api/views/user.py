@@ -20,7 +20,6 @@ UserSchema = T.dict(
         provider=T.str,
         avatar_url=T.str.optional,
     )).optional,
-    shopant_enable=T.bool.default(False),
     ezrevenue_enable=T.bool.default(False),
     image_proxy=T.dict(
         enable=T.bool,
@@ -54,7 +53,6 @@ def serialize_user(user):
         avatar_url=avatar_url,
         token=token.key,
         social_accounts=social_accounts_info,
-        shopant_enable=CONFIG.shopant_enable,
         ezrevenue_enable=CONFIG.ezrevenue_enable,
         image_proxy=image_proxy
     )
