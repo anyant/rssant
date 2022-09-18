@@ -8,21 +8,23 @@ aiocontextvars==0.2.2
     # via -r requirements.in
 aiodns==2.0.0
     # via -r requirements.in
+aiohttp-devtools==0.13.1
+    # via -r requirements.in
+aiohttp-socks==0.5.5
+    # via -r requirements.in
 aiohttp==3.7.4
     # via
     #   -r requirements.in
     #   aiohttp-devtools
     #   aiohttp-socks
-aiohttp-devtools==0.13.1
-    # via -r requirements.in
-aiohttp-socks==0.5.5
-    # via -r requirements.in
 aiojobs==0.3.0
     # via -r requirements.in
 aliyun-fc2==2.5.0
     # via -r requirements.in
 altgraph==0.17.2
-    # via pyinstaller
+    # via
+    #   macholib
+    #   pyinstaller
 anyio==3.4.0
     # via httpcore
 asttokens==2.0.5
@@ -120,18 +122,6 @@ devtools==0.8.0
     # via aiohttp-devtools
 distlib==0.3.4
     # via virtualenv
-django==2.2.28
-    # via
-    #   -r requirements.in
-    #   django-allauth
-    #   django-debug-toolbar
-    #   django-optimistic-lock
-    #   django-postgrespool2
-    #   django-rest-auth
-    #   django-seal
-    #   django-timezone-field
-    #   djangorestframework
-    #   jsonfield
 django-allauth==0.44.0
     # via -r requirements.in
 django-debug-toolbar==2.2.1
@@ -150,6 +140,18 @@ django-seal==1.2.3
     # via -r requirements.in
 django-timezone-field==4.0
     # via -r requirements.in
+django==2.2.28
+    # via
+    #   -r requirements.in
+    #   django-allauth
+    #   django-debug-toolbar
+    #   django-optimistic-lock
+    #   django-postgrespool2
+    #   django-rest-auth
+    #   django-seal
+    #   django-timezone-field
+    #   djangorestframework
+    #   jsonfield
 djangorestframework==3.12.2
     # via
     #   -r requirements.in
@@ -167,13 +169,13 @@ filelock==3.4.2
     # via virtualenv
 flake8==3.7.9
     # via -r requirements.in
+flask-basicauth==0.2.0
+    # via locust
 flask==2.0.2
     # via
     #   -r requirements.in
     #   flask-basicauth
     #   locust
-flask-basicauth==0.2.0
-    # via locust
 gevent==21.12.0
     # via
     #   geventhttpclient
@@ -233,7 +235,9 @@ lxml==4.9.1
     #   readability-lxml
 lz4==3.1.0
     # via -r requirements.in
-mako==1.1.2
+macholib==1.16
+    # via pyinstaller
+mako==1.2.2
     # via -r requirements.in
 markdown==3.2.1
     # via -r requirements.in
@@ -301,10 +305,10 @@ psycopg2==2.8.6
     #   -r requirements.in
     #   pgcli
     #   pgspecial
-py==1.11.0
-    # via pytest
 py-spy==0.3.3
     # via -r requirements.in
+py==1.11.0
+    # via pytest
 pycares==4.2.0
     # via aiodns
 pycodestyle==2.5.0
@@ -321,16 +325,16 @@ pygments==2.11.1
     #   aiohttp-devtools
     #   cli-helpers
     #   pgcli
-pyinstaller==4.7
-    # via -r requirements.in
 pyinstaller-hooks-contrib==2021.4
     # via pyinstaller
-pyinstrument==3.1.3
+pyinstaller==4.7
     # via -r requirements.in
 pyinstrument-cext==0.2.2
     # via
     #   -r requirements.in
     #   pyinstrument
+pyinstrument==3.1.3
+    # via -r requirements.in
 pyjwt[crypto]==2.4.0
     # via
     #   -r requirements.in
@@ -345,17 +349,17 @@ pyparsing==3.0.6
     #   validr
 pysocks==1.7.1
     # via -r requirements.in
-pytest==5.4.1
-    # via
-    #   -r requirements.in
-    #   pytest-cov
-    #   pytest-django
 pytest-cov==2.8.1
     # via -r requirements.in
 pytest-django==3.10.0
     # via -r requirements.in
 pytest-httpserver==0.3.4
     # via -r requirements.in
+pytest==5.4.1
+    # via
+    #   -r requirements.in
+    #   pytest-cov
+    #   pytest-django
 python-dateutil==2.8.1
     # via
     #   -r requirements.in
@@ -389,6 +393,8 @@ raven==6.10.0
     # via -r requirements.in
 readability-lxml==0.8.1
     # via -r requirements.in
+requests-oauthlib==1.3.0
+    # via django-allauth
 requests==2.26.0
     # via
     #   -r requirements.in
@@ -397,8 +403,6 @@ requests==2.26.0
     #   django-allauth
     #   locust
     #   requests-oauthlib
-requests-oauthlib==1.3.0
-    # via django-allauth
 rfc3986[idna2008]==1.5.0
     # via httpx
 sentry-sdk==0.9.0
@@ -485,9 +489,9 @@ yarl==1.6.3
     # via
     #   -r requirements.in
     #   aiohttp
-zope-event==4.5.0
+zope.event==4.5.0
     # via gevent
-zope-interface==5.4.0
+zope.interface==5.4.0
     # via gevent
 
 # The following packages are considered to be unsafe in a requirements file:
