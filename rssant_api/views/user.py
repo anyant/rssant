@@ -22,7 +22,6 @@ UserSchema = T.dict(
     )).optional,
     shopant_enable=T.bool.default(False),
     ezrevenue_enable=T.bool.default(False),
-    ezrevenue_vip_equity_id=T.str.optional,
     image_proxy=T.dict(
         enable=T.bool,
         url_s=T.list(T.str).optional,
@@ -57,7 +56,6 @@ def serialize_user(user):
         social_accounts=social_accounts_info,
         shopant_enable=CONFIG.shopant_enable,
         ezrevenue_enable=CONFIG.ezrevenue_enable,
-        ezrevenue_vip_equity_id=CONFIG.ezrevenue_vip_equity_id,
         image_proxy=image_proxy
     )
 

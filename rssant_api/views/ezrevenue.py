@@ -3,7 +3,6 @@ from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
 from rssant_common.ezrevenue import EZREVENUE_CLIENT
-from rssant_config import CONFIG
 
 EzrevenueView = RestRouter()
 
@@ -17,7 +16,7 @@ def ezrevenue_customer_info(
         return Response(status=501)
     user: AbstractUser = request.user
     params = dict(
-        paywall_id=CONFIG.ezrevenue_paywall_id,
+        paywall_alias='paywall_vip',
         customer=dict(
             external_id=user.id,
             nickname=user.username,

@@ -100,8 +100,6 @@ class EnvConfig(ConfigModel):
     ezrevenue_enable: bool = T.bool.default(False)
     ezrevenue_project_id: str = T.str.optional
     ezrevenue_project_secret: str = T.str.optional
-    ezrevenue_paywall_id: str = T.str.optional
-    ezrevenue_vip_equity_id: str = T.str.optional
     ezrevenue_base_url: str = T.url.optional
     # image proxy
     image_proxy_enable: bool = T.bool.default(True)
