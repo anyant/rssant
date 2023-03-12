@@ -363,4 +363,6 @@ def _get_storys(entries: list):
     for data in entries:
         story = get_story_of_feed_entry(data, now=now)
         storys.append(story)
+    # 按时间倒序排序，确保最新的文章不会在后续处理中被丢弃
+    storys = list(sorted(storys, key=lambda x: x['dt_published'], reverse=True))
     return storys
