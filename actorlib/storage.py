@@ -8,7 +8,6 @@ import msgpack
 from .message import ActorMessage
 from .state import ActorState, ActorStateError
 
-
 LOG = logging.getLogger(__name__)
 
 
@@ -262,7 +261,8 @@ class MsgpackUnpackerWrapper:
     def __next__(self):
         try:
             item = self._unpacker.__next__()
-        except UnicodeError as ex:
+        except (UnicodeError, ValueError) as ex:
+            # eg: ValueError: int is not allowed for map key
             raise DirtyMsgpackFile(f'dirty msgpack file {ex}') from ex
         else:
             if not isinstance(item, dict):
