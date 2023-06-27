@@ -35,6 +35,7 @@ from rssant_feedlib.fulltext import (
 )
 from rssant_feedlib.processor import (
     get_html_redirect_url,
+    is_use_proxy_url,
     process_story_links,
     story_html_clean,
     story_html_to_text,
@@ -130,6 +131,8 @@ def do_sync_feed(
         use_proxy = reader.has_proxy and use_proxy
         if use_proxy and random.random() < switch_prob:
             use_proxy = False
+        if is_use_proxy_url(url):
+            use_proxy = True
         response = reader.read(url, **params, use_proxy=use_proxy)
         LOG.info(f'read feed#{feed_id} url={unquote(url)} status={response.status}')
         need_proxy = FeedResponseStatus.is_need_proxy(response.status)

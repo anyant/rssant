@@ -15,6 +15,7 @@ from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from readability import Document as ReadabilityDocument
 from validr import Invalid, T
 
+from rssant_common.blacklist import compile_url_blacklist
 from rssant_common.validator import compiler
 
 from .helper import RE_URL, LXMLError, lxml_call
@@ -356,6 +357,23 @@ def is_image_url(url):
     if is_data_url(url):
         return False
     return bool(RE_IMAGE_URL.search(url))
+
+
+USE_PROXY_URL_LIST = '''
+tandfonline.com
+sagepub.com
+cnki.net
+'''
+
+_is_use_proxy_url = compile_url_blacklist(USE_PROXY_URL_LIST)
+
+
+def is_use_proxy_url(url):
+    """
+    >>> is_use_proxy_url('https://navi.cnki.net/knavi/rss/SHXJ')
+    True
+    """
+    return _is_use_proxy_url(url)
 
 
 def process_story_links(content, story_link):
