@@ -412,8 +412,7 @@ class FeedFinder:
             self._guess_links()
             self._guessed = True
 
-    def find(self) -> Tuple[FeedResponse, RawFeedResult]:
-        use_proxy = False
+    def find(self, use_proxy=False) -> Tuple[FeedResponse, RawFeedResult]:
         current_try = 0
         should_abort = FeedResponseStatus.is_permanent_failure
         while current_try < self.max_trys:

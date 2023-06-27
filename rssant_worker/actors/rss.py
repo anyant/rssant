@@ -93,7 +93,8 @@ def do_find_feed(
     options.update(request_timeout=CONFIG.feed_reader_request_timeout)
     options.update(dns_service=DNS_SERVICE)
     with FeedFinder(url, **options) as finder:
-        found = finder.find()
+        use_proxy = is_use_proxy_url(url)
+        found = finder.find(use_proxy=use_proxy)
     try:
         feed = _parse_found(found) if found else None
     except (Invalid, FeedParserError) as ex:
