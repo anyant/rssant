@@ -100,6 +100,9 @@ RSSANT_RSS_PROXY_ENABLE=false
 RSSANT_RSS_PROXY_URL=
 RSSANT_RSS_PROXY_TOKEN=
 
+# 为保障网络安全，默认不允许订阅局域网地址，如有需要可设置为true
+# RSSANT_ALLOW_PRIVATE_ADDRESS=true
+
 # 以下配置保持不动
 RSSANT_SCHEDULER_NETWORK=rssant
 RSSANT_PG_DB=rssant
