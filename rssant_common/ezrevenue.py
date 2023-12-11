@@ -14,7 +14,7 @@ _TOKEN_ALGORITHM = "HS256"
 _TOKEN_FIELDS = ["exp", "nonce"]
 _TOKEN_EXPIRES_IN = 30 * 60
 
-_BASE_URL = 'https://revenue.ezfuns.com/api/v1/server'
+_BASE_URL = 'https://revenue.ezboti.com/api/v1/server'
 
 
 class EzrevenueClient:
