@@ -1,6 +1,4 @@
 name = "rssant"
-type = "javascript"
 account_id = "8772320df1662c1375bb57a344a1f78e"
 workers_dev = true
-route = ""
-zone_id = ""
+compatibility_date = "2024-01-08"

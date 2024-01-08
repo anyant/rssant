@@ -4,6 +4,7 @@
 /box/web/
 /box/data/
 /box/logs/
+cloudflare_worker/rssant/.wrangler
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
