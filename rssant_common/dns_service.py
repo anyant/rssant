@@ -1,21 +1,22 @@
-from typing import List, Dict, Any
+import asyncio
+import ipaddress
 import logging
 import random
-import ipaddress
-import ssl
 import socket
-import asyncio
+import ssl
+from collections import OrderedDict, defaultdict
+from typing import Any, Callable, Dict, List
 from urllib.parse import urlparse
-from collections import defaultdict, OrderedDict
 
-import yarl
 import aiohttp
 import requests.adapters
+import yarl
 
-from rssant_config import CONFIG
 from rssant_common import _proxy_helper
-from .rss_proxy import RSSProxyClient, ProxyStrategy
+from rssant_config import CONFIG
+
 from .helper import get_or_create_event_loop
+from .rss_proxy import ProxyStrategy, RSSProxyClient
 
 LOG = logging.getLogger(__name__)
 
@@ -66,38 +67,44 @@ def _is_public_ipv4(value):
 
 
 class DNSService:
-
-    def __init__(self, client: RSSProxyClient, records: dict = None, allow_private_address: bool = False):
-        self.hosts = list(records or {})
-        self.update(records or {})
-        self.client = client
-        self.allow_private_address = allow_private_address
-
-    @staticmethod
-    def create(
-        *,
-        proxy_url: str = None,
-        rss_proxy_url: str = None,
-        rss_proxy_token: str = None,
+    def __init__(
+        self,
+        get_client: Callable,
+        records: dict = None,
         allow_private_address: bool = False,
     ):
+        self.hosts = list(records or {})
+        self.update(records or {})
+        self._client: RSSProxyClient = None
+        self.get_client = get_client
+        self.allow_private_address = allow_private_address
 
+    @property
+    def client(self) -> RSSProxyClient:
+        if self._client is None:
+            self._client = self.get_client()
+        return self._client
+
+    @staticmethod
+    def create():
         def proxy_strategy(url):
             if 'google.com' in url:
                 return ProxyStrategy.PROXY_FIRST
             else:
                 return ProxyStrategy.DIRECT_FIRST
 
-        _rss_proxy_client = RSSProxyClient(
-            proxy_url=proxy_url,
-            rss_proxy_url=rss_proxy_url,
-            rss_proxy_token=rss_proxy_token,
-            proxy_strategy=proxy_strategy,
-        )
+        def get_client():
+            proxy_options = _proxy_helper.get_proxy_options()
+            rss_proxy_client = RSSProxyClient(
+                **proxy_options,
+                proxy_strategy=proxy_strategy,
+            )
+            return rss_proxy_client
+
         service = DNSService(
-            client=_rss_proxy_client,
+            get_client=get_client,
             records=_CACHE_RECORDS,
-            allow_private_address=allow_private_address,
+            allow_private_address=CONFIG.allow_private_address,
         )
         return service
 
@@ -130,12 +137,14 @@ class DNSService:
 
     def _select_ip(self, ip_set: list, *, host: str) -> list:
         # Discard private and prefer ipv4
-        groups = OrderedDict([
-            ((4, False), []),
-            ((6, False), []),
-            ((4, True), []),
-            ((6, True), []),
-        ])
+        groups = OrderedDict(
+            [
+                ((4, False), []),
+                ((6, False), []),
+                ((4, True), []),
+                ((6, True), []),
+            ]
+        )
         for ip in ip_set:
             ip = ipaddress.ip_address(ip)
             key = (ip.version, ip.is_private)
@@ -184,17 +193,25 @@ class DNSService:
 
     async def _verify_record_task(self, host, ip):
         _NetworkErrors = (
-            socket.timeout, TimeoutError, asyncio.TimeoutError,
-            ssl.SSLError, ssl.CertificateError, ConnectionError,
+            socket.timeout,
+            TimeoutError,
+            asyncio.TimeoutError,
+            ssl.SSLError,
+            ssl.CertificateError,
+            ConnectionError,
         )
         try:
-            reader, writer = await asyncio.wait_for(asyncio.open_connection(
-                host=ip, port=443,
-                family=socket.AF_INET,
-                ssl=True,
-                server_hostname=host,
-                ssl_handshake_timeout=10,
-            ), timeout=15)
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(
+                    host=ip,
+                    port=443,
+                    family=socket.AF_INET,
+                    ssl=True,
+                    server_hostname=host,
+                    ssl_handshake_timeout=10,
+                ),
+                timeout=15,
+            )
         except _NetworkErrors as ex:
             LOG.info(f'verify_record host={host} ip={ip} {ex!r}')
             return (host, ip, False)
@@ -219,7 +236,9 @@ class DNSService:
 
     def validate_records(self, records: dict) -> dict:
         loop = get_or_create_event_loop()
-        valid_records = loop.run_until_complete(self._validate_records(records))
+        valid_records = loop.run_until_complete(
+            self._validate_records(records)
+        )
         return valid_records
 
     def query_from_dns_over_tls(self, url_template: str) -> dict:
@@ -242,7 +261,9 @@ class DNSService:
         return records
 
     def query_from_cloudflare(self):
-        url_template = 'https://cloudflare-dns.com/dns-query?name={name}&type=A'
+        url_template = (
+            'https://cloudflare-dns.com/dns-query?name={name}&type=A'
+        )
         return self.query_from_dns_over_tls(url_template)
 
     def query_from_google(self):
@@ -251,7 +272,6 @@ class DNSService:
 
 
 class RssantAsyncResolver(aiohttp.AsyncResolver):
-
     def __init__(self, *args, dns_service: DNSService, **kwargs):
         self._dns_service = dns_service
         super().__init__(*args, **kwargs)
@@ -261,20 +281,23 @@ class RssantAsyncResolver(aiohttp.AsyncResolver):
         return list(set(item['host'] for item in hosts))
 
     async def resolve(
-        self, host: str, port: int = 0,
-        family: int = socket.AF_INET
+        self, host: str, port: int = 0, family: int = socket.AF_INET
     ) -> List[Dict[str, Any]]:
         ip_set = self._dns_service._local_resolve(host)
         if not ip_set:
             ip_set = await self._async_resolve(host)
         LOG.debug('resolve_aiohttp %s to %s', host, ip_set)
         ip = self._dns_service._select_ip(ip_set, host=host)
-        return [{
-            'hostname': host,
-            'host': ip, 'port': port,
-            'family': socket.AF_INET, 'proto': 0,
-            'flags': socket.AI_NUMERICHOST,
-        }]
+        return [
+            {
+                'hostname': host,
+                'host': ip,
+                'port': port,
+                'family': socket.AF_INET,
+                'proto': 0,
+                'flags': socket.AI_NUMERICHOST,
+            }
+        ]
 
 
 class RssantHttpAdapter(requests.adapters.HTTPAdapter):
@@ -307,13 +330,4 @@ class RssantHttpAdapter(requests.adapters.HTTPAdapter):
         return response
 
 
-def _setup():
-    _proxy_options = _proxy_helper.get_proxy_options()
-    service = DNSService.create(
-        **_proxy_options,
-        allow_private_address=CONFIG.allow_private_address,
-    )
-    return service
-
-
-DNS_SERVICE = _setup()
+DNS_SERVICE = DNSService.create()
