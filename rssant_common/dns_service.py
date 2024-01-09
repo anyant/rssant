@@ -86,7 +86,7 @@ class DNSService:
         return self._client
 
     @staticmethod
-    def create():
+    def create(allow_private_address: bool = None):
         def proxy_strategy(url):
             if 'google.com' in url:
                 return ProxyStrategy.PROXY_FIRST
@@ -101,10 +101,12 @@ class DNSService:
             )
             return rss_proxy_client
 
+        if allow_private_address is None:
+            allow_private_address = CONFIG.allow_private_address
         service = DNSService(
             get_client=get_client,
             records=_CACHE_RECORDS,
-            allow_private_address=CONFIG.allow_private_address,
+            allow_private_address=allow_private_address,
         )
         return service
 
