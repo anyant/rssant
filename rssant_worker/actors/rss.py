@@ -88,7 +88,7 @@ def do_find_feed(
         LOG.info(msg)
         messages.append(msg)
 
-    options = _proxy_helper.get_proxy_options()
+    options = _proxy_helper.get_proxy_options(url=url)
     options.update(message_handler=message_handler)
     options.update(request_timeout=CONFIG.feed_reader_request_timeout)
     options.update(dns_service=DNS_SERVICE)
@@ -123,7 +123,7 @@ def do_sync_feed(
     params = {}
     if not is_refresh:
         params = dict(etag=etag, last_modified=last_modified)
-    options = _proxy_helper.get_proxy_options()
+    options = _proxy_helper.get_proxy_options(url=url)
     options.update(request_timeout=CONFIG.feed_reader_request_timeout)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
@@ -232,7 +232,7 @@ async def do_fetch_story(
     num_sub_sentences: T.int.optional,
 ) -> SCHEMA_FETCH_STORY_RESULT:
     LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
-    options = _proxy_helper.get_proxy_options()
+    options = _proxy_helper.get_proxy_options(url=url)
     if DNS_SERVICE.is_resolved_url(url):
         use_proxy = False
     # make timeout less than actor default 30s to avoid ask timeout

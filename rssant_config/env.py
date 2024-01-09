@@ -12,10 +12,14 @@ MAX_FEED_COUNT = 5000
 
 
 compiler = Compiler()
-validate_extra_networks = compiler.compile(T.list(T.dict(
-    name=T.str,
-    url=T.url,
-)))
+validate_extra_networks = compiler.compile(
+    T.list(
+        T.dict(
+            name=T.str,
+            url=T.url,
+        )
+    )
+)
 
 
 @modelclass(compiler=compiler)
@@ -31,20 +35,34 @@ class GitHubConfigModel(ConfigModel):
 
 class EnvConfig(ConfigModel):
     debug: bool = T.bool.default(False).desc('debug')
-    profiler_enable: bool = T.bool.default(False).desc('enable profiler or not')
-    debug_toolbar_enable: bool = T.bool.default(False).desc('enable debug toolbar or not')
+    profiler_enable: bool = T.bool.default(False).desc(
+        'enable profiler or not'
+    )
+    debug_toolbar_enable: bool = T.bool.default(False).desc(
+        'enable debug toolbar or not'
+    )
     log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url: str = T.url.default('http://localhost:6789')
     standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
-    scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')
-    scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
-    secret_key: str = T.str.default('8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y')
+    scheduler_url: str = T.url.default(
+        'http://localhost:6790/api/v1/scheduler'
+    )
+    scheduler_extra_networks: str = T.str.optional.desc(
+        'eg: name@url,name@url'
+    )
+    secret_key: str = T.str.default(
+        '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
+    )
     allow_private_address: bool = T.bool.default(False)
     check_feed_minutes: int = T.int.min(1).default(30)
-    feed_story_retention: int = T.int.min(1).default(5000).desc('max storys to keep per feed')
+    feed_story_retention: int = (
+        T.int.min(1).default(5000).desc('max storys to keep per feed')
+    )
     pg_story_volumes: str = T.str.optional
-    feed_reader_request_timeout: int = T.int.default(30).desc('feed reader request timeout')
+    feed_reader_request_timeout: int = T.int.default(30).desc(
+        'feed reader request timeout'
+    )
     # actor
     actor_storage_path: str = T.str.default('data/actor_storage')
     actor_storage_compact_wal_delta: int = T.int.min(1).default(5000)
@@ -61,7 +79,9 @@ class EnvConfig(ConfigModel):
     # github login
     github_client_id: str = T.str.optional
     github_secret: str = T.str.optional
-    github_standby_configs: str = T.str.optional.desc('domain,client_id,secret;')
+    github_standby_configs: str = T.str.optional.desc(
+        'domain,client_id,secret;'
+    )
     # sentry
     sentry_enable: bool = T.bool.default(False)
     sentry_dsn: str = T.str.optional
@@ -80,6 +100,12 @@ class EnvConfig(ConfigModel):
     # http proxy or socks proxy
     proxy_url: str = T.url.scheme('http https socks5').optional
     proxy_enable: bool = T.bool.default(False)
+    # ezproxy
+    ezproxy_base_url: str = T.url.optional
+    ezproxy_apikey: str = T.str.default('ezproxy')
+    ezproxy_chain_cn: str = T.str.default('cn')
+    ezproxy_chain_global: str = T.str.default('default')
+    ezproxy_enable: bool = T.bool.default(False)
     # analytics matomo
     analytics_matomo_enable: bool = T.bool.default(False)
     analytics_matomo_url: str = T.str.optional
@@ -133,7 +159,8 @@ class EnvConfig(ConfigModel):
         True
         """
         re_volume = re.compile(
-            r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$')
+            r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$'
+        )
         volumes = {}
         for part in text.split(','):
             match = re_volume.match(part)
@@ -159,7 +186,8 @@ class EnvConfig(ConfigModel):
                 raise Invalid('invalid github standby configs')
             domain, client_id, secret = parts
             configs[domain] = GitHubConfigModel(
-                domain=domain, client_id=client_id, secret=secret)
+                domain=domain, client_id=client_id, secret=secret
+            )
         return configs
 
     def __post_init__(self):
@@ -174,32 +202,41 @@ class EnvConfig(ConfigModel):
         self.registery_node_spec = {
             'name': 'scheduler',
             'modules': ['scheduler'],
-            'networks': [{
-                'name': self.scheduler_network,
-                'url': self.scheduler_url,
-            }] + scheduler_extra_networks
+            'networks': [
+                {
+                    'name': self.scheduler_network,
+                    'url': self.scheduler_url,
+                }
+            ]
+            + scheduler_extra_networks,
         }
         self.current_node_spec = {
             'name': '{}@{}'.format(LOCAL_NODE_NAME, os.getpid()),
             'modules': [],
-            'networks': [{
-                'name': self.scheduler_network,
-                'url': None,
-            }]
+            'networks': [
+                {
+                    'name': self.scheduler_network,
+                    'url': None,
+                }
+            ],
         }
         if self.pg_story_volumes:
             volumes = self._parse_story_volumes(self.pg_story_volumes)
         else:
-            volumes = {0: dict(
-                user=self.pg_user,
-                password=self.pg_password,
-                host=self.pg_host,
-                port=self.pg_port,
-                db=self.pg_db,
-                table='story_volume_0',
-            )}
+            volumes = {
+                0: dict(
+                    user=self.pg_user,
+                    password=self.pg_password,
+                    host=self.pg_host,
+                    port=self.pg_port,
+                    db=self.pg_db,
+                    table='story_volume_0',
+                )
+            }
         self.pg_story_volumes_parsed = volumes
-        self.github_standby_configs_parsed = self._parse_github_standby_configs()
+        self.github_standby_configs_parsed = (
+            self._parse_github_standby_configs()
+        )
 
     @cached_property
     def root_domain(self) -> str:

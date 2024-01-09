@@ -18,6 +18,6 @@ def oauth_api_request(method, url, **kwargs):
     """
     when network error, fallback to use rss proxy
     """
-    options = _proxy_helper.get_proxy_options()
+    options = _proxy_helper.get_proxy_options(url=url)
     client = RSSProxyClient(**options, proxy_strategy=_proxy_strategy)
     return client.request(method, url, **kwargs)

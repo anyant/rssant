@@ -172,7 +172,7 @@ real_urls = [
 def test_find_real(start_url: str):
     finder, messages = _create_finder(
         start_url,
-        **_proxy_helper.get_proxy_options(),
+        **_proxy_helper.get_proxy_options(url=start_url),
     )
     with finder:
         found = finder.find()

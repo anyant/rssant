@@ -1,54 +1,60 @@
+import logging
 import re
 import socket
 import ssl
-import logging
-from urllib.parse import urlparse
 from http import HTTPStatus
+from urllib.parse import unquote, urlparse
 
 import requests
 
 from rssant_common import _proxy_helper
 from rssant_common.dns_service import (
-    DNSService, DNS_SERVICE,
-    PrivateAddressError,
+    DNS_SERVICE,
+    DNSService,
     NameNotResolvedError,
+    PrivateAddressError,
 )
 from rssant_common.requests_helper import requests_check_incomplete_response
+
+from . import cacert
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
-from . import cacert
-
 
 LOG = logging.getLogger(__name__)
 
 
 class FeedReaderError(Exception):
     """FeedReaderError"""
+
     status = None
 
 
 class ContentTooLargeError(FeedReaderError):
     """Content too large"""
+
     status = FeedResponseStatus.CONTENT_TOO_LARGE_ERROR.value
 
 
 class ContentTypeNotSupportError(FeedReaderError):
     """ContentTypeNotSupportError"""
+
     status = FeedResponseStatus.CONTENT_TYPE_NOT_SUPPORT_ERROR.value
 
 
 class RSSProxyError(FeedReaderError):
     """RSSProxyError"""
+
     status = FeedResponseStatus.RSS_PROXY_ERROR.value
 
 
 RE_WEBPAGE_CONTENT_TYPE = re.compile(
     r'(text/html|application/xml|text/xml|text/plain|application/json|'
-    r'application/.*xml|application/.*json|text/.*xml)', re.I)
+    r'application/.*xml|application/.*json|text/.*xml)',
+    re.I,
+)
 
-RE_WEBPAGE_EXT = re.compile(
-    r'(html|xml|json|txt|opml|rss|feed|atom)', re.I)
+RE_WEBPAGE_EXT = re.compile(r'(html|xml|json|txt|opml|rss|feed|atom)', re.I)
 
 RE_URL_EXT_SEP = re.compile(r'[./]')
 
@@ -148,7 +154,8 @@ class FeedReader:
 
     def _choice_proxy(self) -> bool:
         return _proxy_helper.choice_proxy(
-            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url
+        )
 
     def check_content_type(self, response):
         if self.allow_non_webpage:
@@ -158,7 +165,8 @@ class FeedReader:
         content_type = response.headers.get('content-type')
         if not is_webpage(content_type, str(response.url)):
             raise ContentTypeNotSupportError(
-                f'content-type {content_type!r} not support')
+                f'content-type {content_type!r} not support'
+            )
 
     def _read_content(self, response: requests.Response):
         content_length = response.headers.get('Content-Length')
@@ -166,7 +174,8 @@ class FeedReader:
             content_length = int(content_length)
             if content_length > self.max_content_length:
                 msg = 'content length {} larger than limit {}'.format(
-                    content_length, self.max_content_length)
+                    content_length, self.max_content_length
+                )
                 raise ContentTooLargeError(msg)
         content_length = 0
         content = bytearray()
@@ -174,7 +183,8 @@ class FeedReader:
             content_length += len(data)
             if content_length > self.max_content_length:
                 msg = 'content length larger than limit {}'.format(
-                    self.max_content_length)
+                    self.max_content_length
+                )
                 raise ContentTooLargeError(msg)
             content.extend(data)
         requests_check_incomplete_response(response)
@@ -221,16 +231,30 @@ class FeedReader:
             response.close()
         return response, content
 
-    def _read(self, url, etag=None, last_modified=None, ignore_content=False, proxies=None):
-        headers = self._prepare_headers(url, etag=etag, last_modified=last_modified)
+    def _read(
+        self,
+        url,
+        etag=None,
+        last_modified=None,
+        ignore_content=False,
+        proxies=None,
+    ):
+        headers = self._prepare_headers(
+            url, etag=etag, last_modified=last_modified
+        )
         req = requests.Request('GET', url, headers=headers)
         prepared = self.session.prepare_request(req)
         response, content = self._send_request(
-            prepared, ignore_content=ignore_content, proxies=proxies)
+            prepared, ignore_content=ignore_content, proxies=proxies
+        )
         return response.headers, content, response.url, response.status_code
 
-    def _read_by_rss_proxy(self, url, etag=None, last_modified=None, ignore_content=False):
-        headers = self._prepare_headers(url, etag=etag, last_modified=last_modified)
+    def _read_by_rss_proxy(
+        self, url, etag=None, last_modified=None, ignore_content=False
+    ):
+        headers = self._prepare_headers(
+            url, etag=etag, last_modified=last_modified
+        )
         data = dict(
             url=url,
             token=self.rss_proxy_token,
@@ -238,17 +262,23 @@ class FeedReader:
         )
         req = requests.Request('POST', self.rss_proxy_url, json=data)
         prepared = self.session.prepare_request(req)
-        response, content = self._send_request(prepared, ignore_content=ignore_content)
+        response, content = self._send_request(
+            prepared, ignore_content=ignore_content
+        )
         if not is_ok_status(response.status_code):
             message = 'status={} body={!r}'.format(
-                response.status_code, self._decode_content(content))
+                response.status_code, self._decode_content(content)
+            )
             raise RSSProxyError(message)
         proxy_status = response.headers.get('x-rss-proxy-status', None)
         if proxy_status and proxy_status.upper() == 'ERROR':
             message = 'status={} body={!r}'.format(
-                response.status_code, self._decode_content(content))
+                response.status_code, self._decode_content(content)
+            )
             raise RSSProxyError(message)
-        proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
+        proxy_status = (
+            int(proxy_status) if proxy_status else HTTPStatus.OK.value
+        )
         return response.headers, content, url, proxy_status
 
     def _read_by_proxy(self, url, *args, **kwargs):
@@ -262,21 +292,43 @@ class FeedReader:
             proxies = {'http': self.proxy_url, 'https': self.proxy_url}
             return self._read(url, *args, **kwargs, proxies=proxies)
 
+    def _get_proxy_msg(self, use_proxy: bool):
+        if (not self.has_proxy) or (not use_proxy):
+            return 'False'
+        if self._use_rss_proxy:
+            return self.rss_proxy_url
+        else:
+            return self.proxy_url
+
     def read(self, url, *args, use_proxy=False, **kwargs) -> FeedResponse:
+        proxy_msg = self._get_proxy_msg(use_proxy)
+        LOG.info('read %s use_proxy=%s', unquote(url), proxy_msg)
         headers = content = None
         try:
             if use_proxy:
-                headers, content, url, status = self._read_by_proxy(url, *args, **kwargs)
+                headers, content, url, status = self._read_by_proxy(
+                    url, *args, **kwargs
+                )
             else:
-                headers, content, url, status = self._read(url, *args, **kwargs)
+                headers, content, url, status = self._read(
+                    url, *args, **kwargs
+                )
         except (socket.gaierror, NameNotResolvedError):
             status = FeedResponseStatus.DNS_ERROR.value
         except requests.exceptions.ReadTimeout:
             status = FeedResponseStatus.READ_TIMEOUT.value
-        except (socket.timeout, TimeoutError, requests.exceptions.Timeout,
-                requests.exceptions.ConnectTimeout):
+        except (
+            socket.timeout,
+            TimeoutError,
+            requests.exceptions.Timeout,
+            requests.exceptions.ConnectTimeout,
+        ):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
-        except (ssl.SSLError, ssl.CertificateError, requests.exceptions.SSLError):
+        except (
+            ssl.SSLError,
+            ssl.CertificateError,
+            requests.exceptions.SSLError,
+        ):
             status = FeedResponseStatus.SSL_ERROR.value
         except requests.exceptions.ProxyError:
             status = FeedResponseStatus.PROXY_ERROR.value

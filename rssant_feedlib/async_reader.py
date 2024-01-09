@@ -1,33 +1,35 @@
+import asyncio
+import concurrent.futures
+import logging
 import socket
 import ssl
-import asyncio
-import logging
-import concurrent.futures
 from http import HTTPStatus
+from urllib.parse import unquote
 
 import aiodns
 import aiohttp
 
 from rssant_common import _proxy_helper
-from rssant_common.helper import aiohttp_client_session
 from rssant_common.dns_service import (
-    DNSService, DNS_SERVICE,
-    PrivateAddressError,
+    DNS_SERVICE,
+    DNSService,
     NameNotResolvedError,
+    PrivateAddressError,
 )
+from rssant_common.helper import aiohttp_client_session
 
-from .reader import is_webpage, is_ok_status
+from . import cacert
 from .reader import (
     ContentTooLargeError,
     ContentTypeNotSupportError,
-    RSSProxyError,
     FeedReaderError,
+    RSSProxyError,
+    is_ok_status,
+    is_webpage,
 )
 from .response import FeedResponse, FeedResponseStatus
 from .response_builder import FeedResponseBuilder
 from .useragent import DEFAULT_USER_AGENT
-from . import cacert
-
 
 LOG = logging.getLogger(__name__)
 
@@ -62,7 +64,8 @@ class AsyncFeedReader:
 
     def _choice_proxy(self) -> bool:
         return _proxy_helper.choice_proxy(
-            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url
+        )
 
     async def _async_init(self):
         if self.resolver is None:
@@ -87,7 +90,8 @@ class AsyncFeedReader:
         content_type = response.headers.get('content-type')
         if not is_webpage(content_type, str(response.url)):
             raise ContentTypeNotSupportError(
-                f'content-type {content_type} not support')
+                f'content-type {content_type} not support'
+            )
 
     async def _read_content(self, response: aiohttp.ClientResponse):
         content_length = response.headers.get('Content-Length')
@@ -95,7 +99,8 @@ class AsyncFeedReader:
             content_length = int(content_length)
             if content_length > self.max_content_length:
                 msg = 'content length {} larger than limit {}'.format(
-                    content_length, self.max_content_length)
+                    content_length, self.max_content_length
+                )
                 raise ContentTooLargeError(msg)
         content_length = 0
         content = bytearray()
@@ -103,7 +108,8 @@ class AsyncFeedReader:
             content_length += len(chunk)
             if content_length > self.max_content_length:
                 msg = 'content length larger than limit {}'.format(
-                    self.max_content_length)
+                    self.max_content_length
+                )
                 raise ContentTooLargeError(msg)
             content.extend(chunk)
         return content
@@ -112,7 +118,9 @@ class AsyncFeedReader:
         content = await self._read_content(response)
         return content.decode('utf-8', errors='ignore')
 
-    def _prepare_headers(self, url, etag=None, last_modified=None, referer=None, headers=None):
+    def _prepare_headers(
+        self, url, etag=None, last_modified=None, referer=None, headers=None
+    ):
         if headers is None:
             headers = {}
         if callable(self.user_agent):
@@ -129,8 +137,14 @@ class AsyncFeedReader:
         return headers
 
     async def _read(
-            self, url, etag=None, last_modified=None, referer=None,
-            headers=None, ignore_content=False, proxy_url=None,
+        self,
+        url,
+        etag=None,
+        last_modified=None,
+        referer=None,
+        headers=None,
+        ignore_content=False,
+        proxy_url=None,
     ) -> aiohttp.ClientResponse:
         headers = self._prepare_headers(
             url,
@@ -141,7 +155,9 @@ class AsyncFeedReader:
         )
         await self._async_init()
         async with self._create_session(proxy_url=proxy_url) as session:
-            async with session.get(url, headers=headers, ssl=self._sslcontext) as response:
+            async with session.get(
+                url, headers=headers, ssl=self._sslcontext
+            ) as response:
                 content = None
                 if not is_ok_status(response.status) or not ignore_content:
                     content = await self._read_content(response)
@@ -151,8 +167,13 @@ class AsyncFeedReader:
         return response.headers, content, str(response.url), response.status
 
     async def _read_by_rss_proxy(
-        self, url, etag=None, last_modified=None, referer=None,
-        headers=None, ignore_content=False
+        self,
+        url,
+        etag=None,
+        last_modified=None,
+        referer=None,
+        headers=None,
+        ignore_content=False,
     ):
         headers = self._prepare_headers(
             url,
@@ -179,7 +200,9 @@ class AsyncFeedReader:
                     body = await self._read_text(response)
                     message = f'status={response.status} body={body!r}'
                     raise RSSProxyError(message)
-                proxy_status = int(proxy_status) if proxy_status else HTTPStatus.OK.value
+                proxy_status = (
+                    int(proxy_status) if proxy_status else HTTPStatus.OK.value
+                )
                 content = None
                 if not is_ok_status(proxy_status) or not ignore_content:
                     content = await self._read_content(response)
@@ -196,34 +219,64 @@ class AsyncFeedReader:
         else:
             if not self.proxy_url:
                 raise ValueError("proxy_url not provided")
-            return await self._read(url, *args, **kwargs, proxy_url=self.proxy_url)
+            return await self._read(
+                url, *args, **kwargs, proxy_url=self.proxy_url
+            )
 
-    async def read(self, url, *args, use_proxy=False, **kwargs) -> FeedResponse:
+    def _get_proxy_msg(self, use_proxy: bool):
+        if (not self.has_proxy) or (not use_proxy):
+            return 'False'
+        if self._use_rss_proxy:
+            return self.rss_proxy_url
+        else:
+            return self.proxy_url
+
+    async def read(
+        self, url, *args, use_proxy=False, **kwargs
+    ) -> FeedResponse:
+        proxy_msg = self._get_proxy_msg(use_proxy)
+        LOG.info('read %s use_proxy=%s', unquote(url), proxy_msg)
         headers = content = None
         try:
             if use_proxy:
-                headers, content, url, status = await self._read_by_proxy(url, *args, **kwargs)
+                headers, content, url, status = await self._read_by_proxy(
+                    url, *args, **kwargs
+                )
             else:
-                headers, content, url, status = await self._read(url, *args, **kwargs)
+                headers, content, url, status = await self._read(
+                    url, *args, **kwargs
+                )
         except (socket.gaierror, aiodns.error.DNSError, NameNotResolvedError):
             status = FeedResponseStatus.DNS_ERROR.value
-        except (socket.timeout, TimeoutError, aiohttp.ServerTimeoutError,
-                asyncio.TimeoutError, concurrent.futures.TimeoutError):
+        except (
+            socket.timeout,
+            TimeoutError,
+            aiohttp.ServerTimeoutError,
+            asyncio.TimeoutError,
+            concurrent.futures.TimeoutError,
+        ):
             status = FeedResponseStatus.CONNECTION_TIMEOUT.value
-        except (ssl.SSLError, ssl.CertificateError,
-                aiohttp.ServerFingerprintMismatch,
-                aiohttp.ClientSSLError,
-                aiohttp.ClientConnectorSSLError,
-                aiohttp.ClientConnectorCertificateError):
+        except (
+            ssl.SSLError,
+            ssl.CertificateError,
+            aiohttp.ServerFingerprintMismatch,
+            aiohttp.ClientSSLError,
+            aiohttp.ClientConnectorSSLError,
+            aiohttp.ClientConnectorCertificateError,
+        ):
             status = FeedResponseStatus.SSL_ERROR.value
-        except (aiohttp.ClientProxyConnectionError,
-                aiohttp.ClientHttpProxyError):
+        except (
+            aiohttp.ClientProxyConnectionError,
+            aiohttp.ClientHttpProxyError,
+        ):
             status = FeedResponseStatus.PROXY_ERROR.value
-        except (ConnectionError,
-                aiohttp.ServerDisconnectedError,
-                aiohttp.ServerConnectionError,
-                aiohttp.ClientConnectionError,
-                aiohttp.ClientConnectorError):
+        except (
+            ConnectionError,
+            aiohttp.ServerDisconnectedError,
+            aiohttp.ServerConnectionError,
+            aiohttp.ClientConnectionError,
+            aiohttp.ClientConnectorError,
+        ):
             status = FeedResponseStatus.CONNECTION_RESET.value
         except (aiohttp.WSServerHandshakeError, aiohttp.ClientOSError):
             status = FeedResponseStatus.CONNECTION_ERROR.value
