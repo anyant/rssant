@@ -2,12 +2,14 @@ import datetime
 import functools
 from collections import namedtuple
 from base64 import urlsafe_b64encode, urlsafe_b64decode
+from urllib.parse import urlparse
 
 from validr import T, validator, SchemaError, Invalid, Compiler, builtin_validators
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from rssant.settings import ENV_CONFIG
 
 from .helper import coerce_url
 from .cursor import Cursor
@@ -58,6 +60,20 @@ def url_validator(compiler, scheme='http https', default_schema=None, maxlen=102
         raise SchemaError('invalid default_schema {}'.format(default_schema))
     _django_validate_url = URLValidator(schemes=schemes)
 
+    def _is_in_hosts(domain):
+        file_path = '/etc/hosts'
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    _, *domains = parts
+                    if domain in domains:
+                        return True
+        return False
+
     def validate(value):
         if default_schema:
             value = coerce_url(value, default_schema=default_schema)
@@ -67,6 +83,10 @@ def url_validator(compiler, scheme='http https', default_schema=None, maxlen=102
             # TODO: access ValidationError.messages will cause error when
             # django/i18n not setup, maybe use validators package instead
             # raise Invalid(','.join(ex.messages).rstrip('.'))
+            if ENV_CONFIG.allow_private_address:
+                domain = urlparse(value).netloc.split(':')[0]
+                if '.' not in domain and _is_in_hosts(domain):
+                    return value
             raise Invalid('invalid or incorrect url format')
         if len(value) > maxlen:
             raise Invalid(f'url length must <= {maxlen}')
@@ -186,4 +206,4 @@ VALIDATORS = {
 compiler = Compiler(validators=VALIDATORS)
 
 # warming up django url validator
-compiler.compile(T.url)('https://example.com/')
+# compiler.compile(T.url)('https://example.com/')
