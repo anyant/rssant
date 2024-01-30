@@ -1,18 +1,25 @@
 import datetime
 import functools
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from collections import namedtuple
-from base64 import urlsafe_b64encode, urlsafe_b64decode
 
-from validr import T, validator, SchemaError, Invalid, Compiler, builtin_validators
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
+from validr import (
+    Compiler,
+    Invalid,
+    SchemaError,
+    T,
+    builtin_validators,
+    validator,
+)
 
-from .helper import coerce_url
+from . import unionid
 from .cursor import Cursor
 from .detail import detail_validator
-from . import unionid
+from .helper import coerce_url
 
 
 @validator(accept=(str, object), output=(str, object))
@@ -28,7 +35,9 @@ def cursor_validator(compiler, keys=None, output_object=False, base64=False):
         try:
             if not isinstance(value, Cursor):
                 if base64:
-                    value = urlsafe_b64decode(value.encode('ascii')).decode('utf-8')
+                    value = urlsafe_b64decode(value.encode('ascii')).decode(
+                        'utf-8'
+                    )
                 value = Cursor.from_string(value, keys)
             else:
                 value._check_missing_keys(keys)
@@ -45,7 +54,13 @@ def cursor_validator(compiler, keys=None, output_object=False, base64=False):
 
 
 @validator(accept=str, output=str)
-def url_validator(compiler, scheme='http https', default_schema=None, maxlen=1024, relaxed=False):
+def url_validator(
+    compiler,
+    scheme='http https',
+    default_schema=None,
+    maxlen=1024,
+    relaxed=False,
+):
     """
     Args:
         default_schema: 接受没有scheme的url并尝试修正
@@ -76,7 +91,9 @@ def url_validator(compiler, scheme='http https', default_schema=None, maxlen=102
 
 
 @validator(accept=(str, object), output=(str, object))
-def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=False):
+def datetime_validator(
+    compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=False
+):
     def validate(value):
         try:
             if not isinstance(value, datetime.datetime):
@@ -98,11 +115,13 @@ def datetime_validator(compiler, format='%Y-%m-%dT%H:%M:%S.%fZ', output_object=F
             raise
         except Exception as ex:
             raise Invalid('invalid datetime') from ex
+
     return validate
 
 
 FeedUnionId = namedtuple('FeedUnionId', 'user_id, feed_id')
 StoryUnionId = namedtuple('StoryUnionId', 'user_id, feed_id, offset')
+PublishUnionId = namedtuple('PublishUnionId', 'user_id, publish_id')
 
 
 def create_unionid_validator(tuple_class):
@@ -118,7 +137,9 @@ def create_unionid_validator(tuple_class):
                     return unionid.encode(*value)
             except (unionid.UnionIdError, TypeError, ValueError) as ex:
                 raise Invalid('invalid unionid, {}'.format(str(ex))) from ex
+
         return validate
+
     return unionid_validator
 
 
@@ -159,7 +180,6 @@ def str_validator(compiler, schema):
 
 @validator(accept=bytes, output=bytes)
 def bytes_validator(compiler, maxlen=None):
-
     def validate(value):
         if not isinstance(value, bytes):
             raise Invalid('invalid bytes type')
@@ -177,6 +197,7 @@ VALIDATORS = {
     'datetime': datetime_validator,
     'feed_unionid': create_unionid_validator(FeedUnionId),
     'story_unionid': create_unionid_validator(StoryUnionId),
+    'publish_unionid': create_unionid_validator(PublishUnionId),
     'detail': detail_validator,
     'str': str_validator,
     'bytes': bytes_validator,

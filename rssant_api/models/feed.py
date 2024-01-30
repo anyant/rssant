@@ -1,13 +1,22 @@
 import gzip
 
-from django.utils import timezone
 from django.db import connection
+from django.utils import timezone
 from validr import T
 
-from rssant_common.detail import Detail
-from rssant_api.monthly_story_count import MonthlyStoryCount
 from rssant_api.helper import DuplicateFeedDetector
-from .helper import Model, ContentHashMixin, models, optional, JSONField, User, extract_choices
+from rssant_api.monthly_story_count import MonthlyStoryCount
+from rssant_common.detail import Detail
+
+from .helper import (
+    ContentHashMixin,
+    JSONField,
+    Model,
+    User,
+    extract_choices,
+    models,
+    optional,
+)
 
 
 class FeedStatus:
@@ -21,6 +30,7 @@ class FeedStatus:
        更新内容, status=ready，更新失败 status=error
     4. 当更新feed时发生重定向，且新URL对应的feed已存在，则将旧feed合并到新feed，旧feed标记为DISCARD
     """
+
     PENDING = 'pending'
     UPDATING = 'updating'
     READY = 'ready'
@@ -31,30 +41,39 @@ class FeedStatus:
 FEED_STATUS_CHOICES = extract_choices(FeedStatus)
 
 
-FeedDetailSchema = T.detail.fields("""
-    title
-    group,
-    dryness
-    response_status
-    freeze_level
-    use_proxy
-    dt_first_story_published
-    dt_latest_story_published
-""").extra_fields("""
-    icon
-    author
-    version
-    link
-    description
-    warnings
-    encoding
-    etag
-    last_modified
-    content_length
-    content_hash_base64
-    dt_checked
-    dt_synced
-""").default(False)
+FeedDetailSchema = (
+    T.detail.fields(
+        """
+        title
+        group
+        is_publish
+        dryness
+        response_status
+        freeze_level
+        use_proxy
+        dt_first_story_published
+        dt_latest_story_published
+        """
+    )
+    .extra_fields(
+        """
+        icon
+        author
+        version
+        link
+        description
+        warnings
+        encoding
+        etag
+        last_modified
+        content_length
+        content_hash_base64
+        dt_checked
+        dt_synced
+        """
+    )
+    .default(False)
+)
 
 FEED_DETAIL_FIELDS = Detail.from_schema(False, FeedDetailSchema).exclude_fields
 USER_FEED_DETAIL_FIELDS = [f'feed__{x}' for x in FEED_DETAIL_FIELDS]
@@ -62,6 +81,7 @@ USER_FEED_DETAIL_FIELDS = [f'feed__{x}' for x in FEED_DETAIL_FIELDS]
 
 class Feed(Model, ContentHashMixin):
     """订阅的最新数据"""
+
     class Meta:
         indexes = [
             models.Index(fields=["url"]),
@@ -76,14 +96,20 @@ class Feed(Model, ContentHashMixin):
     # TODO: make reverse_url unique and not null
     reverse_url = models.TextField(**optional, help_text="倒转URL")
     status = models.CharField(
-        max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
+        max_length=20,
+        choices=FEED_STATUS_CHOICES,
+        default=FeedStatus.PENDING,
+        help_text='状态',
+    )
     # RSS解析内容
     title = models.CharField(max_length=200, **optional, help_text="标题")
     link = models.TextField(**optional, help_text="网站链接")
     author = models.CharField(max_length=200, **optional, help_text="作者")
     icon = models.TextField(**optional, help_text="网站Logo或图标")
     description = models.TextField(**optional, help_text="描述或小标题")
-    version = models.CharField(max_length=200, **optional, help_text="供稿格式/RSS/Atom")
+    version = models.CharField(
+        max_length=200, **optional, help_text="供稿格式/RSS/Atom"
+    )
     dt_updated = models.DateTimeField(help_text="更新时间")
     # RSS抓取相关的状态
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
@@ -91,51 +117,77 @@ class Feed(Model, ContentHashMixin):
     dt_synced = models.DateTimeField(**optional, help_text="最近一次同步时间")
     encoding = models.CharField(max_length=200, **optional, help_text="编码")
     etag = models.CharField(
-        max_length=200, **optional, help_text="HTTP response header ETag")
+        max_length=200, **optional, help_text="HTTP response header ETag"
+    )
     last_modified = models.CharField(
-        max_length=200, **optional, help_text="HTTP response header Last-Modified")
+        max_length=200,
+        **optional,
+        help_text="HTTP response header Last-Modified",
+    )
     content_length = models.IntegerField(
-        **optional, help_text='length of content')
+        **optional, help_text='length of content'
+    )
     response_status = models.IntegerField(
-        **optional, help_text='response status code')
+        **optional, help_text='response status code'
+    )
     # 其他
     monthly_story_count_data = models.BinaryField(
-        **optional, max_length=514, help_text="monthly story count data")
+        **optional, max_length=514, help_text="monthly story count data"
+    )
     dryness = models.IntegerField(
-        **optional, default=0, help_text="Dryness of the feed")
+        **optional, default=0, help_text="Dryness of the feed"
+    )
     dt_first_story_published = models.DateTimeField(
-        **optional, help_text="最老的story发布时间")
+        **optional, help_text="最老的story发布时间"
+    )
     total_storys = models.IntegerField(
-        **optional, default=0, help_text="Number of total storys")
+        **optional, default=0, help_text="Number of total storys"
+    )
     retention_offset = models.IntegerField(
-        **optional, default=0, help_text="stale story == offset < retention_offset")
+        **optional,
+        default=0,
+        help_text="stale story == offset < retention_offset",
+    )
     freeze_level = models.IntegerField(
-        **optional, default=1, help_text="freeze level, 1: normal, N: slow down N times")
+        **optional,
+        default=1,
+        help_text="freeze level, 1: normal, N: slow down N times",
+    )
     use_proxy = models.BooleanField(
-        **optional, default=False, help_text="use proxy or not")
+        **optional, default=False, help_text="use proxy or not"
+    )
     checksum_data = models.BinaryField(
-        **optional, max_length=4096, help_text="feed checksum data")
+        **optional, max_length=4096, help_text="feed checksum data"
+    )
     warnings = models.TextField(
-        **optional, help_text="warning messages when processing the feed")
+        **optional, help_text="warning messages when processing the feed"
+    )
     # Deprecated since v0.3.1
     story_publish_period = models.IntegerField(
-        **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算")
+        **optional, default=30, help_text="story发布周期(天)，按18个月时间窗口计算"
+    )
     # Deprecated since v0.3.1
     offset_early_story = models.IntegerField(
-        **optional, help_text="最老或18个月前发布的story的offset")
+        **optional, help_text="最老或18个月前发布的story的offset"
+    )
     # Deprecated since v0.3.1
     dt_early_story_published = models.DateTimeField(
-        **optional, help_text="最老或18个月前发布的story的发布时间")
+        **optional, help_text="最老或18个月前发布的story的发布时间"
+    )
     dt_latest_story_published = models.DateTimeField(
-        **optional, help_text="最新的story发布时间")
+        **optional, help_text="最新的story发布时间"
+    )
 
     def merge(self, other: "Feed"):
         """
         Merge other feed to self by change other's userfeeds' feed_id to self id.
         User stotys are ignored / not handled.
         """
-        user_feeds = UserFeed.objects.only('id', 'user_id', 'feed_id', 'story_offset')\
-            .filter(feed_id__in=(self.id, other.id)).all()
+        user_feeds = (
+            UserFeed.objects.only('id', 'user_id', 'feed_id', 'story_offset')
+            .filter(feed_id__in=(self.id, other.id))
+            .all()
+        )
         self_user_ids = set()
         other_user_feeds = []
         for user_feed in user_feeds:
@@ -184,11 +236,16 @@ class Feed(Model, ContentHashMixin):
     @staticmethod
     def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=300):
         feeds = Feed.take_outdated_feeds(
-            outdate_seconds=outdate_seconds, timeout_seconds=timeout_seconds, limit=limit)
+            outdate_seconds=outdate_seconds,
+            timeout_seconds=timeout_seconds,
+            limit=limit,
+        )
         return [x['feed_id'] for x in feeds]
 
     @staticmethod
-    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=300):
+    def take_outdated_feeds(
+        outdate_seconds=300, timeout_seconds=None, limit=300
+    ):
         """
         outdate_seconds: 正常检查时间间隔
         timeout_seconds: 异常检查时间间隔
@@ -230,12 +287,25 @@ class Feed(Model, ContentHashMixin):
         ;
         """
         params = [
-            statuses, outdate_seconds, timeout_seconds,
-            statuses, outdate_seconds, timeout_seconds, limit,
-            FeedStatus.PENDING, timezone.now(),
+            statuses,
+            outdate_seconds,
+            timeout_seconds,
+            statuses,
+            outdate_seconds,
+            timeout_seconds,
+            limit,
+            FeedStatus.PENDING,
+            timezone.now(),
         ]
         feeds = []
-        columns = ['feed_id', 'url', 'etag', 'last_modified', 'use_proxy', 'checksum_data']
+        columns = [
+            'feed_id',
+            'url',
+            'etag',
+            'last_modified',
+            'use_proxy',
+            'checksum_data',
+        ]
         with connection.cursor() as cursor:
             cursor.execute(sql_check_update, params)
             for row in cursor.fetchall():
@@ -416,16 +486,23 @@ class RawFeed(Model, ContentHashMixin):
     encoding = models.CharField(max_length=200, **optional, help_text="编码")
     status_code = models.IntegerField(**optional, help_text='HTTP状态码')
     etag = models.CharField(
-        max_length=200, **optional, help_text="HTTP response header ETag")
+        max_length=200, **optional, help_text="HTTP response header ETag"
+    )
     last_modified = models.CharField(
-        max_length=200, **optional, help_text="HTTP response header Last-Modified")
+        max_length=200,
+        **optional,
+        help_text="HTTP response header Last-Modified",
+    )
     headers = JSONField(
-        **optional, help_text='HTTP response headers, JSON object')
+        **optional, help_text='HTTP response headers, JSON object'
+    )
     is_gzipped = models.BooleanField(
-        **optional, default=False, help_text="is content gzip compressed")
+        **optional, default=False, help_text="is content gzip compressed"
+    )
     content = models.BinaryField(**optional)
     content_length = models.IntegerField(
-        **optional, help_text='length of content')
+        **optional, help_text='length of content'
+    )
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
 
     def set_content(self, content):
@@ -447,6 +524,7 @@ class RawFeed(Model, ContentHashMixin):
 
 class UserFeed(Model):
     """用户的订阅状态"""
+
     class Meta:
         unique_together = ('user', 'feed')
         indexes = [
@@ -460,8 +538,15 @@ class UserFeed(Model):
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
-    story_offset = models.IntegerField(**optional, default=0, help_text="story offset")
-    is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
+    story_offset = models.IntegerField(
+        **optional, default=0, help_text="story offset"
+    )
+    is_from_bookmark = models.BooleanField(
+        **optional, default=False, help_text='是否从书签导入'
+    )
+    is_publish = models.BooleanField(
+        **optional, default=False, help_text='是否发布'
+    )
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 

@@ -1,21 +1,25 @@
 import logging
 
 from django.http.response import HttpResponse
-from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 
-from rssant_feedlib.importer import import_feed_from_text
-from rssant_api.models.errors import FeedExistError, FeedStoryOffsetError
-from rssant_api.models.errors import FeedNotFoundError
-from rssant_api.models.feed import FeedDetailSchema
-from rssant_api.models import UnionFeed, FeedCreation, FeedImportItem
+from django_rest_validr import RestRouter, T
 from rssant_api.feed_helper import group_id_of, render_opml
-from rssant_config import MAX_FEED_COUNT
+from rssant_api.models import FeedCreation, FeedImportItem, UnionFeed
+from rssant_api.models.errors import (
+    FeedExistError,
+    FeedNotFoundError,
+    FeedStoryOffsetError,
+)
+from rssant_api.models.feed import FeedDetailSchema
 from rssant_common.actor_client import scheduler
 from rssant_common.helper import timer
-from .helper import check_unionid
-from .errors import RssantAPIException
+from rssant_config import MAX_FEED_COUNT
+from rssant_feedlib.importer import import_feed_from_text
 
+from .errors import RssantAPIException
+from .helper import check_unionid
+from .publish import PublishView, is_publish_request, require_publish_user
 
 LOG = logging.getLogger(__name__)
 
@@ -37,6 +41,7 @@ FeedSchema = T.dict(
     version=T.str.optional,
     title=T.str.maxlen(200).optional,
     group=T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
+    is_publish=T.bool.optional,
     warnings=T.str.optional,
     num_unread_storys=T.int.optional,
     total_storys=T.int.optional,
@@ -79,12 +84,17 @@ FeedView = RestRouter()
 
 @FeedView.get('feed/query')
 @FeedView.post('feed/query')
+@PublishView.post('publish.feed_query')
 def feed_query(
     request,
-    hints: T.list(T.dict(
-        id=T.feed_unionid.object,
-        dt_updated=T.datetime.object,
-    )).maxlen(MAX_FEED_COUNT * 10).optional,
+    hints: T.list(
+        T.dict(
+            id=T.feed_unionid.object,
+            dt_updated=T.datetime.object,
+        )
+    )
+    .maxlen(MAX_FEED_COUNT * 10)
+    .optional,
     detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.optional,
@@ -94,12 +104,17 @@ def feed_query(
     deleted_ids=T.list(T.feed_unionid).maxlen(MAX_FEED_COUNT),
 ):
     """Feed query, if user feed count exceed limit, only return limit feeds."""
+    user = require_publish_user(request)
     if hints:
         # allow hints schema exceed feed count limit, but discard exceeded
         hints = hints[:MAX_FEED_COUNT]
-        check_unionid(request, [x['id'] for x in hints])
+        check_unionid(user, [x['id'] for x in hints])
     total, feeds, deleted_ids = UnionFeed.query_by_user(
-        user_id=request.user.id, hints=hints, detail=detail)
+        user_id=user.id,
+        hints=hints,
+        detail=detail,
+        only_publish=is_publish_request(request),
+    )
     feeds = [x.to_dict() for x in feeds]
     return dict(
         total=total,
@@ -110,16 +125,22 @@ def feed_query(
     )
 
 
-@FeedView.get('feed/<slug:feed_unionid>')
+@FeedView.get('feed/<slug:id>')
+@PublishView.post('publish.feed_get')
 def feed_get(
     request,
-    feed_unionid: T.feed_unionid.object,
+    id: T.feed_unionid.object,
     detail: FeedDetailSchema,
 ) -> FeedSchema:
     """Feed detail"""
-    check_unionid(request, feed_unionid)
+    user = require_publish_user(request)
+    check_unionid(user, id)
     try:
-        feed = UnionFeed.get_by_id(feed_unionid, detail=detail)
+        feed = UnionFeed.get_by_id(
+            id,
+            detail=detail,
+            only_publish=is_publish_request(request),
+        )
     except FeedNotFoundError:
         return Response({"message": "订阅不存在"}, status=400)
     return feed.to_dict()
@@ -131,21 +152,28 @@ _SCHEMA_FEED_CREATE_URL = T.url.default_schema('http')
 
 
 @FeedView.post('feed/creation')
-def feed_create(request, url: _SCHEMA_FEED_CREATE_URL) -> T.dict(
+def feed_create(
+    request, url: _SCHEMA_FEED_CREATE_URL
+) -> T.dict(
     is_ready=T.bool,
     feed=FeedSchema.optional,
     feed_creation=FeedCreationSchema.optional,
 ):
     """Deprecated, use feed_import instead."""
     try:
-        feed, feed_creation = UnionFeed.create_by_url(url=url, user_id=request.user.id)
+        feed, feed_creation = UnionFeed.create_by_url(
+            url=url, user_id=request.user.id
+        )
     except FeedExistError:
         return Response({'message': 'already exists'}, status=400)
     if feed_creation:
-        scheduler.tell('worker_rss.find_feed', dict(
-            feed_creation_id=feed_creation.id,
-            url=feed_creation.url,
-        ))
+        scheduler.tell(
+            'worker_rss.find_feed',
+            dict(
+                feed_creation_id=feed_creation.id,
+                url=feed_creation.url,
+            ),
+        )
     return dict(
         is_ready=bool(feed),
         feed=feed.to_dict() if feed else None,
@@ -154,11 +182,17 @@ def feed_create(request, url: _SCHEMA_FEED_CREATE_URL) -> T.dict(
 
 
 @FeedView.get('feed/creation/<int:pk>')
-def feed_get_creation(request, pk: T.int, detail: FeedDetailSchema) -> FeedCreationSchema:
+def feed_get_creation(
+    request, pk: T.int, detail: FeedDetailSchema
+) -> FeedCreationSchema:
     try:
-        feed_creation = FeedCreation.get_by_pk(pk, user_id=request.user.id, detail=detail)
+        feed_creation = FeedCreation.get_by_pk(
+            pk, user_id=request.user.id, detail=detail
+        )
     except FeedCreation.DoesNotExist:
-        return Response({'message': 'feed creation does not exist'}, status=400)
+        return Response(
+            {'message': 'feed creation does not exist'}, status=400
+        )
     return feed_creation.to_dict(detail=detail)
 
 
@@ -166,13 +200,15 @@ def feed_get_creation(request, pk: T.int, detail: FeedDetailSchema) -> FeedCreat
 def feed_query_creation(
     request,
     limit: T.int.min(10).max(MAX_FEED_COUNT).default(500),
-    detail: FeedDetailSchema
+    detail: FeedDetailSchema,
 ) -> T.dict(
     total=T.int.min(0),
     size=T.int.min(0),
     feed_creations=T.list(FeedCreationSchema).maxlen(MAX_FEED_COUNT),
 ):
-    feed_creations = FeedCreation.query_by_user(request.user.id, limit=limit, detail=detail)
+    feed_creations = FeedCreation.query_by_user(
+        request.user.id, limit=limit, detail=detail
+    )
     feed_creations = [x.to_dict() for x in feed_creations]
     return dict(
         total=len(feed_creations),
@@ -188,7 +224,7 @@ def feed_update(
     title: T.str.maxlen(200).optional,
 ) -> FeedSchema:
     """deprecated, use feed_set_title instead"""
-    check_unionid(request, feed_unionid)
+    check_unionid(request.user, feed_unionid)
     feed = UnionFeed.set_title(feed_unionid, title)
     return feed.to_dict()
 
@@ -199,7 +235,7 @@ def feed_set_title(
     id: T.feed_unionid.object,
     title: T.str.maxlen(200).optional,
 ) -> FeedSchema:
-    check_unionid(request, id)
+    check_unionid(request.user, id)
     feed = UnionFeed.set_title(id, title)
     return feed.to_dict()
 
@@ -210,8 +246,19 @@ def feed_set_group(
     id: T.feed_unionid.object,
     group: T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
 ) -> FeedSchema:
-    check_unionid(request, id)
+    check_unionid(request.user, id)
     feed = UnionFeed.set_group(id, group)
+    return feed.to_dict()
+
+
+@FeedView.put('feed/set-publish')
+def feed_set_publish(
+    request,
+    id: T.feed_unionid.object,
+    is_publish: T.bool,
+) -> FeedSchema:
+    check_unionid(request.user, id)
+    feed = UnionFeed.set_publish(id, is_publish)
     return feed.to_dict()
 
 
@@ -221,10 +268,11 @@ def feed_set_all_group(
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT),
     group: T.str.maxlen(MAX_GROUP_NAME_LENGTH),
 ) -> T.dict(num_updated=T.int):
-    check_unionid(request, ids)
+    check_unionid(request.user, ids)
     feed_ids = [x.feed_id for x in ids]
     num_updated = UnionFeed.set_all_group(
-        user_id=request.user.id, feed_ids=feed_ids, group=group)
+        user_id=request.user.id, feed_ids=feed_ids, group=group
+    )
     return dict(num_updated=num_updated)
 
 
@@ -234,7 +282,7 @@ def feed_set_offset(
     feed_unionid: T.feed_unionid.object,
     offset: T.int.min(0).optional,
 ) -> FeedSchema:
-    check_unionid(request, feed_unionid)
+    check_unionid(request.user, feed_unionid)
     try:
         feed = UnionFeed.set_story_offset(feed_unionid, offset)
     except FeedStoryOffsetError as ex:
@@ -247,14 +295,16 @@ def feed_set_all_readed(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
 ) -> T.dict(num_updated=T.int):
-    check_unionid(request, ids)
-    num_updated = UnionFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
+    check_unionid(request.user, ids)
+    num_updated = UnionFeed.set_all_readed_by_user(
+        user_id=request.user.id, ids=ids
+    )
     return dict(num_updated=num_updated)
 
 
 @FeedView.delete('feed/<slug:feed_unionid>')
 def feed_delete(request, feed_unionid: T.feed_unionid.object):
-    check_unionid(request, feed_unionid)
+    check_unionid(request.user, feed_unionid)
     try:
         UnionFeed.delete_by_id(feed_unionid)
     except FeedNotFoundError:
@@ -266,7 +316,7 @@ def feed_delete_all(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
 ) -> T.dict(num_deleted=T.int):
-    check_unionid(request, ids)
+    check_unionid(request.user, ids)
     num_deleted = UnionFeed.delete_all(user_id=request.user.id, ids=ids)
     return dict(num_deleted=num_deleted)
 
@@ -297,18 +347,22 @@ def _create_feeds_by_imports(
             item_group = raw_item.get('group')
         item_group = group_id_of(item_group)
         title = raw_item.get('title')
-        item = FeedImportItem(url=raw_item['url'], title=title, group=item_group)
+        item = FeedImportItem(
+            url=raw_item['url'], title=title, group=item_group
+        )
         import_items.append(item)
     result = UnionFeed.create_by_imports(imports=import_items, user_id=user.id)
     find_feed_tasks = []
     for feed_creation in result.feed_creations:
-        find_feed_tasks.append(dict(
-            dst='worker_rss.find_feed',
-            content=dict(
-                feed_creation_id=feed_creation.id,
-                url=feed_creation.url,
+        find_feed_tasks.append(
+            dict(
+                dst='worker_rss.find_feed',
+                content=dict(
+                    feed_creation_id=feed_creation.id,
+                    url=feed_creation.url,
+                ),
             )
-        ))
+        )
     scheduler.batch_tell(find_feed_tasks)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
@@ -374,8 +428,11 @@ def feed_import(
         return Response({"message": "订阅数超过限制"}, status=400)
     is_from_bookmark = len(import_feeds) > 100
     return _create_feeds_by_imports(
-        request.user, import_feeds, group=group,
-        is_from_bookmark=is_from_bookmark)
+        request.user,
+        import_feeds,
+        group=group,
+        is_from_bookmark=is_from_bookmark,
+    )
 
 
 @FeedView.post('feed/import/file')
@@ -384,5 +441,7 @@ def feed_import_file(request) -> FeedImportResultSchema:
     text, filename = _read_request_file(request)
     group = request.GET.get('group')
     if group and len(group) > MAX_GROUP_NAME_LENGTH:
-        raise RssantAPIException(f'group name length must <= {MAX_GROUP_NAME_LENGTH}')
+        raise RssantAPIException(
+            f'group name length must <= {MAX_GROUP_NAME_LENGTH}'
+        )
     return feed_import(request, text, group=group)
