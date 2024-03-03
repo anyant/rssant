@@ -31,6 +31,9 @@ class UserPublish(Model):
     root_url: str = models.CharField(
         **optional, max_length=255, verbose_name='访问地址'
     )
+    is_all_public = models.BooleanField(
+        **optional, default=False, verbose_name='是否全部公开'
+    )
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
@@ -43,6 +46,7 @@ class UserPublish(Model):
             unionid=self.unionid,
             is_enable=self.is_enable,
             root_url=self.root_url,
+            is_all_public=self.is_all_public,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
         )
@@ -100,8 +104,13 @@ class UserPublish(Model):
         publish_id: int = None,
         is_enable: bool,
         root_url: str = None,
+        is_all_public: bool = None,
     ) -> "UserPublish":
-        data = dict(is_enable=is_enable, root_url=root_url)
+        data = dict(
+            is_enable=is_enable,
+            root_url=root_url,
+            is_all_public=is_all_public,
+        )
         if publish_id is None:
             return UserPublish.objects.create(user_id=user_id, **data)
         q = UserPublish.objects.filter(id=publish_id, user_id=user_id)

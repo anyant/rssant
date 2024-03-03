@@ -11,6 +11,7 @@ UserPublishSchema = T.dict(
     unionid=T.publish_unionid.optional,
     is_enable=T.bool.optional,
     root_url=T.nstr.optional,
+    is_all_public=T.bool.optional,
     dt_created=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
 )
@@ -37,6 +38,7 @@ def on_user_publish_set(
     unionid: T.publish_unionid.object.optional,
     is_enable: T.bool,
     root_url: _RootUrlSchema,
+    is_all_public: T.bool.optional,
 ) -> UserPublishSchema:
     """用户设置发布页面配置"""
     publish_id = None
@@ -49,5 +51,6 @@ def on_user_publish_set(
         publish_id=publish_id,
         is_enable=is_enable,
         root_url=root_url,
+        is_all_public=is_all_public,
     )
     return result.to_dict()
