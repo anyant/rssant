@@ -130,3 +130,10 @@ class UserPublish(Model):
     )
     def get_user_cached(cls, *args, **kwargs):
         return cls._get_user_impl(*args, **kwargs)
+
+    @classmethod
+    def internal_clear_cache(cls):
+        with cls._get_impl_cached.cache_lock:
+            cls._get_impl_cached.cache.clear()
+        with cls.get_user_cached.cache_lock:
+            cls.get_user_cached.cache.clear()

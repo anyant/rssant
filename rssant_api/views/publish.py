@@ -71,5 +71,11 @@ def require_publish_user(request):
     return user
 
 
-def is_publish_request(request):
-    return bool(_get_publish_header(request))
+def is_only_publish(request):
+    value: str = _get_publish_header(request)
+    if not value:
+        return False
+    publish_info = _get_publish_info(value)
+    if publish_info is None or (not publish_info.is_enable):
+        raise PermissionDenied('rssant publish not available')
+    return not publish_info.is_all_public

@@ -21,7 +21,7 @@ from rssant_feedlib import FeedResponseStatus
 from rssant_feedlib.fulltext import FulltextAcceptStrategy
 
 from .helper import check_unionid
-from .publish import PublishView, is_publish_request, require_publish_user
+from .publish import PublishView, is_only_publish, require_publish_user
 
 LOG = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ def story_query_by_feed(
             offset=offset,
             size=size,
             detail=detail,
-            only_publish=is_publish_request(request),
+            only_publish=is_only_publish(request),
         )
     except FeedNotFoundError:
         return Response({"message": "feed does not exist"}, status=400)
@@ -165,7 +165,7 @@ def story_get_by_offset(
     """Story detail"""
     user = require_publish_user(request)
     check_unionid(user, feed_id)
-    only_publish = is_publish_request(request)
+    only_publish = is_only_publish(request)
     try:
         story = UnionStory.get_by_feed_offset(
             feed_id,

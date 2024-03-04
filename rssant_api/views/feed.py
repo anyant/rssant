@@ -19,7 +19,7 @@ from rssant_feedlib.importer import import_feed_from_text
 
 from .errors import RssantAPIException
 from .helper import check_unionid
-from .publish import PublishView, is_publish_request, require_publish_user
+from .publish import PublishView, is_only_publish, require_publish_user
 
 LOG = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ def feed_query(
         user_id=user.id,
         hints=hints,
         detail=detail,
-        only_publish=is_publish_request(request),
+        only_publish=is_only_publish(request),
     )
     feeds = [x.to_dict() for x in feeds]
     return dict(
@@ -139,7 +139,7 @@ def feed_get(
         feed = UnionFeed.get_by_id(
             id,
             detail=detail,
-            only_publish=is_publish_request(request),
+            only_publish=is_only_publish(request),
         )
     except FeedNotFoundError:
         return Response({"message": "订阅不存在"}, status=400)
