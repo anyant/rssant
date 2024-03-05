@@ -1,4 +1,5 @@
 import logging
+import re
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny
@@ -19,16 +20,21 @@ PublishView = RestRouter(permission_classes=[AllowAny])
 @PublishView.post('publish.info')
 def on_publish_info(request) -> UserPublishSchema:
     """公开获取发布页面配置"""
-    value: str = _get_publish_header(request)
-    if not value:
-        raise ValidationError('missing x-rssant-publish')
-    result = _get_publish_info(value)
-    if result is None:
+    try:
+        result = _get_publish_info(request)
+    except PermissionDenied:
         return dict(is_enable=False)
-    return result.to_dict()
+    else:
+        return result.to_dict()
 
 
 validate_publish_unionid = schema_compiler.compile(T.publish_unionid.object)
+
+RE_PUBLISH_API = re.compile(r'^/api/[^/]+/publish\.', re.I)
+
+
+def _is_publish_api(request):
+    return bool(RE_PUBLISH_API.match(request.path))
 
 
 def _get_publish_header(request):
@@ -36,7 +42,7 @@ def _get_publish_header(request):
     return value and value.strip()
 
 
-def _get_publish_info(header):
+def _get_publish_info_by_header(header):
     try:
         publish_unionid = validate_publish_unionid(header)
     except Invalid as ex:
@@ -48,34 +54,40 @@ def _get_publish_info(header):
     return publish_info
 
 
-def _get_publish_user(request):
+def _get_publish_info_by_user(user):
+    publish_info = UserPublish.get_cached(user_id=user.id)
+    return publish_info
+
+
+def _get_publish_info_impl(request):
     value: str = _get_publish_header(request)
-    if not value:
-        return None
-    publish_info = _get_publish_info(value)
+    if value:
+        return _get_publish_info_by_header(value)
+    # 取登录用户信息，方便直接预览自己发布的订阅
+    if request.user.is_authenticated:
+        return _get_publish_info_by_user(request.user)
+    return None
+
+
+def _get_publish_info(request):
+    publish_info = _get_publish_info_impl(request)
     if publish_info is None or (not publish_info.is_enable):
         raise PermissionDenied('rssant publish not available')
+    return publish_info
+
+
+def require_publish_user(request):
+    if not _is_publish_api(request):
+        return request.user
+    publish_info = _get_publish_info(request)
     user = UserPublish.get_user_cached(publish_info.user_id)
     if user is None:
         raise RuntimeError('rssant publish user not found')
     return user
 
 
-def require_publish_user(request):
-    user = _get_publish_user(request)
-    if user is None:
-        if request.user.is_authenticated:
-            user = request.user
-    if user is None:
-        raise PermissionDenied()
-    return user
-
-
 def is_only_publish(request):
-    value: str = _get_publish_header(request)
-    if not value:
+    if not _is_publish_api(request):
         return False
-    publish_info = _get_publish_info(value)
-    if publish_info is None or (not publish_info.is_enable):
-        raise PermissionDenied('rssant publish not available')
+    publish_info = _get_publish_info(request)
     return not publish_info.is_all_public

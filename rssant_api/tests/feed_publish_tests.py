@@ -68,6 +68,16 @@ class FeedPublishTestCase(TestCase):
         unionid = response.json()['unionid']
         assert unionid
 
+        # test /api/v1/publish.info
+        UserPublish.internal_clear_cache()
+        response = self.client.post(
+            '/api/v1/publish.info',
+            HTTP_X_RSSANT_PUBLISH=unionid,
+        )
+        assert response.status_code == 200
+        assert response.json()['is_enable'] is True
+        assert response.json()['unionid'] == unionid
+
         # test /api/v1/user_publish.set
         response = self.client.post(
             '/api/v1/user_publish.set',
@@ -85,7 +95,6 @@ class FeedPublishTestCase(TestCase):
         )
         assert response.status_code == 200
         assert response.json()['is_enable'] is False
-        assert response.json()['unionid'] == unionid
 
     def test_publish_feed_query(self):
         response = self.client.post(
