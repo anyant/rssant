@@ -1,24 +1,26 @@
-from django.utils import timezone
-from django.db import transaction
 from functools import cached_property
 
-from rssant_feedlib.processor import story_html_to_text
-from rssant_common.validator import StoryUnionId, FeedUnionId
-from rssant_common.detail import Detail
-from .feed import UserFeed
-from .story import Story, UserStory, StoryDetailSchema, USER_STORY_DETAIL_FEILDS
-from .story_info import StoryInfo, StoryId, STORY_INFO_DETAIL_FEILDS
-from .errors import FeedNotFoundError, StoryNotFoundError
-from .story_service import STORY_SERVICE
+from django.db import transaction
+from django.utils import timezone
 
+from rssant_common.detail import Detail
+from rssant_common.validator import FeedUnionId, StoryUnionId
+from rssant_feedlib.processor import story_html_to_text
+
+from .errors import FeedNotFoundError, StoryNotFoundError
+from .feed import UserFeed
+from .story import USER_STORY_DETAIL_FEILDS, Story, StoryDetailSchema, UserStory
+from .story_info import STORY_INFO_DETAIL_FEILDS, StoryId, StoryInfo
+from .story_service import STORY_SERVICE
 
 # 旧的数据里有些 summary 是 html 格式，需要转成 text 给页面展示
 _DATE_LAST_HTML_SUMMARY = timezone.datetime(2020, 8, 1, tzinfo=timezone.utc)
 
 
 class UnionStory:
-
-    def __init__(self, story, *, user_id, user_feed_id, user_story=None, detail=False):
+    def __init__(
+        self, story, *, user_id, user_feed_id, user_story=None, detail=False
+    ):
         self._story = story
         self._user_id = user_id
         self._user_feed_id = user_feed_id
@@ -155,7 +157,9 @@ class UnionStory:
     @staticmethod
     def _check_user_feed_by_story_unionid(story_unionid):
         user_id, feed_id, offset = story_unionid
-        q = UserFeed.objects.only('id').filter(user_id=user_id, feed_id=feed_id)
+        q = UserFeed.objects.only('id').filter(
+            user_id=user_id, feed_id=feed_id
+        )
         try:
             user_feed = q.get()
         except UserFeed.DoesNotExist:
@@ -164,7 +168,9 @@ class UnionStory:
 
     @staticmethod
     def get_by_id(story_unionid, detail=False):
-        user_feed_id = UnionStory._check_user_feed_by_story_unionid(story_unionid)
+        user_feed_id = UnionStory._check_user_feed_by_story_unionid(
+            story_unionid
+        )
         user_id, feed_id, offset = story_unionid
         q = UserStory.objects.select_related('story')
         q = q.filter(user_id=user_id, feed_id=feed_id, offset=offset)
@@ -184,16 +190,19 @@ class UnionStory:
             user_id=user_id,
             user_feed_id=user_feed_id,
             user_story=user_story,
-            detail=detail
+            detail=detail,
         )
 
     @staticmethod
-    def get_by_feed_offset(feed_unionid, offset, detail=False):
+    def get_by_feed_offset(feed_unionid, offset, detail=False, only_publish=False):
+        # TODO: filter by only_publish
         story_unionid = StoryUnionId(*feed_unionid, offset)
         return UnionStory.get_by_id(story_unionid, detail=detail)
 
     @staticmethod
-    def _merge_storys(storys, user_storys, *, user_id, user_feeds=None, detail=False):
+    def _merge_storys(
+        storys, user_storys, *, user_id, user_feeds=None, detail=False
+    ):
         user_storys_map = {(x.feed_id, x.offset): x for x in user_storys}
         user_storys_map_fallback = {x.story_id: x for x in user_storys}
         if user_feeds:
@@ -210,13 +219,15 @@ class UnionStory:
                 if story_id is not None:
                     user_story = user_storys_map_fallback.get(story_id)
             user_feed_id = user_feeds_map.get(story.feed_id)
-            ret.append(UnionStory(
-                story,
-                user_id=user_id,
-                user_feed_id=user_feed_id,
-                user_story=user_story,
-                detail=detail
-            ))
+            ret.append(
+                UnionStory(
+                    story,
+                    user_id=user_id,
+                    user_feed_id=user_feed_id,
+                    user_story=user_story,
+                    detail=detail,
+                )
+            )
         return ret
 
     @classmethod
@@ -232,8 +243,7 @@ class UnionStory:
     def _query_storys_by_story_service(cls, feed_id, offset, size, detail):
         begin_id = StoryId.encode(feed_id, offset)
         end_id = StoryId.encode(feed_id, offset + size - 1)
-        q = StoryInfo.objects\
-            .filter(pk__gte=begin_id, pk__lte=end_id)
+        q = StoryInfo.objects.filter(pk__gte=begin_id, pk__lte=end_id)
         if not detail:
             q = q.defer(*STORY_INFO_DETAIL_FEILDS)
         story_info_s = list(q.all())
@@ -242,28 +252,45 @@ class UnionStory:
 
     @classmethod
     def _query_user_storys_by_offset(cls, user_id, feed_id, offset_s):
-        q = UserStory.objects.filter(user_id=user_id, feed_id=feed_id, offset__in=offset_s)
+        q = UserStory.objects.filter(
+            user_id=user_id, feed_id=feed_id, offset__in=offset_s
+        )
         q = q.exclude(is_favorited=False, is_watched=False)
         user_storys = list(q.all())
         return user_storys
 
     @classmethod
     def _query_storys(cls, feed_id, offset, size, detail):
-        storys = cls._query_storys_by_story_service(feed_id, offset, size, detail=detail)
+        storys = cls._query_storys_by_story_service(
+            feed_id, offset, size, detail=detail
+        )
         got_offset_s = set(x.offset for x in storys)
         if len(storys) < size:
-            for story in cls._query_storys_by_feed(feed_id, offset, size, detail=detail):
+            for story in cls._query_storys_by_feed(
+                feed_id, offset, size, detail=detail
+            ):
                 if story.offset not in got_offset_s:
                     storys.append(story)
         storys = list(sorted(storys, key=lambda x: x.offset))
         return storys
 
     @classmethod
-    def query_by_feed(cls, feed_unionid, offset=None, size=10, detail=False):
+    def query_by_feed(
+        cls,
+        feed_unionid,
+        offset=None,
+        size=10,
+        detail=False,
+        only_publish: bool = False,
+    ):
         user_id, feed_id = feed_unionid
-        q = UserFeed.objects.select_related('feed')\
-            .filter(user_id=user_id, feed_id=feed_id)\
-            .only('id', 'story_offset', 'feed_id', 'feed__id', 'feed__total_storys')
+        q = UserFeed.objects.select_related('feed')
+        q = q.filter(user_id=user_id, feed_id=feed_id)
+        if only_publish:
+            q = q.filter(is_publish=True)
+        q = q.only(
+            'id', 'story_offset', 'feed_id', 'feed__id', 'feed__total_storys'
+        )
         try:
             user_feed = q.get()
         except UserFeed.DoesNotExist as ex:
@@ -275,13 +302,22 @@ class UnionStory:
             size = total - offset
         storys = cls._query_storys(feed_id, offset, size, detail=detail)
         offset_s = [x.offset for x in storys]
-        user_storys = cls._query_user_storys_by_offset(user_id, feed_id, offset_s)
+        user_storys = cls._query_user_storys_by_offset(
+            user_id, feed_id, offset_s
+        )
         ret = UnionStory._merge_storys(
-            storys, user_storys, user_feeds=[user_feed], user_id=user_id, detail=detail)
+            storys,
+            user_storys,
+            user_feeds=[user_feed],
+            user_id=user_id,
+            detail=detail,
+        )
         return total, offset, ret
 
     @classmethod
-    def query_recent_by_user(cls, user_id, feed_unionids=None, days=14, limit=300, detail=False):
+    def query_recent_by_user(
+        cls, user_id, feed_unionids=None, days=14, limit=300, detail=False
+    ):
         """
         Deprecated since 1.4.2, use batch_get_by_feed_offset instead
         """
@@ -293,14 +329,16 @@ class UnionStory:
         else:
             feed_ids = cls._query_user_feed_ids(user_id)
         dt_begin = timezone.now() - timezone.timedelta(days=days)
-        q = Story.objects.filter(feed_id__in=feed_ids)\
-            .filter(dt_published__gte=dt_begin)
+        q = Story.objects.filter(feed_id__in=feed_ids).filter(
+            dt_published__gte=dt_begin
+        )
         detail = Detail.from_schema(detail, StoryDetailSchema)
         q = q.defer(*detail.exclude_fields)
         q = q.order_by('-dt_published')[:limit]
         storys = list(q.all())
         union_storys = cls._query_union_storys(
-            user_id=user_id, storys=storys, detail=detail)
+            user_id=user_id, storys=storys, detail=detail
+        )
         return union_storys
 
     @classmethod
@@ -322,11 +360,13 @@ class UnionStory:
         story_ids = [x.id for x in storys]
         feed_ids = list(set([x.feed_id for x in storys]))
         q = UserStory.objects.filter(
-            user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids)
+            user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids
+        )
         q = q.exclude(is_favorited=False, is_watched=False)
         user_storys = list(q.all())
         union_storys = UnionStory._merge_storys(
-            storys, user_storys, user_id=user_id, detail=detail)
+            storys, user_storys, user_id=user_id, detail=detail
+        )
         return union_storys
 
     @classmethod
@@ -343,7 +383,8 @@ class UnionStory:
         """
         user_storys = list(UserStory.objects.raw(sql, [user_id]))
         union_storys = UnionStory._merge_storys(
-            storys, user_storys, user_id=user_id, detail=detail)
+            storys, user_storys, user_id=user_id, detail=detail
+        )
         return union_storys
 
     @classmethod
@@ -378,13 +419,18 @@ class UnionStory:
         finish_story_keys = set((x.feed_id, x.offset) for x in storys)
         remain_story_keys = list(sorted(set(story_keys) - finish_story_keys))
         if remain_story_keys:
-            storys.extend(Story.batch_get_by_offset(remain_story_keys, detail=detail))
+            storys.extend(
+                Story.batch_get_by_offset(remain_story_keys, detail=detail)
+            )
         union_storys = cls._query_union_storys_by_offset(
-            user_id=user_id, storys=storys, detail=detail)
+            user_id=user_id, storys=storys, detail=detail
+        )
         return union_storys
 
     @staticmethod
-    def _query_by_tag(user_id, is_favorited=None, is_watched=None, detail=False):
+    def _query_by_tag(
+        user_id, is_favorited=None, is_watched=None, detail=False
+    ):
         q = UserStory.objects.select_related('story').filter(user_id=user_id)
         detail = Detail.from_schema(detail, StoryDetailSchema)
         exclude_fields = [f'story__{x}' for x in detail.exclude_fields]
@@ -395,16 +441,22 @@ class UnionStory:
             q = q.filter(is_watched=is_watched)
         user_storys = list(q.all())
         storys = [x.story for x in user_storys]
-        union_storys = UnionStory._merge_storys(storys, user_storys, user_id=user_id, detail=detail)
+        union_storys = UnionStory._merge_storys(
+            storys, user_storys, user_id=user_id, detail=detail
+        )
         return union_storys
 
     @staticmethod
     def query_favorited(user_id, detail=False):
-        return UnionStory._query_by_tag(user_id, is_favorited=True, detail=detail)
+        return UnionStory._query_by_tag(
+            user_id, is_favorited=True, detail=detail
+        )
 
     @staticmethod
     def query_watched(user_id, detail=False):
-        return UnionStory._query_by_tag(user_id, is_watched=True, detail=detail)
+        return UnionStory._query_by_tag(
+            user_id, is_watched=True, detail=detail
+        )
 
     @staticmethod
     def _set_tag_by_id(story_unionid, is_favorited=None, is_watched=None):
@@ -412,12 +464,14 @@ class UnionStory:
         story = STORY_SERVICE.set_user_marked(feed_id, offset)
         if not story:
             story = Story.get_by_offset(feed_id, offset, detail=False)
-        user_feed = UserFeed.objects\
-            .only('id', 'user_id', 'feed_id')\
-            .get(user_id=user_id, feed_id=feed_id)
+        user_feed = UserFeed.objects.only('id', 'user_id', 'feed_id').get(
+            user_id=user_id, feed_id=feed_id
+        )
         user_feed_id = user_feed.id
         try:
-            user_story = UserStory.get_by_offset(user_id, feed_id, offset, detail=False)
+            user_story = UserStory.get_by_offset(
+                user_id, feed_id, offset, detail=False
+            )
         except UserStory.DoesNotExist:
             user_story = None
         with transaction.atomic():
@@ -427,7 +481,7 @@ class UnionStory:
                     feed_id=feed_id,
                     user_feed_id=user_feed_id,
                     story_id=story.id,
-                    offset=offset
+                    offset=offset,
                 )
             if is_favorited is not None:
                 user_story.is_favorited = is_favorited
@@ -441,13 +495,19 @@ class UnionStory:
                     story.is_user_marked = True
                     story.save()
         union_story = UnionStory(
-            story, user_id=user_id, user_feed_id=user_feed_id,
-            user_story=user_story, detail=False)
+            story,
+            user_id=user_id,
+            user_feed_id=user_feed_id,
+            user_story=user_story,
+            detail=False,
+        )
         return union_story
 
     @staticmethod
     def set_favorited_by_id(story_unionid, is_favorited):
-        return UnionStory._set_tag_by_id(story_unionid, is_favorited=is_favorited)
+        return UnionStory._set_tag_by_id(
+            story_unionid, is_favorited=is_favorited
+        )
 
     @staticmethod
     def set_watched_by_id(story_unionid, is_watched):
@@ -456,9 +516,13 @@ class UnionStory:
     @staticmethod
     def set_favorited_by_feed_offset(feed_unionid, offset, is_favorited):
         story_unionid = StoryUnionId(*feed_unionid, offset)
-        return UnionStory.set_favorited_by_id(story_unionid, is_favorited=is_favorited)
+        return UnionStory.set_favorited_by_id(
+            story_unionid, is_favorited=is_favorited
+        )
 
     @staticmethod
     def set_watched_by_feed_offset(feed_unionid, offset, is_watched):
         story_unionid = StoryUnionId(*feed_unionid, offset)
-        return UnionStory.set_watched_by_id(story_unionid, is_watched=is_watched)
+        return UnionStory.set_watched_by_id(
+            story_unionid, is_watched=is_watched
+        )

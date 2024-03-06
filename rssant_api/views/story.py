@@ -1,22 +1,27 @@
-import time
-import socket
 import logging
+import socket
+import time
 
 import requests
-from django_rest_validr import RestRouter, T
 from rest_framework.response import Response
 
-from rssant_api.models.errors import FeedNotFoundError, StoryNotFoundError, FeedStoryOffsetError
+from django_rest_validr import RestRouter, T
+from rssant_api.models import UnionFeed, UnionStory
+from rssant_api.models.errors import (
+    FeedNotFoundError,
+    FeedStoryOffsetError,
+    StoryNotFoundError,
+)
 from rssant_api.models.helper import ConcurrentUpdateError
-from rssant_api.models import UnionStory, UnionFeed
 from rssant_api.models.story import StoryDetailSchema
+from rssant_common.actor_client import scheduler
+from rssant_common.image_token import ImageToken
+from rssant_config import CONFIG
 from rssant_feedlib import FeedResponseStatus
 from rssant_feedlib.fulltext import FulltextAcceptStrategy
-from rssant_common.image_token import ImageToken
-from rssant_common.actor_client import scheduler
-from rssant_config import CONFIG
-from .helper import check_unionid
 
+from .helper import check_unionid
+from .publish import PublishView, is_only_publish, require_publish_user
 
 LOG = logging.getLogger(__name__)
 
@@ -65,6 +70,7 @@ STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 
 
 @StoryView.get('story/query')
+@PublishView.post('publish.story_query')
 def story_query_by_feed(
     request,
     feed_id: T.feed_unionid.object,
@@ -73,10 +79,16 @@ def story_query_by_feed(
     detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     """Story list"""
-    check_unionid(request, feed_id)
+    user = require_publish_user(request)
+    check_unionid(user, feed_id)
     try:
         total, offset, storys = UnionStory.query_by_feed(
-            feed_unionid=feed_id, offset=offset, size=size, detail=detail)
+            feed_unionid=feed_id,
+            offset=offset,
+            size=size,
+            detail=detail,
+            only_publish=is_only_publish(request),
+        )
     except FeedNotFoundError:
         return Response({"message": "feed does not exist"}, status=400)
     storys = [x.to_dict() for x in storys]
@@ -95,11 +107,13 @@ def story_query_recent(
     days: T.int.min(1).max(30).default(14),
     detail: StoryDetailSchema,
 ) -> StoryResultSchema:
-    check_unionid(request, feed_ids)
+    check_unionid(request.user, feed_ids)
     storys = UnionStory.query_recent_by_user(
         user_id=request.user.id,
         feed_unionids=feed_ids,
-        days=days, detail=detail)
+        days=days,
+        detail=detail,
+    )
     storys = [x.to_dict() for x in storys]
     return dict(
         total=len(storys),
@@ -111,15 +125,17 @@ def story_query_recent(
 @StoryView.post('story/query-batch')
 def story_query_batch(
     request,
-    storys: T.list(T.dict(
-        feed_id=T.feed_unionid.object,
-        offset=T.int.min(0),
-        limit=T.int.min(1).max(10).default(1),
-    )),
+    storys: T.list(
+        T.dict(
+            feed_id=T.feed_unionid.object,
+            offset=T.int.min(0),
+            limit=T.int.min(1).max(10).default(1),
+        )
+    ),
     detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     feed_union_ids = [x['feed_id'] for x in storys]
-    check_unionid(request, feed_union_ids)
+    check_unionid(request.user, feed_union_ids)
     story_keys = []
     for item in storys:
         feed_id = item['feed_id'].feed_id
@@ -127,7 +143,8 @@ def story_query_batch(
         for i in range(item['limit']):
             story_keys.append((feed_id, offset + i))
     storys = UnionStory.batch_get_by_feed_offset(
-        story_keys=story_keys, user_id=request.user.id, detail=detail)
+        story_keys=story_keys, user_id=request.user.id, detail=detail
+    )
     storys = [x.to_dict() for x in storys]
     return dict(
         total=len(storys),
@@ -136,30 +153,40 @@ def story_query_batch(
     )
 
 
-@StoryView.get('story/<slug:feed_unionid>-<int:offset>')
+@StoryView.get('story/<slug:feed_id>-<int:offset>')
+@PublishView.post('publish.story_get')
 def story_get_by_offset(
     request,
-    feed_unionid: T.feed_unionid.object,
+    feed_id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     detail: StoryDetailSchema,
     set_readed: T.bool.default(False),
 ) -> StorySchema:
     """Story detail"""
-    check_unionid(request, feed_unionid)
+    user = require_publish_user(request)
+    check_unionid(user, feed_id)
+    only_publish = is_only_publish(request)
     try:
-        story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=detail)
+        story = UnionStory.get_by_feed_offset(
+            feed_id,
+            offset,
+            detail=detail,
+            only_publish=only_publish,
+        )
     except StoryNotFoundError:
         return Response({"message": "does not exist"}, status=400)
-    if set_readed:
+    if (not only_publish) and set_readed:
         try:
-            UnionFeed.set_story_offset(feed_unionid, offset + 1)
+            UnionFeed.set_story_offset(feed_id, offset + 1)
         except FeedStoryOffsetError as ex:
             return Response({'message': str(ex)}, status=400)
         except ConcurrentUpdateError as ex:
-            LOG.error(f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex)
+            LOG.error(
+                f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex
+            )
     image_token = ImageToken(
         referrer=story.link,
-        feed=feed_unionid.feed_id,
+        feed=feed_id.feed_id,
         offset=offset,
     ).encode(secret=CONFIG.image_token_secret)
     ret = story.to_dict()
@@ -204,8 +231,10 @@ def story_set_watched(
     offset: T.int.min(0).optional,
     is_watched: T.bool.default(True),
 ) -> StorySchema:
-    check_unionid(request, feed_unionid)
-    story = UnionStory.set_watched_by_feed_offset(feed_unionid, offset, is_watched=is_watched)
+    check_unionid(request.user, feed_unionid)
+    story = UnionStory.set_watched_by_feed_offset(
+        feed_unionid, offset, is_watched=is_watched
+    )
     return story.to_dict()
 
 
@@ -216,8 +245,10 @@ def story_set_favorited(
     offset: T.int.min(0).optional,
     is_favorited: T.bool.default(True),
 ) -> StorySchema:
-    check_unionid(request, feed_unionid)
-    story = UnionStory.set_favorited_by_feed_offset(feed_unionid, offset, is_favorited=is_favorited)
+    check_unionid(request.user, feed_unionid)
+    story = UnionStory.set_favorited_by_feed_offset(
+        feed_unionid, offset, is_favorited=is_favorited
+    )
     return story.to_dict()
 
 
@@ -240,14 +271,16 @@ def story_fetch_fulltext(
     story=StorySchema.optional,
 ):
     feed_unionid = feed_id
-    check_unionid(request, feed_unionid)
+    check_unionid(request.user, feed_unionid)
     user_id, feed_id = feed_unionid
     content = dict(feed_id=feed_id, offset=offset)
     expire_at = int(time.time() + 60)
     use_proxy = None
     accept = None
     try:
-        result = scheduler.ask('harbor_rss.sync_story_fulltext', content, expire_at=expire_at)
+        result = scheduler.ask(
+            'harbor_rss.sync_story_fulltext', content, expire_at=expire_at
+        )
     except _TIMEOUT_ERRORS as ex:
         LOG.error(f'Ask harbor_rss.sync_story_fulltext timeout: {ex}')
         response_status = FeedResponseStatus.CONNECTION_TIMEOUT
@@ -257,7 +290,9 @@ def story_fetch_fulltext(
         accept = result['accept']
     story = None
     if accept != FulltextAcceptStrategy.REJECT.value:
-        story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=True)
+        story = UnionStory.get_by_feed_offset(
+            feed_unionid, offset, detail=True
+        )
         story = story.to_dict()
     response_status_name = FeedResponseStatus.name_of(response_status)
     return dict(

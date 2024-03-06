@@ -1,21 +1,25 @@
 import typing
 from collections import namedtuple
-
-from django.utils import timezone
-from django.db import transaction
 from functools import cached_property
 
-from rssant_common.validator import FeedUnionId
+from django.db import transaction
+from django.utils import timezone
+
 from rssant_common.detail import Detail
+from rssant_common.validator import FeedUnionId
 from rssant_config import MAX_FEED_COUNT
 from rssant_feedlib import FeedResponseStatus
-from .errors import FeedExistError, FeedStoryOffsetError, FeedNotFoundError
-from .feed import (
-    UserFeed, Feed, FeedStatus, FeedDetailSchema,
-    FEED_DETAIL_FIELDS, USER_FEED_DETAIL_FIELDS,
-)
-from .feed_creation import FeedCreation, FeedCreateResult, FeedUrlMap
 
+from .errors import FeedExistError, FeedNotFoundError, FeedStoryOffsetError
+from .feed import (
+    FEED_DETAIL_FIELDS,
+    USER_FEED_DETAIL_FIELDS,
+    Feed,
+    FeedDetailSchema,
+    FeedStatus,
+    UserFeed,
+)
+from .feed_creation import FeedCreateResult, FeedCreation, FeedUrlMap
 
 FeedImportItem = namedtuple('FeedImportItem', 'url, title, group')
 
@@ -61,6 +65,10 @@ class UnionFeed:
         return self._user_feed.group
 
     @property
+    def is_publish(self):
+        return self._user_feed.is_publish
+
+    @property
     def link(self):
         return self._feed.link
 
@@ -98,7 +106,8 @@ class UnionFeed:
     @property
     def dt_updated(self):
         return self._union_dt_updated(
-            self._user_feed.dt_updated, self._feed.dt_updated)
+            self._user_feed.dt_updated, self._feed.dt_updated
+        )
 
     @property
     def dt_created(self):
@@ -193,10 +202,12 @@ class UnionFeed:
         return ret
 
     @staticmethod
-    def get_by_id(feed_unionid, detail=False):
+    def get_by_id(feed_unionid, detail=False, only_publish=False):
         user_id, feed_id = feed_unionid
         q = UserFeed.objects.select_related('feed').seal()
         q = q.filter(user_id=user_id, feed_id=feed_id)
+        if only_publish:
+            q = q.filter(is_publish=True)
         if not detail:
             q = q.defer(*USER_FEED_DETAIL_FIELDS)
         try:
@@ -213,13 +224,16 @@ class UnionFeed:
     def _merge_user_feeds(user_feeds, detail=False):
         def sort_union_feeds(x):
             return (bool(x.dt_updated), x.dt_updated, x.id)
+
         union_feeds = []
         for user_feed in user_feeds:
-            union_feeds.append(UnionFeed(user_feed.feed, user_feed, detail=detail))
+            union_feeds.append(
+                UnionFeed(user_feed.feed, user_feed, detail=detail)
+            )
         return list(sorted(union_feeds, key=sort_union_feeds, reverse=True))
 
     @staticmethod
-    def query_by_user(user_id, hints=None, detail=False):
+    def query_by_user(user_id, hints=None, detail=False, only_publish=False):
         """获取用户所有的订阅，支持增量查询
 
         hints: T.list(T.dict(id=T.unionid, dt_updated=T.datetime))
@@ -227,9 +241,14 @@ class UnionFeed:
         detail = Detail.from_schema(detail, FeedDetailSchema)
         exclude_fields = [f'feed__{x}' for x in detail.exclude_fields]
         if not hints:
-            q = UserFeed.objects.select_related('feed').filter(user_id=user_id)
+            q = UserFeed.objects.select_related('feed')
+            q = q.filter(user_id=user_id)
+            if only_publish:
+                q = q.filter(is_publish=True)
             q = q.defer(*exclude_fields)
-            union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
+            union_feeds = UnionFeed._merge_user_feeds(
+                list(q.all()), detail=detail
+            )
             return len(union_feeds), union_feeds, []
         hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
         q = UserFeed.objects.filter(user_id=user_id).select_related('feed')
@@ -244,13 +263,15 @@ class UnionFeed:
         for user_feed in user_feeds:
             feed_id = user_feed.feed_id
             dt_updated = UnionFeed._union_dt_updated(
-                user_feed.dt_updated, user_feed.feed.dt_updated)
+                user_feed.dt_updated, user_feed.feed.dt_updated
+            )
             if feed_id not in hints or not dt_updated:
                 updates.append(feed_id)
             elif dt_updated > hints[feed_id]:
                 updates.append(feed_id)
-        q = UserFeed.objects.select_related('feed')\
-            .filter(user_id=user_id, feed_id__in=updates)
+        q = UserFeed.objects.select_related('feed').filter(
+            user_id=user_id, feed_id__in=updates
+        )
         q = q.defer(*exclude_fields)
         union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
         return total, union_feeds, deteted_ids
@@ -259,7 +280,9 @@ class UnionFeed:
     def delete_by_id(feed_unionid):
         user_id, feed_id = feed_unionid
         try:
-            user_feed = UserFeed.objects.only('id').get(user_id=user_id, feed_id=feed_id)
+            user_feed = UserFeed.objects.only('id').get(
+                user_id=user_id, feed_id=feed_id
+            )
         except UserFeed.DoesNotExist as ex:
             raise FeedNotFoundError(str(ex)) from ex
         user_feed.delete()
@@ -289,6 +312,10 @@ class UnionFeed:
     def set_group(cls, feed_unionid, group):
         return cls._set_fields(feed_unionid, group=group)
 
+    @classmethod
+    def set_publish(cls, feed_unionid, is_publish):
+        return cls._set_fields(feed_unionid, is_publish=is_publish)
+
     @staticmethod
     def _set_fields(feed_unionid, **fields):
         union_feed = UnionFeed.get_by_id(feed_unionid)
@@ -301,7 +328,9 @@ class UnionFeed:
 
     @staticmethod
     def set_all_group(user_id: int, feed_ids: list, *, group: str) -> int:
-        q = UserFeed.objects.filter(user_id=user_id).filter(feed_id__in=feed_ids)
+        q = UserFeed.objects.filter(user_id=user_id).filter(
+            feed_id__in=feed_ids
+        )
         return q.update(
             group=group,
             dt_updated=timezone.now(),
@@ -315,7 +344,9 @@ class UnionFeed:
         feed_ids = [x.feed_id for x in ids]
         if ids is not None:
             q = q.filter(feed_id__in=feed_ids)
-        q = q.only('_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys')
+        q = q.only(
+            '_version', 'id', 'story_offset', 'feed_id', 'feed__total_storys'
+        )
         updates = []
         now = timezone.now()
         for user_feed in q.all():
@@ -348,7 +379,9 @@ class UnionFeed:
         if target and target != FeedUrlMap.NOT_FOUND:
             feed = Feed.objects.filter(url=target).first()
         if feed:
-            user_feed = UserFeed.objects.filter(user_id=user_id, feed=feed).first()
+            user_feed = UserFeed.objects.filter(
+                user_id=user_id, feed=feed
+            ).first()
             if user_feed:
                 raise FeedExistError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed)
@@ -380,17 +413,20 @@ class UnionFeed:
             else:
                 url_map[url] = target
         # url not existed in url_map: url_map outdated or new url
-        for url in (urls - set(url_map.keys())):
+        for url in urls - set(url_map.keys()):
             url_map[url] = url
         rev_url_map = {v: k for k, v in url_map.items()}
         found_feeds = list(
             Feed.objects.seal()
             .filter(url__in=set(url_map.values()))
-            .defer(*FEED_DETAIL_FIELDS).all()
+            .defer(*FEED_DETAIL_FIELDS)
+            .all()
         )
         feed_id_map = {x.id: x for x in found_feeds}
         feed_map = {x.url: x for x in found_feeds}
-        q = UserFeed.objects.filter(user_id=user_id, feed__in=found_feeds).all()
+        q = UserFeed.objects.filter(
+            user_id=user_id, feed__in=found_feeds
+        ).all()
         user_feed_map = {x.feed_id: x for x in q.all()}
         for x in user_feed_map.values():
             x.feed = feed_id_map[x.feed_id]
@@ -410,7 +446,8 @@ class UnionFeed:
             else:
                 import_item = import_map.get(url)
                 feed_creation = FeedCreation(
-                    user_id=user_id, url=url,
+                    user_id=user_id,
+                    url=url,
                     title=import_item.title if import_item else None,
                     group=import_item.group if import_item else None,
                     is_from_bookmark=is_from_bookmark,
@@ -422,17 +459,24 @@ class UnionFeed:
             import_item = import_map.get(rev_url_map.get(feed.url))
             # only set UserFeed.title when import title not equal feed title
             title = None
-            if import_item and import_item.title and import_item.title != feed.title:
+            if (
+                import_item
+                and import_item.title
+                and import_item.title != feed.title
+            ):
                 title = import_item.title
             user_feed = UserFeed(
-                user_id=user_id, feed=feed,
+                user_id=user_id,
+                feed=feed,
                 title=title,
                 group=import_item.group if import_item else None,
             )
             new_user_feeds.append(user_feed)
         # 尽量确保用户订阅数不超过限制
         user_feed_count = UserFeed.objects.filter(user_id=user_id).count()
-        user_feed_creation_count = FeedCreation.objects.filter(user_id=user_id).count()
+        user_feed_creation_count = FeedCreation.objects.filter(
+            user_id=user_id
+        ).count()
         user_total_feed = user_feed_count + user_feed_creation_count
         free_count = max(0, MAX_FEED_COUNT - user_total_feed)
         new_user_feeds = new_user_feeds[:free_count]
@@ -442,7 +486,9 @@ class UnionFeed:
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
         if unfreeze_feed_ids:
-            Feed.objects.filter(pk__in=unfreeze_feed_ids).update(freeze_level=1)
+            Feed.objects.filter(pk__in=unfreeze_feed_ids).update(
+                freeze_level=1
+            )
         existed_feeds = UnionFeed._merge_user_feeds(user_feed_map.values())
         union_feeds = UnionFeed._merge_user_feeds(new_user_feeds)
         return FeedCreateResult(
