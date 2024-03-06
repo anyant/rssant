@@ -34,6 +34,9 @@ class UserPublish(Model):
     is_all_public = models.BooleanField(
         **optional, default=False, verbose_name='是否全部公开'
     )
+    website_title: str = models.CharField(
+        **optional, max_length=255, verbose_name='网站标题'
+    )
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
@@ -46,6 +49,7 @@ class UserPublish(Model):
             unionid=self.unionid,
             is_enable=self.is_enable,
             root_url=self.root_url,
+            website_title=self.website_title,
             is_all_public=self.is_all_public,
             dt_created=self.dt_created,
             dt_updated=self.dt_updated,
@@ -68,7 +72,7 @@ class UserPublish(Model):
 
     @classmethod
     @cached(
-        TTLCache(maxsize=1000, ttl=30),
+        TTLCache(maxsize=1000, ttl=10),
         lock=RLock(),
     )
     def _get_impl_cached(cls, *args, **kwargs):
@@ -105,12 +109,15 @@ class UserPublish(Model):
         is_enable: bool,
         root_url: str = None,
         is_all_public: bool = None,
+        website_title: str = None,
     ) -> "UserPublish":
         data = dict(
             is_enable=is_enable,
             root_url=root_url,
             is_all_public=is_all_public,
+            website_title=website_title,
         )
+        data = {k: v for k, v in data.items() if v is not None}
         if publish_id is None:
             return UserPublish.objects.create(user_id=user_id, **data)
         q = UserPublish.objects.filter(id=publish_id, user_id=user_id)
@@ -125,7 +132,7 @@ class UserPublish(Model):
 
     @classmethod
     @cached(
-        TTLCache(maxsize=1000, ttl=30),
+        TTLCache(maxsize=1000, ttl=10),
         lock=RLock(),
     )
     def get_user_cached(cls, *args, **kwargs):
