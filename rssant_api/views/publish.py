@@ -8,6 +8,7 @@ from validr import Invalid
 from django_rest_validr import RestRouter, T
 from rssant_api.models.user_publish import UserPublish
 from rssant_common.validator import compiler as schema_compiler
+from rssant_config import CONFIG
 
 from .user_publish import UserPublishSchema
 
@@ -24,8 +25,12 @@ def on_publish_info(request) -> UserPublishSchema:
         result = _get_publish_info(request)
     except PermissionDenied:
         return dict(is_enable=False)
-    else:
-        return result.to_dict()
+    result = result.to_dict()
+    image_proxy = dict(enable=CONFIG.image_proxy_enable, url_s=None)
+    if CONFIG.image_proxy_enable:
+        image_proxy.update(url_s=CONFIG.image_proxy_url_list)
+    result.update(image_proxy=image_proxy)
+    return result
 
 
 validate_publish_unionid = schema_compiler.compile(T.publish_unionid.object)
