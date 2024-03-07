@@ -15,6 +15,10 @@ UserPublishSchema = T.dict(
     is_all_public=T.bool.optional,
     dt_created=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
+    image_proxy=T.dict(
+        enable=T.bool,
+        url_s=T.list(T.str).optional,
+    ).optional,
 )
 
 UserPublishView = RestRouter()
