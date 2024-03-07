@@ -65,11 +65,13 @@ StoryResultSchema = T.dict(
 )
 
 StoryView = RestRouter()
+DeprecatedStoryView = StoryView  # TODO: 待废弃的接口
 
 STORY_DETAIL_FEILDS = ['story__summary', 'story__content']
 
 
-@StoryView.get('story/query')
+@DeprecatedStoryView.get('story/query')
+@StoryView.post('story.query')
 @PublishView.post('publish.story_query')
 def story_query_by_feed(
     request,
@@ -100,7 +102,8 @@ def story_query_by_feed(
     )
 
 
-@StoryView.post('story/recent')
+@DeprecatedStoryView.post('story/recent')
+@StoryView.post('story.query_recent')
 def story_query_recent(
     request,
     feed_ids: T.list(T.feed_unionid.object).optional,
@@ -122,7 +125,8 @@ def story_query_recent(
     )
 
 
-@StoryView.post('story/query-batch')
+@DeprecatedStoryView.post('story/query-batch')
+@StoryView.post('story.query_batch')
 def story_query_batch(
     request,
     storys: T.list(
@@ -153,7 +157,8 @@ def story_query_batch(
     )
 
 
-@StoryView.get('story/<slug:feed_id>-<int:offset>')
+@DeprecatedStoryView.get('story/<slug:feed_id>-<int:offset>')
+@StoryView.post('story.get')
 @PublishView.post('publish.story_get')
 def story_get_by_offset(
     request,
@@ -194,7 +199,8 @@ def story_get_by_offset(
     return ret
 
 
-@StoryView.get('story/favorited')
+@DeprecatedStoryView.get('story/favorited')
+@StoryView.post('story.query_favorited')
 def story_query_favorited(
     request,
     detail: StoryDetailSchema,
@@ -209,7 +215,8 @@ def story_query_favorited(
     )
 
 
-@StoryView.get('story/watched')
+@DeprecatedStoryView.get('story/watched')
+@StoryView.post('story.query_watched')
 def story_query_watched(
     request,
     detail: StoryDetailSchema,
@@ -224,30 +231,32 @@ def story_query_watched(
     )
 
 
-@StoryView.put('story/<slug:feed_unionid>-<int:offset>/watched')
+@DeprecatedStoryView.put('story/<slug:feed_id>-<int:offset>/watched')
+@StoryView.post('story.set_watched')
 def story_set_watched(
     request,
-    feed_unionid: T.feed_unionid.object,
+    feed_id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     is_watched: T.bool.default(True),
 ) -> StorySchema:
-    check_unionid(request.user, feed_unionid)
+    check_unionid(request.user, feed_id)
     story = UnionStory.set_watched_by_feed_offset(
-        feed_unionid, offset, is_watched=is_watched
+        feed_id, offset, is_watched=is_watched
     )
     return story.to_dict()
 
 
-@StoryView.put('story/<slug:feed_unionid>-<int:offset>/favorited')
+@StoryView.put('story/<slug:feed_id>-<int:offset>/favorited')
+@StoryView.post('story.set_favorited')
 def story_set_favorited(
     request,
-    feed_unionid: T.feed_unionid.object,
+    feed_id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
     is_favorited: T.bool.default(True),
 ) -> StorySchema:
-    check_unionid(request.user, feed_unionid)
+    check_unionid(request.user, feed_id)
     story = UnionStory.set_favorited_by_feed_offset(
-        feed_unionid, offset, is_favorited=is_favorited
+        feed_id, offset, is_favorited=is_favorited
     )
     return story.to_dict()
 
@@ -257,6 +266,7 @@ _TIMEOUT_ERRORS = (socket.timeout, TimeoutError, requests.exceptions.Timeout)
 
 
 @StoryView.post('story/fetch-fulltext')
+@StoryView.post('story.fetch_fulltext')
 def story_fetch_fulltext(
     request,
     feed_id: T.feed_unionid.object,

@@ -80,10 +80,12 @@ FeedCreationSchema = T.dict(
 
 
 FeedView = RestRouter()
+DeprecatedFeedView = FeedView  # TODO: 待废弃的接口
 
 
-@FeedView.get('feed/query')
-@FeedView.post('feed/query')
+@DeprecatedFeedView.get('feed/query')
+@DeprecatedFeedView.post('feed/query')
+@FeedView.post('feed.query')
 @PublishView.post('publish.feed_query')
 def feed_query(
     request,
@@ -125,7 +127,8 @@ def feed_query(
     )
 
 
-@FeedView.get('feed/<slug:id>')
+@DeprecatedFeedView.get('feed/<slug:id>')
+@FeedView.post('feed.get')
 @PublishView.post('publish.feed_get')
 def feed_get(
     request,
@@ -151,7 +154,7 @@ def feed_get(
 _SCHEMA_FEED_CREATE_URL = T.url.default_schema('http')
 
 
-@FeedView.post('feed/creation')
+@DeprecatedFeedView.post('feed/creation')
 def feed_create(
     request, url: _SCHEMA_FEED_CREATE_URL
 ) -> T.dict(
@@ -181,13 +184,14 @@ def feed_create(
     )
 
 
-@FeedView.get('feed/creation/<int:pk>')
+@DeprecatedFeedView.get('feed/creation/<int:id>')
+@FeedView.post('feed.get_creation')
 def feed_get_creation(
-    request, pk: T.int, detail: FeedDetailSchema
+    request, id: T.int, detail: FeedDetailSchema
 ) -> FeedCreationSchema:
     try:
         feed_creation = FeedCreation.get_by_pk(
-            pk, user_id=request.user.id, detail=detail
+            id, user_id=request.user.id, detail=detail
         )
     except FeedCreation.DoesNotExist:
         return Response(
@@ -196,7 +200,8 @@ def feed_get_creation(
     return feed_creation.to_dict(detail=detail)
 
 
-@FeedView.get('feed/creation')
+@DeprecatedFeedView.get('feed/creation')
+@FeedView.post('feed.query_creation')
 def feed_query_creation(
     request,
     limit: T.int.min(10).max(MAX_FEED_COUNT).default(500),
@@ -217,19 +222,20 @@ def feed_query_creation(
     )
 
 
-@FeedView.put('feed/<slug:feed_unionid>')
+@DeprecatedFeedView.put('feed/<slug:id>')
 def feed_update(
     request,
-    feed_unionid: T.feed_unionid.object,
+    id: T.feed_unionid.object,
     title: T.str.maxlen(200).optional,
 ) -> FeedSchema:
     """deprecated, use feed_set_title instead"""
-    check_unionid(request.user, feed_unionid)
-    feed = UnionFeed.set_title(feed_unionid, title)
+    check_unionid(request.user, id)
+    feed = UnionFeed.set_title(id, title)
     return feed.to_dict()
 
 
-@FeedView.put('feed/set-title')
+@DeprecatedFeedView.put('feed/set-title')
+@FeedView.post('feed.set_title')
 def feed_set_title(
     request,
     id: T.feed_unionid.object,
@@ -240,7 +246,8 @@ def feed_set_title(
     return feed.to_dict()
 
 
-@FeedView.put('feed/set-group')
+@DeprecatedFeedView.put('feed/set-group')
+@FeedView.post('feed.set_group')
 def feed_set_group(
     request,
     id: T.feed_unionid.object,
@@ -251,7 +258,8 @@ def feed_set_group(
     return feed.to_dict()
 
 
-@FeedView.put('feed/set-publish')
+@DeprecatedFeedView.put('feed/set-publish')
+@FeedView.post('feed.set_publish')
 def feed_set_publish(
     request,
     id: T.feed_unionid.object,
@@ -262,7 +270,8 @@ def feed_set_publish(
     return feed.to_dict()
 
 
-@FeedView.put('feed/set-all-group')
+@DeprecatedFeedView.put('feed/set-all-group')
+@FeedView.post('feed.set_all_group')
 def feed_set_all_group(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT),
@@ -276,21 +285,23 @@ def feed_set_all_group(
     return dict(num_updated=num_updated)
 
 
-@FeedView.put('feed/<slug:feed_unionid>/offset')
+@DeprecatedFeedView.put('feed/<slug:id>/offset')
+@FeedView.post('feed.set_offset')
 def feed_set_offset(
     request,
-    feed_unionid: T.feed_unionid.object,
+    id: T.feed_unionid.object,
     offset: T.int.min(0).optional,
 ) -> FeedSchema:
-    check_unionid(request.user, feed_unionid)
+    check_unionid(request.user, id)
     try:
-        feed = UnionFeed.set_story_offset(feed_unionid, offset)
+        feed = UnionFeed.set_story_offset(id, offset)
     except FeedStoryOffsetError as ex:
         return Response({'message': str(ex)}, status=400)
     return feed.to_dict()
 
 
-@FeedView.put('feed/all/readed')
+@DeprecatedFeedView.put('feed/all/readed')
+@FeedView.post('feed.set_all_readed')
 def feed_set_all_readed(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
@@ -302,16 +313,18 @@ def feed_set_all_readed(
     return dict(num_updated=num_updated)
 
 
-@FeedView.delete('feed/<slug:feed_unionid>')
-def feed_delete(request, feed_unionid: T.feed_unionid.object):
-    check_unionid(request.user, feed_unionid)
+@DeprecatedFeedView.delete('feed/<slug:id>')
+@FeedView.post('feed.delete')
+def feed_delete(request, id: T.feed_unionid.object):
+    check_unionid(request.user, id)
     try:
-        UnionFeed.delete_by_id(feed_unionid)
+        UnionFeed.delete_by_id(id)
     except FeedNotFoundError:
         return Response({"message": "订阅不存在"}, status=400)
 
 
-@FeedView.post('feed/all/delete')
+@DeprecatedFeedView.post('feed/all/delete')
+@FeedView.post('feed.delete_all')
 def feed_delete_all(
     request,
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
@@ -391,13 +404,13 @@ FeedImportResultSchema = T.dict(
 )
 
 
-@FeedView.post('feed/opml')
+@DeprecatedFeedView.post('feed/opml')
 def feed_import_opml(request) -> FeedImportResultSchema:
     """Deprecated. import feeds from OPML file"""
     return feed_import_file(request)
 
 
-@FeedView.get('feed/opml')
+@DeprecatedFeedView.get('feed/opml')
 @FeedView.get('feed/export/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
@@ -409,13 +422,14 @@ def feed_export_opml(request, download: T.bool.default(False)):
     return response
 
 
-@FeedView.post('feed/bookmark')
+@DeprecatedFeedView.post('feed/bookmark')
 def feed_import_bookmark(request) -> FeedImportResultSchema:
     """Deprecated. import feeds from bookmark file"""
     return feed_import_file(request)
 
 
-@FeedView.post('feed/import')
+@DeprecatedFeedView.post('feed/import')
+@FeedView.post('feed.import')
 def feed_import(
     request,
     text: T.str,
@@ -435,7 +449,8 @@ def feed_import(
     )
 
 
-@FeedView.post('feed/import/file')
+@DeprecatedFeedView.post('feed/import/file')
+@FeedView.post('feed.import_file')
 def feed_import_file(request) -> FeedImportResultSchema:
     """从OPML/XML/浏览器书签/含有链接的HTML或文本文件导入订阅"""
     text, filename = _read_request_file(request)
