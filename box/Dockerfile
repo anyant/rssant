@@ -1,8 +1,9 @@
-FROM node:lts-alpine as build-web
+FROM node:16-alpine as build-web
 ARG NPM_REGISTERY="--registry=https://registry.npmmirror.com"
 WORKDIR /app
 COPY box/web/package*.json ./
-RUN npm clean-install --no-audit --verbose ${NPM_REGISTERY}
+RUN --mount=type=cache,target=/root/.npm \
+    npm clean-install --no-audit --verbose ${NPM_REGISTERY}
 COPY box/web .
 RUN npm run build
 
@@ -11,11 +12,14 @@ FROM python:3.8.6-buster as build-api
 RUN mkdir -p /app
 WORKDIR /app
 # install rssant
-ARG PYPI_MIRROR="https://pypi.doubanio.com/simple/"
+ARG PYPI_MIRROR="https://mirrors.cloud.tencent.com/pypi/simple/"
 ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
+COPY constraint.txt .
+ENV PIP_CONSTRAINT=/app/constraint.txt
 COPY requirements.txt .
-RUN python -m venv .venv && \
-    .venv/bin/pip install -r requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv .venv && \
+    .venv/bin/pip install -r /app/requirements.txt
 
 
 FROM python:3.8.6-slim-buster
