@@ -10,6 +10,7 @@ from rssant.helper.content_hash import compute_hash_base64
 from rssant_api.helper import shorten
 from rssant_api.models import FeedStatus
 from rssant_common import _proxy_helper
+from rssant_common._proxy_helper import is_use_proxy_url
 from rssant_common.attrdict import AttrDict
 from rssant_common.dns_service import DNS_SERVICE
 from rssant_common.rss import get_story_of_feed_entry
@@ -35,7 +36,6 @@ from rssant_feedlib.fulltext import (
 )
 from rssant_feedlib.processor import (
     get_html_redirect_url,
-    is_use_proxy_url,
     process_story_links,
     story_html_clean,
     story_html_to_text,
@@ -77,10 +77,13 @@ def do_find_feed(
     url: T.url,
 ):
     # immediately send message to update status
-    ctx.ask('harbor_rss.update_feed_creation_status', dict(
-        feed_creation_id=feed_creation_id,
-        status=FeedStatus.UPDATING,
-    ))
+    ctx.ask(
+        'harbor_rss.update_feed_creation_status',
+        dict(
+            feed_creation_id=feed_creation_id,
+            status=FeedStatus.UPDATING,
+        ),
+    )
 
     messages = []
 
@@ -101,11 +104,14 @@ def do_find_feed(
         LOG.error('invalid feed url=%r: %s', unquote(url), ex, exc_info=ex)
         message_handler(f'invalid feed: {ex}')
         feed = None
-    ctx.tell('harbor_rss.save_feed_creation_result', dict(
-        feed_creation_id=feed_creation_id,
-        messages=messages,
-        feed=feed,
-    ))
+    ctx.tell(
+        'harbor_rss.save_feed_creation_result',
+        dict(
+            feed_creation_id=feed_creation_id,
+            messages=messages,
+            feed=feed,
+        ),
+    )
 
 
 @actor('worker_rss.sync_feed')
@@ -140,7 +146,9 @@ def do_sync_feed(
         if (not use_proxy) and reader.has_proxy and need_proxy:
             LOG.info(f'try use proxy read feed#{feed_id} url={unquote(url)}')
             proxy_response = reader.read(url, **params, use_proxy=True)
-            LOG.info(f'proxy read feed#{feed_id} url={unquote(url)} status={proxy_response.status}')
+            LOG.info(
+                f'proxy read feed#{feed_id} url={unquote(url)} status={proxy_response.status}'
+            )
             if proxy_response.ok:
                 response = proxy_response
     if (not response.ok) or (not response.content):
@@ -149,7 +157,9 @@ def do_sync_feed(
         return
     new_hash = compute_hash_base64(response.content)
     if (not is_refresh) and (new_hash == content_hash_base64):
-        LOG.info(f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!')
+        LOG.info(
+            f'feed#{feed_id} url={unquote(url)} not modified by compare content hash!'
+        )
         _update_feed_info(ctx, feed_id, response=response)
         return
     LOG.info(f'parse feed#{feed_id} url={unquote(url)}')
@@ -158,43 +168,54 @@ def do_sync_feed(
     except FeedParserError as ex:
         LOG.warning('failed parse feed#%s url=%r: %s', feed_id, unquote(url), ex)
         _update_feed_info(
-            ctx, feed_id, status=FeedStatus.ERROR,
-            response=response, warnings=str(ex))
+            ctx, feed_id, status=FeedStatus.ERROR, response=response, warnings=str(ex)
+        )
         return
     if raw_result.warnings:
         warnings = '; '.join(raw_result.warnings)
         LOG.warning('warning parse feed#%s url=%r: %s', feed_id, unquote(url), warnings)
     try:
         feed = _parse_found(
-            (response, raw_result),
-            checksum_data=checksum_data, is_refresh=is_refresh)
+            (response, raw_result), checksum_data=checksum_data, is_refresh=is_refresh
+        )
     except (Invalid, FeedParserError) as ex:
         LOG.error('invalid feed#%s url=%r: %s', feed_id, unquote(url), ex, exc_info=ex)
         _update_feed_info(
-            ctx, feed_id, status=FeedStatus.ERROR,
-            response=response, warnings=str(ex))
-        return
-    ctx.tell('harbor_rss.update_feed', dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh))
-
-
-def _update_feed_info(ctx, feed_id, response: FeedResponse, status: str = None, warnings: str = None):
-    ctx.tell('harbor_rss.update_feed_info', dict(
-        feed_id=feed_id,
-        feed=dict(
-            status=status,
-            response_status=response.status,
-            warnings=warnings,
+            ctx, feed_id, status=FeedStatus.ERROR, response=response, warnings=str(ex)
         )
-    ))
+        return
+    ctx.tell(
+        'harbor_rss.update_feed',
+        dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh),
+    )
 
 
-async def _fetch_story(reader: AsyncFeedReader, feed_id, offset, url, use_proxy) -> tuple:
+def _update_feed_info(
+    ctx, feed_id, response: FeedResponse, status: str = None, warnings: str = None
+):
+    ctx.tell(
+        'harbor_rss.update_feed_info',
+        dict(
+            feed_id=feed_id,
+            feed=dict(
+                status=status,
+                response_status=response.status,
+                warnings=warnings,
+            ),
+        ),
+    )
+
+
+async def _fetch_story(
+    reader: AsyncFeedReader, feed_id, offset, url, use_proxy
+) -> tuple:
     for i in range(2):
         response = await reader.read(url, use_proxy=use_proxy)
         if response and response.url:
             url = str(response.url)
         LOG.info(
-            f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished')
+            f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished'
+        )
         if not (response and response.ok and response.content):
             return url, None, response
         try:
@@ -205,7 +226,9 @@ async def _fetch_story(reader: AsyncFeedReader, feed_id, offset, url, use_proxy)
         html_redirect = get_html_redirect_url(content)
         if (not html_redirect) or html_redirect == url:
             return url, content, response
-        LOG.info('story#%s,%s resolve html redirect to %r', feed_id, offset, html_redirect)
+        LOG.info(
+            'story#%s,%s resolve html redirect to %r', feed_id, offset, html_redirect
+        )
         url = html_redirect
     return url, content, response
 
@@ -239,10 +262,16 @@ async def do_fetch_story(
     options.update(request_timeout=25)
     async with AsyncFeedReader(**options) as reader:
         use_proxy = use_proxy and reader.has_proxy
-        url, content, response = await _fetch_story(reader, feed_id, offset, url, use_proxy=use_proxy)
+        url, content, response = await _fetch_story(
+            reader, feed_id, offset, url, use_proxy=use_proxy
+        )
     DEFAULT_RESULT = dict(
-        feed_id=feed_id, offset=offset, url=url,
-        response_status=response.status, use_proxy=response.use_proxy)
+        feed_id=feed_id,
+        offset=offset,
+        url=url,
+        response_status=response.status,
+        use_proxy=response.use_proxy,
+    )
     if not content:
         return DEFAULT_RESULT
     if len(content) >= _MAX_STORY_HTML_LENGTH:
@@ -252,13 +281,16 @@ async def do_fetch_story(
             LOG.warning(msg, feed_id, offset, len(content), url)
             content = story_html_to_text(content)[:_MAX_STORY_HTML_LENGTH]
     msg_func = ctx.ask if ctx.message.is_ask else ctx.hope
-    result = await msg_func('worker_rss.process_story_webpage', dict(
-        feed_id=feed_id,
-        offset=offset,
-        url=url,
-        text=content,
-        num_sub_sentences=num_sub_sentences,
-    ))
+    result = await msg_func(
+        'worker_rss.process_story_webpage',
+        dict(
+            feed_id=feed_id,
+            offset=offset,
+            url=url,
+            text=content,
+            num_sub_sentences=num_sub_sentences,
+        ),
+    )
     if not ctx.message.is_ask:
         return DEFAULT_RESULT
     result.update(DEFAULT_RESULT)

@@ -175,10 +175,11 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 
 #### 系统级依赖
 
-- Linux 或 Mac OSX
+- Linux 或 macOS
 - [Docker](https://developer.aliyun.com/mirror/docker-ce) + [镜像加速器](https://juejin.im/post/5cd2cf01f265da0374189441)
-- Python + [pyenv](https://github.com/pyenv/pyenv-installer)
-- Node.js + [nvm](https://github.com/nvm-sh/nvm#install--update-script)
+- Python环境 https://mise.jdx.dev/lang/python.html
+- Python依赖管理 https://github.com/astral-sh/uv
+- Node.js环境 https://mise.jdx.dev/lang/node.html
 
 #### 后端
 
@@ -187,9 +188,9 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 git clone git@gitee.com:anyant/rssant.git
 cd rssant
-pyenv virtualenv -p python3.8 3.8.6 rssant
-pyenv local rssant
-pip install -r requirements.txt
+mise install python@3.8
+python -m venv .venv
+PIP_CONSTRAINT=constraint.txt pip install -r requirements.txt
 ```
 
 启动数据库
@@ -242,6 +243,7 @@ docker build -t rssant/api:latest .
 ```
 git clone git@gitee.com:anyant/rssant-web.git
 cd rssant-web
+mise install node@16
 npm install
 npm run serve
 ```

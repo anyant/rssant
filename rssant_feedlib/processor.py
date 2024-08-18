@@ -15,7 +15,6 @@ from lxml.html.defs import safe_attrs as lxml_safe_attrs
 from readability import Document as ReadabilityDocument
 from validr import Invalid, T
 
-from rssant_common.blacklist import compile_url_blacklist
 from rssant_common.validator import compiler
 
 from .helper import RE_URL, LXMLError, lxml_call
@@ -59,7 +58,8 @@ def _quote_path(path: str) -> str:
 RE_IMG = re.compile(
     r'(?:<img\s*[^<>]*?\s+src="([^"]+?)")|'
     r'(?:<source\s*[^<>]*?\s+srcset="([^"]+?)")',
-    re.I | re.M)
+    re.I | re.M,
+)
 
 RE_LINK = re.compile(r'<a\s*.*?\s+href="([^"]+?)"', re.I | re.M)
 
@@ -110,13 +110,16 @@ _RE_MATHJAX_DOLLAR = r'(?<![^\s>])\$[^$\n]+?\$(?![^\s<])'
 _RE_MATHJAX_ASCIIMATH = r'(?<![^\s>])\`[^`\n]+?\`(?![^\s<])'
 
 # loose regex for check MathJax
-RE_MATHJAX = re.compile((
-    r'(\$\$.+?\$\$)|'                       # $$...$$
-    r'(\\\[.+?\\\])|'                       # \[...\]
-    r'(\\\(.+?\\\))|'                       # \(...\)
-    fr'({_RE_MATHJAX_DOLLAR})|'             # $...$
-    fr'({_RE_MATHJAX_ASCIIMATH})'           # `...`
-), re.I | re.M)
+RE_MATHJAX = re.compile(
+    (
+        r'(\$\$.+?\$\$)|'  # $$...$$
+        r'(\\\[.+?\\\])|'  # \[...\]
+        r'(\\\(.+?\\\))|'  # \(...\)
+        fr'({_RE_MATHJAX_DOLLAR})|'  # $...$
+        fr'({_RE_MATHJAX_ASCIIMATH})'  # `...`
+    ),
+    re.I | re.M,
+)
 
 
 def story_has_mathjax(content):
@@ -174,7 +177,8 @@ def make_absolute_url(url, base_href):
     return url
 
 
-TOP_DOMAINS = set("""
+TOP_DOMAINS = set(
+    """
 com
 org
 net
@@ -193,7 +197,8 @@ io
 tech
 top
 xyz
-""".strip().split())
+""".strip().split()
+)
 
 RE_STICK_DOMAIN = re.compile(r'^({})[^\:\/\.$]+'.format('|'.join(TOP_DOMAINS)))
 
@@ -228,7 +233,7 @@ def normalize_url(url: str, base_url: str = None):
     if url.count('://') >= 2:
         matchs = list(re.finditer(r'https?://', url))
         if matchs:
-            url = url[matchs[-1].start(0):]
+            url = url[matchs[-1].start(0) :]
         else:
             url = 'http://' + url.split('://')[-1]
     match = re.search(r'\.[^.]+?(\/|$)', url)
@@ -243,7 +248,7 @@ def normalize_url(url: str, base_url: str = None):
             top_domain = stick_match.group(1)
             pre_len = 1 + len(top_domain)
             match_text = match_text[:pre_len] + '/' + match_text[pre_len:]
-        url = url[:match.start()] + match_text + url[match.end():]
+        url = url[: match.start()] + match_text + url[match.end() :]
     try:
         scheme, netloc, path, query, fragment = urlsplit(url)
     except ValueError as ex:
@@ -339,7 +344,7 @@ class StoryImageProcessor:
         content_chunks = []
         beginpos = 0
         for pos, endpos, value in new_image_indexs:
-            content_chunks.append(content[beginpos: pos])
+            content_chunks.append(content[beginpos:pos])
             content_chunks.append(value)
             beginpos = endpos
         content_chunks.append(content[beginpos:])
@@ -348,7 +353,9 @@ class StoryImageProcessor:
 
 IMG_EXT_SRC_ATTRS = ['data-src', 'data-original', 'data-origin', 'data-options']
 RE_IMAGE_URL = re.compile(
-    '(img|image|pic|picture|photo|png|jpg|jpeg|webp|bpg|ico|exif|tiff|gif|svg|bmp)', re.I)
+    '(img|image|pic|picture|photo|png|jpg|jpeg|webp|bpg|ico|exif|tiff|gif|svg|bmp)',
+    re.I,
+)
 
 
 def is_image_url(url):
@@ -357,23 +364,6 @@ def is_image_url(url):
     if is_data_url(url):
         return False
     return bool(RE_IMAGE_URL.search(url))
-
-
-USE_PROXY_URL_LIST = '''
-tandfonline.com
-sagepub.com
-cnki.net
-'''
-
-_is_use_proxy_url = compile_url_blacklist(USE_PROXY_URL_LIST)
-
-
-def is_use_proxy_url(url):
-    """
-    >>> is_use_proxy_url('https://navi.cnki.net/knavi/rss/SHXJ')
-    True
-    """
-    return _is_use_proxy_url(url)
 
 
 def process_story_links(content, story_link):
@@ -565,7 +555,9 @@ def story_html_to_text(content, clean=True):
         try:
             content = _to_soup_text(content)
         except LXMLError as ex:
-            LOG.info(f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex)
+            LOG.info(
+                f'lxml unable to parse content: {ex} content={content!r}', exc_info=ex
+            )
             content = html_escape(content)
     return RE_BLANK_LINE.sub('\n', content)
 

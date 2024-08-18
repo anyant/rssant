@@ -1,9 +1,25 @@
 import random
 
 from rssant_config import CONFIG
-from rssant_feedlib.processor import is_use_proxy_url
 
+from .blacklist import compile_url_blacklist
 from .ezproxy import EZPROXY_SERVICE
+
+USE_PROXY_URL_LIST = '''
+tandfonline.com
+sagepub.com
+cnki.net
+'''
+
+_is_use_proxy_url = compile_url_blacklist(USE_PROXY_URL_LIST)
+
+
+def is_use_proxy_url(url):
+    """
+    >>> is_use_proxy_url('https://navi.cnki.net/knavi/rss/SHXJ')
+    True
+    """
+    return _is_use_proxy_url(url)
 
 
 def choice_proxy(*, proxy_url, rss_proxy_url) -> bool:

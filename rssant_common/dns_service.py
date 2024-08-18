@@ -12,9 +12,9 @@ import aiohttp
 import requests.adapters
 import yarl
 
-from rssant_common import _proxy_helper
 from rssant_config import CONFIG
 
+from . import _proxy_helper
 from .helper import get_or_create_event_loop
 from .rss_proxy import ProxyStrategy, RSSProxyClient
 
@@ -238,9 +238,7 @@ class DNSService:
 
     def validate_records(self, records: dict) -> dict:
         loop = get_or_create_event_loop()
-        valid_records = loop.run_until_complete(
-            self._validate_records(records)
-        )
+        valid_records = loop.run_until_complete(self._validate_records(records))
         return valid_records
 
     def query_from_dns_over_tls(self, url_template: str) -> dict:
@@ -263,9 +261,7 @@ class DNSService:
         return records
 
     def query_from_cloudflare(self):
-        url_template = (
-            'https://cloudflare-dns.com/dns-query?name={name}&type=A'
-        )
+        url_template = 'https://cloudflare-dns.com/dns-query?name={name}&type=A'
         return self.query_from_dns_over_tls(url_template)
 
     def query_from_google(self):

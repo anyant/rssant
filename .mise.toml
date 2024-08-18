@@ -1,0 +1,5 @@
+[tools]
+python = "3.8.19"
+
+[env]
+_.python.venv = ".venv"
