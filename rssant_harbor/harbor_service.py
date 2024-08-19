@@ -1,5 +1,5 @@
 """
-TODO: check_feed, sync_story_fulltext, retry_feed_creations
+TODO: check_feed, retry_feed_creations
 """
 
 import logging
@@ -284,7 +284,7 @@ class HarborService:
         if not story:
             LOG.error('story#%s,%s not found', feed_id, offset)
             return
-        _update_story(
+        accept = _update_story(
             story=story,
             story_content_info=StoryContentInfo(story.content),
             content=content,
@@ -293,6 +293,7 @@ class HarborService:
             has_mathjax=has_mathjax,
             sentence_count=sentence_count,
         )
+        return dict(accept=accept.value)
 
     def clean_feed_creation(self):
         # 删除所有入库时间超过24小时的订阅创建信息

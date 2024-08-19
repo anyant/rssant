@@ -1,13 +1,14 @@
 import logging
 
 from django_rest_validr import RestRouter, T
+from rssant_api.views.common import AllowServiceClient
 
 from .harbor_service import HARBOR_SERVICE
 from .schema import T_ACCEPT, FeedInfoSchema, FeedSchema
 
 LOG = logging.getLogger(__name__)
 
-HarborView = RestRouter()
+HarborView = RestRouter(permission_classes=[AllowServiceClient])
 
 
 @HarborView.post('harbor_rss.update_feed_creation_status')

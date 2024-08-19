@@ -4,15 +4,11 @@ from django.http.response import HttpResponse
 from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
+from rssant_api.api_service import API_SERVICE
 from rssant_api.feed_helper import group_id_of, render_opml
 from rssant_api.models import FeedCreation, FeedImportItem, UnionFeed
-from rssant_api.models.errors import (
-    FeedExistError,
-    FeedNotFoundError,
-    FeedStoryOffsetError,
-)
+from rssant_api.models.errors import FeedNotFoundError, FeedStoryOffsetError
 from rssant_api.models.feed import FeedDetailSchema
-from rssant_common.actor_client import scheduler
 from rssant_common.helper import timer
 from rssant_config import MAX_FEED_COUNT
 from rssant_feedlib.importer import import_feed_from_text
@@ -149,41 +145,6 @@ def feed_get(
     return feed.to_dict()
 
 
-# TODO: fix flake8 check F821 in typing
-# https://www.flake8rules.com/rules/F821.html
-_SCHEMA_FEED_CREATE_URL = T.url.default_schema('http')
-
-
-@DeprecatedFeedView.post('feed/creation')
-def feed_create(
-    request, url: _SCHEMA_FEED_CREATE_URL
-) -> T.dict(
-    is_ready=T.bool,
-    feed=FeedSchema.optional,
-    feed_creation=FeedCreationSchema.optional,
-):
-    """Deprecated, use feed_import instead."""
-    try:
-        feed, feed_creation = UnionFeed.create_by_url(
-            url=url, user_id=request.user.id
-        )
-    except FeedExistError:
-        return Response({'message': 'already exists'}, status=400)
-    if feed_creation:
-        scheduler.tell(
-            'worker_rss.find_feed',
-            dict(
-                feed_creation_id=feed_creation.id,
-                url=feed_creation.url,
-            ),
-        )
-    return dict(
-        is_ready=bool(feed),
-        feed=feed.to_dict() if feed else None,
-        feed_creation=feed_creation.to_dict() if feed_creation else None,
-    )
-
-
 @DeprecatedFeedView.get('feed/creation/<int:id>')
 @FeedView.post('feed.get_creation')
 def feed_get_creation(
@@ -194,9 +155,7 @@ def feed_get_creation(
             id, user_id=request.user.id, detail=detail
         )
     except FeedCreation.DoesNotExist:
-        return Response(
-            {'message': 'feed creation does not exist'}, status=400
-        )
+        return Response({'message': 'feed creation does not exist'}, status=400)
     return feed_creation.to_dict(detail=detail)
 
 
@@ -307,9 +266,7 @@ def feed_set_all_readed(
     ids: T.list(T.feed_unionid.object).maxlen(MAX_FEED_COUNT).optional,
 ) -> T.dict(num_updated=T.int):
     check_unionid(request.user, ids)
-    num_updated = UnionFeed.set_all_readed_by_user(
-        user_id=request.user.id, ids=ids
-    )
+    num_updated = UnionFeed.set_all_readed_by_user(user_id=request.user.id, ids=ids)
     return dict(num_updated=num_updated)
 
 
@@ -360,23 +317,18 @@ def _create_feeds_by_imports(
             item_group = raw_item.get('group')
         item_group = group_id_of(item_group)
         title = raw_item.get('title')
-        item = FeedImportItem(
-            url=raw_item['url'], title=title, group=item_group
-        )
+        item = FeedImportItem(url=raw_item['url'], title=title, group=item_group)
         import_items.append(item)
     result = UnionFeed.create_by_imports(imports=import_items, user_id=user.id)
-    find_feed_tasks = []
+    find_feed_item_s = []
     for feed_creation in result.feed_creations:
-        find_feed_tasks.append(
+        find_feed_item_s.append(
             dict(
-                dst='worker_rss.find_feed',
-                content=dict(
-                    feed_creation_id=feed_creation.id,
-                    url=feed_creation.url,
-                ),
+                feed_creation_id=feed_creation.id,
+                url=feed_creation.url,
             )
         )
-    scheduler.batch_tell(find_feed_tasks)
+    API_SERVICE.batch_find_feed_in_thread(find_feed_item_s)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
     first_existed_feed = None
@@ -456,7 +408,5 @@ def feed_import_file(request) -> FeedImportResultSchema:
     text, filename = _read_request_file(request)
     group = request.GET.get('group')
     if group and len(group) > MAX_GROUP_NAME_LENGTH:
-        raise RssantAPIException(
-            f'group name length must <= {MAX_GROUP_NAME_LENGTH}'
-        )
+        raise RssantAPIException(f'group name length must <= {MAX_GROUP_NAME_LENGTH}')
     return feed_import(request, text, group=group)

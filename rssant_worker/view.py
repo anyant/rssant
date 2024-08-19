@@ -1,12 +1,13 @@
 import logging
 
 from django_rest_validr import RestRouter, T
+from rssant_api.views.common import AllowServiceClient
 
 from .worker_service import SCHEMA_FETCH_STORY_RESULT, WORKER_SERVICE
 
 LOG = logging.getLogger(__name__)
 
-WorkerView = RestRouter()
+WorkerView = RestRouter(permission_classes=[AllowServiceClient])
 
 
 @WorkerView.post('worker_rss.find_feed')
@@ -46,7 +47,7 @@ def do_sync_feed(
 
 
 @WorkerView.post('worker_rss.fetch_story')
-async def do_fetch_story(
+def do_fetch_story(
     request,
     feed_id: T.int,
     offset: T.int.min(0),
@@ -54,7 +55,7 @@ async def do_fetch_story(
     use_proxy: T.bool.default(False),
     num_sub_sentences: T.int.optional,
 ) -> SCHEMA_FETCH_STORY_RESULT:
-    return await WORKER_SERVICE.fetch_story(
+    return WORKER_SERVICE.fetch_story(
         feed_id=feed_id,
         offset=offset,
         url=url,

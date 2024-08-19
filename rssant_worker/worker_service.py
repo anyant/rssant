@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import random
 from urllib.parse import unquote
@@ -15,6 +16,7 @@ from rssant_common.dns_service import DNS_SERVICE
 from rssant_common.rss import get_story_of_feed_entry
 from rssant_common.rss import validate_feed as _validate_feed
 from rssant_common.rss import validate_story as _validate_story
+from rssant_common.service_client import SERVICE_CLIENT
 from rssant_config import CONFIG
 from rssant_feedlib import (
     AsyncFeedReader,
@@ -86,6 +88,15 @@ class WorkerService:
         feed_creation_id: T.int,
         url: T.url,
     ):
+        # immediately send message to update status
+        SERVICE_CLIENT.call(
+            'harbor_rss.update_feed_creation_status',
+            dict(
+                feed_creation_id=feed_creation_id,
+                status=FeedStatus.UPDATING,
+            ),
+        )
+
         messages = []
 
         def message_handler(msg):
@@ -105,11 +116,13 @@ class WorkerService:
             LOG.error('invalid feed url=%r: %s', unquote(url), ex, exc_info=ex)
             message_handler(f'invalid feed: {ex}')
             feed = None
-        return dict(
+        result = dict(
             feed_creation_id=feed_creation_id,
             messages=messages,
             feed=feed,
         )
+        SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
+        return result
 
     def sync_feed(
         self,
@@ -192,16 +205,17 @@ class WorkerService:
                 warnings=str(ex),
             )
             return
-        return dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
+        result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
+        SERVICE_CLIENT.call('harbor_rss.update_feed', result)
+        return result
 
-    async def fetch_story(
+    async def _fetch_story_impl(
         self,
         feed_id: T.int,
         offset: T.int.min(0),
         url: T.url,
         use_proxy: T.bool.default(False),
-        num_sub_sentences: T.int.optional,
-    ) -> SCHEMA_FETCH_STORY_RESULT:
+    ):
         LOG.info(f'fetch story#{feed_id},{offset} url={unquote(url)} begin')
         options = _proxy_helper.get_proxy_options(url=url)
         if DNS_SERVICE.is_resolved_url(url):
@@ -213,6 +227,25 @@ class WorkerService:
             url, content, response = await _fetch_story(
                 reader, feed_id, offset, url, use_proxy=use_proxy
             )
+        result = dict(url=url, content=content, response=response)
+        return result
+
+    def fetch_story(
+        self,
+        feed_id: T.int,
+        offset: T.int.min(0),
+        url: T.url,
+        use_proxy: T.bool.default(False),
+        num_sub_sentences: T.int.optional,
+    ) -> SCHEMA_FETCH_STORY_RESULT:
+        task = self._fetch_story_impl(
+            feed_id=feed_id,
+            offset=offset,
+            url=url,
+            use_proxy=use_proxy,
+        )
+        res = asyncio.get_event_loop().run_until_complete(task)
+        response = res['response']
         DEFAULT_RESULT = dict(
             feed_id=feed_id,
             offset=offset,
@@ -220,6 +253,7 @@ class WorkerService:
             response_status=response.status,
             use_proxy=response.use_proxy,
         )
+        content = res['content']
         if not content:
             return DEFAULT_RESULT
         if len(content) >= _MAX_STORY_HTML_LENGTH:
@@ -228,7 +262,7 @@ class WorkerService:
                 msg = 'too large story#%s,%s size=%s url=%r'
                 LOG.warning(msg, feed_id, offset, len(content), url)
                 content = story_html_to_text(content)[:_MAX_STORY_HTML_LENGTH]
-        result = self.process_story_webpage(
+        result = self._process_story_webpage(
             feed_id=feed_id,
             offset=offset,
             url=url,
@@ -238,7 +272,7 @@ class WorkerService:
         result.update(DEFAULT_RESULT)
         return result
 
-    def process_story_webpage(
+    def _process_story_webpage(
         self,
         feed_id: T.int,
         offset: T.int,
@@ -284,24 +318,30 @@ class WorkerService:
             summary=summary,
             sentence_count=num_sentences,
         )
+        res = SERVICE_CLIENT.call('harbor_rss.update_story', result)
+        result.update(
+            accept=res.get('accept', None),
+        )
         return result
 
 
 def _update_feed_info(
-    feed_id, response: FeedResponse, status: str = None, warnings: str = None
+    feed_id,
+    response: FeedResponse,
+    status: str = None,
+    warnings: str = None,
 ):
-    pass
-    # ctx.tell(
-    #     'harbor_rss.update_feed_info',
-    #     dict(
-    #         feed_id=feed_id,
-    #         feed=dict(
-    #             status=status,
-    #             response_status=response.status,
-    #             warnings=warnings,
-    #         ),
-    #     ),
-    # )
+    return SERVICE_CLIENT.call(
+        'harbor_rss.update_feed_info',
+        dict(
+            feed_id=feed_id,
+            feed=dict(
+                status=status,
+                response_status=response.status,
+                warnings=warnings,
+            ),
+        ),
+    )
 
 
 async def _fetch_story(
