@@ -35,9 +35,7 @@ class GitHubConfigModel(ConfigModel):
 
 class EnvConfig(ConfigModel):
     debug: bool = T.bool.default(False).desc('debug')
-    profiler_enable: bool = T.bool.default(False).desc(
-        'enable profiler or not'
-    )
+    profiler_enable: bool = T.bool.default(False).desc('enable profiler or not')
     debug_toolbar_enable: bool = T.bool.default(False).desc(
         'enable debug toolbar or not'
     )
@@ -45,12 +43,8 @@ class EnvConfig(ConfigModel):
     root_url: str = T.url.default('http://localhost:6789')
     standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
-    scheduler_url: str = T.url.default(
-        'http://localhost:6790/api/v1/scheduler'
-    )
-    scheduler_extra_networks: str = T.str.optional.desc(
-        'eg: name@url,name@url'
-    )
+    scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')
+    scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
     secret_key: str = T.str.default(
         '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
     )
@@ -79,9 +73,7 @@ class EnvConfig(ConfigModel):
     # github login
     github_client_id: str = T.str.optional
     github_secret: str = T.str.optional
-    github_standby_configs: str = T.str.optional.desc(
-        'domain,client_id,secret;'
-    )
+    github_standby_configs: str = T.str.optional.desc('domain,client_id,secret;')
     # sentry
     sentry_enable: bool = T.bool.default(False)
     sentry_dsn: str = T.str.optional
@@ -234,9 +226,7 @@ class EnvConfig(ConfigModel):
                 )
             }
         self.pg_story_volumes_parsed = volumes
-        self.github_standby_configs_parsed = (
-            self._parse_github_standby_configs()
-        )
+        self.github_standby_configs_parsed = self._parse_github_standby_configs()
 
     @cached_property
     def root_domain(self) -> str:
