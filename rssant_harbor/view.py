@@ -3,6 +3,7 @@ import logging
 from django_rest_validr import RestRouter, T
 from rssant_api.views.common import AllowServiceClient
 
+from .django_service import django_clear_expired_sessions
 from .harbor_service import HARBOR_SERVICE
 from .schema import T_ACCEPT, FeedInfoSchema, FeedSchema
 
@@ -11,13 +12,18 @@ LOG = logging.getLogger(__name__)
 HarborView = RestRouter(permission_classes=[AllowServiceClient])
 
 
+@HarborView.post('harbor_django.django_clear_expired_sessions')
+def do_django_clear_expired_sessions(request):
+    django_clear_expired_sessions()
+
+
 @HarborView.post('harbor_rss.update_feed_creation_status')
 def do_update_feed_creation_status(
     request,
     feed_creation_id: T.int,
     status: T.str,
 ):
-    return HARBOR_SERVICE.update_feed_creation_status(
+    HARBOR_SERVICE.update_feed_creation_status(
         feed_creation_id=feed_creation_id,
         status=status,
     )
@@ -29,7 +35,7 @@ def do_save_feed_creation_result(
     feed_creation_id: T.int,
     messages: T.list(T.str),
     feed: FeedSchema.optional,
-):
+) -> T.any:
     return HARBOR_SERVICE.save_feed_creation_result(
         feed_creation_id=feed_creation_id,
         messages=messages,
@@ -43,7 +49,7 @@ def do_update_feed(
     feed_id: T.int,
     feed: FeedSchema,
     is_refresh: T.bool.default(False),
-):
+) -> T.any:
     return HARBOR_SERVICE.update_feed(
         feed_id=feed_id,
         feed=feed,
@@ -73,7 +79,7 @@ def do_update_feed_info(
     feed_id: T.int,
     feed: FeedInfoSchema,
 ):
-    return HARBOR_SERVICE.update_feed_info(
+    HARBOR_SERVICE.update_feed_info(
         feed_id=feed_id,
         feed=feed,
     )
@@ -90,7 +96,7 @@ def do_update_story(
     url: T.url,
     response_status: T.int.optional,
     sentence_count: T.int.min(0).optional,
-):
+) -> T.any:
     return HARBOR_SERVICE.update_story(
         feed_id=feed_id,
         offset=offset,
@@ -105,24 +111,24 @@ def do_update_story(
 
 @HarborView.post('harbor_rss.clean_feed_creation')
 def do_clean_feed_creation(request):
-    return HARBOR_SERVICE.clean_feed_creation()
+    HARBOR_SERVICE.clean_feed_creation()
 
 
 @HarborView.post('harbor_rss.clean_by_retention')
 def do_clean_by_retention(request):
-    return HARBOR_SERVICE.clean_by_retention()
+    HARBOR_SERVICE.clean_by_retention()
 
 
 @HarborView.post('harbor_rss.clean_feedurlmap_by_retention')
 def do_clean_feedurlmap_by_retention(request):
-    return HARBOR_SERVICE.clean_feedurlmap_by_retention()
+    HARBOR_SERVICE.clean_feedurlmap_by_retention()
 
 
 @HarborView.post('harbor_rss.feed_refresh_freeze_level')
 def do_feed_refresh_freeze_level(request):
-    return HARBOR_SERVICE.feed_refresh_freeze_level()
+    HARBOR_SERVICE.feed_refresh_freeze_level()
 
 
 @HarborView.post('harbor_rss.feed_detect_and_merge_duplicate')
 def do_feed_detect_and_merge_duplicate(request):
-    return HARBOR_SERVICE.feed_detect_and_merge_duplicate()
+    HARBOR_SERVICE.feed_detect_and_merge_duplicate()

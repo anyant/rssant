@@ -42,13 +42,15 @@ class RssantServiceClient:
             base_url = self.harbor_url
         else:
             raise ValueError(f'unknown api: {api}')
-        return base_url.rstrip('/') + '/api/v1' + api.lstrip('/')
+        return base_url.rstrip('/') + '/api/v1/' + api.lstrip('/')
 
     def call(self, api: str, data: dict = None, timeout: int = None):
         url = self._get_api_url(api)
         with self.http_client(timeout=timeout) as client:
             resp = client.post(url, json=data)
             resp.raise_for_status()
+            if not resp.text:
+                return None
             return resp.json()
 
     async def acall(self, api: str, data: dict = None, timeout: int = None):
@@ -56,6 +58,8 @@ class RssantServiceClient:
         async with self.async_http_client(timeout=timeout) as client:
             resp = await client.post(url, json=data)
             resp.raise_for_status()
+            if not resp.text:
+                return None
             return resp.json()
 
 

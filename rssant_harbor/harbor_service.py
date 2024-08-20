@@ -1,7 +1,3 @@
-"""
-TODO: check_feed, retry_feed_creations
-"""
-
 import logging
 import time
 
@@ -33,8 +29,6 @@ from rssant_feedlib.fulltext import (
 from .schema import FeedInfoSchema, FeedSchema, validate_feed_output
 
 LOG = logging.getLogger(__name__)
-
-CHECK_FEED_SECONDS = CONFIG.check_feed_minutes * 60
 
 
 def _is_feed_need_fetch_storys(feed, modified_storys):
@@ -299,25 +293,7 @@ class HarborService:
         # 删除所有入库时间超过24小时的订阅创建信息
         num_deleted = FeedCreation.delete_by_status(survival_seconds=24 * 60 * 60)
         LOG.info('delete {} old feed creations'.format(num_deleted))
-        # 重试 status=UPDATING 超过4小时的订阅
-        feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
-            FeedStatus.UPDATING, survival_seconds=4 * 60 * 60
-        )
-        num_retry_updating = len(feed_creation_id_urls)
-        LOG.info('retry {} status=UPDATING feed creations'.format(num_retry_updating))
-        # _retry_feed_creations(ctx, feed_creation_id_urls)
-        # 重试 status=PENDING 超过4小时的订阅
-        feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
-            FeedStatus.PENDING, survival_seconds=4 * 60 * 60
-        )
-        num_retry_pending = len(feed_creation_id_urls)
-        LOG.info('retry {} status=PENDING feed creations'.format(num_retry_pending))
-        # _retry_feed_creations(ctx, feed_creation_id_urls)
-        return dict(
-            num_deleted=num_deleted,
-            num_retry_updating=num_retry_updating,
-            num_retry_pending=num_retry_pending,
-        )
+        return dict(num_deleted=num_deleted)
 
     def clean_by_retention(self):
         retention = CONFIG.feed_story_retention
