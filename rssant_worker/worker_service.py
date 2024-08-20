@@ -208,7 +208,6 @@ class WorkerService:
             return
         result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
         SERVICE_CLIENT.call('harbor_rss.update_feed', result)
-        return result
 
     async def _fetch_story_impl(
         self,

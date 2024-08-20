@@ -96,7 +96,7 @@ class RssantApiService:
     def batch_find_feed(self, item_s: list):
         task_s = []
         for item in item_s:
-            task = SERVICE_CLIENT.acall('worker_rss.find_feed', item)
+            task = SERVICE_CLIENT.acall('worker_rss.find_feed', item, timeout=120)
             task_s.append(asyncio.create_task(task))
         all_task = asyncio.gather(*task_s, return_exceptions=True)
         asyncio.get_event_loop().run_until_complete(all_task)

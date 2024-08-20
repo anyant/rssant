@@ -5,7 +5,7 @@ from rssant_api.views.common import AllowServiceClient
 
 from .django_service import django_clear_expired_sessions
 from .harbor_service import HARBOR_SERVICE
-from .schema import T_ACCEPT, FeedInfoSchema, FeedSchema
+from .schema import FeedInfoSchema, FeedSchema
 from .task_service import TASK_SERVICE
 
 LOG = logging.getLogger(__name__)
@@ -56,22 +56,6 @@ def do_update_feed(
         feed=feed,
         is_refresh=is_refresh,
     )
-
-
-@HarborView.post('harbor_rss.sync_story_fulltext')
-def do_sync_story_fulltext(
-    request,
-    feed_id: T.int,
-    offset: T.int,
-) -> T.dict(
-    feed_id=T.int,
-    offset=T.int.min(0),
-    use_proxy=T.bool,
-    url=T.url,
-    response_status=T.int,
-    accept=T_ACCEPT,
-):
-    pass
 
 
 @HarborView.post('harbor_rss.update_feed_info')

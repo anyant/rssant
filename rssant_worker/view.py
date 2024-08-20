@@ -16,7 +16,7 @@ def do_find_feed(
     feed_creation_id: T.int,
     url: T.url,
 ):
-    return WORKER_SERVICE.find_feed(
+    WORKER_SERVICE.find_feed(
         feed_creation_id=feed_creation_id,
         url=url,
     )
@@ -34,7 +34,7 @@ def do_sync_feed(
     last_modified: T.str.optional,
     is_refresh: T.bool.default(False),
 ):
-    return WORKER_SERVICE.sync_feed(
+    WORKER_SERVICE.sync_feed(
         feed_id=feed_id,
         url=url,
         use_proxy=use_proxy,

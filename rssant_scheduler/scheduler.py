@@ -85,8 +85,8 @@ class WorkerTask(BaseTask):
         task = result['task']
         if not task:
             return False
-        LOG.info('%s executing task: %r', self._name, task['key'])
-        await SERVICE_CLIENT.acall(task['api'], data=task['data'])
+        LOG.info('%s executing task %s', self._name, task['key'])
+        await SERVICE_CLIENT.acall(task['api'], data=task['data'], timeout=120)
         return True
 
     async def _execute_one_safe(self):
