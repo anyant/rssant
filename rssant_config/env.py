@@ -44,6 +44,7 @@ class EnvConfig(ConfigModel):
     harbor_url: str = T.url.default('http://localhost:6788')
     worker_url: str = T.url.default('http://localhost:6788')
     service_secret: str = T.str.default('rssant')
+    scheduler_num_worker: int = T.int.min(1).default(10)
     standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
     scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')

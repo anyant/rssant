@@ -6,6 +6,7 @@ from rssant_api.views.common import AllowServiceClient
 from .django_service import django_clear_expired_sessions
 from .harbor_service import HARBOR_SERVICE
 from .schema import T_ACCEPT, FeedInfoSchema, FeedSchema
+from .task_service import TASK_SERVICE
 
 LOG = logging.getLogger(__name__)
 
@@ -132,3 +133,13 @@ def do_feed_refresh_freeze_level(request):
 @HarborView.post('harbor_rss.feed_detect_and_merge_duplicate')
 def do_feed_detect_and_merge_duplicate(request):
     HARBOR_SERVICE.feed_detect_and_merge_duplicate()
+
+
+@HarborView.post('harbor_rss.get_task')
+def do_get_task(request) -> T.dict:
+    """获取一个Worker任务"""
+    task = TASK_SERVICE.get()
+    task_data = None
+    if task is not None:
+        task_data = task.to_dict()
+    return dict(task=task_data)

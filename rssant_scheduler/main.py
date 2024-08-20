@@ -1,18 +1,18 @@
 import logging
 
-from actorlib import actor, ActorContext
+from rssant_common.logger import configure_logging
+from rssant_config import CONFIG
 
-from rssant_common.actor_helper import start_actor
-
+from .scheduler import RssantScheduler
 
 LOG = logging.getLogger(__name__)
 
 
-@actor('actor.init')
-async def do_init(ctx: ActorContext):
-    await ctx.hope('scheduler.load_registery')
-    await ctx.hope('scheduler.dns_service_refresh')
+def main():
+    configure_logging(level=CONFIG.log_level)
+    scheduler = RssantScheduler(num_worker=CONFIG.scheduler_num_worker)
+    scheduler.main()
 
 
-if __name__ == "__main__":
-    start_actor('scheduler', port=6790)
+if __name__ == '__main__':
+    main()

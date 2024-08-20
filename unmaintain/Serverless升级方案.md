@@ -50,10 +50,10 @@ worker_rss.find_feed
 worker_rss.sync_feed
 worker_rss.fetch_story
 worker_rss.process_story_webpage
-worker_rss.execute_task 调用API取队列任务并执行
+DNS_SERVICE.refresh 后台线程执行
 
 # scheduler任务调度器，服务器上单实例部署
 定时任务，调用harbor接口
-多线程持续调用worker接口执行任务
+调用harbor接口取任务，调用worker接口执行任务
 
 db,img,api,worker,scheduler
