@@ -12,6 +12,7 @@ from rssant_api.models import FeedStatus
 from rssant_common import _proxy_helper
 from rssant_common._proxy_helper import is_use_proxy_url
 from rssant_common.attrdict import AttrDict
+from rssant_common.base64 import UrlsafeBase64
 from rssant_common.dns_service import DNS_SERVICE
 from rssant_common.rss import get_story_of_feed_entry
 from rssant_common.rss import validate_feed as _validate_feed
@@ -129,7 +130,7 @@ class WorkerService:
         feed_id: T.int,
         url: T.url,
         use_proxy: T.bool.default(False),
-        checksum_data: T.bytes.maxlen(4096).optional,
+        checksum_data_base64: str,
         content_hash_base64: T.str.optional,
         etag: T.str.optional,
         last_modified: T.str.optional,
@@ -191,7 +192,7 @@ class WorkerService:
         try:
             feed = _parse_found(
                 (response, raw_result),
-                checksum_data=checksum_data,
+                checksum_data_base64=checksum_data_base64,
                 is_refresh=is_refresh,
             )
         except (Invalid, FeedParserError) as ex:
@@ -371,7 +372,7 @@ async def _fetch_story(
     return url, content, response
 
 
-def _parse_found(found, checksum_data=None, is_refresh=False):
+def _parse_found(found, checksum_data_base64=None, is_refresh=False):
     response: FeedResponse
     raw_result: RawFeedResult
     response, raw_result = found
@@ -390,10 +391,12 @@ def _parse_found(found, checksum_data=None, is_refresh=False):
 
     # parse feed and storys
     checksum = None
+    checksum_data = UrlsafeBase64.decode(checksum_data_base64)
     if checksum_data and (not is_refresh):
         checksum = FeedChecksum.load(checksum_data)
     result = FeedParser(checksum=checksum).parse(raw_result)
     checksum_data = result.checksum.dump(limit=300)
+    checksum_data_base64 = UrlsafeBase64.encode(checksum_data)
     num_raw_storys = len(raw_result.storys)
     warnings = None
     if raw_result.warnings:
@@ -410,7 +413,7 @@ def _parse_found(found, checksum_data=None, is_refresh=False):
     feed.dt_updated = result.feed['dt_updated']
     feed.version = result.feed['version']
     feed.storys = _get_storys(result.storys)
-    feed.checksum_data = checksum_data
+    feed.checksum_data_base64 = checksum_data_base64
     feed.warnings = warnings
     del result  # release memory in advance
 

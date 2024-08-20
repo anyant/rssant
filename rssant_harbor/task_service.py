@@ -6,6 +6,7 @@ from threading import RLock
 from typing import Optional
 
 from rssant_api.models import Feed, FeedCreation, FeedStatus
+from rssant_common.base64 import UrlsafeBase64
 from rssant_config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -76,7 +77,7 @@ class RssantTaskService:
         for feed in feeds:
             task_api = 'worker_rss.sync_feed'
             task_key = f'{task_api}:{feed["feed_id"]}'
-            checksum_data_base64 = self._b64encode(feed['checksum_data'])
+            checksum_data_base64 = UrlsafeBase64.encode(feed['checksum_data'])
             task_data = dict(
                 feed_id=feed['feed_id'],
                 url=feed['url'],

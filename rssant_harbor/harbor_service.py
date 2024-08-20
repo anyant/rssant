@@ -15,6 +15,7 @@ from rssant_api.models import (
     FeedUrlMap,
     UserFeed,
 )
+from rssant_common.base64 import UrlsafeBase64
 from rssant_config import CONFIG
 from rssant_feedlib import processor
 from rssant_feedlib.do_not_fetch_fulltext import is_not_fetch_fulltext
@@ -163,7 +164,15 @@ class HarborService:
             FeedUrlMap(source=feed_creation.url, target=feed.url).save()
             if feed.url != feed_creation.url:
                 FeedUrlMap(source=feed.url, target=feed.url).save()
-        return validate_feed_output(feed_dict)
+        self.update_feed(
+            feed_id=feed.id,
+            feed=validate_feed_output(feed_dict),
+        )
+
+    def _convert_checksum_data(self, feed_dict: dict):
+        feed_dict['checksum_data'] = UrlsafeBase64.decode(
+            feed_dict.pop('checksum_data_base64', None)
+        )
 
     def update_feed(
         self,
@@ -171,8 +180,9 @@ class HarborService:
         feed: FeedSchema,
         is_refresh: bool = False,
     ):
+        feed_dict = feed
+        self._convert_checksum_data(feed_dict)
         with transaction.atomic():
-            feed_dict = feed
             storys = feed_dict.pop('storys')
             feed = Feed.get_by_pk(feed_id)
             is_feed_url_changed = feed.url != feed_dict['url']
@@ -255,8 +265,9 @@ class HarborService:
         feed_id: int,
         feed: FeedInfoSchema,
     ):
+        feed_dict = feed
+        self._convert_checksum_data(feed_dict)
         with transaction.atomic():
-            feed_dict = feed
             feed = Feed.get_by_pk(feed_id)
             for k, v in feed_dict.items():
                 setattr(feed, k, v)

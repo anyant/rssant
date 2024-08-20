@@ -75,10 +75,10 @@ class WorkerTask(BaseTask):
 
     async def _execute(self):
         LOG.info("schedule {} started".format(self._name))
+        init_delay = 1 + random.random() * 3
+        await asyncio.sleep(init_delay)
         while True:
-            is_ok = await self._execute_one_safe()
-            if not is_ok:
-                await asyncio.sleep(30)
+            await self._execute_one_safe()
 
     async def _execute_task(self):
         result = await SERVICE_CLIENT.acall('harbor_rss.get_task')
@@ -95,7 +95,9 @@ class WorkerTask(BaseTask):
         except Exception as ex:
             LOG.exception('%s failed: %r', self._name, ex, exc_info=ex)
             is_ok = False
-        return is_ok
+        if not is_ok:
+            delay = 10 + random.random() * 20
+            await asyncio.sleep(delay)
 
 
 class RssantScheduler:
