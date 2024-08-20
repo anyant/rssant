@@ -7,6 +7,7 @@ from typing import Optional
 
 from rssant_api.models import Feed, FeedCreation, FeedStatus
 from rssant_common.base64 import UrlsafeBase64
+from rssant_common.throttle import throttle
 from rssant_config import CONFIG
 
 LOG = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ class RssantTaskService:
             return None
         return base64.urlsafe_b64encode(data).decode('ascii')
 
+    @throttle(seconds=10)
     def _fetch_sync_feed_task(self):
         rand_sec = random.random() * CHECK_FEED_SECONDS / 10
         outdate_seconds = CHECK_FEED_SECONDS + rand_sec
@@ -114,6 +116,7 @@ class RssantTaskService:
             )
             self._add_task(task)
 
+    @throttle(seconds=60)
     def _fetch_find_feed_task(self):
         # 重试 status=UPDATING 超过4小时的订阅
         feed_creation_id_urls = FeedCreation.query_id_urls_by_status(
