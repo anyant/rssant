@@ -94,8 +94,8 @@ geventhttpclient==1.5.3
 pyzmq==20.0.0
 
 # package
-pip-tools==5.5.0
-pipdeptree==0.13.2
+pip-tools==7.4.1
+pipdeptree==2.23.1
 pyinstaller==4.7
 
 # deploy
