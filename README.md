@@ -104,7 +104,6 @@ RSSANT_RSS_PROXY_TOKEN=
 # RSSANT_ALLOW_PRIVATE_ADDRESS=true
 
 # 以下配置保持不动
-RSSANT_SCHEDULER_NETWORK=rssant
 RSSANT_PG_DB=rssant
 RSSANT_PG_HOST=localhost
 RSSANT_PG_USER=rssant
@@ -118,7 +117,6 @@ RSSANT_PG_PASSWORD=rssant
 ```bash
 #!/bin/bash
 
-docker volume create rssant-data || true
 docker volume create rssant-postgres-data || true
 docker volume create rssant-postgres-logs || true
 
@@ -126,7 +124,6 @@ docker rm -f rssant || true
 docker run -ti --name rssant -d \
     -p 6789:80 \
     --env-file ~/rssant/rssant.env \
-    -v rssant-data:/app/data \
     -v rssant-postgres-data:/var/lib/postgresql/11/main \
     -v rssant-postgres-logs:/var/log/postgresql \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
@@ -190,7 +187,7 @@ git clone git@gitee.com:anyant/rssant.git
 cd rssant
 mise install python@3.8
 python -m venv .venv
-PIP_CONSTRAINT=constraint.txt pip install -r requirements.txt
+bash ./setup.sh
 ```
 
 启动数据库
@@ -209,15 +206,10 @@ python manage.py runscript django_db_init
 开多个终端，分别启动以下服务
 
 ```
-python manage.py runserver 6788
-
-python -m rssant_async.main
-
-python -m rssant_scheduler.main --concurrency 10
-
-python -m rssant_harbor.main --concurrency 10
-
-python -m rssant_worker.main --concurrency 10
+bash ./rundev-api.sh
+bash ./rundev-worker.sh
+python ./rundev-scheduler.py
+python ./rundev-async.py
 ```
 
 访问 http://127.0.0.1:6788/doc/v1/  账号: admin 密码: admin
@@ -235,7 +227,7 @@ pytest
 打包
 
 ```
-docker build -t rssant/api:latest .
+bash deploy/rssant_server/build.sh
 ```
 
 #### 前端

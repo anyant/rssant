@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pyinstaller rssant_scheduler_main.py \
+pyinstaller run-scheduler.py \
     --exclude-module django \
     --exclude-module lxml \
     --exclude-module gevent \

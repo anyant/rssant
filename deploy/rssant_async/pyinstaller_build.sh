@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pyinstaller rssant_async_main.py \
+pyinstaller run-async.py \
     --exclude-module django \
     --exclude-module lxml \
     --exclude-module gevent \
