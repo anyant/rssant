@@ -9,6 +9,7 @@ from .story_service import STORY_SERVICE, CommonStory
 from .union_feed import FeedImportItem, FeedUnionId, UnionFeed
 from .union_story import StoryUnionId, UnionStory
 from .user_publish import UserPublish
+from .worker_task import WorkerTask
 
 __models__ = (
     FeedCreation,
@@ -23,4 +24,5 @@ __models__ = (
     Registery,
     ImageInfo,
     UserPublish,
+    WorkerTask,
 )

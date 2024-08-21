@@ -22,6 +22,10 @@ SCHEDULER_TASK_S = [
         timer=Timer('1m'),
     ),
     dict(
+        api='harbor_rss.clean_expired_worker_task',
+        timer=Timer('10m'),
+    ),
+    dict(
         api='harbor_rss.clean_feedurlmap_by_retention',
         timer=Timer('30m'),
     ),

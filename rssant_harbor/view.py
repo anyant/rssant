@@ -109,6 +109,11 @@ def do_clean_feedurlmap_by_retention(request):
     HARBOR_SERVICE.clean_feedurlmap_by_retention()
 
 
+@HarborView.post('harbor_rss.clean_expired_worker_task')
+def do_clean_expired_worker_task(request):
+    HARBOR_SERVICE.clean_expired_worker_task()
+
+
 @HarborView.post('harbor_rss.feed_refresh_freeze_level')
 def do_feed_refresh_freeze_level(request):
     HARBOR_SERVICE.feed_refresh_freeze_level()

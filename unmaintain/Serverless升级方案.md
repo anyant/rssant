@@ -11,7 +11,15 @@ scheduler服务
 接口互相调用问题
 
 worker实例单独运行
-任务缓存到数据库
+任务缓存到数据库，分优先级，带有效期
+sync_feed,find_feed,story_fetch_fulltext
+sync_feed每次取100个，有效期24小时
+find_feed每次取不限数量，有效期12小时
+story_fetch_fulltext，有效期6小时
+单个写入：key唯一upsert
+批量写入：insert update
+取出：update where, delete where
+过期： delete where，定期执行
 
 # 虚拟任务队列，提供取任务的API
 从多个来源，按优先级取任务，取到之后返回给消费者（可以批量取，缓存起来）

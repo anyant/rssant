@@ -14,6 +14,7 @@ from rssant_api.models import (
     FeedStatus,
     FeedUrlMap,
     UserFeed,
+    WorkerTask,
 )
 from rssant_common.base64 import UrlsafeBase64
 from rssant_config import CONFIG
@@ -212,7 +213,6 @@ class HarborService:
                         is_feed_updated = True
                         setattr(feed, k, v)
             now = timezone.now()
-            now_sub_30d = now - timezone.timedelta(days=30)
             if is_feed_updated:
                 # set dt_updated to now, not trust rss date
                 feed.dt_updated = now
@@ -220,6 +220,22 @@ class HarborService:
             feed.reverse_url = reverse_url(feed.url)
             feed.status = FeedStatus.READY
             feed.save()
+        self._save_feed_storys(
+            feed=feed,
+            storys=storys,
+            is_refresh=is_refresh,
+            now=now,
+        )
+
+    def _save_feed_storys(
+        self,
+        *,
+        feed: Feed,
+        storys: list,
+        is_refresh: bool,
+        now: timezone.datetime,
+    ):
+        now_sub_30d = now - timezone.timedelta(days=30)
         # save storys, bulk_save_by_feed has standalone transaction
         for s in storys:
             if not s['dt_updated']:
@@ -237,10 +253,10 @@ class HarborService:
             len(storys),
             len(modified_storys),
         )
-        feed = Feed.get_by_pk(feed_id)
+        feed = Feed.get_by_pk(feed.id)
         is_freezed = feed.freeze_level is None or feed.freeze_level > 1
         if modified_storys and is_freezed:
-            Feed.unfreeze_by_id(feed_id)
+            Feed.unfreeze_by_id(feed.id)
         need_fetch_story = _is_feed_need_fetch_storys(feed, modified_storys)
         fetch_story_task_s = []
         for story in modified_storys:
@@ -258,7 +274,22 @@ class HarborService:
                         num_sub_sentences=num_sub_sentences,
                     )
                 )
-        return fetch_story_task_s
+        self._save_fetch_story_task_s(fetch_story_task_s)
+
+    def _save_fetch_story_task_s(self, fetch_story_task_s: list):
+        task_obj_s = []
+        for item in fetch_story_task_s:
+            story_id = f'{item["feed_id"]}-{item["offset"]}'
+            api = 'worker_rss.fetch_story'
+            obj = WorkerTask.from_dict(
+                api=api,
+                key=f'{api}:{story_id}',
+                data=item,
+                priority=5,
+                expired_seconds=6 * 60 * 60,
+            )
+            task_obj_s.append(obj)
+        WorkerTask.bulk_save(task_obj_s)
 
     def update_feed_info(
         self,
@@ -319,6 +350,10 @@ class HarborService:
     def clean_feedurlmap_by_retention(self):
         num_rows = FeedUrlMap.delete_by_retention()
         LOG.info('delete {} outdated feedurlmap'.format(num_rows))
+
+    def clean_expired_worker_task(self):
+        num_rows = WorkerTask.delete_all_expired()
+        LOG.info('delete {} expired worker task'.format(num_rows))
 
     def feed_refresh_freeze_level(self):
         begin_time = time.time()

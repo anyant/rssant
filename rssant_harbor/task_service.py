@@ -1,11 +1,9 @@
-import base64
 import logging
 import random
-import time
 from threading import RLock
 from typing import Optional
 
-from rssant_api.models import Feed, FeedCreation, FeedStatus
+from rssant_api.models import Feed, FeedCreation, FeedStatus, WorkerTask
 from rssant_common.base64 import UrlsafeBase64
 from rssant_common.throttle import throttle
 from rssant_config import CONFIG
@@ -15,60 +13,37 @@ LOG = logging.getLogger(__name__)
 CHECK_FEED_SECONDS = CONFIG.check_feed_minutes * 60
 
 
-class RssantTask:
-    def __init__(
-        self,
-        *,
-        api: str,
-        key: str,
-        data: dict,
-        priority: int,
-        timestamp: int,
-    ) -> None:
-        self.api = api
-        self.key = key
-        self.data = data
-        self.priority = priority
-        self.timestamp = timestamp
-
-    def to_dict(self):
-        return dict(
-            api=self.api,
-            key=self.key,
-            data=self.data,
-            priority=self.priority,
-            timestamp=self.timestamp,
-        )
-
-
 class RssantTaskService:
     def __init__(self) -> None:
         self._cache = []
         self._lock = RLock()
 
-    def _add_task(self, task: RssantTask):
+    def _add_task(self, task: WorkerTask):
         self._cache.append(task)
 
-    def _pick_task(self) -> Optional[RssantTask]:
-        if not self._cache:
-            return None
-        return self._cache.pop(0)
+    def _bulk_save_task(self):
+        if self._cache:
+            task_s = self._cache
+            self._cache = []
+            WorkerTask.bulk_save(task_s)
+            return True
+        return False
+
+    def _pick_task(self) -> Optional[WorkerTask]:
+        return WorkerTask.poll()
 
     def get(self):
         with self._lock:
             task = self._pick_task()
             if task is not None:
                 return task
-            # 限制数据库查询频率，避免频繁查询
             self._fetch_sync_feed_task()
             self._fetch_find_feed_task()
+            has_task = self._bulk_save_task()
+            if not has_task:
+                return None
             task = self._pick_task()
             return task
-
-    def _b64encode(self, data: Optional[bytes]):
-        if data is None:
-            return None
-        return base64.urlsafe_b64encode(data).decode('ascii')
 
     @throttle(seconds=10)
     def _fetch_sync_feed_task(self):
@@ -88,12 +63,12 @@ class RssantTaskService:
                 use_proxy=feed['use_proxy'],
                 checksum_data_base64=checksum_data_base64,
             )
-            task = RssantTask(
+            task = WorkerTask.from_dict(
                 api=task_api,
                 key=task_key,
                 data=task_data,
-                priority=1,
-                timestamp=int(time.time()),
+                priority=10,
+                expired_seconds=24 * 60 * 60,
             )
             self._add_task(task)
 
@@ -107,12 +82,12 @@ class RssantTaskService:
                 feed_creation_id=feed_creation_id,
                 url=url,
             )
-            task = RssantTask(
+            task = WorkerTask.from_dict(
                 api=task_api,
                 key=task_key,
                 data=task_data,
-                priority=1,
-                timestamp=int(time.time()),
+                priority=20,
+                expired_seconds=12 * 60 * 60,
             )
             self._add_task(task)
 
