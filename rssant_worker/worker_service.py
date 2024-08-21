@@ -129,7 +129,6 @@ class WorkerService:
             feed=feed,
         )
         SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
-        return result
 
     def sync_feed(
         self,
@@ -215,6 +214,36 @@ class WorkerService:
         result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
         SERVICE_CLIENT.call('harbor_rss.update_feed', result)
 
+    @classmethod
+    async def _fetch_story(
+        cls, reader: AsyncFeedReader, feed_id, offset, url, use_proxy
+    ) -> tuple:
+        for i in range(2):
+            response = await reader.read(url, use_proxy=use_proxy)
+            if response and response.url:
+                url = str(response.url)
+            LOG.info(
+                f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished'
+            )
+            if not (response and response.ok and response.content):
+                return url, None, response
+            try:
+                content = response.content.decode(response.encoding)
+            except UnicodeError as ex:
+                LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
+                content = response.content.decode(response.encoding, errors='ignore')
+            html_redirect = get_html_redirect_url(content)
+            if (not html_redirect) or html_redirect == url:
+                return url, content, response
+            LOG.info(
+                'story#%s,%s resolve html redirect to %r',
+                feed_id,
+                offset,
+                html_redirect,
+            )
+            url = html_redirect
+        return url, content, response
+
     async def _async_fetch_story_impl(
         self,
         feed_id: T.int,
@@ -230,7 +259,7 @@ class WorkerService:
         options.update(request_timeout=25)
         async with AsyncFeedReader(**options) as reader:
             use_proxy = use_proxy and reader.has_proxy
-            url, content, response = await _fetch_story(
+            url, content, response = await self._fetch_story(
                 reader, feed_id, offset, url, use_proxy=use_proxy
             )
         result = dict(url=url, content=content, response=response)
@@ -363,33 +392,6 @@ def _update_feed_info(
             ),
         ),
     )
-
-
-async def _fetch_story(
-    reader: AsyncFeedReader, feed_id, offset, url, use_proxy
-) -> tuple:
-    for i in range(2):
-        response = await reader.read(url, use_proxy=use_proxy)
-        if response and response.url:
-            url = str(response.url)
-        LOG.info(
-            f'fetch story#{feed_id},{offset} url={unquote(url)} status={response.status} finished'
-        )
-        if not (response and response.ok and response.content):
-            return url, None, response
-        try:
-            content = response.content.decode(response.encoding)
-        except UnicodeError as ex:
-            LOG.warning('fetch story unicode decode error=%s url=%r', ex, url)
-            content = response.content.decode(response.encoding, errors='ignore')
-        html_redirect = get_html_redirect_url(content)
-        if (not html_redirect) or html_redirect == url:
-            return url, content, response
-        LOG.info(
-            'story#%s,%s resolve html redirect to %r', feed_id, offset, html_redirect
-        )
-        url = html_redirect
-    return url, content, response
 
 
 def _parse_found(found, checksum_data_base64=None, is_refresh=False):

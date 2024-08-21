@@ -34,63 +34,6 @@ from .schema import FeedInfoSchema, FeedSchema, validate_feed_output
 LOG = logging.getLogger(__name__)
 
 
-def _is_feed_need_fetch_storys(feed, modified_storys):
-    if is_not_fetch_fulltext(feed.url):
-        return False
-    # eg: news, forum, bbs, daily reports
-    if feed.dryness is not None and feed.dryness < 500:
-        return False
-    return True
-
-
-def _is_fulltext_story(story):
-    if story.iframe_url or story.audio_url or story.image_url:
-        return True
-    return is_fulltext_content(StoryContentInfo(story.content))
-
-
-def _update_story(
-    story: CommonStory,
-    story_content_info: StoryContentInfo,
-    content: str,
-    summary: str,
-    url: str,
-    has_mathjax: bool = None,
-    sentence_count: int = None,
-) -> FulltextAcceptStrategy:
-    new_info = StoryContentInfo(content)
-    accept = decide_accept_fulltext(new_info, story_content_info)
-    if accept == FulltextAcceptStrategy.REJECT:
-        msg = 'fetched story#%s,%s url=%r is not fulltext of feed story content'
-        LOG.info(msg, story.feed_id, story.offset, url)
-        return accept
-    if accept == FulltextAcceptStrategy.APPEND:
-        content = (story.content or '') + '\n<hr/>\n' + (content or '')
-    data = dict(
-        link=url,
-        content=content,
-        summary=summary,
-        has_mathjax=has_mathjax,
-        sentence_count=sentence_count,
-    )
-    STORY_SERVICE.update_story(story.feed_id, story.offset, data)
-    return accept
-
-
-def _feed_merge_duplicate(found: list):
-    for feed_ids in found:
-        primary_id, *duplicates = feed_ids
-        with transaction.atomic():
-            primary = Feed.get_by_pk(primary_id)
-            primary_info = f'#{primary.id} url={primary.url!r}'
-            for feed_id in duplicates:
-                other = Feed.get_by_pk(feed_id)
-                other_info = f'#{other.id} url={other.url!r}'
-                LOG.info('merge duplicate feed %s into %s', other_info, primary_info)
-                FeedUrlMap(source=other.url, target=primary.url).save()
-                primary.merge(other)
-
-
 class HarborService:
 
     def update_feed_creation_status(
@@ -258,12 +201,12 @@ class HarborService:
         is_freezed = feed.freeze_level is None or feed.freeze_level > 1
         if modified_storys and is_freezed:
             Feed.unfreeze_by_id(feed.id)
-        need_fetch_story = _is_feed_need_fetch_storys(feed, modified_storys)
+        need_fetch_story = self._is_feed_need_fetch_storys(feed, modified_storys)
         fetch_story_task_s = []
         for story in modified_storys:
             if not story.link:
                 continue
-            if need_fetch_story and (not _is_fulltext_story(story)):
+            if need_fetch_story and (not self._is_fulltext_story(story)):
                 text = processor.story_html_to_text(story.content)
                 num_sub_sentences = len(split_sentences(text))
                 fetch_story_task_s.append(
@@ -276,6 +219,21 @@ class HarborService:
                     )
                 )
         self._save_fetch_story_task_s(fetch_story_task_s)
+
+    @staticmethod
+    def _is_feed_need_fetch_storys(feed, modified_storys):
+        if is_not_fetch_fulltext(feed.url):
+            return False
+        # eg: news, forum, bbs, daily reports
+        if feed.dryness is not None and feed.dryness < 500:
+            return False
+        return True
+
+    @staticmethod
+    def _is_fulltext_story(story):
+        if story.iframe_url or story.audio_url or story.image_url:
+            return True
+        return is_fulltext_content(StoryContentInfo(story.content))
 
     def _save_fetch_story_task_s(self, fetch_story_task_s: list):
         task_obj_s = []
@@ -321,7 +279,7 @@ class HarborService:
         if not story:
             LOG.error('story#%s,%s not found', feed_id, offset)
             return
-        accept = _update_story(
+        accept = self._update_story(
             story=story,
             story_content_info=StoryContentInfo(story.content),
             content=content,
@@ -331,6 +289,35 @@ class HarborService:
             sentence_count=sentence_count,
         )
         return dict(accept=accept.value)
+
+    @classmethod
+    def _update_story(
+        cls,
+        story: CommonStory,
+        story_content_info: StoryContentInfo,
+        content: str,
+        summary: str,
+        url: str,
+        has_mathjax: bool = None,
+        sentence_count: int = None,
+    ) -> FulltextAcceptStrategy:
+        new_info = StoryContentInfo(content)
+        accept = decide_accept_fulltext(new_info, story_content_info)
+        if accept == FulltextAcceptStrategy.REJECT:
+            msg = 'fetched story#%s,%s url=%r is not fulltext of feed story content'
+            LOG.info(msg, story.feed_id, story.offset, url)
+            return accept
+        if accept == FulltextAcceptStrategy.APPEND:
+            content = (story.content or '') + '\n<hr/>\n' + (content or '')
+        data = dict(
+            link=url,
+            content=content,
+            summary=summary,
+            has_mathjax=has_mathjax,
+            sentence_count=sentence_count,
+        )
+        STORY_SERVICE.update_story(story.feed_id, story.offset, data)
+        return accept
 
     def clean_feed_creation(self):
         # 删除所有入库时间超过24小时的订阅创建信息
@@ -362,12 +349,28 @@ class HarborService:
         cost = time.time() - begin_time
         LOG.info('feed_refresh_freeze_level cost {:.1f}ms'.format(cost * 1000))
 
+    @classmethod
+    def _feed_merge_duplicate(cls, found: list):
+        for feed_ids in found:
+            primary_id, *duplicates = feed_ids
+            with transaction.atomic():
+                primary = Feed.get_by_pk(primary_id)
+                primary_info = f'#{primary.id} url={primary.url!r}'
+                for feed_id in duplicates:
+                    other = Feed.get_by_pk(feed_id)
+                    other_info = f'#{other.id} url={other.url!r}'
+                    LOG.info(
+                        'merge duplicate feed %s into %s', other_info, primary_info
+                    )
+                    FeedUrlMap(source=other.url, target=primary.url).save()
+                    primary.merge(other)
+
     def feed_detect_and_merge_duplicate(self):
         begin_time = time.time()
         checkpoint = None
         while True:
             found, checkpoint = Feed.find_duplicate_feeds(checkpoint=checkpoint)
-            _feed_merge_duplicate(found)
+            self._feed_merge_duplicate(found)
             if not checkpoint:
                 break
         cost = time.time() - begin_time
