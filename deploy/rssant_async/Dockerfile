@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.8.6-buster as build
+FROM --platform=linux/amd64 python:3.8.19-bullseye as build
 ENV PIP_INDEX_URL="https://mirrors.aliyun.com/pypi/simple/" PIP_DISABLE_PIP_VERSION_CHECK=1
 COPY requirements.txt /tmp/requirements.txt
 RUN mkdir /code && cd /code && python -m venv .venv && \
@@ -10,7 +10,7 @@ RUN bash rssant_async_build.sh && \
     /code/dist/rssant_async_main/rssant_async_main --help && \
     du -sh /code/dist/rssant_async_main
 
-FROM --platform=linux/amd64 debian:buster-slim as runtime
+FROM --platform=linux/amd64 debian:bullseye-slim as runtime
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
