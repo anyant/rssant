@@ -45,8 +45,6 @@ def _gen_installed_apps():
     yield 'django.contrib.staticfiles'
     yield 'django.contrib.postgres'
     yield 'django.contrib.sites'
-    if ENV_CONFIG.sentry_enable:
-        yield 'raven.contrib.django.raven_compat'
     if ENV_CONFIG.debug_toolbar_enable:
         yield 'debug_toolbar'
     yield 'django_extensions'
@@ -72,7 +70,6 @@ def _gen_middleware():
         yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
     else:
         yield 'rssant.middleware.timer.RssantTimerMiddleware'
-    yield 'rssant.middleware.prometheus.RssantPrometheusMiddleware'
     yield 'django.middleware.security.SecurityMiddleware'
     yield 'whitenoise.middleware.WhiteNoiseMiddleware'
     yield 'django.contrib.sessions.middleware.SessionMiddleware'
@@ -178,11 +175,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-if ENV_CONFIG.sentry_enable:
-    RAVEN_CONFIG = {
-        'dsn': ENV_CONFIG.sentry_dsn,
-    }
 
 # RSSANT
 RSSANT_CHECK_FEED_SECONDS = 60 * ENV_CONFIG.check_feed_minutes

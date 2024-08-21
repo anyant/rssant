@@ -58,9 +58,6 @@ class EnvConfig(ConfigModel):
     github_client_id: str = T.str.optional
     github_secret: str = T.str.optional
     github_standby_configs: str = T.str.optional.desc('domain,client_id,secret;')
-    # sentry
-    sentry_enable: bool = T.bool.default(False)
-    sentry_dsn: str = T.str.optional
     # email smtp
     admin_email: str = T.email.default('admin@localhost.com')
     smtp_enable: bool = T.bool.default(False)
@@ -158,8 +155,6 @@ class EnvConfig(ConfigModel):
         return configs
 
     def __post_init__(self):
-        if self.sentry_enable and not self.sentry_dsn:
-            raise Invalid('sentry_dsn is required when sentry_enable=True')
         if self.smtp_enable:
             if not self.smtp_host:
                 raise Invalid('smtp_host is required when smtp_enable=True')

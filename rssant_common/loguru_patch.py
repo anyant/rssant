@@ -2,6 +2,7 @@
 Proper way to intercept stdlib logging:
     https://github.com/Delgan/loguru/issues/78
 """
+
 import io
 import logging
 import os.path
@@ -21,9 +22,12 @@ class InterceptHandler(logging.Handler):
 
 
 if hasattr(sys, '_getframe'):
+
     def currentframe():
         return sys._getframe(3)
+
 else:  # pragma: no cover
+
     def currentframe():
         """Return the frame object for the caller's stack frame."""
         try:
@@ -37,14 +41,6 @@ _srcfile = (
     os.path.normcase(parse_ansi.__code__.co_filename),
     os.path.normcase(currentframe.__code__.co_filename),
 )
-
-
-try:
-    import sentry_sdk.integrations.logging
-except ImportError:
-    pass  # ignore
-else:
-    _srcfile = (sentry_sdk.integrations.logging.__file__, *_srcfile)
 
 
 def findCaller(stack_info=False):
@@ -94,7 +90,7 @@ def fixed_get_frame(depth=None):
         f_code=AttrDict(
             co_filename=fn,
             co_name=func,
-        )
+        ),
     )
     return frame
 
@@ -102,5 +98,6 @@ def fixed_get_frame(depth=None):
 def loguru_patch():
     import loguru._get_frame
     import loguru._logger
+
     loguru._get_frame.get_frame = fixed_get_frame
     loguru._logger.get_frame = fixed_get_frame

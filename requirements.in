@@ -55,11 +55,6 @@ aiocontextvars==0.2.2  # Python 3.6
 aiohttp-socks==0.5.5
 python-socks==1.2.4
 
-# metrics
-raven==6.10.0
-sentry-sdk==0.9.0
-prometheus-client==0.7.1
-
 # helpers
 Brotli==1.0.7
 validr==1.2.2

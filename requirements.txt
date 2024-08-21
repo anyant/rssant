@@ -298,8 +298,6 @@ pluggy==0.13.1
     # via pytest
 pre-commit==2.3.0
     # via -r requirements.in
-prometheus-client==0.7.1
-    # via -r requirements.in
 prompt-toolkit==3.0.24
     # via pgcli
 psutil==5.6.7
@@ -396,8 +394,6 @@ pyzmq==20.0.0
     # via
     #   -r requirements.in
     #   locust
-raven==6.10.0
-    # via -r requirements.in
 readability-lxml==0.8.1
     # via -r requirements.in
 requests-file==1.5.1
