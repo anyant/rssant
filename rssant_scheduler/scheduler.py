@@ -4,6 +4,7 @@ import random
 from typing import List
 
 from rssant_common.service_client import SERVICE_CLIENT
+from rssant_config import CONFIG
 
 from .timer_task import SCHEDULER_TASK_S
 
@@ -117,6 +118,8 @@ class RssantScheduler:
         return task_s
 
     def main(self):
+        LOG.info('harbor url: %s', CONFIG.harbor_url)
+        LOG.info('worker url: %s', CONFIG.worker_url)
         asyncio.run(self._main_async())
 
     async def _main_async(self):
