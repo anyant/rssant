@@ -18,7 +18,7 @@ class WorkerTaskExpired(enum.IntEnum):
     SYNC_FEED = 24 * 60 * 60
     FIND_FEED = 12 * 60 * 60
     RETRY_FIND_FEED = 12 * 60 * 60
-    FETCH_STORY = 6 * 60 * 60
+    FETCH_STORY = 1 * 60 * 60
 
 
 class WorkerTask(Model):

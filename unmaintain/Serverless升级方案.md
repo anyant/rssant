@@ -15,7 +15,7 @@ worker实例单独运行
 sync_feed,find_feed,story_fetch_fulltext
 sync_feed每次取100个，有效期24小时
 find_feed每次取不限数量，有效期12小时
-story_fetch_fulltext，有效期6小时
+story_fetch_fulltext，有效期1小时
 单个写入：key唯一upsert
 批量写入：insert update
 取出：update where, delete where
