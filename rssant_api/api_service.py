@@ -55,7 +55,6 @@ class RssantApiService:
             offset=offset,
             url=story.link,
             use_proxy=feed.use_proxy,
-            accept=FulltextAcceptStrategy.REJECT.value,
         )
         try:
             result = SERVICE_CLIENT.call(
@@ -77,8 +76,10 @@ class RssantApiService:
             ret.update(
                 response_status=result['response_status'],
                 use_proxy=result['use_proxy'],
-                accept=result['accept'],
+                accept=result.get('accept', None),
             )
+        if ret.get('accept') is None:
+            ret['accept'] = FulltextAcceptStrategy.REJECT.value
         return ret
 
     def batch_find_feed(self, item_s: list):

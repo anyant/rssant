@@ -32,6 +32,7 @@ from rssant_feedlib import (
     RawFeedResult,
 )
 from rssant_feedlib.fulltext import (
+    FulltextAcceptStrategy,
     StoryContentInfo,
     is_fulltext_content,
     split_sentences,
@@ -51,6 +52,8 @@ _MAX_STORY_HTML_LENGTH = 5 * 1000 * 1024
 _MAX_STORY_CONTENT_LENGTH = 1000 * 1024
 _MAX_STORY_SUMMARY_LENGTH = 300
 
+T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+
 SCHEMA_FETCH_STORY_RESULT = T.dict(
     feed_id=T.int,
     offset=T.int.min(0),
@@ -60,6 +63,7 @@ SCHEMA_FETCH_STORY_RESULT = T.dict(
     content=T.str.maxlen(_MAX_STORY_HTML_LENGTH).optional,
     summary=T.str.optional,
     sentence_count=T.int.optional,
+    accept=T_ACCEPT.optional,
 )
 
 
@@ -209,7 +213,7 @@ class WorkerService:
         result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
         SERVICE_CLIENT.call('harbor_rss.update_feed', result)
 
-    async def _fetch_story_impl(
+    async def _async_fetch_story_impl(
         self,
         feed_id: T.int,
         offset: T.int.min(0),
@@ -238,13 +242,13 @@ class WorkerService:
         use_proxy: T.bool.default(False),
         num_sub_sentences: T.int.optional,
     ) -> SCHEMA_FETCH_STORY_RESULT:
-        task = self._fetch_story_impl(
+        task = self._async_fetch_story_impl(
             feed_id=feed_id,
             offset=offset,
             url=url,
             use_proxy=use_proxy,
         )
-        res = asyncio.get_event_loop().run_until_complete(task)
+        res = asyncio.run(task)
         response = res['response']
         DEFAULT_RESULT = dict(
             feed_id=feed_id,
