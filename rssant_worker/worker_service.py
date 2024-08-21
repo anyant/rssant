@@ -255,7 +255,7 @@ class WorkerService:
         options = _proxy_helper.get_proxy_options(url=url)
         if DNS_SERVICE.is_resolved_url(url):
             use_proxy = False
-        # make timeout less than actor default 30s to avoid ask timeout
+        # make timeout less than service default 30s to avoid ask timeout
         options.update(request_timeout=25)
         async with AsyncFeedReader(**options) as reader:
             use_proxy = use_proxy and reader.has_proxy

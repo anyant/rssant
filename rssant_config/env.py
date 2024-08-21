@@ -6,20 +6,9 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from validr import Compiler, Invalid, T, fields, modelclass
 
-from rssant_common.network_helper import LOCAL_NODE_NAME
-
 MAX_FEED_COUNT = 5000
 
-
 compiler = Compiler()
-validate_extra_networks = compiler.compile(
-    T.list(
-        T.dict(
-            name=T.str,
-            url=T.url,
-        )
-    )
-)
 
 
 @modelclass(compiler=compiler)
@@ -47,9 +36,6 @@ class EnvConfig(ConfigModel):
     scheduler_num_worker: int = T.int.min(1).default(10)
     role: str = T.enum('api,worker').default('api')
     standby_domains: str = T.str.optional
-    scheduler_network: str = T.str.default('localhost')
-    scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')
-    scheduler_extra_networks: str = T.str.optional.desc('eg: name@url,name@url')
     secret_key: str = T.str.default(
         '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
     )
@@ -62,13 +48,6 @@ class EnvConfig(ConfigModel):
     feed_reader_request_timeout: int = T.int.default(30).desc(
         'feed reader request timeout'
     )
-    # actor
-    actor_storage_path: str = T.str.default('data/actor_storage')
-    actor_storage_compact_wal_delta: int = T.int.min(1).default(5000)
-    actor_queue_max_complete_size: int = T.int.min(0).default(500)
-    actor_max_retry_time: int = T.int.min(1).default(600)
-    actor_max_retry_count: int = T.int.min(0).default(1)
-    actor_token: str = T.str.optional
     # postgres database
     pg_host: str = T.str.default('localhost').desc('postgres host')
     pg_port: int = T.int.default(5432).desc('postgres port')
@@ -132,19 +111,6 @@ class EnvConfig(ConfigModel):
     def is_role_worker(self):
         return self.role == 'worker'
 
-    def _parse_scheduler_extra_networks(self):
-        if not self.scheduler_extra_networks:
-            return []
-        networks = []
-        for part in self.scheduler_extra_networks.strip().split(','):
-            part = part.split('@', maxsplit=1)
-            if len(part) != 2:
-                raise Invalid('invalid scheduler_extra_networks')
-            name, url = part
-            networks.append(dict(name=name, url=url))
-        networks = validate_extra_networks(networks)
-        return list(networks)
-
     @classmethod
     def _parse_story_volumes(cls, text: str):
         """
@@ -199,28 +165,6 @@ class EnvConfig(ConfigModel):
                 raise Invalid('smtp_host is required when smtp_enable=True')
             if not self.smtp_port:
                 raise Invalid('smtp_port is required when smtp_enable=True')
-        scheduler_extra_networks = self._parse_scheduler_extra_networks()
-        self.registery_node_spec = {
-            'name': 'scheduler',
-            'modules': ['scheduler'],
-            'networks': [
-                {
-                    'name': self.scheduler_network,
-                    'url': self.scheduler_url,
-                }
-            ]
-            + scheduler_extra_networks,
-        }
-        self.current_node_spec = {
-            'name': '{}@{}'.format(LOCAL_NODE_NAME, os.getpid()),
-            'modules': [],
-            'networks': [
-                {
-                    'name': self.scheduler_network,
-                    'url': None,
-                }
-            ],
-        }
         if self.pg_story_volumes:
             volumes = self._parse_story_volumes(self.pg_story_volumes)
         else:

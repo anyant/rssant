@@ -1,26 +1,22 @@
 import logging
-import time
-import json
 from collections import defaultdict
 
-import tqdm
 import click
-from django.utils import timezone
-from django.db import transaction, connection
-from django.db.models import Q
+import tqdm
 from django.contrib.auth import get_user_model
+from django.db import connection, transaction
+from django.db.models import Q
+from django.utils import timezone
 
 import rssant_common.django_setup  # noqa:F401
-from rssant_api.models import Feed, Story, UnionFeed, UserStory, UserFeed
 from rssant_api.helper import reverse_url
-from rssant_common import _proxy_helper
+from rssant_api.models import Feed, Story, UnionFeed, UserFeed, UserStory
+from rssant_api.models.worker_task import WorkerTask, WorkerTaskPriority
+from rssant_common import _proxy_helper, unionid
 from rssant_common.helper import format_table, pretty_format_json
-from rssant_feedlib.reader import FeedResponseStatus, FeedReader
-from rssant_common import unionid
-from rssant_feedlib import processor
-from rssant_common.actor_client import scheduler
 from rssant_config import CONFIG
-
+from rssant_feedlib import processor
+from rssant_feedlib.reader import FeedReader, FeedResponseStatus
 
 LOG = logging.getLogger(__name__)
 
@@ -150,9 +146,7 @@ def update_story_has_mathjax(storys=None):
 @main.command()
 def update_story_is_user_marked():
     user_storys = list(
-        UserStory.objects
-        .exclude(is_watched=False, is_favorited=False)
-        .all()
+        UserStory.objects.exclude(is_watched=False, is_favorited=False).all()
     )
     LOG.info('total %s user marked storys', len(user_storys))
     if not user_storys:
@@ -173,20 +167,6 @@ def process_story_links(storys=None):
             if story.content != content:
                 story.content = content
                 story.save()
-
-
-@main.command()
-@click.option('--storys', help="story ids, separate by ','")
-def update_story_images(storys=None):
-    story_ids = _get_story_ids(storys)
-    LOG.info('total %s storys', len(story_ids))
-    for story_id in tqdm.tqdm(story_ids, ncols=80, ascii=True):
-        story = Story.objects.get(pk=story_id)
-        scheduler.tell('harbor_rss.update_story_images', dict(
-            story_id=story_id,
-            story_url=story.link,
-            images=[],
-        ))
 
 
 @main.command()
@@ -230,7 +210,9 @@ def delete_invalid_feeds(days=1, limit=100, threshold=99):
     with connection.cursor() as cursor:
         cursor.execute(sql, [t_begin, limit])
         for feed_id, title, link, url, status_code, count in cursor.fetchall():
-            error_feeds[feed_id].update(feed_id=feed_id, title=title, link=link, url=url)
+            error_feeds[feed_id].update(
+                feed_id=feed_id, title=title, link=link, url=url
+            )
             error = error_feeds[feed_id].setdefault('error', {})
             error_name = FeedResponseStatus.name_of(status_code)
             error[error_name] = count
@@ -242,7 +224,9 @@ def delete_invalid_feeds(days=1, limit=100, threshold=99):
             total = feed['error_count'] + ok_count
             error_percent = round((feed['error_count'] / total) * 100)
             feed.update(ok_count=ok_count, error_percent=error_percent)
-    error_feeds = list(sorted(error_feeds.values(), key=lambda x: x['error_percent'], reverse=True))
+    error_feeds = list(
+        sorted(error_feeds.values(), key=lambda x: x['error_percent'], reverse=True)
+    )
     delete_feed_ids = []
     for feed in error_feeds:
         if feed['error_percent'] >= threshold:
@@ -295,8 +279,9 @@ def subscribe_changelog():
     click.echo(f'total {len(users)} users')
     for user in tqdm.tqdm(users, ncols=80, ascii=True):
         with transaction.atomic():
-            user_feed = UserFeed.objects\
-                .filter(user_id=user.id, feed_id=feed.id).first()
+            user_feed = UserFeed.objects.filter(
+                user_id=user.id, feed_id=feed.id
+            ).first()
             if not user_feed:
                 user_feed = UserFeed(
                     user_id=user.id,
@@ -336,7 +321,9 @@ def update_feed_use_proxy():
             click.echo(f'    #{i} status={FeedResponseStatus.name_of(status)}')
             if FeedResponseStatus.is_need_proxy(status):
                 proxy_status = reader.read(feed.url, use_proxy=True).status
-                click.echo(f'    #{i} proxy_status={FeedResponseStatus.name_of(proxy_status)}')
+                click.echo(
+                    f'    #{i} proxy_status={FeedResponseStatus.name_of(proxy_status)}'
+                )
                 if proxy_status == 200:
                     proxy_feeds.append(feed)
     click.echo(f'{len(proxy_feeds)} feeds need use proxy')
@@ -384,15 +371,24 @@ def refresh_feed(feeds, union_feeds, key, expire=None):
         feed_objs = Feed.objects.filter(cond).only('id').all()
         feed_ids.extend(x.id for x in feed_objs)
     feed_ids = list(sorted(set(feed_ids)))
-    expire_at = time.time() + expire * 60 * 60
+    task_s = []
     for feed_id in tqdm.tqdm(feed_ids, ncols=80, ascii=True):
         feed = Feed.objects.only('id', 'url', 'use_proxy').get(pk=feed_id)
-        scheduler.tell('worker_rss.sync_feed', dict(
-            feed_id=feed.id,
-            url=feed.url,
-            use_proxy=feed.use_proxy,
-            is_refresh=True,
-        ), expire_at=expire_at)
+        api = 'worker_rss.sync_feed'
+        task = WorkerTask.from_dict(
+            api=api,
+            key=f'{api}:{feed.id}',
+            data=dict(
+                feed_id=feed.id,
+                url=feed.url,
+                use_proxy=feed.use_proxy,
+                is_refresh=True,
+            ),
+            priority=WorkerTaskPriority.SYNC_FEED,
+            expired_seconds=expire * 60 * 60,
+        )
+        task_s.append(task)
+    WorkerTask.bulk_save(task_s)
 
 
 @main.command()
@@ -403,19 +399,6 @@ def update_feed_reverse_url(feeds):
         feed = Feed.objects.get(pk=feed_id)
         feed.reverse_url = reverse_url(feed.url)
         feed.save()
-
-
-@main.command()
-@click.option('--dst', required=True, help='actor dst')
-@click.option('--content', help='message content')
-@click.option('--expire-seconds', type=int, help='expire time in seconds')
-def tell(dst, content, expire_seconds):
-    if content:
-        content = json.loads(content)
-    expire_at = None
-    if expire_seconds:
-        expire_at = int(time.time()) + expire_seconds
-    scheduler.tell(dst, content=content, expire_at=expire_at)
 
 
 if __name__ == "__main__":
