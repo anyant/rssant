@@ -328,7 +328,7 @@ def _create_feeds_by_imports(
                 url=feed_creation.url,
             )
         )
-    API_SERVICE.batch_find_feed_in_thread(find_feed_item_s)
+    API_SERVICE.batch_find_feed(find_feed_item_s)
     created_feeds = [x.to_dict() for x in result.created_feeds]
     feed_creations = [x.to_dict() for x in result.feed_creations]
     first_existed_feed = None

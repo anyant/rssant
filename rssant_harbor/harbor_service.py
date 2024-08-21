@@ -16,6 +16,7 @@ from rssant_api.models import (
     UserFeed,
     WorkerTask,
 )
+from rssant_api.models.worker_task import WorkerTaskExpired, WorkerTaskPriority
 from rssant_common.base64 import UrlsafeBase64
 from rssant_config import CONFIG
 from rssant_feedlib import processor
@@ -285,8 +286,8 @@ class HarborService:
                 api=api,
                 key=f'{api}:{story_id}',
                 data=item,
-                priority=5,
-                expired_seconds=6 * 60 * 60,
+                priority=WorkerTaskPriority.FETCH_STORY,
+                expired_seconds=WorkerTaskExpired.FETCH_STORY,
             )
             task_obj_s.append(obj)
         WorkerTask.bulk_save(task_obj_s)

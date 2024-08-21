@@ -4,6 +4,7 @@ from threading import RLock
 from typing import Optional
 
 from rssant_api.models import Feed, FeedCreation, FeedStatus, WorkerTask
+from rssant_api.models.worker_task import WorkerTaskExpired, WorkerTaskPriority
 from rssant_common.base64 import UrlsafeBase64
 from rssant_common.throttle import throttle
 from rssant_config import CONFIG
@@ -67,8 +68,8 @@ class RssantTaskService:
                 api=task_api,
                 key=task_key,
                 data=task_data,
-                priority=10,
-                expired_seconds=24 * 60 * 60,
+                priority=WorkerTaskPriority.SYNC_FEED,
+                expired_seconds=WorkerTaskExpired.SYNC_FEED,
             )
             self._add_task(task)
 
@@ -86,8 +87,8 @@ class RssantTaskService:
                 api=task_api,
                 key=task_key,
                 data=task_data,
-                priority=20,
-                expired_seconds=12 * 60 * 60,
+                priority=WorkerTaskPriority.RETRY_FIND_FEED,
+                expired_seconds=WorkerTaskExpired.RETRY_FIND_FEED,
             )
             self._add_task(task)
 

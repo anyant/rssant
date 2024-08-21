@@ -1,14 +1,16 @@
-import asyncio
-import atexit
 import logging
 import socket
-from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 import requests
 from validr import T
 
 from rssant_api.models import STORY_SERVICE, Feed
+from rssant_api.models.worker_task import (
+    WorkerTask,
+    WorkerTaskExpired,
+    WorkerTaskPriority,
+)
 from rssant_common.service_client import SERVICE_CLIENT
 from rssant_feedlib.fulltext import (
     FulltextAcceptStrategy,
@@ -29,20 +31,6 @@ TIMEOUT_ERRORS = (
 
 
 class RssantApiService:
-
-    def __init__(self) -> None:
-        self._thread_pool = None
-        atexit.register(self._on_shutdown)
-
-    def _get_thread_pool(self):
-        if self._thread_pool is None:
-            self._thread_pool = ThreadPoolExecutor(max_workers=5)
-        return self._thread_pool
-
-    def _on_shutdown(self):
-        if self._thread_pool is not None:
-            self._thread_pool.shutdown(wait=False)
-            self._thread_pool = None
 
     def sync_story_fulltext(
         self,
@@ -94,16 +82,19 @@ class RssantApiService:
         return ret
 
     def batch_find_feed(self, item_s: list):
-        task_s = []
+        task_obj_s = []
+        api = 'worker_rss.find_feed'
         for item in item_s:
-            task = SERVICE_CLIENT.acall('worker_rss.find_feed', item, timeout=120)
-            task_s.append(asyncio.create_task(task))
-        all_task = asyncio.gather(*task_s, return_exceptions=True)
-        asyncio.get_event_loop().run_until_complete(all_task)
-
-    def batch_find_feed_in_thread(self, item_s: list):
-        pool = self._get_thread_pool()
-        pool.submit(self, self.batch_find_feed, item_s)
+            key = '{}:{}'.format(api, item['feed_creation_id'])
+            task_obj = WorkerTask.from_dict(
+                api=api,
+                key=key,
+                data=item,
+                priority=WorkerTaskPriority.FIND_FEED,
+                expired_seconds=WorkerTaskExpired.FIND_FEED,
+            )
+            task_obj_s.append(task_obj)
+        WorkerTask.bulk_save(task_obj_s)
 
 
 API_SERVICE = RssantApiService()

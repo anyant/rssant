@@ -1,9 +1,24 @@
+import enum
 from typing import List, Optional
 
 from django.db import connection
 from django.utils import timezone
 
 from .helper import JSONField, Model, models
+
+
+class WorkerTaskPriority(enum.IntEnum):
+    FIND_FEED = 30
+    RETRY_FIND_FEED = 20
+    SYNC_FEED = 10
+    FETCH_STORY = 5
+
+
+class WorkerTaskExpired(enum.IntEnum):
+    SYNC_FEED = 24 * 60 * 60
+    FIND_FEED = 12 * 60 * 60
+    RETRY_FIND_FEED = 12 * 60 * 60
+    FETCH_STORY = 6 * 60 * 60
 
 
 class WorkerTask(Model):
@@ -58,13 +73,13 @@ class WorkerTask(Model):
         if dt_expired is None:
             if expired_seconds is None:
                 expired_seconds = 24 * 60 * 60
-            expired_delta = timezone.timedelta(seconds=expired_seconds)
+            expired_delta = timezone.timedelta(seconds=int(expired_seconds))
             dt_expired = dt_created + expired_delta
         return WorkerTask(
             key=key,
             api=api,
             data=data,
-            priority=priority,
+            priority=int(priority),
             dt_created=dt_created,
             dt_expired=dt_expired,
         )
