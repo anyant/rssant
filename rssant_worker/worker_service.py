@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import random
+import time
+from threading import Thread
 from urllib.parse import unquote
 
 from django.utils import timezone
@@ -327,6 +329,21 @@ class WorkerService:
             accept=res.get('accept', None),
         )
         return result
+
+    @staticmethod
+    def _dns_refresh_main():
+        LOG.info('DNS service refresh thread started')
+        time.sleep(10)
+        while True:
+            try:
+                DNS_SERVICE.refresh()
+            except Exception as ex:
+                LOG.error('DNS service refresh failed: %s', ex, exc_info=ex)
+            time.sleep(4 * 60 * 60)
+
+    def start_dns_refresh_thread(self):
+        thread = Thread(target=self._dns_refresh_main, daemon=True)
+        thread.start()
 
 
 def _update_feed_info(
