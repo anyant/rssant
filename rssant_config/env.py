@@ -1,3 +1,4 @@
+import hashlib
 import os.path
 import re
 from functools import cached_property
@@ -32,7 +33,6 @@ class EnvConfig(ConfigModel):
     root_url: str = T.url.default('http://localhost:6789')
     harbor_url: str = T.url.default('http://localhost:6788')
     worker_url: str = T.url.default('http://localhost:6793')
-    service_secret: str = T.str.default('rssant')
     scheduler_num_worker: int = T.int.min(1).default(10)
     role: str = T.enum('api,worker').default('api')
     standby_domains: str = T.str.optional
@@ -175,6 +175,11 @@ class EnvConfig(ConfigModel):
             }
         self.pg_story_volumes_parsed = volumes
         self.github_standby_configs_parsed = self._parse_github_standby_configs()
+
+    @cached_property
+    def service_secret(self) -> str:
+        payload = self.secret_key.encode() + b'rssant'
+        return hashlib.sha256(payload).hexdigest()[:32]
 
     @cached_property
     def root_domain(self) -> str:
