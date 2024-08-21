@@ -1,11 +1,11 @@
 import datetime
 import logging
 
-from rssant_common.validator import T, compiler
+from validr import Compiler, T
 
 LOG = logging.getLogger(__name__)
 
-_validate_timer = compiler.compile(T.timedelta.object)
+_validate_timer = Compiler().compile(T.timedelta.object)
 
 
 def Timer(value) -> datetime.timedelta:

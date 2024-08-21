@@ -14,9 +14,9 @@ COPY requirements-build.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt -r requirements-build.txt
 COPY . /app
-RUN bash rssant_async_build.sh && \
-    /app/dist/rssant_async_main/rssant_async_main --help && \
-    du -sh /app/dist/rssant_async_main
+RUN bash rssant_scheduler_build.sh && \
+    /app/dist/rssant_scheduler_main/rssant_scheduler_main --help && \
+    du -sh /app/dist/rssant_scheduler_main
 
 FROM --platform=linux/amd64 debian:bullseye-slim as runtime
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
@@ -29,12 +29,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 FROM --platform=linux/amd64 runtime as check
-COPY --from=build /app/dist/rssant_async_main /app
-RUN /app/rssant_async_main --help
+COPY --from=build /app/dist/rssant_scheduler_main /app
+RUN /app/rssant_scheduler_main --help
 
 FROM --platform=linux/amd64 runtime
 COPY --from=check /app /app
 ARG EZFAAS_BUILD_ID=''
 ARG EZFAAS_COMMIT_ID=''
 ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
-CMD [ "/app/rssant_async_main", "--bind=0.0.0.0:9000", "--keep-alive=7200" ]
+CMD [ "/app/rssant_scheduler_main" ]

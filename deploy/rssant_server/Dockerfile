@@ -1,8 +1,5 @@
-FROM --platform=linux/amd64 python:3.8.19 as build
+FROM --platform=linux/amd64 python:3.8.19-bullseye as build
 WORKDIR /app
-COPY etc/apt-sources.list /etc/apt/sources.list
-# Fix DNS pollution of local network
-COPY etc/resolv.conf /etc/resolv.conf
 ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
 ENV PIP_INDEX_URL=$PYPI_MIRROR PIP_DISABLE_PIP_VERSION_CHECK=1
 RUN python -m venv .venv
@@ -16,9 +13,8 @@ COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
-FROM --platform=linux/amd64 python:3.8.19-slim as runtime
+FROM --platform=linux/amd64 python:3.8.19-slim-bullseye as runtime
 WORKDIR /app
-COPY etc/apt-sources.list /etc/apt/sources.list
 # Fix DNS pollution of local network
 COPY etc/resolv.conf /etc/resolv.conf
 ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"

@@ -1,4 +1,4 @@
-from rssant_async.main import main
+from rssant_scheduler.main import main
 
 if __name__ == '__main__':
     main()

@@ -18,7 +18,6 @@ geventhttpclient==1.5.3
 # package
 pip-tools==5.5.0
 pipdeptree==0.13.2
-pyinstaller==4.7
 
 # deploy
 aliyun-fc2==2.5.0
