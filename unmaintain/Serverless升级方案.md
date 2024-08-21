@@ -10,6 +10,9 @@ scheduler服务
 
 接口互相调用问题
 
+worker实例单独运行
+任务缓存到数据库
+
 # 虚拟任务队列，提供取任务的API
 从多个来源，按优先级取任务，取到之后返回给消费者（可以批量取，缓存起来）
 api_task:find_feed/fetch_story （直接调用worker接口，优先级1）

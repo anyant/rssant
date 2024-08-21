@@ -42,9 +42,10 @@ class EnvConfig(ConfigModel):
     log_level: str = T.enum('DEBUG,INFO,WARNING,ERROR').default('INFO')
     root_url: str = T.url.default('http://localhost:6789')
     harbor_url: str = T.url.default('http://localhost:6788')
-    worker_url: str = T.url.default('http://localhost:6788')
+    worker_url: str = T.url.default('http://localhost:6793')
     service_secret: str = T.str.default('rssant')
     scheduler_num_worker: int = T.int.min(1).default(10)
+    role: str = T.enum('api,worker').default('api')
     standby_domains: str = T.str.optional
     scheduler_network: str = T.str.default('localhost')
     scheduler_url: str = T.url.default('http://localhost:6790/api/v1/scheduler')
@@ -126,6 +127,10 @@ class EnvConfig(ConfigModel):
     detect_story_image_enable: bool = T.bool.default(False)
     # hashid salt
     hashid_salt: str = T.str.default('rssant')
+
+    @property
+    def is_role_worker(self):
+        return self.role == 'worker'
 
     def _parse_scheduler_extra_networks(self):
         if not self.scheduler_extra_networks:

@@ -36,8 +36,8 @@ def do_save_feed_creation_result(
     feed_creation_id: T.int,
     messages: T.list(T.str),
     feed: FeedSchema.optional,
-) -> T.any:
-    return HARBOR_SERVICE.save_feed_creation_result(
+):
+    HARBOR_SERVICE.save_feed_creation_result(
         feed_creation_id=feed_creation_id,
         messages=messages,
         feed=feed,
@@ -50,8 +50,8 @@ def do_update_feed(
     feed_id: T.int,
     feed: FeedSchema,
     is_refresh: T.bool.default(False),
-) -> T.any:
-    return HARBOR_SERVICE.update_feed(
+):
+    HARBOR_SERVICE.update_feed(
         feed_id=feed_id,
         feed=feed,
         is_refresh=is_refresh,
