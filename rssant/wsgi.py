@@ -24,4 +24,5 @@ def get_wsgi_application():
 
 
 if is_main_or_wsgi(__name__):
+    print(f'* WSGI application role={CONFIG.role} started')
     application = get_wsgi_application()

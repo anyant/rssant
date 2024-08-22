@@ -1,16 +1,17 @@
 from django.http import HttpResponse
 from django.utils import timezone
-from django.views.decorators.http import condition
 from django.views.decorators.cache import cache_control
+from django.views.decorators.http import condition
 
-from rssant_config import CONFIG
-from rssant_common.changelog import ChangeLogList
 from rssant_common.analytics import AnalyticsScript
+from rssant_common.changelog import ChangeLogList
 from rssant_common.standby_domain import get_request_domain
+from rssant_config import CONFIG
 
 
 def index(request):
-    return HttpResponse("你好, RSSAnt!")
+    msg = "你好, RSSAnt {}!".format(CONFIG.role)
+    return HttpResponse(msg)
 
 
 def accounts_profile(request):

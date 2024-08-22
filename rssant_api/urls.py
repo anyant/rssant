@@ -1,5 +1,6 @@
 from django.urls import include, path
 
+from rssant_config import CONFIG
 from rssant_harbor.view import HarborView
 from rssant_worker.view import WorkerView
 
@@ -11,16 +12,21 @@ from .views.story import StoryView
 from .views.user import UserView
 from .views.user_publish import UserPublishView
 
+
+def _gen_urlpatterns():
+    yield path('', index)
+    yield path('error/', error)
+    if CONFIG.is_role_worker:
+        yield path('', include(WorkerView.urls))
+    else:
+        yield path('', include(FeedView.urls))
+        yield path('', include(StoryView.urls))
+        yield path('', include(UserView.urls))
+        yield path('', include(PublishView.urls))
+        yield path('', include(UserPublishView.urls))
+        yield path('', include(EzrevenueView.urls))
+        yield path('', include(HarborView.urls))
+
+
 app_name = 'rssant_api'
-urlpatterns = [
-    path('', index),
-    path('error/', error),
-    path('', include(HarborView.urls)),
-    path('', include(WorkerView.urls)),
-    path('', include(FeedView.urls)),
-    path('', include(StoryView.urls)),
-    path('', include(UserView.urls)),
-    path('', include(PublishView.urls)),
-    path('', include(UserPublishView.urls)),
-    path('', include(EzrevenueView.urls)),
-]
+urlpatterns = list(_gen_urlpatterns())
