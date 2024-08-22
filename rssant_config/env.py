@@ -112,7 +112,7 @@ class EnvConfig(ConfigModel):
         """
         Format:
             {volume}:{user}:{password}@{host}:{port}/{db}/{table}
-
+            {volume}:{table}
         >>> volumes = EnvConfig._parse_story_volumes('0:user:password@host:5432/db/table')
         >>> expect = {0: dict(
         ...    user='user', password='password',
@@ -124,20 +124,29 @@ class EnvConfig(ConfigModel):
         re_volume = re.compile(
             r'^(\d+)\:([^:@/]+)\:([^:@/]+)\@([^:@/]+)\:(\d+)\/([^:@/]+)\/([^:@/]+)$'
         )
+        re_simple_volume = re.compile(r'^(\d+)\:([^:@/]+)$')
         volumes = {}
         for part in text.split(','):
             match = re_volume.match(part)
+            is_simple = False
+            if not match:
+                match = re_simple_volume.match(part)
+                is_simple = True
             if not match:
                 raise Invalid(f'invalid story volume {part!r}')
             volume = int(match.group(1))
-            volumes[volume] = dict(
-                user=match.group(2),
-                password=match.group(3),
-                host=match.group(4),
-                port=int(match.group(5)),
-                db=match.group(6),
-                table=match.group(7),
-            )
+            if is_simple:
+                volume_info = dict(table=match.group(2))
+            else:
+                volume_info = dict(
+                    user=match.group(2),
+                    password=match.group(3),
+                    host=match.group(4),
+                    port=int(match.group(5)),
+                    db=match.group(6),
+                    table=match.group(7),
+                )
+            volumes[volume] = volume_info
         return volumes
 
     def _parse_github_standby_configs(self):
@@ -159,21 +168,27 @@ class EnvConfig(ConfigModel):
                 raise Invalid('smtp_host is required when smtp_enable=True')
             if not self.smtp_port:
                 raise Invalid('smtp_port is required when smtp_enable=True')
-        if self.pg_story_volumes:
-            volumes = self._parse_story_volumes(self.pg_story_volumes)
-        else:
-            volumes = {
-                0: dict(
-                    user=self.pg_user,
-                    password=self.pg_password,
-                    host=self.pg_host,
-                    port=self.pg_port,
-                    db=self.pg_db,
-                    table='story_volume_0',
-                )
-            }
-        self.pg_story_volumes_parsed = volumes
+        self.pg_story_volumes_parsed = self._get_pg_story_volumes_parsed()
         self.github_standby_configs_parsed = self._parse_github_standby_configs()
+
+    def _get_pg_story_volumes_parsed(self):
+        default_story_volume_info = dict(
+            user=self.pg_user,
+            password=self.pg_password,
+            host=self.pg_host,
+            port=self.pg_port,
+            db=self.pg_db,
+            table='story_volume_0',
+        )
+        if self.pg_story_volumes:
+            volumes = {}
+            raw_volumes = self._parse_story_volumes(self.pg_story_volumes)
+            for volume, volume_info in raw_volumes.items():
+                volume_info = dict(default_story_volume_info, **volume_info)
+                volumes[volume] = volume_info
+        else:
+            volumes = {0: default_story_volume_info}
+        return volumes
 
     def _get_extra_secret(self, salt: str):
         payload1 = hashlib.sha256(self.secret_key.encode()).digest()
