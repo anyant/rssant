@@ -6,6 +6,7 @@ from validr import T
 
 from rssant_common import timezone
 from rssant_common.image_token import ImageToken, ImageTokenDecodeError
+from rssant_common.network_helper import LOCAL_IP_LIST
 from rssant_config import CONFIG
 
 from .image_proxy import image_proxy
@@ -44,12 +45,14 @@ def _get_health():
     commit_id = os.getenv("EZFAAS_COMMIT_ID")
     now = timezone.now()
     uptime = _get_uptime(now)
+    ip_list = [ip for _, ip in LOCAL_IP_LIST]
     result = dict(
         build_id=build_id,
         commit_id=commit_id,
         now=now.isoformat(),
         uptime=uptime,
         pid=os.getpid(),
+        ip_list=ip_list,
     )
     return result
 

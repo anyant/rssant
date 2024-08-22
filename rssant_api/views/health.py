@@ -5,6 +5,7 @@ from django.http import JsonResponse as _JsonResponse
 from django.urls import path
 
 from rssant_common import timezone
+from rssant_common.network_helper import LOCAL_IP_LIST
 from rssant_config import CONFIG
 
 
@@ -44,6 +45,7 @@ def _get_health():
     commit_id = os.getenv("EZFAAS_COMMIT_ID")
     now = timezone.now()
     uptime = _get_uptime(now)
+    ip_list = [ip for _, ip in LOCAL_IP_LIST]
     result = dict(
         role=CONFIG.role,
         build_id=build_id,
@@ -51,6 +53,7 @@ def _get_health():
         now=now.isoformat(),
         uptime=uptime,
         pid=os.getpid(),
+        ip_list=ip_list,
     )
     if not CONFIG.is_role_worker:
         is_db_ok = _check_db_health()
