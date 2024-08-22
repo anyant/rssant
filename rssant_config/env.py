@@ -98,7 +98,6 @@ class EnvConfig(ConfigModel):
     # image proxy
     image_proxy_enable: bool = T.bool.default(True)
     image_proxy_urls: bool = T.str.default('origin').desc('逗号分隔的URL列表')
-    image_token_secret: str = T.str.default('rssant')
     image_token_expires: float = T.timedelta.min('1s').default('30m')
     detect_story_image_enable: bool = T.bool.default(False)
     # hashid salt
@@ -176,10 +175,18 @@ class EnvConfig(ConfigModel):
         self.pg_story_volumes_parsed = volumes
         self.github_standby_configs_parsed = self._parse_github_standby_configs()
 
+    def _get_extra_secret(self, salt: str):
+        payload1 = hashlib.sha256(self.secret_key.encode()).digest()
+        payload2 = hashlib.sha256(salt.encode()).digest()
+        return hashlib.sha256(payload1 + payload2).hexdigest()[:32]
+
     @cached_property
     def service_secret(self) -> str:
-        payload = self.secret_key.encode() + b'rssant'
-        return hashlib.sha256(payload).hexdigest()[:32]
+        return self._get_extra_secret('service_secret')
+
+    @cached_property
+    def image_token_secret(self) -> str:
+        return self._get_extra_secret('image_token_secret')
 
     @cached_property
     def root_domain(self) -> str:
