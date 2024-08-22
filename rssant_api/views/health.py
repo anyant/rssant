@@ -1,3 +1,4 @@
+import logging
 import os
 
 from django.db import connection as CONNECTION
@@ -7,6 +8,8 @@ from django.urls import path
 from rssant_common import timezone
 from rssant_common.network_helper import LOCAL_IP_LIST
 from rssant_config import CONFIG
+
+LOG = logging.getLogger(__name__)
 
 
 def JsonResponse(data: dict):
@@ -32,8 +35,10 @@ def _get_uptime(now: timezone.datetime):
 
 def _check_db_health():
     try:
-        CONNECTION.cursor()
-    except Exception:
+        with CONNECTION.cursor() as db:
+            db.execute('SELECT 1')
+    except Exception as ex:
+        LOG.info('check_db_health %s', ex, exc_info=True)
         connected = False
     else:
         connected = True
