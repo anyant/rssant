@@ -4,7 +4,10 @@ set -ex
 
 /app/box/bin/wait-initdb.sh
 
-python -m rssant_worker.main \
-    --concurrency 3 \
-    --node rssant --port 6792 \
-    --network rssant@http://localhost:6792
+export RSSANT_ROLE=worker
+gunicorn -b 0.0.0.0:6793 --threads 30 \
+    --forwarded-allow-ips '*' \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info \
+    rssant.wsgi
