@@ -6,6 +6,6 @@ set -e
 ezfaas deploy-aliyun \
     --repository registry.cn-zhangjiakou.aliyuncs.com/rssant/rssant-async \
     --dockerfile deploy/rssant_async/Dockerfile \
-    --function rssant-async-qa \
+    --function rssant-async \
     --build-id \
     $@

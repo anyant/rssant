@@ -1,7 +1,10 @@
 #!/bin/bash
 
-docker build \
-    --platform linux/amd64 \
-    -f deploy/rssant_async/Dockerfile \
-    -t rssant/async \
-    .
+set -e
+
+# shellcheck disable=SC2068
+ezfaas build \
+    --repository registry.cn-zhangjiakou.aliyuncs.com/rssant/rssant-async \
+    --dockerfile deploy/rssant_async/Dockerfile \
+    --build-platform linux/amd64 \
+    $@
