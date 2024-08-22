@@ -4,7 +4,7 @@ from rssant_config import CONFIG
 from rssant_harbor.view import HarborView
 from rssant_worker.view import WorkerView
 
-from .views import error, index
+from .views import health
 from .views.ezrevenue import EzrevenueView
 from .views.feed import FeedView
 from .views.publish import PublishView
@@ -14,8 +14,7 @@ from .views.user_publish import UserPublishView
 
 
 def _gen_urlpatterns():
-    yield path('', index)
-    yield path('error/', error)
+    yield path('', include(health.urls))
     if CONFIG.is_role_worker:
         yield path('', include(WorkerView.urls))
     else:
