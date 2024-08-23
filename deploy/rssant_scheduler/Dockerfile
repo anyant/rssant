@@ -37,4 +37,4 @@ COPY --from=check /app /app
 ARG EZFAAS_BUILD_ID=''
 ARG EZFAAS_COMMIT_ID=''
 ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
-CMD [ "/app/run-scheduler" ]
+CMD [ "/app/run-scheduler", "--port=9000" ]

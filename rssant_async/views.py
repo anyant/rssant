@@ -1,12 +1,9 @@
-import os
-
 from aiohttp.web import json_response
 from aiohttp.web_request import Request
 from validr import T
 
-from rssant_common import timezone
+from rssant_common.health import health_info
 from rssant_common.image_token import ImageToken, ImageTokenDecodeError
-from rssant_common.network_helper import LOCAL_IP_LIST
 from rssant_config import CONFIG
 
 from .image_proxy import image_proxy
@@ -31,33 +28,8 @@ async def image_proxy_view_v2(
     return response
 
 
-UPTIME_BEGIN = timezone.now()
-
-
-def _get_uptime(now: timezone.datetime):
-    uptime_seconds = round((now - UPTIME_BEGIN).total_seconds())
-    uptime = str(timezone.timedelta(seconds=uptime_seconds))
-    return uptime
-
-
-def _get_health():
-    build_id = os.getenv("EZFAAS_BUILD_ID")
-    commit_id = os.getenv("EZFAAS_COMMIT_ID")
-    now = timezone.now()
-    uptime = _get_uptime(now)
-    ip_list = [ip for _, ip in LOCAL_IP_LIST]
-    result = dict(
-        build_id=build_id,
-        commit_id=commit_id,
-        now=now.isoformat(),
-        uptime=uptime,
-        pid=os.getpid(),
-        ip_list=ip_list,
-    )
-    return result
-
-
 @routes.get('/image/_health')
 async def get_health(request):
-    info = _get_health()
-    return json_response(info)
+    result = health_info()
+    result.update(role='asyncapi')
+    return json_response(result)

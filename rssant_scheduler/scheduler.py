@@ -1,6 +1,9 @@
 import asyncio
 import logging
+import os
 import random
+import signal
+from threading import Thread
 from typing import List
 
 from rssant_common.service_client import SERVICE_CLIENT
@@ -108,6 +111,7 @@ class RssantScheduler:
         task_s.extend(self._get_worker_task_s(num_worker))
         self.task_s = task_s
         self.num_worker = num_worker
+        self._thread = None
 
     def _get_timer_task_s(self):
         task_s = [TimerTask(task=task) for task in SCHEDULER_TASK_S]
@@ -117,13 +121,43 @@ class RssantScheduler:
         task_s = [WorkerTask(index) for index in range(num)]
         return task_s
 
-    def main(self):
+    def main(self, *, is_thread=False):
         LOG.info('harbor url: %s', CONFIG.harbor_url)
         LOG.info('worker url: %s', CONFIG.worker_url)
-        asyncio.run(self._main_async())
+        try:
+            asyncio.run(self._main_async())
+        except KeyboardInterrupt:
+            raise
+        except Exception as ex:
+            if is_thread:
+                LOG.exception('scheduler failed: %r', ex, exc_info=ex)
+                self._exit_process()
+            raise
+
+    def _exit_process(self):
+        """
+        退出主进程
+        https://stackoverflow.com/questions/905189/why-does-sys-exit-not-exit-when-called-inside-a-thread-in-python
+        """
+        os.kill(os.getpid(), signal.SIGINT)
 
     async def _main_async(self):
         for task in self.task_s:
             await task.start()
-        for task in self.task_s:
-            await task.join()
+        fut_s = [task.join() for task in self.task_s]
+        for fut in asyncio.as_completed(fut_s):
+            await fut
+
+    def start(self):
+        thread = Thread(
+            target=self.main,
+            kwargs=dict(is_thread=True),
+            name='rssant-scheduler',
+            daemon=True,
+        )
+        self._thread = thread
+        thread.start()
+
+    def join(self):
+        if self._thread:
+            self._thread.join()
