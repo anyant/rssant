@@ -15,8 +15,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt -r requirements-build.txt
 COPY . /app
 RUN bash deploy/rssant_asyncapi/pyinstaller_build.sh && \
-    /app/dist/run-async/run-async --help && \
-    du -sh /app/dist/run-async
+    /app/dist/run-asyncapi/run-asyncapi --help && \
+    du -sh /app/dist/run-asyncapi
 
 FROM --platform=linux/amd64 debian:bullseye-slim as runtime
 ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
@@ -29,12 +29,12 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 FROM --platform=linux/amd64 runtime as check
-COPY --from=build /app/dist/run-async /app
-RUN /app/run-async --help
+COPY --from=build /app/dist/run-asyncapi /app
+RUN /app/run-asyncapi --help
 
 FROM --platform=linux/amd64 runtime
 COPY --from=check /app /app
 ARG EZFAAS_BUILD_ID=''
 ARG EZFAAS_COMMIT_ID=''
 ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
-CMD [ "/app/run-async", "--bind=0.0.0.0:9000", "--keep-alive=7200" ]
+CMD [ "/app/run-asyncapi", "--bind=0.0.0.0:9000", "--keep-alive=7200" ]
