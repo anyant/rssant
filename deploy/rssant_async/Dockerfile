@@ -14,7 +14,7 @@ COPY requirements-build.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt -r requirements-build.txt
 COPY . /app
-RUN bash deploy/rssant_async/pyinstaller_build.sh && \
+RUN bash deploy/rssant_asyncapi/pyinstaller_build.sh && \
     /app/dist/run-async/run-async --help && \
     du -sh /app/dist/run-async
 

@@ -5,6 +5,6 @@ set -e
 # shellcheck disable=SC2068
 ezfaas build \
     --repository registry.cn-zhangjiakou.aliyuncs.com/rssant/rssant-async \
-    --dockerfile deploy/rssant_async/Dockerfile \
+    --dockerfile deploy/rssant_asyncapi/Dockerfile \
     --build-platform linux/amd64 \
     $@

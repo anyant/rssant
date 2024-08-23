@@ -4,4 +4,4 @@ set -ex
 
 /app/box/bin/wait-initdb.sh
 
-/app/run-async.py --bind 0.0.0.0:6786
+/app/run-asyncapi.py --bind 0.0.0.0:6786

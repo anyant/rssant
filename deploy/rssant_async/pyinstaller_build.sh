@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pyinstaller run-async.py \
+pyinstaller run-asyncapi.py \
     --exclude-module django \
     --exclude-module lxml \
     --exclude-module gevent \

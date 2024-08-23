@@ -209,7 +209,7 @@ python manage.py runscript django_db_init
 bash ./rundev-api.sh
 bash ./rundev-worker.sh
 python ./rundev-scheduler.py
-python ./rundev-async.py
+python ./rundev-asyncapi.py
 ```
 
 访问 http://127.0.0.1:6788/doc/v1/  账号: admin 密码: admin
