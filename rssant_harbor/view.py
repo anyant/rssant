@@ -13,8 +13,8 @@ LOG = logging.getLogger(__name__)
 HarborView = RestRouter(permission_classes=[AllowServiceClient])
 
 
-@HarborView.post('harbor_django.django_clear_expired_sessions')
-def do_django_clear_expired_sessions(request):
+@HarborView.post('harbor_django.clear_expired_sessions')
+def do_clear_expired_sessions(request):
     django_clear_expired_sessions()
 
 
