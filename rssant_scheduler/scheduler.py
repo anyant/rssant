@@ -3,6 +3,7 @@ import logging
 import os
 import random
 import signal
+import time
 from threading import Thread
 from typing import List
 
@@ -60,6 +61,40 @@ class TimerTask(BaseTask):
             LOG.info('%s execute success', self._name)
 
 
+class WorkerGetTaskService:
+    """
+    限流调用get_task，没有任务时，每隔3秒调用一次
+    """
+
+    def __init__(self) -> None:
+        self._has_task = True
+        self._no_task_wait = 3
+        self._last_call_time = None
+
+    def _check_call(self):
+        if self._has_task:
+            return True
+        now = time.monotonic()
+        if self._last_call_time is None:
+            self._last_call_time = now
+            return True
+        if now - self._last_call_time >= self._no_task_wait:
+            self._last_call_time = now
+            return True
+        return False
+
+    async def get_task(self):
+        if not self._check_call():
+            return None
+        result = await SERVICE_CLIENT.acall('harbor_rss.get_task')
+        task = result['task']
+        self._has_task = bool(task)
+        return task
+
+
+WORKER_GET_TASK_SERVICE = WorkerGetTaskService()
+
+
 class WorkerTask(BaseTask):
     def __init__(self, index: int) -> None:
         self.index = index
@@ -85,8 +120,7 @@ class WorkerTask(BaseTask):
             await self._execute_one_safe()
 
     async def _execute_task(self):
-        result = await SERVICE_CLIENT.acall('harbor_rss.get_task')
-        task = result['task']
+        task = WORKER_GET_TASK_SERVICE.get_task()
         if not task:
             return False
         LOG.info('%s executing task %s', self._name, task['key'])
