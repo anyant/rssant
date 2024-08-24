@@ -2,9 +2,8 @@
 
 set -ex
 
-export PIP_CONSTRAINT=constraint.txt
 pip install -r requirements-pip.txt
-pip install \
+PIP_CONSTRAINT=constraint.txt pip install \
     -r requirements.txt \
     -r requirements-dev.txt \
     -r requirements-build.txt

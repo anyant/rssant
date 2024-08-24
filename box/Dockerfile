@@ -1,4 +1,4 @@
-FROM node:16-alpine as build-web
+FROM node:16-alpine AS build-web
 ARG NPM_REGISTERY="--registry=https://registry.npmmirror.com"
 WORKDIR /app
 COPY box/web/package*.json ./
@@ -8,7 +8,7 @@ COPY box/web .
 RUN npm run build
 
 
-FROM python:3.8.19-bullseye as build-api
+FROM python:3.8.12-bullseye AS build-api
 WORKDIR /app
 # install rssant
 ARG PYPI_MIRROR="https://mirrors.aliyun.com/pypi/simple/"
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 
 
-FROM python:3.8.19-slim-bullseye
+FROM python:3.8.12-slim-bullseye
 WORKDIR /app
 # install ca-certificates, nginx and postgresql
 COPY etc/apt-sources.list /etc/apt/sources.list
