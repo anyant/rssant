@@ -175,7 +175,12 @@ class RssantScheduler:
         """
         os.kill(os.getpid(), signal.SIGINT)
 
+    async def _on_scheduler_init(self):
+        LOG.info('scheduler init call harbor_django.run_db_init')
+        await SERVICE_CLIENT.acall('harbor_django.run_db_init')
+
     async def _main_async(self):
+        await self._on_scheduler_init()
         for task in self.task_s:
             await task.start()
         fut_s = [task.join() for task in self.task_s]

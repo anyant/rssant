@@ -3,7 +3,7 @@ import logging
 from django_rest_validr import RestRouter, T
 from rssant_api.views.common import AllowServiceClient
 
-from .django_service import django_clear_expired_sessions
+from .django_service import django_clear_expired_sessions, django_run_db_init
 from .harbor_service import HARBOR_SERVICE
 from .schema import FeedInfoSchema, FeedSchema
 from .task_service import TASK_SERVICE
@@ -14,8 +14,13 @@ HarborView = RestRouter(permission_classes=[AllowServiceClient])
 
 
 @HarborView.post('harbor_django.clear_expired_sessions')
-def do_clear_expired_sessions(request):
+def do_django_clear_expired_sessions(request):
     django_clear_expired_sessions()
+
+
+@HarborView.post('harbor_django.run_db_init')
+def do_django_run_db_init(request):
+    django_run_db_init()
 
 
 @HarborView.post('harbor_rss.update_feed_creation_status')
