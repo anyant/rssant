@@ -120,7 +120,7 @@ class WorkerTask(BaseTask):
             await self._execute_one_safe()
 
     async def _execute_task(self):
-        task = WORKER_GET_TASK_SERVICE.get_task()
+        task = await WORKER_GET_TASK_SERVICE.get_task()
         if not task:
             return False
         LOG.info('%s executing task %s', self._name, task['key'])
