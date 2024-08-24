@@ -4,6 +4,7 @@ from django.db import connection as CONNECTION
 from django.http import JsonResponse as _JsonResponse
 from django.urls import path
 
+from rssant_api.models import WorkerTask
 from rssant_common.health import health_info
 from rssant_config import CONFIG
 
@@ -35,12 +36,20 @@ def _check_db_health():
     return connected
 
 
+def _check_task_stats():
+    task_stats = WorkerTask.stats()
+    return task_stats
+
+
 def _get_health():
     result = health_info()
     result.update(role=CONFIG.role)
     if not CONFIG.is_role_worker:
         is_db_ok = _check_db_health()
         result.update(is_db_ok=is_db_ok)
+        if is_db_ok:
+            task_stats = _check_task_stats()
+            result.update(task_stats=task_stats)
     return result
 
 

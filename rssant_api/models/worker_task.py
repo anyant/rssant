@@ -120,3 +120,18 @@ DELETE FROM {table_name} WHERE "id" IN (
             return None
         ret = WorkerTask(**dict(zip(column_s, row)))
         return ret
+
+    @classmethod
+    def stats(cls):
+        table_name = cls._meta.db_table
+        sql = f'''
+SELECT "priority", "api", COUNT(*) as "count" FROM {table_name}
+GROUP BY "priority", "api"
+ORDER BY "priority" desc, "api"
+'''
+        column_s = ['priority', 'api', 'count']
+        with connection.cursor() as cursor:
+            cursor.execute(sql)
+            row_s = list(cursor.fetchall())
+        ret = [dict(zip(column_s, row)) for row in row_s]
+        return ret
