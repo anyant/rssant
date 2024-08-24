@@ -1,6 +1,7 @@
 import logging
 
 from django.db import connection as CONNECTION
+from django.http import HttpRequest
 from django.http import JsonResponse as _JsonResponse
 from django.urls import path
 
@@ -16,11 +17,11 @@ def JsonResponse(data: dict):
     return _JsonResponse(data, json_dumps_params=params)
 
 
-def index(request):
+def on_index(request):
     return JsonResponse({'message': "你好, RSSAnt!"})
 
 
-def error(request):
+def on_error(request):
     raise ValueError(request.GET.get('error') or 'A value error!')
 
 
@@ -53,12 +54,33 @@ def _get_health():
     return result
 
 
-def health(request):
+def on_health(request):
     return JsonResponse(_get_health())
 
 
+def _to_json(v):
+    if v is None or isinstance(v, (int, float, str, bool)):
+        return v
+    return str(v)
+
+
+def on_debug(request: HttpRequest):
+    headers = dict(request.headers)
+    meta = {k: _to_json(v) for k, v in request.META.items()}
+    url = request.get_raw_uri()
+    result = dict(
+        url=url,
+        method=request.method,
+        path=request.path,
+        headers=headers,
+        meta=meta,
+    )
+    return JsonResponse(result)
+
+
 urls = [
-    path('', index),
-    path('error', error),
-    path('health', health),
+    path('', on_index),
+    path('error', on_error),
+    path('health', on_health),
+    path('debug', on_debug),
 ]

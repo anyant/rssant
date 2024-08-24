@@ -128,7 +128,7 @@ else:
         }
     }
 
-# https://github.com/heroku-python/django-postgrespool
+# https://github.com/lcd1232/django-postgrespool2
 DATABASE_POOL_ARGS = {'max_overflow': 20, 'pool_size': 15, 'recycle': 300}
 
 # Password validation

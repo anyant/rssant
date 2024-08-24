@@ -52,9 +52,9 @@ def _gen_urlpatterns():
         yield path('api/v1/accounts/profile/', views.accounts_profile)
         yield path('api/v1/analytics.js', views.analytics_script)
         # override allauth github views
-        path('api/v1/accounts/', include(github_urls)),
-        path('api/v1/accounts/', include('allauth.urls')),
-        path('api/v1/', include(auth.urlpaterns)),
+        yield path('api/v1/accounts/', include(github_urls))
+        yield path('api/v1/accounts/', include('allauth.urls'))
+        yield path('api/v1/', include(auth.urlpaterns))
     yield path('api/v1/', include('rssant_api.urls'))
 
 
