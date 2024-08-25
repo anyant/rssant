@@ -50,5 +50,5 @@ COPY --from=build-web /app/dist /var/www/rssant-html
 RUN bash box/setup-container.sh
 VOLUME /var/lib/postgresql/11/main
 VOLUME /var/log/postgresql
-EXPOSE 80 5432 6786 6788 6793 9001
+EXPOSE 80 5432 6786 6788 6790 6793 9001
 CMD ["/app/.venv/bin/supervisord", "-c", "/etc/supervisord.conf"]

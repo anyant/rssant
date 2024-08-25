@@ -114,7 +114,7 @@ WSGI_APPLICATION = 'rssant.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-if ENV_CONFIG.is_role_worker:
+if not ENV_CONFIG.is_role_api:
     DATABASES = {}
 else:
     DATABASES = {

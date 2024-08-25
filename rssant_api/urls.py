@@ -15,7 +15,7 @@ from .views.user_publish import UserPublishView
 
 def _gen_urlpatterns():
     yield path('', include(health.urls))
-    if CONFIG.is_role_worker:
+    if not CONFIG.is_role_api:
         yield path('', include(WorkerView.urls))
     else:
         yield path('', include(FeedView.urls))

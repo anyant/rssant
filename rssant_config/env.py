@@ -34,7 +34,7 @@ class EnvConfig(ConfigModel):
     harbor_url: str = T.url.default('http://localhost:6788')
     worker_url: str = T.url.default('http://localhost:6793')
     scheduler_num_worker: int = T.int.min(1).default(10)
-    role: str = T.enum('api,worker').default('api')
+    role: str = T.enum('api,worker,scheduler,asyncapi').default('api')
     standby_domains: str = T.str.optional
     secret_key: str = T.str.default(
         '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
@@ -108,8 +108,8 @@ class EnvConfig(ConfigModel):
     hashid_salt: str = T.str.default('rssant')
 
     @property
-    def is_role_worker(self):
-        return self.role == 'worker'
+    def is_role_api(self):
+        return self.role == 'api'
 
     @classmethod
     def _parse_story_volumes(cls, text: str):

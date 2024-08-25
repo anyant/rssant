@@ -1,3 +1,5 @@
+import os
+
 import click
 import gunicorn.app.base
 
@@ -22,17 +24,19 @@ class StandaloneApplication(gunicorn.app.base.BaseApplication):
 
 
 @click.command()
-@click.option('--bind', type=str, default='0.0.0.0:6786')
-@click.option('--workers', type=int, default=1)
-@click.option('--keep-alive', type=int, default=2)
-def main(bind: str, workers: int, keep_alive: int):
-    """Run rssant async server."""
+def main():
+    """Run rssant asyncapi server."""
+    bind = os.getenv('RSSANT_BIND_ADDRESS') or '0.0.0.0:6786'
+    workers = int(os.getenv('RSSANT_NUM_WORKERS') or 1)
+    keep_alive = int(os.getenv('RSSANT_KEEP_ALIVE') or 2)
     options = {
         'bind': bind,
         'workers': workers,
         'keepalive': keep_alive,
         'worker_class': 'aiohttp.GunicornWebWorker',
         'forwarded_allow_ips': '*',
+        'reuse_port': True,
+        'timeout': 300,
         'accesslog': '-',
         'errorlog': '-',
         'loglevel': 'info',

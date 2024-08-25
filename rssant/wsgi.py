@@ -18,7 +18,7 @@ from rssant_worker.worker_service import WORKER_SERVICE
 
 def get_wsgi_application():
     configure_logging(level=CONFIG.log_level)
-    if CONFIG.is_role_worker:
+    if not CONFIG.is_role_api:
         WORKER_SERVICE.start_dns_refresh_thread()
     return _get_app()
 

@@ -45,7 +45,7 @@ def _check_task_stats():
 def _get_health():
     result = health_info()
     result.update(role=CONFIG.role)
-    if not CONFIG.is_role_worker:
+    if CONFIG.is_role_api:
         is_db_ok = _check_db_health()
         result.update(is_db_ok=is_db_ok)
         if is_db_ok:

@@ -4,4 +4,6 @@ set -ex
 
 /app/box/bin/wait-initdb.sh
 
-/app/run-asyncapi.py --bind 0.0.0.0:6786
+export RSSANT_ROLE=asyncapi
+export RSSANT_BIND_ADDRESS=0.0.0.0:6786
+/app/runserver.py

@@ -36,7 +36,7 @@ def _gen_urlpatterns():
 
         yield path('__debug__/', include(debug_toolbar.urls))
     yield path('', views.index)
-    if not CONFIG.is_role_worker:
+    if CONFIG.is_role_api:
         schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
         docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
         swagger_view = get_swagger_view(title=API_TITLE)

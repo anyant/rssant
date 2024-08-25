@@ -28,4 +28,4 @@ ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
 RUN python manage.py collectstatic
 
 FROM runtime
-CMD [ "/app/runserver.sh" ]
+CMD [ "/app/runserver.py" ]
