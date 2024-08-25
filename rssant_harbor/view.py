@@ -1,10 +1,14 @@
+import json
 import logging
+
+from rest_framework.exceptions import ValidationError
 
 from django_rest_validr import RestRouter, T
 from rssant_api.views.common import AllowServiceClient
 
 from .django_service import django_clear_expired_sessions, django_run_db_init
 from .harbor_service import HARBOR_SERVICE
+from .pg_count import pg_count, pg_verify
 from .schema import FeedInfoSchema, FeedSchema
 from .task_service import TASK_SERVICE
 
@@ -21,6 +25,40 @@ def do_django_clear_expired_sessions(request):
 @HarborView.post('harbor_django.run_db_init')
 def do_django_run_db_init(request):
     django_run_db_init()
+
+
+@HarborView.post('harbor_django.pg_count')
+def do_pg_count(request) -> T.any:
+    result = pg_count()
+    return result
+
+
+def _read_request_json_file(request, name):
+    fileobj = request.FILES.get(name)
+    if not fileobj:
+        return None
+    text = fileobj.read()
+    if not isinstance(text, str):
+        try:
+            text = text.decode('utf-8')
+        except UnicodeError:
+            raise ValidationError(dict(message='file type or encoding invalid'))
+    return json.loads(text)
+
+
+@HarborView.post('harbor_django.pg_verify')
+def do_pg_verify(
+    request,
+    verify_bias: T.float.min(0).max(1).default(0.003),
+) -> T.any:
+    source = _read_request_json_file(request, 'source')
+    expected = _read_request_json_file(request, 'expected')
+    if source is None:
+        source = pg_count()
+    if expected is None:
+        raise ValidationError(dict(message='expected field is required'))
+    result = pg_verify(source, expected, verify_bias)
+    return result
 
 
 @HarborView.post('harbor_rss.update_feed_creation_status')
