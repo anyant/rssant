@@ -39,6 +39,8 @@ class EnvConfig(ConfigModel):
     secret_key: str = T.str.default(
         '8k1v_4#kv4+3qu1=ulp+@@#65&++!fl1(e*7)ew&nv!)cq%e2y'
     )
+    service_secret: str = T.str.optional.desc('service secret')
+    image_token_secret: str = T.str.optional.desc('image proxy token secret')
     allow_private_address: bool = T.bool.default(False)
     check_feed_minutes: int = T.int.min(1).default(30)
     feed_story_retention: int = (
@@ -163,6 +165,10 @@ class EnvConfig(ConfigModel):
         return configs
 
     def __post_init__(self):
+        if not self.service_secret:
+            self.service_secret = self._get_extra_secret('service_secret')
+        if not self.image_token_secret:
+            self.image_token_secret = self._get_extra_secret('image_token_secret')
         if self.smtp_enable:
             if not self.smtp_host:
                 raise Invalid('smtp_host is required when smtp_enable=True')
@@ -194,14 +200,6 @@ class EnvConfig(ConfigModel):
         payload1 = hashlib.sha256(self.secret_key.encode()).digest()
         payload2 = hashlib.sha256(salt.encode()).digest()
         return hashlib.sha256(payload1 + payload2).hexdigest()[:32]
-
-    @cached_property
-    def service_secret(self) -> str:
-        return self._get_extra_secret('service_secret')
-
-    @cached_property
-    def image_token_secret(self) -> str:
-        return self._get_extra_secret('image_token_secret')
 
     @cached_property
     def root_domain(self) -> str:
