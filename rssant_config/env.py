@@ -81,10 +81,12 @@ class EnvConfig(ConfigModel):
     ezproxy_chain_cn: str = T.str.default('cn')
     ezproxy_chain_global: str = T.str.default('default')
     ezproxy_enable: bool = T.bool.default(False)
-    # analytics matomo
-    analytics_matomo_enable: bool = T.bool.default(False)
-    analytics_matomo_url: str = T.str.optional
-    analytics_matomo_site_id: str = T.str.optional
+    # analytics baidu
+    analytics_baidu_tongji_enable: bool = T.bool.default(False)
+    analytics_baidu_tongji_id: str = T.str.optional
+    # analytics clarity
+    analytics_clarity_enable: bool = T.bool.default(False)
+    analytics_clarity_code: str = T.str.optional
     # analytics google
     analytics_google_enable: bool = T.bool.default(False)
     analytics_google_tracking_id: str = T.str.optional
