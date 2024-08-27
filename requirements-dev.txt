@@ -9,7 +9,7 @@ flake8==3.7.9
 pycodestyle==2.5.0
 isort==5.10.1
 coverage==4.5.4
-flask==2.0.2
+flask==2.2.5
 autopep8==1.5
 pre-commit==2.3.0
 locust==1.4.1
