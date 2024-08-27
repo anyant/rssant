@@ -37,4 +37,5 @@ COPY --from=check /app /app
 ARG EZFAAS_BUILD_ID=''
 ARG EZFAAS_COMMIT_ID=''
 ENV EZFAAS_BUILD_ID=${EZFAAS_BUILD_ID} EZFAAS_COMMIT_ID=${EZFAAS_COMMIT_ID}
-CMD [ "/app/run-asyncapi", "--bind=0.0.0.0:9000", "--keep-alive=7200" ]
+ENV RSSANT_BIND_ADDRESS=0.0.0.0:9000
+CMD [ "/app/run-asyncapi" ]

@@ -28,7 +28,7 @@ def main():
     """Run rssant asyncapi server."""
     bind = os.getenv('RSSANT_BIND_ADDRESS') or '0.0.0.0:6786'
     workers = int(os.getenv('RSSANT_NUM_WORKERS') or 1)
-    keep_alive = int(os.getenv('RSSANT_KEEP_ALIVE') or 2)
+    keep_alive = int(os.getenv('RSSANT_KEEP_ALIVE') or 7200)
     options = {
         'bind': bind,
         'workers': workers,
