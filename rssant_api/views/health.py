@@ -12,9 +12,9 @@ from rssant_config import CONFIG
 LOG = logging.getLogger(__name__)
 
 
-def JsonResponse(data: dict):
+def JsonResponse(data: dict, **kwargs):
     params = {'ensure_ascii': False, 'indent': 4}
-    return _JsonResponse(data, json_dumps_params=params)
+    return _JsonResponse(data, json_dumps_params=params, **kwargs)
 
 
 def on_index(request):
@@ -55,7 +55,12 @@ def _get_health():
 
 
 def on_health(request):
-    return JsonResponse(_get_health())
+    result = _get_health()
+    status = 200
+    if CONFIG.is_role_api:
+        if not result['is_db_ok']:
+            status = 500
+    return JsonResponse(result, status=status)
 
 
 def _to_json(v):
