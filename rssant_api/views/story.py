@@ -1,11 +1,11 @@
 import logging
 import socket
-import time
 
 import requests
 from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
+from rssant_api.api_service import API_SERVICE
 from rssant_api.models import UnionFeed, UnionStory
 from rssant_api.models.errors import (
     FeedNotFoundError,
@@ -14,7 +14,6 @@ from rssant_api.models.errors import (
 )
 from rssant_api.models.helper import ConcurrentUpdateError
 from rssant_api.models.story import StoryDetailSchema
-from rssant_common.actor_client import scheduler
 from rssant_common.image_token import ImageToken
 from rssant_config import CONFIG
 from rssant_feedlib import FeedResponseStatus
@@ -186,9 +185,7 @@ def story_get_by_offset(
         except FeedStoryOffsetError as ex:
             return Response({'message': str(ex)}, status=400)
         except ConcurrentUpdateError as ex:
-            LOG.error(
-                f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex
-            )
+            LOG.error(f'ConcurrentUpdateError: story set_readed {ex}', exc_info=ex)
     image_token = ImageToken(
         referrer=story.link,
         feed=feed_id.feed_id,
@@ -282,27 +279,19 @@ def story_fetch_fulltext(
 ):
     feed_unionid = feed_id
     check_unionid(request.user, feed_unionid)
-    user_id, feed_id = feed_unionid
-    content = dict(feed_id=feed_id, offset=offset)
-    expire_at = int(time.time() + 60)
+    _, feed_id = feed_unionid
     use_proxy = None
     accept = None
-    try:
-        result = scheduler.ask(
-            'harbor_rss.sync_story_fulltext', content, expire_at=expire_at
-        )
-    except _TIMEOUT_ERRORS as ex:
-        LOG.error(f'Ask harbor_rss.sync_story_fulltext timeout: {ex}')
-        response_status = FeedResponseStatus.CONNECTION_TIMEOUT
-    else:
-        response_status = result['response_status']
-        use_proxy = result['use_proxy']
-        accept = result['accept']
+    result = API_SERVICE.sync_story_fulltext(
+        feed_id=feed_id,
+        offset=offset,
+        timeout=50,
+    )
+    response_status = result['response_status']
+    accept = result['accept']
     story = None
     if accept != FulltextAcceptStrategy.REJECT.value:
-        story = UnionStory.get_by_feed_offset(
-            feed_unionid, offset, detail=True
-        )
+        story = UnionStory.get_by_feed_offset(feed_unionid, offset, detail=True)
         story = story.to_dict()
     response_status_name = FeedResponseStatus.name_of(response_status)
     return dict(

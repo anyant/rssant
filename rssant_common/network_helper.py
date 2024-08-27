@@ -1,6 +1,6 @@
-import socket
-import platform
 import hashlib
+import platform
+import socket
 
 import netifaces
 from slugify import slugify
@@ -78,10 +78,7 @@ def get_localhost_network(port=None, subpath=None):
         port = 80
     if subpath is None:
         subpath = ''
-    return dict(
-        name=LOCAL_NODE_NAME,
-        url=f'http://localhost:{port}{subpath}'
-    )
+    return dict(name=LOCAL_NODE_NAME, url=f'http://localhost:{port}{subpath}')
 
 
 def get_public_ip_list():

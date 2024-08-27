@@ -104,7 +104,6 @@ RSSANT_RSS_PROXY_TOKEN=
 # RSSANT_ALLOW_PRIVATE_ADDRESS=true
 
 # 以下配置保持不动
-RSSANT_SCHEDULER_NETWORK=rssant
 RSSANT_PG_DB=rssant
 RSSANT_PG_HOST=localhost
 RSSANT_PG_USER=rssant
@@ -118,7 +117,6 @@ RSSANT_PG_PASSWORD=rssant
 ```bash
 #!/bin/bash
 
-docker volume create rssant-data || true
 docker volume create rssant-postgres-data || true
 docker volume create rssant-postgres-logs || true
 
@@ -126,7 +124,6 @@ docker rm -f rssant || true
 docker run -ti --name rssant -d \
     -p 6789:80 \
     --env-file ~/rssant/rssant.env \
-    -v rssant-data:/app/data \
     -v rssant-postgres-data:/var/lib/postgresql/11/main \
     -v rssant-postgres-logs:/var/log/postgresql \
     --log-driver json-file --log-opt max-size=50m --log-opt max-file=10 \
@@ -175,10 +172,11 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 
 #### 系统级依赖
 
-- Linux 或 Mac OSX
+- Linux 或 macOS
 - [Docker](https://developer.aliyun.com/mirror/docker-ce) + [镜像加速器](https://juejin.im/post/5cd2cf01f265da0374189441)
-- Python + [pyenv](https://github.com/pyenv/pyenv-installer)
-- Node.js + [nvm](https://github.com/nvm-sh/nvm#install--update-script)
+- Python环境 https://mise.jdx.dev/lang/python.html
+- Python依赖管理 https://github.com/astral-sh/uv
+- Node.js环境 https://mise.jdx.dev/lang/node.html
 
 #### 后端
 
@@ -187,9 +185,9 @@ worker                           RUNNING   pid 21, uptime 0:10:03
 ```
 git clone git@gitee.com:anyant/rssant.git
 cd rssant
-pyenv virtualenv -p python3.8 3.8.6 rssant
-pyenv local rssant
-pip install -r requirements.txt
+mise install python@3.8
+python -m venv .venv
+bash ./setup.sh
 ```
 
 启动数据库
@@ -208,15 +206,10 @@ python manage.py runscript django_db_init
 开多个终端，分别启动以下服务
 
 ```
-python manage.py runserver 6788
-
-python -m rssant_async.main
-
-python -m rssant_scheduler.main --concurrency 10
-
-python -m rssant_harbor.main --concurrency 10
-
-python -m rssant_worker.main --concurrency 10
+bash ./rundev-api.sh
+bash ./rundev-worker.sh
+python ./run-scheduler.py
+python ./run-asyncapi.py
 ```
 
 访问 http://127.0.0.1:6788/doc/v1/  账号: admin 密码: admin
@@ -234,7 +227,8 @@ pytest
 打包
 
 ```
-docker build -t rssant/api:latest .
+bash deploy/rssant_server/build.sh
+bash deploy/rssant_asyncapi/build.sh
 ```
 
 #### 前端
@@ -242,6 +236,7 @@ docker build -t rssant/api:latest .
 ```
 git clone git@gitee.com:anyant/rssant-web.git
 cd rssant-web
+mise install node@16
 npm install
 npm run serve
 ```
@@ -251,19 +246,27 @@ npm run serve
 打包
 
 ```
-docker build -t rssant/web:latest .
+bash deploy/build.sh
 ```
 
 #### guyskk/rssant
 
-打包
+**打包**
 
 ```
 bash ./box/build.sh
 ```
 
-运行
+**运行**
 
 ```
 bash ./box/run.sh
+```
+
+**多平台打包**
+
+参考 https://docs.docker.com/build/building/multi-platform/
+
+```
+bash ./box/build-all.sh
 ```

@@ -4,7 +4,6 @@ set -ex
 
 /app/box/bin/wait-initdb.sh
 
-python -m rssant_scheduler.main \
-    --concurrency 1 \
-    --node rssant --port 6790 \
-    --network rssant@http://localhost:6790
+export RSSANT_ROLE=scheduler
+export RSSANT_BIND_ADDRESS=0.0.0.0:6790
+/app/runserver.py

@@ -13,6 +13,17 @@ class EzproxyClient:
     def __init__(self, base_url: str, apikey: str) -> None:
         self._base_url = base_url
         self._apikey = apikey
+        self._http_client = None
+
+    def close(self):
+        if self._http_client is not None:
+            self._http_client.close()
+            self._http_client = None
+
+    def _get_http_client(self):
+        if self._http_client is None:
+            self._http_client = httpx.Client(trust_env=False)
+        return self._http_client
 
     def _url_for(self, api: str) -> str:
         base = self._base_url.rstrip('/') + '/api/v1/'
@@ -21,7 +32,8 @@ class EzproxyClient:
     def _call(self, api: str, **kwargs):
         url = self._url_for(api)
         headers = {'x-api-key': self._apikey}
-        resp = httpx.post(url, json=kwargs, headers=headers)
+        client = self._get_http_client()
+        resp = client.post(url, json=kwargs, headers=headers)
         resp.raise_for_status()
         return resp.json()
 

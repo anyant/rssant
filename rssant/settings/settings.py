@@ -12,7 +12,8 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import os.path
-from os.path import dirname, abspath
+from os.path import abspath, dirname
+
 from rssant_config import CONFIG as ENV_CONFIG
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -44,8 +45,6 @@ def _gen_installed_apps():
     yield 'django.contrib.staticfiles'
     yield 'django.contrib.postgres'
     yield 'django.contrib.sites'
-    if ENV_CONFIG.sentry_enable:
-        yield 'raven.contrib.django.raven_compat'
     if ENV_CONFIG.debug_toolbar_enable:
         yield 'debug_toolbar'
     yield 'django_extensions'
@@ -71,7 +70,6 @@ def _gen_middleware():
         yield 'rssant.middleware.debug_toolbar.RssantDebugToolbarMiddleware'
     else:
         yield 'rssant.middleware.timer.RssantTimerMiddleware'
-    yield 'rssant.middleware.prometheus.RssantPrometheusMiddleware'
     yield 'django.middleware.security.SecurityMiddleware'
     yield 'whitenoise.middleware.WhiteNoiseMiddleware'
     yield 'django.contrib.sessions.middleware.SessionMiddleware'
@@ -116,23 +114,22 @@ WSGI_APPLICATION = 'rssant.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django_postgrespool2',
-        'NAME': ENV_CONFIG.pg_db,
-        'USER': ENV_CONFIG.pg_user,
-        'PASSWORD': ENV_CONFIG.pg_password,
-        'HOST': ENV_CONFIG.pg_host,
-        'PORT': ENV_CONFIG.pg_port,
+if not ENV_CONFIG.is_role_api:
+    DATABASES = {}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django_postgrespool2',
+            'NAME': ENV_CONFIG.pg_db,
+            'USER': ENV_CONFIG.pg_user,
+            'PASSWORD': ENV_CONFIG.pg_password,
+            'HOST': ENV_CONFIG.pg_host,
+            'PORT': ENV_CONFIG.pg_port,
+        }
     }
-}
 
-# https://github.com/heroku-python/django-postgrespool
-DATABASE_POOL_ARGS = {
-    'max_overflow': 20,
-    'pool_size': 15,
-    'recycle': 300
-}
+# https://github.com/lcd1232/django-postgrespool2
+DATABASE_POOL_ARGS = {'max_overflow': 20, 'pool_size': 15, 'recycle': 300}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -178,11 +175,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-if ENV_CONFIG.sentry_enable:
-    RAVEN_CONFIG = {
-        'dsn': ENV_CONFIG.sentry_dsn,
-    }
 
 # RSSANT
 RSSANT_CHECK_FEED_SECONDS = 60 * ENV_CONFIG.check_feed_minutes
@@ -234,11 +226,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
     # TODO: https://github.com/encode/django-rest-framework/issues/6809
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
 }
 
 # Django debug toolbar and X-Time header

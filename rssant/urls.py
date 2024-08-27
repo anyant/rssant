@@ -13,47 +13,49 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
+
 from django.conf import settings
-from rest_framework.schemas import get_schema_view
+from django.contrib import admin
+from django.urls import include, path
 from rest_framework.documentation import include_docs_urls
+from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.views import get_swagger_view
 
-from . import views
-from . import auth
+from rssant_config import CONFIG
+
+from . import auth, views
 from .allauth_providers.github import urls as github_urls
-from .middleware.prometheus import django_metrics_view
 
 API_TITLE = 'RSSAnt API'
 API_DESCRIPTION = 'A Web API for RSSAnt.'
 
-schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
-docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
-swagger_view = get_swagger_view(title=API_TITLE)
 
-urlpatterns = [
-    path('', views.index),
-    path('changelog', views.changelog_html),
-    path('changelog.atom', views.changelog_atom),
-    path('admin/metrics', django_metrics_view),
-    path('admin/', admin.site.urls),
-    path('docs/v1/', docs_view),
-    path('docs/v1/', include('rest_framework.urls', namespace='rest_framework')),
-    path('docs/v1/schema/', schema_view),
-    path('docs/v1/swagger/', swagger_view),
-    path('api/v1/accounts/profile/', views.accounts_profile),
-    path('api/v1/analytics.js', views.analytics_script),
-    # override allauth github views
-    path('api/v1/accounts/', include(github_urls)),
-    path('api/v1/accounts/', include('allauth.urls')),
-    path('api/v1/', include('rssant_api.urls')),
-    path('api/v1/', include(auth.urlpaterns)),
-]
+def _gen_urlpatterns():
+    if settings.DEBUG:
+        import debug_toolbar
+
+        yield path('__debug__/', include(debug_toolbar.urls))
+    yield path('', views.index)
+    if CONFIG.is_role_api:
+        schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
+        docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
+        swagger_view = get_swagger_view(title=API_TITLE)
+        yield path('changelog', views.changelog_html)
+        yield path('changelog.atom', views.changelog_atom)
+        yield path('admin/', admin.site.urls)
+        yield path('docs/v1/', docs_view)
+        yield path(
+            'docs/v1/', include('rest_framework.urls', namespace='rest_framework')
+        )
+        yield path('docs/v1/schema/', schema_view)
+        yield path('docs/v1/swagger/', swagger_view)
+        yield path('api/v1/accounts/profile/', views.accounts_profile)
+        yield path('api/v1/analytics.js', views.analytics_script)
+        # override allauth github views
+        yield path('api/v1/accounts/', include(github_urls))
+        yield path('api/v1/accounts/', include('allauth.urls'))
+        yield path('api/v1/', include(auth.urlpaterns))
+    yield path('api/v1/', include('rssant_api.urls'))
 
 
-if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
-    ] + urlpatterns
+urlpatterns = list(_gen_urlpatterns())

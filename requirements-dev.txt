@@ -1,0 +1,20 @@
+# django
+pytest-django==3.10.0
+
+# test
+pytest==5.4.1
+pytest-cov==2.8.1
+pytest-httpserver==0.3.4
+flake8==3.7.9
+pycodestyle==2.5.0
+isort==5.10.1
+coverage==4.5.4
+flask==2.0.2
+autopep8==1.5
+pre-commit==2.3.0
+locust==1.4.1
+geventhttpclient==1.5.3
+
+# package
+pip-tools==5.5.0
+pipdeptree==0.13.2

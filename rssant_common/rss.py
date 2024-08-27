@@ -40,7 +40,7 @@ FeedSchema = T.dict(
     etag=T.str.optional,
     last_modified=T.str.optional,
     response_status=T.int.optional,
-    checksum_data=T.bytes.maxlen(4096).optional,
+    checksum_data_base64=T.str.maxlen(8192).optional,
     warnings=T.str.optional,
     storys=T.list,
 )

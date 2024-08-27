@@ -1,13 +1,12 @@
-import socket
-import logging
 import enum
+import logging
+import socket
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
-from rssant_common import _proxy_helper
-from rssant_common.requests_helper import requests_check_incomplete_response
-
+from . import _proxy_helper
+from .requests_helper import requests_check_incomplete_response
 
 LOG = logging.getLogger(__name__)
 
@@ -105,7 +104,8 @@ class RSSProxyClient:
 
     def request_by_proxy(self, *args, **kwargs) -> requests.Response:
         use_rss_proxy = _proxy_helper.choice_proxy(
-            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url)
+            proxy_url=self.proxy_url, rss_proxy_url=self.rss_proxy_url
+        )
         if use_rss_proxy:
             if not self.rss_proxy_url:
                 raise ValueError("rss_proxy_url not provided")
@@ -116,7 +116,9 @@ class RSSProxyClient:
             proxies = {'http': self.proxy_url, 'https': self.proxy_url}
             return self.request_direct(*args, **kwargs, proxies=proxies)
 
-    def _request_by_rss_proxy(self, method, url, timeout=None, **kwargs) -> requests.Response:
+    def _request_by_rss_proxy(
+        self, method, url, timeout=None, **kwargs
+    ) -> requests.Response:
         if timeout is None:
             timeout = _DEFAULT_TIMEOUT
         request: requests.PreparedRequest

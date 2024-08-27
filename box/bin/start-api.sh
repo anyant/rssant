@@ -4,9 +4,6 @@ set -ex
 
 /app/box/bin/wait-initdb.sh
 
-gunicorn -b 0.0.0.0:6788 --threads 10 \
-    --forwarded-allow-ips '*' \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info \
-    rssant.wsgi
+export RSSANT_ROLE=api
+export RSSANT_BIND_ADDRESS=0.0.0.0:6788
+/app/runserver.py
