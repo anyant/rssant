@@ -208,8 +208,8 @@ python manage.py runscript django_db_init
 ```
 bash ./rundev-api.sh
 bash ./rundev-worker.sh
-python ./rundev-scheduler.py
-python ./rundev-asyncapi.py
+python ./run-scheduler.py
+python ./run-asyncapi.py
 ```
 
 访问 http://127.0.0.1:6788/doc/v1/  账号: admin 密码: admin
@@ -228,6 +228,7 @@ pytest
 
 ```
 bash deploy/rssant_server/build.sh
+bash deploy/rssant_asyncapi/build.sh
 ```
 
 #### 前端
@@ -245,19 +246,27 @@ npm run serve
 打包
 
 ```
-docker build -t rssant/web:latest .
+bash deploy/build.sh
 ```
 
 #### guyskk/rssant
 
-打包
+**打包**
 
 ```
 bash ./box/build.sh
 ```
 
-运行
+**运行**
 
 ```
 bash ./box/run.sh
+```
+
+**多平台打包**
+
+参考 https://docs.docker.com/build/building/multi-platform/
+
+```
+bash ./box/build-all.sh
 ```
