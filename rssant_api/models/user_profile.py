@@ -3,6 +3,7 @@ from typing import Optional
 
 from django.contrib.auth.models import AbstractUser
 
+from rssant_common import timezone
 from rssant_common.ezrevenue import EZREVENUE_CLIENT
 
 from .helper import JSONField, Model, User, models, optional
@@ -25,6 +26,7 @@ class UserProfile(Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     vip_balance: int = models.BigIntegerField(**optional, verbose_name='会员余额')
     vip_info: dict = JSONField(**optional, verbose_name='会员信息')
+    dt_vip_synced = models.DateTimeField(**optional, help_text="会员信息同步时间")
 
     def is_vip(self, now=None):
         if now is None:
@@ -59,7 +61,7 @@ class UserProfile(Model):
         return profile.is_vip()
 
     @classmethod
-    def refresh_vip_info(cls, user: AbstractUser):
+    def sync_vip_info(cls, user: AbstractUser):
         params = dict(
             paywall_alias='paywall_vip',
             customer=dict(
@@ -71,11 +73,13 @@ class UserProfile(Model):
         )
         vip_info = EZREVENUE_CLIENT.call('customer.info', params)
         vip_balance = cls._get_vip_balance(vip_info)
+        dt_vip_synced = timezone.now()
         profile, _ = UserProfile.objects.update_or_create(
             dict(
                 user_id=user.id,
                 vip_balance=vip_balance,
                 vip_info=vip_info,
+                dt_vip_synced=dt_vip_synced,
             ),
             user_id=user.id,
         )

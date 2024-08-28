@@ -19,25 +19,25 @@ def main():
     """User Commands"""
 
 
-def _run_refresh_vip_info(queue: Queue, progress: tqdm):
+def _run_sync_vip_info(queue: Queue, progress: tqdm):
     while True:
         try:
             user = queue.get(block=False)
         except QueueEmpty:
             return
-        UserProfile.refresh_vip_info(user=user)
+        UserProfile.sync_vip_info(user=user)
         progress.update(1)
 
 
 @click.option('--user-id', type=int, required=False, help='User ID')
 @main.command()
-def refresh_vip_info(user_id: typing.Optional[int] = None):
+def sync_vip_info(user_id: typing.Optional[int] = None):
     User = get_user_model()
     if user_id is not None:
         user_s = User.objects.filter(id=user_id).all()
     else:
         user_s = User.objects.all()
-    LOG.info(f'refresh_vip_info user count={len(user_s)}')
+    LOG.info(f'sync_vip_info user count={len(user_s)}')
     queue = Queue()
     for user in user_s:
         queue.put(user)
@@ -46,7 +46,7 @@ def refresh_vip_info(user_id: typing.Optional[int] = None):
     try:
         fut_s: typing.List[Future] = []
         for _ in range(20):
-            fut = pool.submit(_run_refresh_vip_info, queue, progress)
+            fut = pool.submit(_run_sync_vip_info, queue, progress)
             fut_s.append(fut)
         for fut in fut_s:
             fut.result()

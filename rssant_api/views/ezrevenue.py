@@ -15,5 +15,5 @@ def ezrevenue_customer_info(
     if not EZREVENUE_CLIENT:
         return Response(status=501)
     user: AbstractUser = request.user
-    profile = UserProfile.refresh_vip_info(user=user)
+    profile = UserProfile.sync_vip_info(user=user)
     return profile.vip_info
