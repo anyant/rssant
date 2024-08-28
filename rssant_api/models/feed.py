@@ -124,12 +124,8 @@ class Feed(Model, ContentHashMixin):
         **optional,
         help_text="HTTP response header Last-Modified",
     )
-    content_length = models.IntegerField(
-        **optional, help_text='length of content'
-    )
-    response_status = models.IntegerField(
-        **optional, help_text='response status code'
-    )
+    content_length = models.IntegerField(**optional, help_text='length of content')
+    response_status = models.IntegerField(**optional, help_text='response status code')
     # 其他
     monthly_story_count_data = models.BinaryField(
         **optional, max_length=514, help_text="monthly story count data"
@@ -243,9 +239,7 @@ class Feed(Model, ContentHashMixin):
         return [x['feed_id'] for x in feeds]
 
     @staticmethod
-    def take_outdated_feeds(
-        outdate_seconds=300, timeout_seconds=None, limit=300
-    ):
+    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=300):
         """
         outdate_seconds: 正常检查时间间隔
         timeout_seconds: 异常检查时间间隔
@@ -383,13 +377,39 @@ class Feed(Model, ContentHashMixin):
     @staticmethod
     def refresh_freeze_level():
         """
-        活跃用户: 90天内有阅读记录
-        冻结策略:
-            1. 无人订阅，冻结1个月。有人订阅时解冻。
-            2. 创建时间>=7天，且2年无更新，冻结1个月。有更新时解冻。
-            3. 创建时间>=7天，且没有任何内容，冻结7天。有更新时解冻。
-            4. 无活跃用户订阅，冻结3天。有活跃用户订阅时解冻。
-            5. 其余订阅参照冻结时间表格。
+        冻结级别 = 内容系数 x 用户系数 + 阅读系数
+
+        冻结逻辑：
+            - 周更、月更博客，减少更新
+            - 没有会员订阅的，不要更新
+            - 有会员但不活跃的，减少更新
+            - 内容没人阅读的，不要更新
+
+        解冻逻辑：
+            - 订阅有内容更新时解冻
+            - 有用户创建订阅时解冻
+            - 定时任务更新冻结级别
+
+        内容系数：基础冻结时间，根据更新频率、内容大小确定
+            - 创建时间>=7天，且2年无更新，冻结1个月。有更新时解冻。
+            - 创建时间>=7天，且没有任何内容，冻结7天。有更新时解冻。
+            - 其余订阅参照冻结时间表格。
+
+        用户系数：根据用户是否是会员、是否活跃确定（无会员信息的当作会员处理）
+            - 有会员订阅+有活跃用户订阅 x1
+            - 有会员订阅 x2
+            - 有7天内活跃用户订阅 x4
+            - 有用户订阅 x24
+            - 其他 x120
+
+        阅读系数：根据订阅阅读记录确定
+            - 1天内有阅读 +0
+            - 2天内有阅读 +1
+            - 7天内有阅读 +3
+            - 30天内有阅读 +8
+            - 90天内有阅读 +12
+            - 其他 +120
+
         统计数据:
             - 90%的订阅小于300KB
             - 99%的订阅小于1500KB
@@ -405,14 +425,60 @@ class Feed(Model, ContentHashMixin):
         +------------+----------+------------+----------+
         """
         # https://stackoverflow.com/questions/7869592/how-to-do-an-update-join-in-postgresql
-        sql = f"""
-        WITH t AS (
+        sql = """
+        WITH user_stat AS (
+            SELECT
+                myuser.id AS user_id,
+                CASE WHEN user_vip.is_vip IS NULL THEN 1 ELSE user_vip.is_vip END AS is_vip,
+                user_active.is_active
+            FROM auth_user AS myuser
+            LEFT OUTER JOIN (
+                SELECT user_id, CASE WHEN (
+                    vip_balance > EXTRACT(epoch FROM NOW())
+                ) THEN 1 ELSE 0 END AS is_vip
+                FROM rssant_api_userprofile
+            ) AS user_vip ON myuser.id = user_vip.user_id
+            LEFT OUTER JOIN (
+                SELECT user_id, CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '7 days'
+                ) THEN 1 ELSE 0 END AS is_active
+                FROM rssant_api_userfeed GROUP BY user_id
+            ) AS user_active ON myuser.id = user_active.user_id
+        ),
+        feed_user_stat AS (
+            SELECT
+                feed_id,
+                COUNT(1) AS user_count,
+                SUM(user_stat.is_vip) AS vip_user_count,
+                SUM(user_stat.is_active) AS active_user_count
+            FROM rssant_api_userfeed JOIN user_stat
+            ON rssant_api_userfeed.user_id = user_stat.user_id
+            GROUP BY feed_id
+        ),
+        feed_read_stat AS (
+            SELECT
+                feed_id,
+                CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '1 days'
+                ) THEN 1 ELSE 0 END AS is_read_1d,
+                CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '2 days'
+                ) THEN 1 ELSE 0 END AS is_read_2d,
+                CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '7 days'
+                ) THEN 1 ELSE 0 END AS is_read_7d,
+                CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '30 days'
+                ) THEN 1 ELSE 0 END AS is_read_30d,
+                CASE WHEN (
+                    MAX(dt_updated) >= NOW() - INTERVAL '90 days'
+                ) THEN 1 ELSE 0 END AS is_read_90d
+            FROM rssant_api_userfeed GROUP BY feed_id
+        ),
+        feed_stat AS (
         SELECT
             feed.id AS id,
             CASE
-                WHEN (
-                    feed_stat.feed_id is NULL OR feed_stat.user_count <= 0
-                ) THEN 31 * 24
                 WHEN (
                     (feed.dt_created <= NOW() - INTERVAL '7 days')
                     AND (feed.dt_latest_story_published <= NOW() - INTERVAL '2 years')
@@ -421,9 +487,6 @@ class Feed(Model, ContentHashMixin):
                     (feed.dt_created <= NOW() - INTERVAL '7 days')
                     AND (feed.dt_latest_story_published is NULL and total_storys <= 0)
                 ) THEN 7 * 24
-                WHEN (
-                    feed_stat.active_user_count <= 0
-                ) THEN 3 * 24
                 WHEN (
                     feed.content_length >= 1500 * 1024 AND feed.dryness >= 500
                 ) THEN 9
@@ -440,24 +503,32 @@ class Feed(Model, ContentHashMixin):
                     feed.dryness >= 500 AND feed.content_length >= 300 * 1024
                 ) THEN 2
                 ELSE 1
-            END AS freeze_level
+            END AS base_freeze_level,
+            CASE WHEN (
+                    feed_user_stat.vip_user_count > 0
+                    AND feed_user_stat.active_user_count > 0
+                ) THEN 1
+                WHEN feed_user_stat.vip_user_count > 0 THEN 2
+                WHEN feed_user_stat.active_user_count > 0 THEN 4
+                WHEN feed_user_stat.user_count > 0 THEN 24
+                ELSE 120
+            END AS user_freeze_level,
+            CASE
+                WHEN feed_read_stat.is_read_1d > 0 THEN 0
+                WHEN feed_read_stat.is_read_2d > 0 THEN 1
+                WHEN feed_read_stat.is_read_7d > 0 THEN 3
+                WHEN feed_read_stat.is_read_30d > 0 THEN 8
+                WHEN feed_read_stat.is_read_90d > 0 THEN 12
+                ELSE 120
+            END AS read_freeze_level
         FROM rssant_api_feed AS feed
-        LEFT OUTER JOIN (
-            SELECT
-                feed_id,
-                COUNT(1) AS user_count,
-                SUM(user_stat.is_active) AS active_user_count
-            FROM rssant_api_userfeed JOIN (
-                SELECT user_id, CASE WHEN (
-                    MAX(dt_updated) >= NOW() - INTERVAL '90 days'
-                ) THEN 1 ELSE 0 END AS is_active
-                FROM rssant_api_userfeed GROUP BY user_id
-            ) user_stat
-            ON rssant_api_userfeed.user_id = user_stat.user_id
-            GROUP BY feed_id
-        ) AS feed_stat
-        ON feed.id = feed_stat.feed_id
-        WHERE feed.status != '{FeedStatus.DISCARD}'
+        LEFT OUTER JOIN feed_user_stat ON feed.id = feed_user_stat.feed_id
+        LEFT OUTER JOIN feed_read_stat ON feed.id = feed_read_stat.feed_id
+        WHERE feed.status != 'discard'
+        ),
+        t AS (
+            SELECT id, base_freeze_level * user_freeze_level + read_freeze_level AS freeze_level
+            FROM feed_stat
         )
         UPDATE rssant_api_feed AS feed
         SET freeze_level = t.freeze_level
@@ -493,16 +564,12 @@ class RawFeed(Model, ContentHashMixin):
         **optional,
         help_text="HTTP response header Last-Modified",
     )
-    headers = JSONField(
-        **optional, help_text='HTTP response headers, JSON object'
-    )
+    headers = JSONField(**optional, help_text='HTTP response headers, JSON object')
     is_gzipped = models.BooleanField(
         **optional, default=False, help_text="is content gzip compressed"
     )
     content = models.BinaryField(**optional)
-    content_length = models.IntegerField(
-        **optional, help_text='length of content'
-    )
+    content_length = models.IntegerField(**optional, help_text='length of content')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
 
     def set_content(self, content):
@@ -538,15 +605,11 @@ class UserFeed(Model):
     feed = models.ForeignKey(Feed, on_delete=models.CASCADE, **optional)
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
-    story_offset = models.IntegerField(
-        **optional, default=0, help_text="story offset"
-    )
+    story_offset = models.IntegerField(**optional, default=0, help_text="story offset")
     is_from_bookmark = models.BooleanField(
         **optional, default=False, help_text='是否从书签导入'
     )
-    is_publish = models.BooleanField(
-        **optional, default=False, help_text='是否发布'
-    )
+    is_publish = models.BooleanField(**optional, default=False, help_text='是否发布')
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
