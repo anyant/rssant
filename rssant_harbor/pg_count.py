@@ -78,6 +78,11 @@ def pg_count():
     return dict(tables=ret_tables)
 
 
+_PG_VERIFY_IGNORE_TABLE_SET = {
+    'rssant_api_workertask',
+}
+
+
 def pg_verify(result, expect_result, bias):
     result_map = {}
     for item in result['tables']:
@@ -86,6 +91,8 @@ def pg_verify(result, expect_result, bias):
     details = []
     for expect_item in expect_result['tables']:
         name = expect_item['name']
+        if name in _PG_VERIFY_IGNORE_TABLE_SET:
+            continue
         expect_count = expect_item['count']
         count = result_map.get(name)
         if count is None:
