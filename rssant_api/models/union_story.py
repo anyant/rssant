@@ -316,7 +316,7 @@ class UnionStory:
 
     @classmethod
     def query_recent_by_user(
-        cls, user_id, feed_unionids=None, days=14, limit=300, detail=False
+        cls, user_id, feed_unionids=None, days=14, limit=100, detail=False
     ):
         """
         Deprecated since 1.4.2, use batch_get_by_feed_offset instead
