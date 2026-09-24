@@ -1,6 +1,9 @@
 from allauth.socialaccount.providers.oauth2.views import (
     OAuth2View, OAuth2CallbackView, OAuth2LoginView)
 
+import yarl
+from rest_framework.authtoken.models import Token
+
 from rssant_config import CONFIG
 from rssant_config.env import GitHubConfigModel
 from rssant_common.standby_domain import get_request_domain
@@ -42,6 +45,19 @@ class RssantOAuth2View(OAuth2View):
 
 class RssantOAuth2CallbackView(RssantOAuth2View, OAuth2CallbackView):
     """RssantOAuth2CallbackView"""
+
+    def dispatch(self, request, *args, **kwargs):
+        response = super().dispatch(request, *args, **kwargs)
+        # 少数浏览器不接受跨站回调写回的 session cookie，前端拿不到登录态。
+        # 登录成功后把 DRF token 放进 URL fragment，供前端首方读取。
+        if getattr(response, 'status_code', None) == 302 and request.user.is_authenticated:
+            url = yarl.URL(response['Location'])
+            is_same_site = (url.host or CONFIG.root_domain) == CONFIG.root_domain
+            if is_same_site and url.scheme in ('', 'https'):
+                token, _ = Token.objects.get_or_create(user=request.user)
+                fragment = 'login_token={}'.format(token.key)
+                response['Location'] = str(url.with_fragment(fragment))
+        return response
 
 
 class RssantOAuth2LoginView(RssantOAuth2View, OAuth2LoginView):
