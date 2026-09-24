@@ -50,3 +50,8 @@ def test_callback_skips_token_when_not_authenticated():
 def test_callback_skips_token_for_external_redirect():
     response = _dispatch_with_redirect('https://evil.com/')
     assert response['Location'] == 'https://evil.com/'
+
+
+def test_callback_skips_token_for_insecure_scheme():
+    response = _dispatch_with_redirect('http://rss.anyant.com/')
+    assert response['Location'] == 'http://rss.anyant.com/'

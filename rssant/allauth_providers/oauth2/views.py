@@ -52,7 +52,8 @@ class RssantOAuth2CallbackView(RssantOAuth2View, OAuth2CallbackView):
         # 登录成功后把 DRF token 放进 URL fragment，供前端首方读取。
         if getattr(response, 'status_code', None) == 302 and request.user.is_authenticated:
             url = yarl.URL(response['Location'])
-            if (url.host or CONFIG.root_domain) == CONFIG.root_domain:
+            is_same_site = (url.host or CONFIG.root_domain) == CONFIG.root_domain
+            if is_same_site and url.scheme in ('', 'https'):
                 token, _ = Token.objects.get_or_create(user=request.user)
                 fragment = 'login_token={}'.format(token.key)
                 response['Location'] = str(url.with_fragment(fragment))
