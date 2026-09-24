@@ -417,7 +417,8 @@ def _parse_found(found, checksum_data_base64=None, is_refresh=False):
     if checksum_data and (not is_refresh):
         checksum = FeedChecksum.load(checksum_data)
     result = FeedParser(checksum=checksum).parse(raw_result)
-    checksum_data = result.checksum.dump(limit=300)
+    limit = min(CONFIG.feed_story_retention, 300)
+    checksum_data = result.checksum.dump(limit=limit)
     checksum_data_base64 = UrlsafeBase64.encode(checksum_data)
     num_raw_storys = len(raw_result.storys)
     warnings = None

@@ -181,6 +181,7 @@ class HarborService:
     ):
         now_sub_30d = now - timezone.timedelta(days=30)
         # save storys, bulk_save_by_feed has standalone transaction
+        storys = storys[: CONFIG.feed_story_retention]
         for s in storys:
             if not s['dt_updated']:
                 s['dt_updated'] = now

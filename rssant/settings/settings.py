@@ -129,7 +129,7 @@ else:
     }
 
 # https://github.com/lcd1232/django-postgrespool2
-DATABASE_POOL_ARGS = {'max_overflow': 20, 'pool_size': 15, 'recycle': 300}
+DATABASE_POOL_ARGS = {'max_overflow': 40, 'pool_size': 15, 'recycle': 300}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

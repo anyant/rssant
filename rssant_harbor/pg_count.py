@@ -1,5 +1,5 @@
 import django.apps
-from django.db import connection
+from django.db import close_old_connections, connection
 
 sql_count_limit = '''
 SELECT count(*) as row_count
@@ -66,6 +66,7 @@ def pg_count():
         https://stackoverflow.com/questions/7943233/fast-way-to-discover-the-row-count-of-a-table-in-postgresql
         https://wiki.postgresql.org/wiki/Count_estimate
     """
+    close_old_connections()
     models = django.apps.apps.get_models()
     tables = [m._meta.db_table for m in models]
     story_volume_tables = get_story_volume_tables()
@@ -78,6 +79,11 @@ def pg_count():
     return dict(tables=ret_tables)
 
 
+_PG_VERIFY_IGNORE_TABLE_SET = {
+    'rssant_api_workertask',
+}
+
+
 def pg_verify(result, expect_result, bias):
     result_map = {}
     for item in result['tables']:
@@ -86,6 +92,8 @@ def pg_verify(result, expect_result, bias):
     details = []
     for expect_item in expect_result['tables']:
         name = expect_item['name']
+        if name in _PG_VERIFY_IGNORE_TABLE_SET:
+            continue
         expect_count = expect_item['count']
         count = result_map.get(name)
         if count is None:

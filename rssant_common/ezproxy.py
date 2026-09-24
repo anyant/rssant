@@ -1,3 +1,4 @@
+import logging
 from threading import Lock
 from typing import List
 from urllib.parse import urlparse
@@ -7,6 +8,8 @@ from cachetools import TTLCache, cached
 
 from rssant_common.chnlist import CHINA_WEBSITE_LIST
 from rssant_config import CONFIG
+
+LOG = logging.getLogger(__name__)
 
 
 class EzproxyClient:
@@ -45,13 +48,20 @@ class EzproxyClient:
         chain: str = None,
         count: int = 1,
     ) -> List[dict]:
-        result = self._call(
-            'proxy.pick',
-            chain=chain,
-            seed=seed,
-            region_s=region_s,
-            count=count,
-        )
+        try:
+            result = self._call(
+                'proxy.pick',
+                chain=chain,
+                seed=seed,
+                region_s=region_s,
+                count=count,
+            )
+        except httpx.HTTPStatusError as ex:
+            # Server error '503 Service Unavailable'
+            if ex.response.status_code == 503:
+                LOG.warning(str(ex))
+                return []
+            raise
         return result['item_s']
 
     def pick_proxy_url(

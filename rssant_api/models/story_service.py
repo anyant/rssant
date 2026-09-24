@@ -171,7 +171,8 @@ class StoryService:
     def _get_unique_ids(self, feed_id, feed_total_story):
         unique_ids_map = self._get_unique_ids_by_stat(feed_id)
         if unique_ids_map is None:
-            begin_offset = max(0, feed_total_story - 300)
+            limit = min(CONFIG.feed_story_retention, 300)
+            begin_offset = max(0, feed_total_story - limit)
             unique_ids_map = self._get_unique_ids_by_story(
                 feed_id, begin_offset, feed_total_story)
         return unique_ids_map
@@ -291,7 +292,8 @@ class StoryService:
             tmp_unique_ids[story.unique_id] = story.offset
         tmp_unique_ids = {y: x for x, y in tmp_unique_ids.items()}
         new_unique_ids = []
-        size = min(len(tmp_unique_ids), 300)
+        limit = min(CONFIG.feed_story_retention, 300)
+        size = min(len(tmp_unique_ids), limit)
         begin_offset = max(0, new_total_storys - size)
         new_begin_offset = new_total_storys
         for offset in reversed(range(begin_offset, new_total_storys)):

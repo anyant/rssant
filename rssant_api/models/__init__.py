@@ -8,6 +8,7 @@ from .story_info import StoryId, StoryInfo
 from .story_service import STORY_SERVICE, CommonStory
 from .union_feed import FeedImportItem, FeedUnionId, UnionFeed
 from .union_story import StoryUnionId, UnionStory
+from .user_profile import UserProfile
 from .user_publish import UserPublish
 from .worker_task import WorkerTask
 
@@ -23,6 +24,7 @@ __models__ = (
     FeedStoryStat,
     Registery,
     ImageInfo,
+    UserProfile,
     UserPublish,
     WorkerTask,
 )
