@@ -155,11 +155,13 @@ class UnionStory:
         return ret
 
     @staticmethod
-    def _check_user_feed_by_story_unionid(story_unionid):
+    def _check_user_feed_by_story_unionid(story_unionid, only_publish=False):
         user_id, feed_id, offset = story_unionid
         q = UserFeed.objects.only('id').filter(
             user_id=user_id, feed_id=feed_id
         )
+        if only_publish:
+            q = q.filter(is_publish=True)
         try:
             user_feed = q.get()
         except UserFeed.DoesNotExist:
@@ -167,9 +169,9 @@ class UnionStory:
         return user_feed.id
 
     @staticmethod
-    def get_by_id(story_unionid, detail=False):
+    def get_by_id(story_unionid, detail=False, only_publish=False):
         user_feed_id = UnionStory._check_user_feed_by_story_unionid(
-            story_unionid
+            story_unionid, only_publish=only_publish
         )
         user_id, feed_id, offset = story_unionid
         q = UserStory.objects.select_related('story')
@@ -195,9 +197,10 @@ class UnionStory:
 
     @staticmethod
     def get_by_feed_offset(feed_unionid, offset, detail=False, only_publish=False):
-        # TODO: filter by only_publish
         story_unionid = StoryUnionId(*feed_unionid, offset)
-        return UnionStory.get_by_id(story_unionid, detail=detail)
+        return UnionStory.get_by_id(
+            story_unionid, detail=detail, only_publish=only_publish
+        )
 
     @staticmethod
     def _merge_storys(
