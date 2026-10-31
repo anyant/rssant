@@ -125,3 +125,6 @@ dmypy.json
 .pyre/
 
 .DS_Store
+
+# 本地临时目录，避免被打进镜像
+tmp/
