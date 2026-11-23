@@ -16,6 +16,7 @@ DiscoverCategorySchema = T.dict(
     name=T.str,
 )
 
+# 公共数据全站共用一份缓存，条目不带用户维度的 feed_id；前端用 url 和订阅列表比对。
 DiscoverItemSchema = T.dict(
     category=T.str,
     url=T.str,
@@ -23,6 +24,7 @@ DiscoverItemSchema = T.dict(
     link=T.str.optional,
     editor_intro=T.str.optional,
     dt_latest_story_published=T.datetime.object.optional,
+    # freeze_level 是系统检查频率倍率，受订阅人数和最近阅读影响；dryness 才是按发文量算的更新频率。
     freeze_level=T.int.min(0).optional,
     dryness=T.int.min(0).max(1000).optional,
 )
