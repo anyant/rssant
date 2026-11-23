@@ -363,16 +363,21 @@ class Feed(Model, ContentHashMixin):
         """
         按读者活性取需要清理的源，返回每个源应保留的篇数。
 
-        - 近 RETENTION_READER_DAYS 天有读者读过：保留 CONFIG.feed_story_retention 篇
-        - 有订阅但长期没人读：保留 RETENTION_INACTIVE_FEED 篇
+        - 有活跃读者（近 RETENTION_READER_DAYS 天内读过东西的用户）订阅的源：
+          保留 CONFIG.feed_story_retention 篇
+        - 有订阅但订阅者长期没来：保留 RETENTION_INACTIVE_FEED 篇
         - 没有任何订阅：全部删除
         """
         sql_check = """
         WITH sub AS (
             SELECT DISTINCT feed_id FROM rssant_api_userfeed
+        ), active_user AS (
+            SELECT user_id FROM rssant_api_userfeed
+            GROUP BY user_id
+            HAVING MAX(dt_updated) > NOW() - %s * '1 day'::interval
         ), active AS (
             SELECT DISTINCT feed_id FROM rssant_api_userfeed
-            WHERE dt_updated > NOW() - %s * '1 day'::interval
+            WHERE user_id IN (SELECT user_id FROM active_user)
         ), retention_feed AS (
             SELECT
                 f.id, f.url,

@@ -84,7 +84,7 @@ class HarborService:
                     reverse_url=reverse_url(url),
                     title=feed_dict['title'],
                     dt_updated=now,
-                    # 不设 dt_checked，让新订阅立刻被抓一次
+                    dt_checked=now,
                     dt_synced=now,
                 )
                 feed.save()

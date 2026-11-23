@@ -57,6 +57,17 @@ class RetentionClassTestCase(TransactionTestCase):
         self.assertEqual(got.get(self.feed_nosub.id), 0)
         self.assertEqual(len(got), 3)
 
+    def test_active_user_subscription_keeps_all(self):
+        # 活跃用户订阅的源，即使这个源自己没被读过（userfeed.dt_updated 为空）也按 A 处理
+        feed = make_feed(
+            'https://d.example.com/feed.xml',
+            total_storys=CONFIG.feed_story_retention + 10,
+        )
+        UserFeed(user=self.active_user, feed=feed, dt_updated=None).save()
+        feeds = Feed.take_retention_feeds(limit=10)
+        got = {x['feed_id']: x['retention'] for x in feeds}
+        self.assertEqual(got.get(feed.id), CONFIG.feed_story_retention)
+
     def test_take_retention_feeds_skips_clean_feed(self):
         self.feed_nosub.retention_offset = self.feed_nosub.total_storys
         self.feed_nosub.save()
