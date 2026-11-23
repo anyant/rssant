@@ -5,6 +5,7 @@ from rssant_harbor.view import HarborView
 from rssant_worker.view import WorkerView
 
 from .views import health
+from .views.discover import DiscoverAdminView, DiscoverView
 from .views.ezrevenue import EzrevenueView
 from .views.feed import FeedView
 from .views.publish import PublishView
@@ -18,6 +19,8 @@ def _gen_urlpatterns():
     if not CONFIG.is_role_api:
         yield path('', include(WorkerView.urls))
     else:
+        yield path('', include(DiscoverView.urls))
+        yield path('', include(DiscoverAdminView.urls))
         yield path('', include(FeedView.urls))
         yield path('', include(StoryView.urls))
         yield path('', include(UserView.urls))
