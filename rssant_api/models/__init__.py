@@ -1,3 +1,4 @@
+from .discover import DiscoverCategory, DiscoverFeed
 from .feed import Feed, FeedStatus, RawFeed, UserFeed
 from .feed_creation import FeedCreation, FeedUrlMap
 from .feed_story_stat import FeedStoryStat
