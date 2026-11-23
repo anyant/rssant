@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
 from rssant_api.api_service import API_SERVICE
-from rssant_api.models import UnionFeed, UnionStory
+from rssant_api.models import Feed, UnionFeed, UnionStory
 from rssant_api.models.errors import (
     FeedNotFoundError,
     FeedStoryOffsetError,
@@ -139,10 +139,17 @@ def story_query_batch(
 ) -> StoryResultSchema:
     feed_union_ids = [x['feed_id'] for x in storys]
     check_unionid(request.user, feed_union_ids)
+    feed_ids = [x.feed_id for x in feed_union_ids]
+    retention_map = dict(
+        Feed.objects.filter(id__in=feed_ids).values_list('id', 'retention_offset')
+    )
     story_keys = []
     for item in storys:
         feed_id = item['feed_id'].feed_id
         offset = item['offset']
+        # 保留策略删掉了窗口之前的文章，从窗口起点开始取，
+        # 避免老用户按旧 offset 拿到空结果
+        offset = max(offset, retention_map.get(feed_id) or 0)
         for i in range(item['limit']):
             story_keys.append((feed_id, offset + i))
     storys = UnionStory.batch_get_by_feed_offset(

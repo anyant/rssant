@@ -11,6 +11,7 @@ from rssant_api.models import (
     Story,
     StoryInfo,
     UnionFeed,
+    UnionStory,
     UserFeed,
 )
 from rssant_api.models.feed import (
@@ -142,3 +143,42 @@ class SubscribeRefreshTestCase(TransactionTestCase):
         self.assertIsNotNone(Feed.get_by_pk(self.feed.id).dt_checked)
         UnionFeed.create_by_url(user_id=self.user.id, url='https://old.example.com/')
         self.assertIsNone(Feed.get_by_pk(self.feed.id).dt_checked)
+
+
+@pytest.mark.dbtest
+class StoryListRetentionTestCase(TransactionTestCase):
+    """列表接口从保留窗口起点开始查，老用户/新订阅不会看到空页"""
+
+    def setUp(self):
+        self.user = User.objects.create_user('listreader', password='test123456')
+        self.feed = make_feed('https://list.example.com/feed.xml', dt_checked=timezone.now())
+        UserFeed(user=self.user, feed=self.feed, story_offset=0).save()
+
+    def _save_storys(self, count):
+        now = timezone.datetime(2020, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+        storys = []
+        for i in range(count):
+            dt = now + timezone.timedelta(hours=i)
+            storys.append(dict(
+                unique_id='list-story-{}'.format(i),
+                title='list story {}'.format(i),
+                link='https://list.example.com/{}'.format(i),
+                content='list content {}'.format(i),
+                dt_published=dt,
+                dt_updated=dt,
+            ))
+        STORY_SERVICE.bulk_save_by_feed(self.feed.id, storys, batch_size=10)
+
+    def test_query_by_feed_starts_at_retention_offset(self):
+        self._save_storys(40)
+        STORY_SERVICE.delete_by_retention(self.feed.id, retention=20, limit=100)
+        self.feed.refresh_from_db()
+        self.assertEqual(self.feed.retention_offset, 20)
+        user_feed = UserFeed.objects.get(user_id=self.user.id, feed_id=self.feed.id)
+        self.assertEqual(user_feed.story_offset, 0, '阅读位置不应被改动')
+
+        total, offset, storys = UnionStory.query_by_feed(
+            (self.user.id, self.feed.id), size=10)
+        self.assertEqual(offset, 20)
+        self.assertEqual(len(storys), 10)
+        self.assertEqual([x.offset for x in storys], list(range(20, 30)))

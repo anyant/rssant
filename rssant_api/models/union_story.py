@@ -9,7 +9,12 @@ from rssant_feedlib.processor import story_html_to_text
 
 from .errors import FeedNotFoundError, StoryNotFoundError
 from .feed import UserFeed
-from .story import USER_STORY_DETAIL_FEILDS, Story, StoryDetailSchema, UserStory
+from .story import (
+    USER_STORY_DETAIL_FEILDS,
+    Story,
+    StoryDetailSchema,
+    UserStory,
+)
 from .story_info import STORY_INFO_DETAIL_FEILDS, StoryId, StoryInfo
 from .story_service import STORY_SERVICE
 
@@ -292,7 +297,8 @@ class UnionStory:
         if only_publish:
             q = q.filter(is_publish=True)
         q = q.only(
-            'id', 'story_offset', 'feed_id', 'feed__id', 'feed__total_storys'
+            'id', 'story_offset', 'feed_id', 'feed__id', 'feed__total_storys',
+            'feed__retention_offset',
         )
         try:
             user_feed = q.get()
@@ -301,6 +307,11 @@ class UnionStory:
         total = user_feed.feed.total_storys
         if offset is None:
             offset = user_feed.story_offset
+        # 保留策略删掉了窗口之前的文章，从窗口起点开始查，
+        # 避免老用户、新订阅从旧 offset 打开看到空页。
+        retention_offset = user_feed.feed.retention_offset or 0
+        if offset < retention_offset:
+            offset = retention_offset
         if offset + size > total:
             size = total - offset
         storys = cls._query_storys(feed_id, offset, size, detail=detail)
@@ -374,6 +385,8 @@ class UnionStory:
 
     @classmethod
     def _query_union_storys_by_offset(cls, user_id, storys, detail):
+        if not storys:
+            return []
         where_items = []
         for story in storys:
             # ensure integer, avoid sql inject attack
