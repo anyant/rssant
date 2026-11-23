@@ -7,6 +7,7 @@ from validr import T
 from rssant_api.helper import DuplicateFeedDetector
 from rssant_api.monthly_story_count import MonthlyStoryCount
 from rssant_common.detail import Detail
+from rssant_config import CONFIG
 
 from .helper import (
     ContentHashMixin,
@@ -17,6 +18,12 @@ from .helper import (
     models,
     optional,
 )
+
+# 文章保留策略按读者活性分档：
+# 近 RETENTION_READER_DAYS 天有阅读的源保留 CONFIG.feed_story_retention 篇，
+# 有订阅但没人读的源保留 RETENTION_INACTIVE_FEED 篇，没有订阅的源全部删除。
+RETENTION_READER_DAYS = 90
+RETENTION_INACTIVE_FEED = 30
 
 
 class FeedStatus:
@@ -352,18 +359,46 @@ class Feed(Model, ContentHashMixin):
         return got, next_checkpoint
 
     @staticmethod
-    def take_retention_feeds(retention=5000, limit=5):
+    def take_retention_feeds(limit=5):
+        """
+        按读者活性取需要清理的源，返回每个源应保留的篇数。
+
+        - 近 RETENTION_READER_DAYS 天有读者读过：保留 CONFIG.feed_story_retention 篇
+        - 有订阅但长期没人读：保留 RETENTION_INACTIVE_FEED 篇
+        - 没有任何订阅：全部删除
+        """
         sql_check = """
-        SELECT id, url FROM rssant_api_feed
-        WHERE total_storys - retention_offset > %s
+        WITH sub AS (
+            SELECT DISTINCT feed_id FROM rssant_api_userfeed
+        ), active AS (
+            SELECT DISTINCT feed_id FROM rssant_api_userfeed
+            WHERE dt_updated > NOW() - %s * '1 day'::interval
+        ), retention_feed AS (
+            SELECT
+                f.id, f.url,
+                f.total_storys - f.retention_offset AS num_excess,
+                CASE WHEN active.feed_id IS NOT NULL THEN %s
+                     WHEN sub.feed_id IS NOT NULL THEN %s
+                     ELSE 0 END AS retention
+            FROM rssant_api_feed AS f
+            LEFT JOIN active ON active.feed_id = f.id
+            LEFT JOIN sub ON sub.feed_id = f.id
+        )
+        SELECT id, url, retention FROM retention_feed
+        WHERE num_excess > retention
         LIMIT %s
         """
-        params = [retention, limit]
+        params = [
+            RETENTION_READER_DAYS,
+            CONFIG.feed_story_retention,
+            RETENTION_INACTIVE_FEED,
+            limit,
+        ]
         with connection.cursor() as cursor:
             cursor.execute(sql_check, params)
             feeds = []
-            for feed_id, url in cursor.fetchall():
-                feeds.append(dict(feed_id=feed_id, url=url))
+            for feed_id, url, retention in cursor.fetchall():
+                feeds.append(dict(feed_id=feed_id, url=url, retention=retention))
             return feeds
 
     def unfreeze(self):
