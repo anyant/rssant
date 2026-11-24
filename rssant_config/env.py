@@ -68,6 +68,10 @@ class EnvConfig(ConfigModel):
     smtp_username: str = T.str.optional
     smtp_password: str = T.str.optional
     smtp_use_ssl: bool = T.bool.default(False)
+    # user registration
+    user_registration_enable: bool = T.bool.default(True).desc(
+        'enable user registration and github signup'
+    )
     # rss proxy
     rss_proxy_url: str = T.url.optional
     rss_proxy_token: str = T.str.optional

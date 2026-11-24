@@ -79,6 +79,10 @@ RSSANT_ROOT_URL=http://localhost:6789
 # 检查订阅的时间间隔，默认30分钟
 RSSANT_CHECK_FEED_MINUTES=30
 
+# 是否开放注册，默认开启。关闭后邮箱注册和 GitHub 首次登录都不会建号，已注册用户不受影响
+# 关闭后 GitHub 登录仅对已绑定账号有效，需要时先用账号密码登录并在账号设置里绑定 GitHub
+RSSANT_USER_REGISTRATION_ENABLE=true
+
 # 请前往GITHUB设置页面申请，不需要Github登录可留空
 # GitHub OAuth callback:
 # http://<你的域名>/api/v1/accounts/github/login/callback/
