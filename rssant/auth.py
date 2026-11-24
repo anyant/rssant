@@ -8,13 +8,17 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialLogin, SocialAccount
+from rest_auth.registration.views import RegisterView
 from rest_auth.registration.views import SocialConnectView
 from rest_auth.registration.views import SocialLoginView
 from rest_auth.registration.views import (
     SocialAccountListView, SocialAccountDisconnectView
 )
+from rest_framework import status
+from rest_framework.response import Response
 
 from rssant_common.standby_domain import get_request_root_url
+from rssant_config import CONFIG
 from .email_template import EMAIL_CONFIRM_TEMPLATE
 from .allauth_providers.oauth2.client import RssantOAuth2Client
 from .allauth_providers.github.views import RssantGitHubOAuth2Adapter
@@ -33,8 +37,23 @@ class GitHubConnect(SocialConnectView):
     client_class = RssantOAuth2Client
 
 
+class RssantRegisterView(RegisterView):
+    """关闭注册时直接拒绝，rest_auth 的注册接口不检查 is_open_for_signup"""
+
+    def create(self, request, *args, **kwargs):
+        if not CONFIG.user_registration_enable:
+            return Response(
+                {'message': '本站未开放注册'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().create(request, *args, **kwargs)
+
+
 class RssantAccountAdapter(DefaultAccountAdapter):
     """RSSAnt Account Adapter"""
+
+    def is_open_for_signup(self, request):
+        return CONFIG.user_registration_enable
 
     def get_email_confirmation_url(self, request, emailconfirmation):
         """Constructs the email confirmation (activation) url.
@@ -109,6 +128,8 @@ class RssantSocialAccountAdapter(DefaultSocialAccountAdapter):
 
 urlpaterns = [
     path('auth/', include('rest_auth.urls')),
+    # 放在 include 前面，先于 rest_auth 的注册接口匹配
+    path('auth/registration/', RssantRegisterView.as_view()),
     path('auth/registration/', include('rest_auth.registration.urls')),
     path('auth/github/', GitHubLogin.as_view()),
     path('auth/github/connect/', GitHubConnect.as_view()),
