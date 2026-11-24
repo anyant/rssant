@@ -477,7 +477,7 @@ class UnionFeed:
         # 尽量确保用户订阅数不超过限制
         user_feed_count = UserFeed.objects.filter(user_id=user_id).count()
         user_feed_creation_count = FeedCreation.objects.filter(
-            user_id=user_id
+            user_id=user_id, deleted_at__isnull=True
         ).count()
         user_total_feed = user_feed_count + user_feed_creation_count
         free_count = max(0, MAX_FEED_COUNT - user_total_feed)

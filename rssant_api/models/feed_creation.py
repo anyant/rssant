@@ -1,10 +1,12 @@
-from django.utils import timezone
 from django.db import connection
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+from django.utils import timezone
 
 from rssant_common.validator import FeedUnionId
-from .helper import User, Model, models, optional
-from .feed import Feed, FeedStatus, FEED_STATUS_CHOICES
 
+from .feed import FEED_STATUS_CHOICES, Feed, FeedStatus
+from .helper import Model, User, models, optional
 
 FEED_CREATION_DETAIL_FIELDS = ['message']
 
@@ -15,13 +17,25 @@ class FeedCreation(Model):
     class Meta:
         indexes = [
             models.Index(fields=['user', 'dt_created']),
+            # 只索引 24 小时内的活跃记录，表长期增长后清理和重试仍然走索引
+            models.Index(
+                fields=['dt_created'],
+                name='rssant_api__fc_active_dt_idx',
+                condition=models.Q(deleted_at__isnull=True),
+            ),
+            models.Index(
+                fields=['status', 'dt_created'],
+                name='rssant_api__fc_status_dt_idx',
+                condition=models.Q(deleted_at__isnull=True),
+            ),
         ]
 
     class Admin:
         display_fields = ['user_id', 'feed_id', 'status', 'url', 'is_from_bookmark', 'dt_created']
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    feed = models.ForeignKey(Feed, **optional, on_delete=models.CASCADE)
+    # Feed 删除后保留创建记录，历史数据不跟着消失
+    feed = models.ForeignKey(Feed, **optional, on_delete=models.SET_NULL)
     url = models.TextField(help_text="用户输入的供稿地址")
     is_from_bookmark = models.BooleanField(**optional, default=False, help_text='是否从书签导入')
     status = models.CharField(
@@ -29,6 +43,7 @@ class FeedCreation(Model):
     message = models.TextField(help_text="查找订阅的日志信息")
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
+    deleted_at = models.DateTimeField(**optional, help_text="软删除时间")
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     dt_updated = models.DateTimeField(**optional, help_text="更新时间")
 
@@ -59,7 +74,7 @@ class FeedCreation(Model):
 
     @staticmethod
     def get_by_pk(pk, user_id=None, detail=False):
-        q = FeedCreation.objects
+        q = FeedCreation.objects.filter(deleted_at__isnull=True)
         if user_id is not None:
             q = q.filter(user_id=user_id)
         if not detail:
@@ -68,7 +83,9 @@ class FeedCreation(Model):
 
     @staticmethod
     def query_by_user(user_id, limit=100, detail=False):
-        q = FeedCreation.objects.filter(user_id=user_id)
+        q = FeedCreation.objects.filter(
+            user_id=user_id, deleted_at__isnull=True
+        )
         if not detail:
             q = q.defer(*FEED_CREATION_DETAIL_FIELDS)
         q = q.order_by('-dt_created')
@@ -78,33 +95,41 @@ class FeedCreation(Model):
 
     @staticmethod
     def bulk_set_pending(feed_creation_ids):
-        q = FeedCreation.objects.filter(id__in=feed_creation_ids)
+        q = FeedCreation.objects.filter(
+            id__in=feed_creation_ids, deleted_at__isnull=True
+        )
         return q.update(status=FeedStatus.PENDING, dt_updated=timezone.now())
 
     @staticmethod
-    def delete_by_status(status=None, survival_seconds=None):
-        q = FeedCreation.objects
+    def soft_delete_by_status(status=None, survival_seconds=None):
+        """超过保留时间的记录标记为已删除，数据永久保留"""
+        now = timezone.now()
+        q = FeedCreation.objects.filter(deleted_at__isnull=True)
         if status:
             q = q.filter(status=status)
         if survival_seconds:
-            deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
+            deadline = now - timezone.timedelta(seconds=survival_seconds)
             q = q.filter(dt_created__lt=deadline)
-        num_deleted, __ = q.delete()
-        return num_deleted
-
-    @classmethod
-    def query_ids_by_status(cls, status, survival_seconds=None):
-        id_urls = cls.query_id_urls_by_status(status, survival_seconds=survival_seconds)
-        return [id for (id, url) in id_urls]
+        return q.update(deleted_at=now)
 
     @classmethod
     def query_id_urls_by_status(cls, status, survival_seconds=None):
-        q = FeedCreation.objects.filter(status=status)
+        q = FeedCreation.objects.filter(
+            status=status, deleted_at__isnull=True
+        )
         if survival_seconds:
             deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
             q = q.filter(dt_created__lt=deadline)
         id_urls = [(x.id, x.url) for x in q.only('id', 'url').all()]
         return id_urls
+
+
+@receiver(pre_delete, sender=Feed)
+def _soft_delete_creations_of_feed(sender, instance, **kwargs):
+    """Feed 删除时，关联的创建记录一并软删除，用户侧行为和删除前一致"""
+    FeedCreation.objects.filter(
+        feed_id=instance.pk, deleted_at__isnull=True
+    ).update(deleted_at=timezone.now())
 
 
 class FeedUrlMap(Model):
