@@ -328,9 +328,11 @@ class HarborService:
         return accept
 
     def clean_feed_creation(self):
-        # 删除所有入库时间超过24小时的订阅创建信息
-        num_deleted = FeedCreation.delete_by_status(survival_seconds=24 * 60 * 60)
-        LOG.info('delete {} old feed creations'.format(num_deleted))
+        # 超过24小时的订阅创建信息标记为已删除，数据永久保留
+        num_deleted = FeedCreation.soft_delete_by_status(
+            survival_seconds=24 * 60 * 60
+        )
+        LOG.info('soft delete {} old feed creations'.format(num_deleted))
         return dict(num_deleted=num_deleted)
 
     def clean_by_retention(self):
