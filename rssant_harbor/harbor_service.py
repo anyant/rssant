@@ -33,6 +33,13 @@ from .schema import FeedInfoSchema, FeedSchema, validate_feed_output
 
 LOG = logging.getLogger(__name__)
 
+# 保留清理：调度器每分钟调用一次，单次最多干 25 秒（HTTP 超时 30 秒），
+# 每批取 20 个源、批间 sleep，避免把 1C1G 的库压住。
+RETENTION_CLEAN_BUDGET_S = 25
+RETENTION_CLEAN_RESERVE_S = 5
+RETENTION_CLEAN_BATCH = 20
+RETENTION_CLEAN_SLEEP_S = 0.3
+
 
 class HarborService:
 
@@ -327,14 +334,31 @@ class HarborService:
         return dict(num_deleted=num_deleted)
 
     def clean_by_retention(self):
-        retention = CONFIG.feed_story_retention
-        feeds = Feed.take_retention_feeds(retention=retention, limit=50)
-        LOG.info('found {} feeds need clean by retention'.format(len(feeds)))
-        for feed in feeds:
-            feed_id = feed['feed_id']
-            url = feed['url']
-            n = STORY_SERVICE.delete_by_retention(feed_id, retention=retention)
-            LOG.info(f'deleted {n} storys of feed#{feed_id} {url} by retention')
+        """
+        按读者活性清理历史文章：有阅读的源保留 CONFIG.feed_story_retention 篇，
+        有订阅但长期没人读的只留最近若干篇，没有订阅的全部删除。
+        单次调用在 25 秒预算内循环处理，批间 sleep 让数据库喘口气。
+        """
+        deadline = time.monotonic() + RETENTION_CLEAN_BUDGET_S
+        num_feeds = 0
+        while time.monotonic() + RETENTION_CLEAN_RESERVE_S < deadline:
+            feeds = Feed.take_retention_feeds(limit=RETENTION_CLEAN_BATCH)
+            if not feeds:
+                break
+            for feed in feeds:
+                if time.monotonic() > deadline:
+                    break
+                feed_id = feed['feed_id']
+                url = feed['url']
+                retention = feed['retention']
+                n = STORY_SERVICE.delete_by_retention(feed_id, retention=retention)
+                num_feeds += 1
+                LOG.info(
+                    f'deleted {n} storys of feed#{feed_id} {url} by retention={retention}'
+                )
+            time.sleep(RETENTION_CLEAN_SLEEP_S)
+        LOG.info('clean by retention done, %s feeds', num_feeds)
+        return dict(num_feeds=num_feeds)
 
     def clean_feedurlmap_by_retention(self):
         num_rows = FeedUrlMap.delete_by_retention()

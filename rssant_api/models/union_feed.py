@@ -385,6 +385,8 @@ class UnionFeed:
             if user_feed:
                 raise FeedExistError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed)
+            # 新订阅立刻抓一次，避免订到刚被清理过的源看到空白
+            feed.dt_checked = None
             feed.unfreeze()
             user_feed.save()
             return UnionFeed(feed, user_feed), None
