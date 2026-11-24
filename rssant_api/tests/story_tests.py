@@ -1,10 +1,14 @@
+import json
+
 import pytest
+from django.contrib.auth.models import User
 from django.utils import timezone
-from django.test import TransactionTestCase
+from django.test import TestCase, TransactionTestCase
 from validr import T
 
+from rssant_common.unionid import encode
 from rssant_common.validator import compiler
-from rssant_api.models import Feed, FeedStatus
+from rssant_api.models import Feed, FeedStatus, UserFeed
 from rssant_api.models import STORY_SERVICE, Story, StoryInfo
 from rssant.helper.content_hash import compute_hash_base64
 
@@ -235,3 +239,54 @@ class StoryTestCase(TransactionTestCase):
         assert modified[0].dt_published == dt_published
         assert modified[0].dt_updated == dt
         assert modified[0].content_length == len(updated_content)
+
+
+STORY_OFFSET_APIS = [
+    '/api/v1/story.get',
+    '/api/v1/story.set_watched',
+    '/api/v1/story.set_favorited',
+]
+
+
+@pytest.mark.dbtest
+class StoryOffsetRequiredTestCase(TestCase):
+    """story.get/set_watched/set_favorited 必须带 offset，缺失返回 400 而不是 500"""
+
+    def setUp(self):
+        self.user = User.objects.create_user('offset', password='test123456')
+        assert self.client.login(username='offset', password='test123456')
+        feed = Feed(
+            title='test feed',
+            url='https://offset.example.com/feed.xml',
+            status=FeedStatus.READY,
+            total_storys=1,
+            dt_updated=timezone.now(),
+        )
+        feed.save()
+        UserFeed(user_id=self.user.id, feed_id=feed.id, title=feed.title).save()
+        Story(
+            feed_id=feed.id,
+            offset=0,
+            unique_id='offset/0',
+            title='test story',
+            link='https://offset.example.com/0.html',
+            dt_published=timezone.now(),
+            content='test content',
+        ).save()
+        self.feed_id = encode(self.user.id, feed.id)
+
+    def post(self, url, data):
+        return self.client.post(
+            url, data=json.dumps(data), content_type='application/json'
+        )
+
+    def test_missing_offset(self):
+        for url in STORY_OFFSET_APIS:
+            response = self.post(url, {'feed_id': self.feed_id})
+            assert response.status_code == 400, url
+            assert response.json()['field'] == 'offset', url
+
+    def test_has_offset(self):
+        for url in STORY_OFFSET_APIS:
+            response = self.post(url, {'feed_id': self.feed_id, 'offset': 0})
+            assert response.status_code == 200, url

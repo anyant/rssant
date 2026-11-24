@@ -169,7 +169,7 @@ def story_query_batch(
 def story_get_by_offset(
     request,
     feed_id: T.feed_unionid.object,
-    offset: T.int.min(0).optional,
+    offset: T.int.min(0),
     detail: StoryDetailSchema,
     set_readed: T.bool.default(False),
 ) -> StorySchema:
@@ -240,7 +240,7 @@ def story_query_watched(
 def story_set_watched(
     request,
     feed_id: T.feed_unionid.object,
-    offset: T.int.min(0).optional,
+    offset: T.int.min(0),
     is_watched: T.bool.default(True),
 ) -> StorySchema:
     check_unionid(request.user, feed_id)
@@ -255,7 +255,7 @@ def story_set_watched(
 def story_set_favorited(
     request,
     feed_id: T.feed_unionid.object,
-    offset: T.int.min(0).optional,
+    offset: T.int.min(0),
     is_favorited: T.bool.default(True),
 ) -> StorySchema:
     check_unionid(request.user, feed_id)
