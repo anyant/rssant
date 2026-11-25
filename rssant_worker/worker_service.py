@@ -245,7 +245,7 @@ class WorkerService:
         else:
             summary = (
                 f'RSSHub 源暂时取不到内容：已尝试 {num_attempted} 个实例'
-                '（超时、限流或实例不可用）。已排入自动重试。'
+                '（超时、限流、实例不可用或返回的不是 Feed）。已排入自动重试。'
             )
         messages.insert(0, summary)
         result = dict(
@@ -487,7 +487,7 @@ class WorkerService:
             result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
             SERVICE_CLIENT.call('harbor_rss.update_feed', result)
             return
-        warnings = 'RSSHub 实例暂不可用（{} 个实例均失败）'.format(
+        warnings = 'RSSHub 源暂时取不到内容（已尝试 {} 个实例）'.format(
             len(candidates)
         )
         _update_feed_info(

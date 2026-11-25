@@ -331,6 +331,32 @@ def test_sync_rsshub_all_empty_feeds_is_failure(patched):
     )[0]
     assert data['rsshub_offset'] == 3
     assert data['feed']['status'] == 'error'
+    # 空内容不是“实例不可用”，文案要覆盖“没取到内容”
+    assert '暂不可用' not in data['feed']['warnings']
+    assert '取不到内容' in data['feed']['warnings']
+
+
+def test_sync_rsshub_all_html_is_failure(patched):
+    html = _Server({ROUTE: [html_response()]})
+    with html:
+        patched.setattr(worker_service, 'get_instances', lambda: [html.url])
+        worker_service.WorkerService().sync_feed(
+            feed_id=0,
+            url=RSSHUB_URL,
+            use_proxy=False,
+            checksum_data_base64=None,
+            content_hash_base64=None,
+            etag=None,
+            last_modified=None,
+            is_refresh=False,
+            rsshub_instance=None,
+            rsshub_offset=0,
+        )
+    data = worker_service.SERVICE_CLIENT.calls_of(
+        'harbor_rss.update_feed_info'
+    )[0]
+    assert data['rsshub_offset'] == 3
+    assert '取不到内容' in data['feed']['warnings']
 
 
 def test_find_rsshub_skips_empty_and_html(patched):
@@ -364,6 +390,23 @@ def test_find_rsshub_all_empty_is_retryable(patched):
     )[0]
     assert result['feed'] is None
     assert result['retryable'] is True
+    # 空内容要归到“没取到内容”，不能只说超时/限流/实例不可用
+    assert '返回的不是 Feed' in result['messages'][0]
+
+
+def test_find_rsshub_all_html_is_retryable(patched):
+    html = _Server({ROUTE: [html_response()]})
+    with html:
+        patched.setattr(worker_service, 'get_instances', lambda: [html.url])
+        worker_service.WorkerService().find_feed(
+            feed_creation_id=7, url=RSSHUB_URL
+        )
+    result = worker_service.SERVICE_CLIENT.calls_of(
+        'harbor_rss.save_feed_creation_result'
+    )[0]
+    assert result['feed'] is None
+    assert result['retryable'] is True
+    assert '返回的不是 Feed' in result['messages'][0]
 
 
 def test_find_private_rsshub_falls_back_to_original_url(patched):
