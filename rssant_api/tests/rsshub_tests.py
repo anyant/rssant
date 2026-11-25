@@ -155,7 +155,9 @@ class FeedRsshubStateTestCase(TestCase):
         client = Client()
         payload = dict(
             feed_creation_id=creation.id,
-            messages=['RSSHub 源暂时取不到内容，已排入自动重试'],
+            messages=[
+                'RSSHub 源暂时取不到内容：已尝试 1 个实例后超时。已排入自动重试。'
+            ],
             feed=None,
             retryable=True,
         )
@@ -168,6 +170,7 @@ class FeedRsshubStateTestCase(TestCase):
         assert response.status_code == 204, response.content
         creation.refresh_from_db()
         assert creation.status == FeedStatus.PENDING
+        assert FeedUrlMap.find_target(creation.url) is None
 
     def test_take_outdated_returns_rsshub_state(self):
         feed = make_feed(

@@ -273,10 +273,15 @@ class WorkerService:
         if response.feed_type.is_html:
             return None
         try:
-            return RawFeedParser().parse(response)
+            raw_result = RawFeedParser().parse(response)
         except FeedParserError as ex:
             LOG.info('rsshub parse failed url=%r: %s', unquote(response.url), ex)
             return None
+        if not raw_result.storys:
+            # 合法 XML 但没有任何条目：换实例，不把它当成功
+            LOG.info('rsshub parsed empty feed url=%r', unquote(response.url))
+            return None
+        return raw_result
 
     def sync_feed(
         self,

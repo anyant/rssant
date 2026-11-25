@@ -6,7 +6,7 @@
 --
 -- 用法：先跑第一步看命中量，再按 300 条一批执行第二步。
 --   :last_id 初始 0，每批用返回的最大 id 更新，直到没有返回。
--- 主机清单要和 rssant_feedlib/rsshub.py 的公共实例清单保持一致；改了清单要同步这里。
+-- 主机清单和 rssant_feedlib/rsshub.py 的 _PUBLIC_HOSTS 一致，由单测校验，改清单要同步这里。
 
 -- 第一步：只看命中量（只读）
 SELECT count(*) AS total,
@@ -18,12 +18,17 @@ WHERE f.status = 'error'
   AND (
       lower(split_part(split_part(f.url, '//', 2), '/', 1)) LIKE '%rsshub%'
       OR lower(split_part(split_part(f.url, '//', 2), '/', 1)) IN (
-          'rss.wudifeixue.com', 'hub.slarker.me', 'rsshub.gneko.io',
-          'rsshub.rssforever.com', 'rsshub.rss.tips', 'rsshub.liumingye.cn',
-          'rsshub-balancer.virworks.moe', 'rsshub.cups.moe',
-          'rsshub.ktachibana.party', 'rss.owo.nz', 'rss.littlebaby.life',
-          'rss.datuan.dev', 'holoxx.f5.si', 'rss.4040940.xyz',
-          'rsshub.email-once.com', 'rsshub.isrss.com', 'rsshub.umzzz.com'
+          'holoxx.f5.si', 'hub.slarker.me', 'rss.4040940.xyz', 'rss.datuan.dev',
+          'rss.fatpandac.com', 'rss.littlebaby.life', 'rss.owo.nz', 'rss.spriple.org',
+          'rss.wudifeixue.com', 'rsshub-balancer.virworks.moe', 'rsshub-instance.zeabur.app',
+          'rsshub-ljp.herokuapp.com', 'rsshub.220303.xyz', 'rsshub.aierliz.xyz', 'rsshub.app',
+          'rsshub.atgw.io', 'rsshub.cups.moe', 'rsshub.email-once.com', 'rsshub.feeded.xyz',
+          'rsshub.friesport.ac.cn', 'rsshub.gneko.io', 'rsshub.henry.wang', 'rsshub.ioiox.com',
+          'rsshub.isrss.com', 'rsshub.ktachibana.party', 'rsshub.kukmoon.com',
+          'rsshub.liumingye.cn', 'rsshub.moerats.com', 'rsshub.mubibai.com',
+          'rsshub.mystery0.app', 'rsshub.pseudoyu.com', 'rsshub.raincandy.net',
+          'rsshub.rss.tips', 'rsshub.rssforever.com', 'rsshub.shunyu.wang', 'rsshub.umzzz.com',
+          'rsshub.uneasy.win', 'rsshub.woodland.cafe', 'rsshub.zsliang.me'
       )
   );
 
@@ -36,12 +41,18 @@ WITH picked AS (
       AND (
           lower(split_part(split_part(f.url, '//', 2), '/', 1)) LIKE '%rsshub%'
           OR lower(split_part(split_part(f.url, '//', 2), '/', 1)) IN (
-              'rss.wudifeixue.com', 'hub.slarker.me', 'rsshub.gneko.io',
-              'rsshub.rssforever.com', 'rsshub.rss.tips', 'rsshub.liumingye.cn',
-              'rsshub-balancer.virworks.moe', 'rsshub.cups.moe',
-              'rsshub.ktachibana.party', 'rss.owo.nz', 'rss.littlebaby.life',
-              'rss.datuan.dev', 'holoxx.f5.si', 'rss.4040940.xyz',
-              'rsshub.email-once.com', 'rsshub.isrss.com', 'rsshub.umzzz.com'
+              'holoxx.f5.si', 'hub.slarker.me', 'rss.4040940.xyz', 'rss.datuan.dev',
+              'rss.fatpandac.com', 'rss.littlebaby.life', 'rss.owo.nz', 'rss.spriple.org',
+              'rss.wudifeixue.com', 'rsshub-balancer.virworks.moe',
+              'rsshub-instance.zeabur.app', 'rsshub-ljp.herokuapp.com', 'rsshub.220303.xyz',
+              'rsshub.aierliz.xyz', 'rsshub.app', 'rsshub.atgw.io', 'rsshub.cups.moe',
+              'rsshub.email-once.com', 'rsshub.feeded.xyz', 'rsshub.friesport.ac.cn',
+              'rsshub.gneko.io', 'rsshub.henry.wang', 'rsshub.ioiox.com', 'rsshub.isrss.com',
+              'rsshub.ktachibana.party', 'rsshub.kukmoon.com', 'rsshub.liumingye.cn',
+              'rsshub.moerats.com', 'rsshub.mubibai.com', 'rsshub.mystery0.app',
+              'rsshub.pseudoyu.com', 'rsshub.raincandy.net', 'rsshub.rss.tips',
+              'rsshub.rssforever.com', 'rsshub.shunyu.wang', 'rsshub.umzzz.com',
+              'rsshub.uneasy.win', 'rsshub.woodland.cafe', 'rsshub.zsliang.me'
           )
       )
       AND EXISTS (SELECT 1 FROM rssant_api_userfeed uf WHERE uf.feed_id = f.id)
