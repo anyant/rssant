@@ -57,6 +57,13 @@ RawStorySchema = T.dict(
     summary=T.str.maxlen(_MAX_SUMMARY_LENGTH).optional,
     image_url=T.str.optional,
     audio_url=T.str.optional,
+    # 原始 enclosure 列表，只在解析阶段用来过滤图片/音频，不落库
+    enclosures=T.list(
+        T.dict(
+            type=T.str.optional,
+            href=T.str.optional,
+        )
+    ).optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     author_name=T.str.optional,
@@ -155,6 +162,20 @@ class RawFeedParser:
 
     def _get_story_audio_url(self, item) -> str:
         return self._get_story_enclosure_url(item, 'audio')
+
+    def _get_story_enclosures(self, item) -> list:
+        enclosures = []
+        for e in item.get('enclosures') or []:
+            if not isinstance(e, dict):
+                continue
+            href = e.get('href')
+            if not isinstance(href, str) or not href.strip():
+                continue
+            mime_type = e.get('type')
+            if not isinstance(mime_type, str):
+                mime_type = ''
+            enclosures.append(dict(type=mime_type, href=href))
+        return enclosures or None
 
     def _get_story_content(self, item) -> str:
         content = ''
@@ -411,6 +432,7 @@ class RawFeedParser:
         story['summary'] = item.get("summary")
         story['image_url'] = self._get_story_image_url(item)
         story['audio_url'] = self._get_story_audio_url(item)
+        story['enclosures'] = self._get_story_enclosures(item)
         story['dt_published'] = dt_published
         story['dt_updated'] = dt_updated
         story.update(self._get_author_info(item))
@@ -464,6 +486,19 @@ class RawFeedParser:
                 return x.url
         return None
 
+    def _get_json_feed_story_enclosures(self, item: RawJSONFeedItem) -> list:
+        if not item.attachments:
+            return None
+        enclosures = []
+        for x in item.attachments:
+            if not isinstance(x.url, str) or not x.url.strip():
+                continue
+            mime_type = x.mime_type
+            if not isinstance(mime_type, str):
+                mime_type = ''
+            enclosures.append(dict(type=mime_type, href=x.url))
+        return enclosures or None
+
     def _get_json_feed_story(self, item: RawJSONFeedItem):
         dt_published = self._normalize_date(item.date_published)
         dt_updated = self._normalize_date(item.date_modified)
@@ -486,6 +521,7 @@ class RawFeedParser:
             summary=summary,
             image_url=item.image or item.banner_image,
             audio_url=audio_url,
+            enclosures=self._get_json_feed_story_enclosures(item),
             dt_published=dt_published,
             dt_updated=dt_updated,
             **self._get_json_feed_author(item.author),

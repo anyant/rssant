@@ -31,6 +31,7 @@ class CommonStory:
     image_url: str = T.str.optional
     audio_url: str = T.str.optional
     iframe_url: str = T.str.optional
+    enclosure_urls: list = T.list(T.str).optional
     has_mathjax: bool = T.bool.optional
     dt_published: datetime.datetime = T.datetime.object.optional
     dt_updated: datetime.datetime = T.datetime.object.optional

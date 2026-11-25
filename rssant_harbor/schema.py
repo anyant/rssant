@@ -13,6 +13,7 @@ StorySchemaFields = dict(
     image_url=T.url.optional,
     iframe_url=T.url.optional,
     audio_url=T.url.optional,
+    enclosure_urls=T.list(T.str.maxlen(2048)).maxlen(10).optional,
     has_mathjax=T.bool.optional,
     dt_published=T.datetime.object.optional.invalid_to_default,
     dt_updated=T.datetime.object.optional,

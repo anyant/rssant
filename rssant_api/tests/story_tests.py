@@ -22,6 +22,7 @@ StorySchema = T.dict(
     image_url=T.url.optional,
     iframe_url=T.url.optional,
     audio_url=T.url.optional,
+    enclosure_urls=T.list(T.str).optional,
     has_mathjax=T.bool.optional,
     dt_published=T.datetime.object.optional.invalid_to_default,
     dt_updated=T.datetime.object.optional,
@@ -290,3 +291,96 @@ class StoryOffsetRequiredTestCase(TestCase):
         for url in STORY_OFFSET_APIS:
             response = self.post(url, {'feed_id': self.feed_id, 'offset': 0})
             assert response.status_code == 200, url
+
+
+@pytest.mark.dbtest
+class StoryEnclosureTestCase(TestCase):
+    """enclosure_urls 只在详情接口返回，列表接口保持原样"""
+
+    def setUp(self):
+        self.user = User.objects.create_user('enclosure', password='test123456')
+        assert self.client.login(username='enclosure', password='test123456')
+        now = timezone.now()
+        feed = Feed(
+            title='enclosure feed',
+            url='https://enclosure.example.com/feed.xml',
+            status=FeedStatus.READY,
+            dt_updated=now,
+        )
+        feed.save()
+        UserFeed(user_id=self.user.id, feed_id=feed.id, title=feed.title).save()
+        self.feed_id = feed.id
+        self.enclosure_urls = [
+            'https://enclosure.example.com/report.pdf',
+            'magnet:?xt=urn:btih:ABCDEF&dn=example',
+        ]
+        storys = []
+        for offset, urls in enumerate([self.enclosure_urls, None]):
+            content = f'<p>story {offset}</p>'
+            story = {
+                'unique_id': f'enclosure/{offset}',
+                'title': f'story {offset}',
+                'content_hash_base64': compute_hash_base64(content),
+                'link': f'https://enclosure.example.com/{offset}.html',
+                'dt_published': now,
+                'dt_updated': now,
+                'summary': content,
+                'content': content,
+                'enclosure_urls': urls,
+            }
+            storys.append(validate_story(story))
+        STORY_SERVICE.bulk_save_by_feed(feed.id, storys, batch_size=10)
+
+    def post(self, url, data):
+        return self.client.post(
+            url, data=json.dumps(data), content_type='application/json'
+        )
+
+    def test_story_info_enclosure_urls(self):
+        story_info = StoryInfo.get(self.feed_id, 0, detail=True)
+        assert story_info.enclosure_urls == self.enclosure_urls
+        old_story_info = StoryInfo.get(self.feed_id, 1, detail=True)
+        assert old_story_info.enclosure_urls is None
+
+    def test_story_get_detail_has_enclosure_urls(self):
+        response = self.post('/api/v1/story.get', {
+            'feed_id': encode(self.user.id, self.feed_id),
+            'offset': 0,
+            'detail': True,
+        })
+        assert response.status_code == 200
+        assert response.json()['enclosure_urls'] == self.enclosure_urls
+
+    def test_story_get_no_detail_without_enclosure_urls(self):
+        response = self.post('/api/v1/story.get', {
+            'feed_id': encode(self.user.id, self.feed_id),
+            'offset': 0,
+            'detail': False,
+        })
+        assert response.status_code == 200
+        assert 'enclosure_urls' not in response.json()
+
+    def test_story_query_no_detail_without_enclosure_urls(self):
+        response = self.post('/api/v1/story.query', {
+            'feed_id': encode(self.user.id, self.feed_id),
+            'offset': 0,
+            'size': 10,
+            'detail': False,
+        })
+        assert response.status_code == 200
+        storys = response.json()['storys']
+        assert len(storys) == 2
+        assert 'enclosure_urls' not in storys[0]
+        assert 'enclosure_urls' not in storys[1]
+
+    def test_story_query_detail_has_enclosure_urls(self):
+        response = self.post('/api/v1/story.query', {
+            'feed_id': encode(self.user.id, self.feed_id),
+            'offset': 0,
+            'size': 10,
+            'detail': True,
+        })
+        assert response.status_code == 200
+        storys = response.json()['storys']
+        assert storys[0]['enclosure_urls'] == self.enclosure_urls
+        assert 'enclosure_urls' not in storys[1]

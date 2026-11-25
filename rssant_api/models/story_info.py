@@ -1,7 +1,7 @@
 import typing
 from django.utils import timezone
 from rssant_common.detail import Detail
-from .helper import models, SealableModel, VersionedMixin, VersionField, optional
+from .helper import JSONField, models, SealableModel, VersionedMixin, VersionField, optional
 from .story_storage import StoryId
 from .story import STORY_DETAIL_FEILDS, StoryDetailSchema
 
@@ -25,6 +25,7 @@ class StoryInfo(VersionedMixin, SealableModel):
     image_url = models.TextField(**optional, help_text="图片链接")
     audio_url = models.TextField(**optional, help_text="播客音频链接")
     iframe_url = models.TextField(**optional, help_text="视频iframe链接")
+    enclosure_urls = JSONField(**optional, help_text="附件链接列表")
     has_mathjax = models.BooleanField(**optional, help_text='has MathJax')
     is_user_marked = models.BooleanField(
         **optional, help_text='is user favorited or watched ever')
