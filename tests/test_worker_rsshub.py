@@ -413,17 +413,26 @@ def test_sync_private_rsshub_falls_back_to_original_url(patched):
 
 
 def test_find_rsshub_budget_exhausted_is_retryable(patched):
-    slow = _Server({ROUTE: [(503, {'Content-Type': 'text/html'}, b'busy')]}, delay=0.5)
-    with slow:
-        patched.setattr(worker_service, 'get_instances', lambda: [slow.url])
-        patched.setattr(worker_service, 'FIND_BUDGET_SECONDS', 0.2)
-        worker_service.WorkerService().find_feed(
-            feed_creation_id=7, url=RSSHUB_URL
+    # 两个慢实例：第一次尝试用完预算，第二次尝试前撞到 deadline，
+    # 走 budget_exhausted 分支（默认池 6 个 × 6 秒 = 36 秒 < 40 秒预算，只有配置更多实例才会触发）
+    slow_a = _Server({ROUTE: [(503, {'Content-Type': 'text/html'}, b'busy')]}, delay=0.5)
+    slow_b = _Server({ROUTE: [(503, {'Content-Type': 'text/html'}, b'busy')]}, delay=0.5)
+    with slow_a, slow_b:
+        patched.setattr(
+            worker_service, 'get_instances', lambda: [slow_a.url, slow_b.url]
         )
+        patched.setattr(worker_service, 'FIND_BUDGET_SECONDS', 0.1)
+        worker_service.WorkerService().find_feed(
+            feed_creation_id=0, url=RSSHUB_URL
+        )
+    # 第一个实例发出请求，第二个因为预算用尽没有请求
+    assert slow_a.paths == [ROUTE]
+    assert slow_b.paths == []
     result = worker_service.SERVICE_CLIENT.calls_of(
         'harbor_rss.save_feed_creation_result'
     )[0]
     assert result['feed'] is None
     assert result['retryable'] is True
-    assert '超时' in result['messages'][0]
+    # 预算分支的总结文案，区别于普通的“超时、限流或实例不可用”
+    assert '个实例后超时' in result['messages'][0]
     assert '已排入自动重试' in result['messages'][0]

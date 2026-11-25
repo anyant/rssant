@@ -80,7 +80,9 @@ OFFSET_STEP = 3
 COOLDOWN_SECONDS = 15 * 60
 MAX_COOLDOWN_SECONDS = 30 * 60
 
-# 单次尝试超时：定时抓取 10 秒；添加订阅 6 秒，总预算 40 秒
+# 单次尝试超时：定时抓取 10 秒；添加订阅 6 秒，总预算 40 秒。
+# 默认 6 个实例 × 6 秒 = 36 秒 < 40 秒，所以“预算用尽”只在池子配置超过 6 个、
+# 或单次尝试更慢时才会触发。
 SYNC_ATTEMPT_TIMEOUT = 10
 FIND_ATTEMPT_TIMEOUT = 6
 FIND_BUDGET_SECONDS = 40
