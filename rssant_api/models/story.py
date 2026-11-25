@@ -4,7 +4,7 @@ from validr import T
 
 from rssant_common.detail import Detail
 from rssant_api.monthly_story_count import MonthlyStoryCount
-from .helper import Model, ContentHashMixin, models, optional, User
+from .helper import Model, ContentHashMixin, JSONField, models, optional, User
 from .feed import Feed, UserFeed
 
 
@@ -24,6 +24,7 @@ StoryDetailSchema = T.detail.fields("""
     author
     audio_url
     iframe_url
+    enclosure_urls
     dt_synced
     summary
     content
@@ -62,6 +63,8 @@ class Story(Model, ContentHashMixin):
         **optional, help_text="播客音频链接")
     iframe_url = models.TextField(
         **optional, help_text="视频iframe链接")
+    enclosure_urls = JSONField(
+        **optional, help_text="附件链接列表")
     has_mathjax = models.BooleanField(
         **optional, default=False, help_text='has MathJax')
     is_user_marked = models.BooleanField(

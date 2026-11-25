@@ -334,3 +334,125 @@ def test_parser_audio_jsonfeed():
     for story in result.storys:
         assert story['audio_url']
         assert re.match(expect, story['audio_url'])
+
+
+def test_parser_story_enclosure_urls():
+    content = '''
+    <rss version="2.0">
+    <channel>
+    <title>test</title>
+    <link>https://e.com</link>
+    <description>test</description>
+    <item>
+        <title>story</title>
+        <link>https://e.com/posts/1</link>
+        <description>hello</description>
+        <enclosure url="magnet:?xt=urn:btih:ABCDEF&amp;dn=Ubuntu+24.04" type="application/x-bittorrent" length="0"/>
+        <enclosure url="https://e.com/files/a.pdf" type="application/pdf" length="12345"/>
+        <enclosure url="/files/b.mp4" type="video/mp4"/>
+        <enclosure url="https://e.com/pic.jpg" type="image/jpeg"/>
+        <enclosure url="javascript:alert(1)" type="text/html"/>
+    </item>
+    </channel>
+    </rss>
+    '''
+    raw = RawFeedParser().parse(_create_builder(content=content.encode()).build())
+    assert len(raw.storys[0]['enclosures']) == 5
+    result = FeedParser().parse(raw)
+    story = result.storys[0]
+    assert story['enclosure_urls'] == [
+        'magnet:?xt=urn:btih:ABCDEF&dn=Ubuntu+24.04',
+        'https://e.com/files/a.pdf',
+        'https://e.com/files/b.mp4',
+    ]
+    assert story['image_url'] == 'https://e.com/pic.jpg'
+
+
+def test_parser_story_enclosure_urls_limit_and_dedupe():
+    enclosures = []
+    for i in range(12):
+        enclosures.append(
+            f'<enclosure url="https://e.com/files/{i}.pdf" type="application/pdf"/>'
+        )
+    # duplicate, image and audio should be filtered out
+    enclosures.append('<enclosure url="https://e.com/files/0.pdf" type="application/pdf"/>')
+    enclosures.append('<enclosure url="https://e.com/pic.jpg" type="image/jpeg"/>')
+    enclosures.append('<enclosure url="https://e.com/ep.mp3" type="audio/mpeg"/>')
+    content = '''
+    <rss version="2.0">
+    <channel>
+    <title>test</title>
+    <link>https://e.com</link>
+    <description>test</description>
+    <item>
+        <title>story</title>
+        <link>https://e.com/posts/1</link>
+        <description>hello</description>
+        %s
+    </item>
+    </channel>
+    </rss>
+    ''' % ''.join(enclosures)
+    result = FeedParser().parse(
+        RawFeedParser().parse(_create_builder(content=content.encode()).build())
+    )
+    story = result.storys[0]
+    assert story['enclosure_urls'] == [
+        f'https://e.com/files/{i}.pdf' for i in range(10)
+    ]
+    assert story['image_url'] == 'https://e.com/pic.jpg'
+    assert story['audio_url'] == 'https://e.com/ep.mp3'
+
+
+def test_parser_story_enclosure_urls_jsonfeed():
+    content = json.dumps({
+        'version': 'https://jsonfeed.org/version/1.1',
+        'title': 'test',
+        'home_page_url': 'https://e.com',
+        'feed_url': 'https://e.com/feed.json',
+        'items': [{
+            'id': '1',
+            'url': 'https://e.com/1',
+            'title': 'story',
+            'content_text': 'hello',
+            'attachments': [
+                {'url': 'https://e.com/a.pdf', 'mime_type': 'application/pdf'},
+                {'url': 'magnet:?xt=urn:btih:X&dn=y', 'mime_type': 'application/x-bittorrent'},
+                {'url': 'https://e.com/ep.mp3', 'mime_type': 'audio/mpeg'},
+            ],
+        }],
+    }).encode()
+    result = FeedParser().parse(
+        RawFeedParser().parse(_create_builder(content=content).build())
+    )
+    story = result.storys[0]
+    assert story['enclosure_urls'] == [
+        'https://e.com/a.pdf',
+        'magnet:?xt=urn:btih:X&dn=y',
+    ]
+    assert story['audio_url'] == 'https://e.com/ep.mp3'
+
+
+def test_parser_story_enclosure_urls_bad_item():
+    long_url = 'https://e.com/' + 'a' * 2100
+    content = '''
+    <rss version="2.0">
+    <channel>
+    <title>test</title>
+    <link>https://e.com</link>
+    <description>test</description>
+    <item>
+        <title>story</title>
+        <link>https://e.com/posts/1</link>
+        <description>hello</description>
+        <enclosure url="%s" type="application/pdf"/>
+        <enclosure url="https://e.com/ok.pdf" type="application/pdf"/>
+    </item>
+    </channel>
+    </rss>
+    ''' % long_url
+    result = FeedParser().parse(
+        RawFeedParser().parse(_create_builder(content=content.encode()).build())
+    )
+    assert len(result.storys) == 1
+    assert result.storys[0]['enclosure_urls'] == ['https://e.com/ok.pdf']

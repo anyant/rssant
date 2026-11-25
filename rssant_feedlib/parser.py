@@ -33,6 +33,8 @@ FeedSchema = T.dict(
 _MAX_CONTENT_LENGTH = 300 * 1024
 _MAX_SUMMARY_LENGTH = 300
 _MAX_STORYS = 300
+_MAX_ENCLOSURES = 10
+_MAX_ENCLOSURE_URL_LENGTH = 2048
 
 StorySchema = T.dict(
     ident=T.str.maxlen(200),
@@ -44,6 +46,9 @@ StorySchema = T.dict(
     image_url=T.url.invalid_to_default.optional,
     iframe_url=T.url.invalid_to_default.optional,
     audio_url=T.url.invalid_to_default.optional,
+    enclosure_urls=T.list(
+        T.str.maxlen(_MAX_ENCLOSURE_URL_LENGTH)
+    ).maxlen(_MAX_ENCLOSURES).optional,
     dt_published=T.datetime.object.optional,
     dt_updated=T.datetime.object.optional,
     author_name=T.str.maxlen(100).optional,
@@ -142,6 +147,46 @@ class FeedParser:
             content = content[:_MAX_CONTENT_LENGTH]
         return content, attach
 
+    def _parse_enclosure_urls(self, enclosures, base_url) -> list:
+        """
+        只保留图片、音频以外的附件链接；数据库里只存 URL。
+        """
+        urls = []
+        for item in enclosures or []:
+            if not isinstance(item, dict):
+                continue
+            mime_type = item.get('type') or ''
+            if not isinstance(mime_type, str):
+                mime_type = ''
+            mime_type = mime_type.lower()
+            # 图片和音频已有 image_url / audio_url，不重复展示
+            if 'image' in mime_type or 'audio' in mime_type:
+                continue
+            href = item.get('href')
+            if not isinstance(href, str):
+                continue
+            href = href.strip()
+            if not href:
+                continue
+            if href.lower().startswith('magnet:'):
+                url = href
+            else:
+                url = normalize_url(href, base_url=base_url)
+                if not url.lower().startswith(('http://', 'https://')):
+                    continue
+                try:
+                    url = validate_url(url)
+                except Invalid:
+                    continue
+            if len(url) > _MAX_ENCLOSURE_URL_LENGTH:
+                continue
+            if url in urls:
+                continue
+            urls.append(url)
+            if len(urls) >= _MAX_ENCLOSURES:
+                break
+        return urls or None
+
     def _parse_story(self, story: dict, feed_url: str):
         ident = story['ident'][:200]
         title = story_html_to_text(story['title'])[:200]
@@ -155,6 +200,7 @@ class FeedParser:
         base_url = valid_url or feed_url
         image_url = normalize_url(story['image_url'], base_url=base_url)
         audio_url = normalize_url(story['audio_url'], base_url=base_url)
+        enclosure_urls = self._parse_enclosure_urls(story.get('enclosures'), base_url)
         author_name = story_html_to_text(story['author_name'])[:100]
         author_url = normalize_url(story['author_url'], base_url=base_url)
         author_avatar_url = normalize_url(story['author_avatar_url'], base_url=base_url)
@@ -183,6 +229,7 @@ class FeedParser:
             image_url=image_url,
             iframe_url=iframe_url,
             audio_url=audio_url,
+            enclosure_urls=enclosure_urls,
             dt_published=story['dt_published'],
             dt_updated=story['dt_updated'],
             author_name=author_name,

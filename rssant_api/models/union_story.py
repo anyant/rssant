@@ -79,6 +79,10 @@ class UnionStory:
         return self._story.audio_url
 
     @property
+    def enclosure_urls(self):
+        return self._story.enclosure_urls
+
+    @property
     def has_mathjax(self):
         return self._story.has_mathjax
 
