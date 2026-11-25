@@ -110,6 +110,10 @@ class EnvConfig(ConfigModel):
     detect_story_image_enable: bool = T.bool.default(False)
     # hashid salt
     hashid_salt: str = T.str.default('rssant')
+    # rsshub 多实例
+    rsshub_enable: bool = T.bool.default(True)
+    rsshub_instances: str = T.str.optional.desc('逗号分隔的 RSSHub 实例地址')
+    rsshub_extra_hosts: str = T.str.optional.desc('逗号分隔的额外 RSSHub 主机')
 
     @property
     def is_role_api(self):

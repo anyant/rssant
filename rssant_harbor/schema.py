@@ -31,6 +31,7 @@ StoryOutputSchemaFields.update(
 FeedSchemaFields = dict(
     url=T.url,
     use_proxy=T.bool.default(False),
+    rsshub_instance=T.str.optional,
     title=T.str,
     content_length=T.int.optional,
     content_hash_base64=T.str,

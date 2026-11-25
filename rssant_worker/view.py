@@ -33,6 +33,8 @@ def do_sync_feed(
     etag: T.str.optional,
     last_modified: T.str.optional,
     is_refresh: T.bool.default(False),
+    rsshub_instance: T.str.optional,
+    rsshub_offset: T.int.optional,
 ):
     WORKER_SERVICE.sync_feed(
         feed_id=feed_id,
@@ -43,6 +45,8 @@ def do_sync_feed(
         etag=etag,
         last_modified=last_modified,
         is_refresh=is_refresh,
+        rsshub_instance=rsshub_instance,
+        rsshub_offset=rsshub_offset,
     )
 
 

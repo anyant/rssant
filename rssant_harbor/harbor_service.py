@@ -13,6 +13,7 @@ from rssant_api.models import (
     FeedCreation,
     FeedStatus,
     FeedUrlMap,
+    RsshubInstance,
     UserFeed,
     WorkerTask,
 )
@@ -28,6 +29,7 @@ from rssant_feedlib.fulltext import (
     is_fulltext_content,
     split_sentences,
 )
+from rssant_feedlib.rsshub import COOLDOWN_SECONDS
 
 from .schema import FeedInfoSchema, FeedSchema, validate_feed_output
 
@@ -56,6 +58,7 @@ class HarborService:
         feed_creation_id: int,
         messages: T.list(T.str),
         feed: FeedSchema.optional,
+        retryable: bool = False,
     ):
         with transaction.atomic():
             feed_dict = feed
@@ -70,6 +73,12 @@ class HarborService:
             feed_creation.message = '\n\n'.join(messages)
             feed_creation.dt_updated = timezone.now()
             if not feed_dict:
+                if retryable:
+                    # 临时失败：回到 PENDING，交给调度器的 4 小时重试；
+                    # 不写 NOT_FOUND，避免用户马上重新添加时命中失败映射
+                    feed_creation.status = FeedStatus.PENDING
+                    feed_creation.save()
+                    return
                 feed_creation.status = FeedStatus.ERROR
                 feed_creation.save()
                 FeedUrlMap(source=feed_creation.url, target=FeedUrlMap.NOT_FOUND).save()
@@ -133,6 +142,7 @@ class HarborService:
         is_refresh: bool = False,
     ):
         feed_dict = feed
+        rsshub_instance = feed_dict.get('rsshub_instance')
         self._convert_checksum_data(feed_dict)
         with transaction.atomic():
             storys = feed_dict.pop('storys')
@@ -171,6 +181,8 @@ class HarborService:
             feed.reverse_url = reverse_url(feed.url)
             feed.status = FeedStatus.READY
             feed.save()
+        if rsshub_instance:
+            RsshubInstance.clear_cooldown(rsshub_instance)
         self._save_feed_storys(
             feed=feed,
             storys=storys,
@@ -262,6 +274,8 @@ class HarborService:
         self,
         feed_id: int,
         feed: FeedInfoSchema,
+        rsshub_offset: int = None,
+        rsshub_cooling: list = None,
     ):
         feed_dict = feed
         self._convert_checksum_data(feed_dict)
@@ -269,8 +283,15 @@ class HarborService:
             feed = Feed.get_by_pk(feed_id)
             for k, v in feed_dict.items():
                 setattr(feed, k, v)
+            if rsshub_offset is not None:
+                feed.rsshub_offset = rsshub_offset
             feed.dt_updated = timezone.now()
             feed.save()
+        for item in rsshub_cooling or []:
+            RsshubInstance.set_cooldown(
+                item['url'],
+                item.get('cooldown_seconds') or COOLDOWN_SECONDS,
+            )
 
     def update_story(
         self,
@@ -326,6 +347,9 @@ class HarborService:
         )
         STORY_SERVICE.update_story(story.feed_id, story.offset, data)
         return accept
+
+    def get_rsshub_cooling(self):
+        return dict(urls=sorted(RsshubInstance.cooling_urls()))
 
     def clean_feed_creation(self):
         # 超过24小时的订阅创建信息标记为已删除，数据永久保留

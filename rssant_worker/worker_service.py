@@ -2,6 +2,7 @@ import asyncio
 import logging
 import random
 import time
+from http import HTTPStatus
 from threading import Thread
 from urllib.parse import unquote
 
@@ -46,6 +47,20 @@ from rssant_feedlib.processor import (
     story_html_to_text,
     story_readability,
 )
+from rssant_feedlib.rsshub import (
+    COOLDOWN_SECONDS,
+    FIND_ATTEMPT_TIMEOUT,
+    FIND_BUDGET_SECONDS,
+    SYNC_ATTEMPT_TIMEOUT,
+    Candidate,
+    build_candidates,
+    candidate_url,
+    canonical_url,
+    get_instances,
+    next_offset,
+    parse_rsshub_url,
+    route_of,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -55,6 +70,27 @@ _MAX_STORY_CONTENT_LENGTH = 1000 * 1024
 _MAX_STORY_SUMMARY_LENGTH = 300
 
 T_ACCEPT = T.enum(','.join(FulltextAcceptStrategy.__members__))
+
+_RSSHUB_COOLING_TTL = 30
+_rsshub_cooling_cache = dict(time=0.0, urls=set())
+
+
+def _get_rsshub_cooling() -> set:
+    """实例冷却列表，worker 侧缓存 30 秒，避免每个任务都查一次库"""
+    now = time.monotonic()
+    cache = _rsshub_cooling_cache
+    if now - cache['time'] < _RSSHUB_COOLING_TTL:
+        return cache['urls']
+    try:
+        result = SERVICE_CLIENT.call('harbor_rss.get_rsshub_cooling')
+        urls = set((result or {}).get('urls') or [])
+    except Exception as ex:
+        LOG.warning('get rsshub cooling failed: %r', ex)
+        urls = cache['urls']
+    cache['time'] = now
+    cache['urls'] = urls
+    return urls
+
 
 SCHEMA_FETCH_STORY_RESULT = T.dict(
     feed_id=T.int,
@@ -103,7 +139,12 @@ class WorkerService:
                 status=FeedStatus.UPDATING,
             ),
         )
+        rsshub = parse_rsshub_url(url) if CONFIG.rsshub_enable else None
+        if rsshub:
+            return self._find_rsshub_feed(feed_creation_id, url, rsshub)
+        return self._find_feed_legacy(feed_creation_id, url)
 
+    def _find_feed_legacy(self, feed_creation_id, url):
         messages = []
 
         def message_handler(msg):
@@ -130,7 +171,150 @@ class WorkerService:
         )
         SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
 
+    def _find_rsshub_feed(self, feed_creation_id, url, rsshub):
+        """添加订阅：没有下一个周期，所以按起点轮换把池里的实例都试一遍"""
+        instances = get_instances()
+        candidates = []
+        if instances:
+            start = feed_creation_id % len(instances)
+            ordered = instances[start:] + instances[:start]
+            if rsshub.is_public:
+                pool = ordered
+            else:
+                pool = ordered[:2]
+            for instance in pool:
+                candidates.append(
+                    Candidate(candidate_url(instance, rsshub.route), instance)
+                )
+        if (not rsshub.is_public) and url not in [c.url for c in candidates]:
+            candidates.append(Candidate(url, None))
+        messages = []
+        statuses = []
+        deadline = time.monotonic() + FIND_BUDGET_SECONDS
+        budget_exhausted = False
+        for candidate in candidates:
+            if time.monotonic() >= deadline:
+                budget_exhausted = True
+                break
+            response = self._read_rsshub(candidate.url, FIND_ATTEMPT_TIMEOUT)
+            status = response.status
+            statuses.append(status)
+            status_name = FeedResponseStatus.name_of(status)
+            message = f'try {unquote(candidate.url)} {status} {status_name}'
+            LOG.info(message)
+            messages.append(message)
+            raw_result = self._parse_rsshub_response(response)
+            if raw_result is None:
+                continue
+            if candidate.instance:
+                feed_url = canonical_url(route_of(response.url))
+            else:
+                feed_url = url
+            try:
+                feed = _parse_found(
+                    (response, raw_result),
+                    url=feed_url,
+                    rsshub_instance=candidate.instance,
+                )
+            except (Invalid, FeedParserError) as ex:
+                LOG.error('invalid feed url=%r: %s', unquote(url), ex, exc_info=ex)
+                messages.append(f'invalid feed: {ex}')
+                continue
+            messages.insert(0, f'RSSHub 源已找到：{feed_url}')
+            result = dict(
+                feed_creation_id=feed_creation_id,
+                messages=messages,
+                feed=feed,
+                retryable=False,
+            )
+            SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
+            return
+        num_attempted = len(statuses)
+        permanent = (
+            bool(statuses)
+            and (not budget_exhausted)
+            and all(status == HTTPStatus.NOT_FOUND.value for status in statuses)
+        )
+        if permanent:
+            summary = 'RSSHub 路由不存在（404），可能已经下线或改名。'
+        elif budget_exhausted:
+            summary = (
+                f'RSSHub 源暂时取不到内容：已尝试 {num_attempted} 个实例后超时。'
+                '已排入自动重试。'
+            )
+        else:
+            summary = (
+                f'RSSHub 源暂时取不到内容：已尝试 {num_attempted} 个实例'
+                '（超时、限流或实例不可用）。已排入自动重试。'
+            )
+        messages.insert(0, summary)
+        result = dict(
+            feed_creation_id=feed_creation_id,
+            messages=messages,
+            feed=None,
+            retryable=not permanent,
+        )
+        SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
+
+    def _read_rsshub(self, url, timeout, use_proxy=False):
+        options = _proxy_helper.get_proxy_options(url=url)
+        options.update(request_timeout=timeout)
+        options.update(dns_service=DNS_SERVICE)
+        with FeedReader(**options) as reader:
+            if DNS_SERVICE.is_resolved_url(url):
+                use_proxy = False
+            use_proxy = reader.has_proxy and (use_proxy or is_use_proxy_url(url))
+            return reader.read(url, use_proxy=use_proxy)
+
+    @staticmethod
+    def _parse_rsshub_response(response):
+        if (not response.ok) or (not response.content):
+            return None
+        if response.feed_type.is_html:
+            return None
+        try:
+            return RawFeedParser().parse(response)
+        except FeedParserError as ex:
+            LOG.info('rsshub parse failed url=%r: %s', unquote(response.url), ex)
+            return None
+
     def sync_feed(
+        self,
+        feed_id: T.int,
+        url: T.url,
+        use_proxy: T.bool.default(False),
+        checksum_data_base64: str,
+        content_hash_base64: T.str.optional,
+        etag: T.str.optional,
+        last_modified: T.str.optional,
+        is_refresh: T.bool.default(False),
+        rsshub_instance: T.str.optional,
+        rsshub_offset: T.int.optional,
+    ):
+        rsshub = parse_rsshub_url(url) if CONFIG.rsshub_enable else None
+        if rsshub:
+            return self._sync_rsshub_feed(
+                feed_id=feed_id,
+                url=url,
+                rsshub=rsshub,
+                use_proxy=use_proxy,
+                is_refresh=is_refresh,
+                checksum_data_base64=checksum_data_base64,
+                rsshub_instance=rsshub_instance,
+                rsshub_offset=rsshub_offset,
+            )
+        return self._sync_feed_legacy(
+            feed_id=feed_id,
+            url=url,
+            use_proxy=use_proxy,
+            checksum_data_base64=checksum_data_base64,
+            content_hash_base64=content_hash_base64,
+            etag=etag,
+            last_modified=last_modified,
+            is_refresh=is_refresh,
+        )
+
+    def _sync_feed_legacy(
         self,
         feed_id: T.int,
         url: T.url,
@@ -213,6 +397,102 @@ class WorkerService:
             return
         result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
         SERVICE_CLIENT.call('harbor_rss.update_feed', result)
+
+    def _sync_rsshub_feed(
+        self,
+        *,
+        feed_id,
+        url,
+        rsshub,
+        use_proxy,
+        is_refresh,
+        checksum_data_base64,
+        rsshub_instance,
+        rsshub_offset,
+    ):
+        offset = rsshub_offset or 0
+        cooling = _get_rsshub_cooling()
+        candidates = build_candidates(
+            feed_id=feed_id,
+            offset=offset,
+            sticky=rsshub_instance,
+            instances=get_instances(),
+            cooling=cooling,
+            route=rsshub.route,
+            is_public=rsshub.is_public,
+            original_url=url,
+        )
+        if not candidates:
+            # 全部实例都在冷却：没有发出任何请求，不推进 offset
+            LOG.info('feed#%s rsshub instances all cooling', feed_id)
+            _update_feed_info(
+                feed_id,
+                status=FeedStatus.ERROR,
+                warnings='RSSHub 实例都在冷却中，稍后会自动重试',
+            )
+            return
+        cooling_updates = []
+        last_response = None
+        for candidate in candidates:
+            response = self._read_rsshub(
+                candidate.url, SYNC_ATTEMPT_TIMEOUT, use_proxy=use_proxy
+            )
+            last_response = response
+            status_name = FeedResponseStatus.name_of(response.status)
+            LOG.info(
+                'rsshub feed#%s try %s status=%s %s',
+                feed_id,
+                unquote(candidate.url),
+                response.status,
+                status_name,
+            )
+            is_transport_error = response.status < 0
+            is_too_many_requests = (
+                response.status == HTTPStatus.TOO_MANY_REQUESTS.value
+            )
+            if candidate.instance and (is_transport_error or is_too_many_requests):
+                cooling_updates.append(
+                    dict(
+                        url=candidate.instance,
+                        cooldown_seconds=(
+                            response.retry_after or COOLDOWN_SECONDS
+                        ),
+                    )
+                )
+            raw_result = self._parse_rsshub_response(response)
+            if raw_result is None:
+                continue
+            try:
+                feed = _parse_found(
+                    (response, raw_result),
+                    checksum_data_base64=checksum_data_base64,
+                    is_refresh=is_refresh,
+                    url=url,
+                    rsshub_instance=candidate.instance,
+                )
+            except (Invalid, FeedParserError) as ex:
+                LOG.error(
+                    'invalid feed#%s url=%r: %s',
+                    feed_id,
+                    unquote(url),
+                    ex,
+                    exc_info=ex,
+                )
+                continue
+            result = dict(feed_id=feed_id, feed=feed, is_refresh=is_refresh)
+            SERVICE_CLIENT.call('harbor_rss.update_feed', result)
+            return
+        warnings = 'RSSHub 实例暂不可用（{} 个实例均失败）'.format(
+            len(candidates)
+        )
+        _update_feed_info(
+            feed_id,
+            response=last_response,
+            status=FeedStatus.ERROR,
+            warnings=warnings,
+            rsshub_offset=next_offset(offset),
+            rsshub_cooling=cooling_updates,
+        )
 
     @classmethod
     async def _fetch_story(
@@ -377,24 +657,30 @@ class WorkerService:
 
 def _update_feed_info(
     feed_id,
-    response: FeedResponse,
+    response: FeedResponse = None,
     status: str = None,
     warnings: str = None,
+    rsshub_offset: int = None,
+    rsshub_cooling: list = None,
 ):
-    return SERVICE_CLIENT.call(
-        'harbor_rss.update_feed_info',
-        dict(
-            feed_id=feed_id,
-            feed=dict(
-                status=status,
-                response_status=response.status,
-                warnings=warnings,
-            ),
-        ),
-    )
+    feed = dict(status=status, warnings=warnings)
+    if response is not None:
+        feed['response_status'] = response.status
+    data = dict(feed_id=feed_id, feed=feed)
+    if rsshub_offset is not None:
+        data['rsshub_offset'] = rsshub_offset
+    if rsshub_cooling:
+        data['rsshub_cooling'] = rsshub_cooling
+    return SERVICE_CLIENT.call('harbor_rss.update_feed_info', data)
 
 
-def _parse_found(found, checksum_data_base64=None, is_refresh=False):
+def _parse_found(
+    found,
+    checksum_data_base64=None,
+    is_refresh=False,
+    url=None,
+    rsshub_instance=None,
+):
     response: FeedResponse
     raw_result: RawFeedResult
     response, raw_result = found
@@ -402,7 +688,9 @@ def _parse_found(found, checksum_data_base64=None, is_refresh=False):
 
     # feed response
     feed.use_proxy = response.use_proxy
-    feed.url = response.url
+    # RSSHub 源要保留 Feed 自己的地址（新订阅是规范地址、老订阅是原地址），
+    # 不能把命中的镜像地址写回去，否则地址会随实例漂移
+    feed.url = url or response.url
     feed.content_length = len(response.content)
     feed.content_hash_base64 = compute_hash_base64(response.content)
     feed.etag = response.etag
@@ -440,7 +728,11 @@ def _parse_found(found, checksum_data_base64=None, is_refresh=False):
     feed.warnings = warnings
     del result  # release memory in advance
 
-    return validate_feed(feed)
+    feed_data = validate_feed(feed)
+    if rsshub_instance:
+        # 命中实例不属于 RSS Feed 字段，校验后再带上
+        feed_data['rsshub_instance'] = rsshub_instance
+    return feed_data
 
 
 def _get_storys(entries: list):

@@ -79,11 +79,13 @@ def do_save_feed_creation_result(
     feed_creation_id: T.int,
     messages: T.list(T.str),
     feed: FeedSchema.optional,
+    retryable: T.bool.default(False),
 ):
     HARBOR_SERVICE.save_feed_creation_result(
         feed_creation_id=feed_creation_id,
         messages=messages,
         feed=feed,
+        retryable=retryable,
     )
 
 
@@ -106,10 +108,16 @@ def do_update_feed_info(
     request,
     feed_id: T.int,
     feed: FeedInfoSchema,
+    rsshub_offset: T.int.optional,
+    rsshub_cooling: T.list(
+        T.dict(url=T.url, cooldown_seconds=T.int.optional)
+    ).optional,
 ):
     HARBOR_SERVICE.update_feed_info(
         feed_id=feed_id,
         feed=feed,
+        rsshub_offset=rsshub_offset,
+        rsshub_cooling=rsshub_cooling,
     )
 
 
@@ -135,6 +143,11 @@ def do_update_story(
         response_status=response_status,
         sentence_count=sentence_count,
     )
+
+
+@HarborView.post('harbor_rss.get_rsshub_cooling')
+def do_get_rsshub_cooling(request) -> T.dict:
+    return HARBOR_SERVICE.get_rsshub_cooling()
 
 
 @HarborView.post('harbor_rss.clean_feed_creation')
