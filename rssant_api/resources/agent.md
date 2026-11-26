@@ -48,7 +48,7 @@ multipart/form-data：file=OPML/书签文件；group 放在 query 参数。
 ### 查询抓取进度
 POST /feed.get_creation
 Body: {"id": 123, "detail": false}
-返回 is_ready、status、feed_id、message；status=ready 且 feed_id 有值时订阅完成。
+返回 is_ready、status、feed_id、message；detail=true 时失败原因在 error_message（仅 status=error 时非空）。status=ready 且 feed_id 有值时订阅完成。
 
 ### 查询最近添加
 POST /feed.query_creation

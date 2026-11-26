@@ -9,7 +9,7 @@ from rssant_common.validator import FeedUnionId
 from .feed import FEED_STATUS_CHOICES, Feed, FeedStatus
 from .helper import Model, User, models, optional
 
-FEED_CREATION_DETAIL_FIELDS = ['message']
+FEED_CREATION_DETAIL_FIELDS = ['message', 'error_message']
 
 
 class FeedCreation(Model):
@@ -42,6 +42,9 @@ class FeedCreation(Model):
     status = models.CharField(
         max_length=20, choices=FEED_STATUS_CHOICES, default=FeedStatus.PENDING, help_text='状态')
     message = models.TextField(help_text="查找订阅的日志信息")
+    error_message = models.TextField(
+        default='', blank=True, help_text="添加失败时给用户看的原因说明"
+    )
     title = models.CharField(max_length=200, **optional, help_text="用户设置的标题")
     group = models.CharField(max_length=200, **optional, help_text="用户设置的分组")
     deleted_at = models.DateTimeField(**optional, help_text="软删除时间")
@@ -70,7 +73,7 @@ class FeedCreation(Model):
             feed_unionid = FeedUnionId(self.user_id, self.feed_id)
             ret.update(feed_id=feed_unionid)
         if detail:
-            ret.update(message=self.message)
+            ret.update(message=self.message, error_message=self.error_message)
         return ret
 
     @staticmethod

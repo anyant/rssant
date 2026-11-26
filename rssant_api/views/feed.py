@@ -78,6 +78,7 @@ FeedCreationSchema = T.dict(
     group=T.str.maxlen(MAX_GROUP_NAME_LENGTH).optional,
     url=T.url,
     message=T.str.optional,
+    error_message=T.str.optional,
     dt_updated=T.datetime.object.optional,
     dt_created=T.datetime.object.optional,
 )

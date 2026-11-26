@@ -153,6 +153,20 @@ def test_find_not_found(httpserver: HTTPServer):
         assert not found, f'messages={messages}'
 
 
+def test_first_response_is_kept(httpserver: HTTPServer):
+    _setup_feed_server(httpserver)
+    start_url = httpserver.url_for('/bad-feed.xml')
+    feed_url = httpserver.url_for('/ok-feed.xml')
+    finder, messages = _create_finder(start_url)
+    with finder:
+        found = finder.find()
+    assert found, f'messages={messages}'
+    assert found[0].url == feed_url
+    # 首个响应是用户输入的坏地址，不是最后命中的 feed
+    assert finder.first_response.status == 200
+    assert finder.first_response.url == start_url
+
+
 real_urls = [
     "ruanyifeng.com",
     "https://arp242.net/feed.xml",

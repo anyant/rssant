@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import User
@@ -70,6 +71,7 @@ class FeedCreationRetryTestCase(TestCase):
 
     def test_retryable_keeps_pending_and_skips_not_found(self):
         creation = self._creation()
+        FeedCreation.objects.filter(pk=creation.pk).update(error_message='旧描述')
         HARBOR_SERVICE.save_feed_creation_result(
             feed_creation_id=creation.id,
             messages=['RSSHub 源暂时取不到内容，已排入自动重试'],
@@ -79,19 +81,48 @@ class FeedCreationRetryTestCase(TestCase):
         creation.refresh_from_db()
         assert creation.status == FeedStatus.PENDING
         assert creation.deleted_at is None
+        assert creation.error_message == ''
         assert FeedUrlMap.find_target(creation.url) is None
 
     def test_permanent_failure_sets_error_and_not_found(self):
         creation = self._creation('https://rsshub.app/not/exists')
+        error_message = 'RSSHub 路由不存在（404），可能已经下线或改名。换一个 RSS 地址试试。'
         HARBOR_SERVICE.save_feed_creation_result(
             feed_creation_id=creation.id,
             messages=['RSSHub 路由不存在（404）'],
             feed=None,
             retryable=False,
+            error_message=error_message,
         )
         creation.refresh_from_db()
         assert creation.status == FeedStatus.ERROR
+        assert creation.error_message == error_message
         assert FeedUrlMap.find_target(creation.url) == FeedUrlMap.NOT_FOUND
+
+    def test_success_clears_error_message(self):
+        creation = FeedCreation.objects.create(
+            user=self.user,
+            url='https://example.com/feed.xml',
+            message='',
+            error_message='旧描述',
+        )
+        feed = dict(
+            url='https://example.com/feed.xml',
+            use_proxy=False,
+            title='test',
+            content_hash_base64='hash',
+            storys=[],
+        )
+        with patch.object(HARBOR_SERVICE, 'update_feed'):
+            HARBOR_SERVICE.save_feed_creation_result(
+                feed_creation_id=creation.id,
+                messages=['Feed: version=rss, title=test'],
+                feed=feed,
+            )
+        creation.refresh_from_db()
+        assert creation.status == FeedStatus.READY
+        assert creation.feed_id
+        assert creation.error_message == ''
 
     def test_retry_query_uses_last_attempt_time(self):
         old = timezone.now() - timezone.timedelta(hours=5)
