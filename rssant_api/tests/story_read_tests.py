@@ -15,6 +15,7 @@ from rssant_api.models import (
     UserFeed,
     UserStory,
 )
+from rssant_api.models.errors import StoryNotFoundError
 from rssant_common.unionid import encode
 
 STORY_COUNT = 5
@@ -43,7 +44,7 @@ def make_feed(url, total=STORY_COUNT):
             summary=f'read story summary {i}',
         ))
     STORY_SERVICE.bulk_save_by_feed(feed.id, storys, batch_size=100)
-    # set_read 不创建 Story，测试数据让 Story 表也有
+    # 大部分文章只有 StoryInfo，这里也建一份 Story 记录方便断言
     Story.objects.bulk_create([
         Story(
             feed_id=feed.id,
@@ -108,6 +109,33 @@ class StoryReadTestCase(TransactionTestCase):
             user_id=self.user.id, feed_id=self.feed.id, offset=2)
         assert user_story.is_read is False
         assert user_story.is_watched is True
+
+
+@pytest.mark.dbtest
+class SetReadWithoutStoryTestCase(TransactionTestCase):
+    """文章只有 StoryInfo、没有 Story 记录时（生产上的常见情况）也能标为已读"""
+
+    def setUp(self):
+        self.user = User.objects.create_user('info-only', password='test123456')
+        self.feed = make_feed('https://info-only.example.com/feed.xml')
+        Story.objects.filter(feed_id=self.feed.id).delete()
+        UserFeed(user=self.user, feed=self.feed, story_offset=0).save()
+
+    def test_set_read_creates_story_without_user_marked(self):
+        assert not Story.objects.filter(feed_id=self.feed.id).exists()
+        story = UnionStory.set_read_by_feed_offset(
+            (self.user.id, self.feed.id), 3)
+        assert story.is_read is True
+        db_story = Story.objects.get(feed_id=self.feed.id, offset=3)
+        assert db_story.is_user_marked is False
+        user_story = UserStory.objects.get(
+            user_id=self.user.id, feed_id=self.feed.id, offset=3)
+        assert user_story.is_read is True
+
+    def test_set_read_story_not_found(self):
+        with pytest.raises(StoryNotFoundError):
+            UnionStory.set_read_by_feed_offset(
+                (self.user.id, self.feed.id), STORY_COUNT + 1)
 
 
 @pytest.mark.dbtest

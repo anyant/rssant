@@ -92,17 +92,32 @@ class StoryService:
             return None
         return self.to_common(story)
 
+    def get_or_create_story(self, feed_id, offset) -> Story:
+        """
+        获取 Story 记录，没有时从 StoryInfo 补一条。
+        不设置 is_user_marked，保留按 retention 清理的能力。
+        """
+        try:
+            return Story.get_by_offset(feed_id, offset)
+        except Story.DoesNotExist:
+            pass
+        common_story = self.get_by_offset(feed_id, offset, detail=True)
+        if not common_story:
+            raise Story.DoesNotExist()
+        d = asdict(common_story)
+        d.pop('content_length', None)
+        story = Story(**d)
+        story.save()
+        return story
+
     def set_user_marked(self, feed_id, offset, is_user_marked=True) -> Story:
         try:
             story = Story.get_by_offset(feed_id, offset)
         except Story.DoesNotExist:
             story = None
         if (not story) and is_user_marked:
-            common_story = self.get_by_offset(feed_id, offset, detail=True)
-            d = asdict(common_story)
-            d.pop('content_length', None)
-            story = Story(**d)
-            story.is_user_marked = is_user_marked
+            story = self.get_or_create_story(feed_id, offset)
+            story.is_user_marked = True
             story.save()
         elif story:
             Story.set_user_marked_by_id(story.id, is_user_marked=is_user_marked)

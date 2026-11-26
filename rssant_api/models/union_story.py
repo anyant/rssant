@@ -559,7 +559,9 @@ class UnionStory:
         """标记单篇已读。只写 UserStory.is_read，不碰 is_watched 和 Story.is_user_marked。"""
         user_id, feed_id, offset = story_unionid
         try:
-            story = Story.get_by_offset(feed_id, offset, detail=False)
+            # 大部分文章只有 StoryInfo，UserStory.story 是必填外键，需要补一条 Story 记录；
+            # 不设置 is_user_marked，文章仍然会按 retention 清理。
+            story = STORY_SERVICE.get_or_create_story(feed_id, offset)
         except Story.DoesNotExist:
             raise StoryNotFoundError()
         user_feed = UserFeed.objects.only('id', 'user_id', 'feed_id').get(
