@@ -6,6 +6,9 @@
 --
 -- 用法：先跑第一步看命中量，再按 300 条一批执行第二步。
 --   :last_id 初始 0，每批用返回的最大 id 更新，直到没有返回。
+--   用 psql 变量传游标：
+--     psql -v last_id=0 -f scripts/rsshub_wakeup.sql   # 第一步 + 第二批共用文件时按需拆分
+--   或者只执行第二步片段：psql -v last_id=0 -c "$(sed -n '/WITH picked/,/RETURNING f.id;/p' scripts/rsshub_wakeup.sql)"
 -- 主机清单和 rssant_feedlib/rsshub.py 的 _PUBLIC_HOSTS 一致，由单测校验，改清单要同步这里。
 
 -- 第一步：只看命中量（只读）
