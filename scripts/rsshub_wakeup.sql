@@ -6,6 +6,11 @@
 --
 -- 用法：先跑第一步看命中量，再按 300 条一批执行第二步。
 --   :last_id 初始 0，每批用返回的最大 id 更新，直到没有返回。
+--   只跑命中量（只读，不写库）：
+--     psql -f <(sed -n '/^SELECT count/,/^  );/p' scripts/rsshub_wakeup.sql)
+--   只跑分批唤醒，游标用上一批返回的最大 id：
+--     psql -v last_id=0 -f <(sed -n '/^WITH picked/,/^RETURNING f.id;/p' scripts/rsshub_wakeup.sql)
+--   不要直接 -f 整个文件（会连 UPDATE 一起跑），也不要用 -c 传这段（psql 不替换 -c 里的 :last_id）。
 -- 主机清单和 rssant_feedlib/rsshub.py 的 _PUBLIC_HOSTS 一致，由单测校验，改清单要同步这里。
 
 -- 第一步：只看命中量（只读）
