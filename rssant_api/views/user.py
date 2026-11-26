@@ -1,6 +1,7 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib import auth as django_auth
 from django.contrib.auth.models import User
+from django.db import transaction
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny
@@ -28,6 +29,7 @@ UserSchema = T.dict(
 )
 
 UserView = RestRouter(permission_classes=[AllowAny])
+UserAuthView = RestRouter()
 
 
 def serialize_user(user):
@@ -56,6 +58,15 @@ def serialize_user(user):
         ezrevenue_enable=CONFIG.ezrevenue_enable,
         image_proxy=image_proxy
     )
+
+
+@UserAuthView.post('user/reset_token/')
+def user_reset_token(request) -> T.dict(token=T.str):
+    """重置登录令牌：删除旧令牌、生成新令牌，返回新令牌。"""
+    with transaction.atomic():
+        Token.objects.filter(user=request.user).delete()
+        token = Token.objects.create(user=request.user)
+    return dict(token=token.key)
 
 
 @UserView.post('user/login/')

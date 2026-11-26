@@ -21,6 +21,7 @@ from rest_framework.documentation import include_docs_urls
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.views import get_swagger_view
 
+from rssant_api.views.agent import agent_doc
 from rssant_config import CONFIG
 
 from . import auth, views
@@ -40,6 +41,7 @@ def _gen_urlpatterns():
         schema_view = get_schema_view(title=API_TITLE, description=API_DESCRIPTION)
         docs_view = include_docs_urls(title=API_TITLE, description=API_DESCRIPTION)
         swagger_view = get_swagger_view(title=API_TITLE)
+        yield path('docs/agent.md', agent_doc)
         yield path('changelog', views.changelog_html)
         yield path('changelog.atom', views.changelog_atom)
         yield path('admin/', admin.site.urls)

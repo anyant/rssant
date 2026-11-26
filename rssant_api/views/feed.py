@@ -5,6 +5,14 @@ from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
 from rssant_api.api_service import API_SERVICE
+from rssant_api.export import (
+    ExportTooFrequent,
+    acquire_export_cooldown,
+    build_feed_zip,
+    export_response,
+    export_too_frequent_response,
+    release_export_cooldown,
+)
 from rssant_api.feed_helper import group_id_of, render_opml
 from rssant_api.models import FeedCreation, FeedImportItem, UnionFeed
 from rssant_api.models.errors import FeedNotFoundError, FeedStoryOffsetError
@@ -362,12 +370,27 @@ def feed_import_opml(request) -> FeedImportResultSchema:
     return feed_import_file(request)
 
 
+@FeedView.get('feed/<slug:feed_id>/export/stories')
+def feed_export_stories(request, feed_id: T.feed_unionid.object):
+    """单个订阅的保留文章打包导出"""
+    check_unionid(request.user, feed_id)
+    return export_response(request.user, lambda: build_feed_zip(request.user, feed_id))
+
+
 @DeprecatedFeedView.get('feed/opml')
 @FeedView.get('feed/export/opml')
 def feed_export_opml(request, download: T.bool.default(False)):
     """export feeds to OPML file"""
-    total, user_feeds, __ = UnionFeed.query_by_user(request.user.id)
-    content = render_opml(user_feeds)
+    try:
+        acquire_export_cooldown(request.user)
+    except ExportTooFrequent:
+        return export_too_frequent_response()
+    try:
+        total, user_feeds, __ = UnionFeed.query_by_user(request.user.id)
+        content = render_opml(user_feeds)
+    except Exception:
+        release_export_cooldown(request.user)
+        raise
     response = HttpResponse(content, content_type='text/xml')
     if download:
         response['Content-Disposition'] = 'attachment;filename="rssant.opml"'

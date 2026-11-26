@@ -10,7 +10,7 @@ from .views.ezrevenue import EzrevenueView
 from .views.feed import FeedView
 from .views.publish import PublishView
 from .views.story import StoryView
-from .views.user import UserView
+from .views.user import UserAuthView, UserView
 from .views.user_publish import UserPublishView
 
 
@@ -24,6 +24,7 @@ def _gen_urlpatterns():
         yield path('', include(FeedView.urls))
         yield path('', include(StoryView.urls))
         yield path('', include(UserView.urls))
+        yield path('', include(UserAuthView.urls))
         yield path('', include(PublishView.urls))
         yield path('', include(UserPublishView.urls))
         yield path('', include(EzrevenueView.urls))

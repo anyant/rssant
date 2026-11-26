@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
 from rssant_api.api_service import API_SERVICE
+from rssant_api.export import build_favorites_zip, export_response
 from rssant_api.models import Feed, UnionFeed, UnionStory
 from rssant_api.models.errors import (
     FeedNotFoundError,
@@ -202,6 +203,12 @@ def story_get_by_offset(
     ret = story.to_dict()
     ret.update(image_token=image_token)
     return ret
+
+
+@StoryView.get('story/export/favorited')
+def story_export_favorited(request):
+    """收藏文章打包导出"""
+    return export_response(request.user, lambda: build_favorites_zip(request.user))
 
 
 @DeprecatedStoryView.get('story/favorited')

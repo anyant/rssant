@@ -38,6 +38,7 @@ bs4==0.0.1
 beautifulsoup4==4.8.2
 pynliner==0.8.0
 html2text==2020.1.16
+openpyxl==3.0.10
 readability-lxml==0.8.1
 fake-useragent==0.1.11
 pyOpenSSL==19.1.0
