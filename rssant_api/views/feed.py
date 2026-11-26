@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from django_rest_validr import RestRouter, T
 from rssant_api.api_service import API_SERVICE
+from rssant_api.export import build_feed_zip, export_response
 from rssant_api.feed_helper import group_id_of, render_opml
 from rssant_api.models import FeedCreation, FeedImportItem, UnionFeed
 from rssant_api.models.errors import FeedNotFoundError, FeedStoryOffsetError
@@ -360,6 +361,13 @@ FeedImportResultSchema = T.dict(
 def feed_import_opml(request) -> FeedImportResultSchema:
     """Deprecated. import feeds from OPML file"""
     return feed_import_file(request)
+
+
+@FeedView.get('feed/<slug:feed_id>/export/stories')
+def feed_export_stories(request, feed_id: T.feed_unionid.object):
+    """单个订阅的保留文章打包导出"""
+    check_unionid(request.user, feed_id)
+    return export_response(request.user, lambda: build_feed_zip(request.user, feed_id))
 
 
 @DeprecatedFeedView.get('feed/opml')
