@@ -125,6 +125,12 @@ class ExportTestCase(TestCase):
         self.assertEqual(first.status_code, 200)
         self.assertEqual(second.status_code, 429)
 
+    def test_opml_export_cooldown(self):
+        first = self.client.get('/api/v1/feed/export/opml?download=true')
+        second = self.client.get('/api/v1/feed/export/opml?download=true')
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 429)
+
     def test_export_requires_login(self):
         client = self.client_class()
         response = client.get('/api/v1/story/export/favorited')

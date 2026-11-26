@@ -220,13 +220,35 @@ def build_feed_zip(user, feed_unionid):
     return tmp, _filename('rssant-feed-{}'.format(feed.id))
 
 
+class ExportTooFrequent(Exception):
+    pass
+
+
+def _export_cache_key(user):
+    return 'rssant:export:{}'.format(user.id)
+
+
+def acquire_export_cooldown(user):
+    if not cache.add(_export_cache_key(user), 1, EXPORT_COOLDOWN_SECONDS):
+        raise ExportTooFrequent()
+
+
+def release_export_cooldown(user):
+    cache.delete(_export_cache_key(user))
+
+
+def export_too_frequent_response():
+    return JsonResponse({'message': '导出太频繁，请稍后再试'}, status=429)
+
+
 def export_response(user, builder):
-    key = 'rssant:export:{}'.format(user.id)
-    if not cache.add(key, 1, EXPORT_COOLDOWN_SECONDS):
-        return JsonResponse({'message': '导出太频繁，请稍后再试'}, status=429)
+    try:
+        acquire_export_cooldown(user)
+    except ExportTooFrequent:
+        return export_too_frequent_response()
     try:
         tmp, filename = builder()
     except Exception:
-        cache.delete(key)
+        release_export_cooldown(user)
         raise
     return FileResponse(tmp, content_type='application/zip', as_attachment=True, filename=filename)
