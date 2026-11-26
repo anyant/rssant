@@ -159,6 +159,13 @@ class Feed(Model, ContentHashMixin):
     use_proxy = models.BooleanField(
         **optional, default=False, help_text="use proxy or not"
     )
+    # RSSHub 多实例：最近一次成功抓取的实例，以及窗口起点偏移（每次失败 +3）
+    rsshub_instance = models.TextField(
+        **optional, help_text="最近一次成功抓取的 RSSHub 实例"
+    )
+    rsshub_offset = models.IntegerField(
+        default=0, help_text="RSSHub 实例窗口偏移，每次失败加 3"
+    )
     checksum_data = models.BinaryField(
         **optional, max_length=4096, help_text="feed checksum data"
     )
@@ -284,7 +291,8 @@ class Feed(Model, ContentHashMixin):
         SET status=%s, dt_checked=%s, _version=t._version+1
         FROM t
         WHERE feed.id=t.id AND feed._version=t._version
-        RETURNING feed.id, url, etag, last_modified, use_proxy, checksum_data
+        RETURNING feed.id, url, etag, last_modified, use_proxy, checksum_data,
+                  rsshub_instance, rsshub_offset
         ;
         """
         params = [
@@ -306,6 +314,8 @@ class Feed(Model, ContentHashMixin):
             'last_modified',
             'use_proxy',
             'checksum_data',
+            'rsshub_instance',
+            'rsshub_offset',
         ]
         with connection.cursor() as cursor:
             cursor.execute(sql_check_update, params)

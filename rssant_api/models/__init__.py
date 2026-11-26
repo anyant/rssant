@@ -4,6 +4,7 @@ from .feed_creation import FeedCreation, FeedUrlMap
 from .feed_story_stat import FeedStoryStat
 from .image import ImageInfo
 from .registery import Registery
+from .rsshub_instance import RsshubInstance
 from .story import Story, UserStory
 from .story_info import StoryId, StoryInfo
 from .story_service import STORY_SERVICE, CommonStory
@@ -24,6 +25,7 @@ __models__ = (
     FeedUrlMap,
     FeedStoryStat,
     Registery,
+    RsshubInstance,
     ImageInfo,
     UserProfile,
     UserPublish,

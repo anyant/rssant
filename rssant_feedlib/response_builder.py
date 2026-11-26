@@ -223,6 +223,14 @@ class FeedResponseBuilder:
             etag = self._headers.get("etag")
             last_modified = self._headers.get("last-modified")
         status = self._status if self._status is not None else HTTPStatus.OK.value
+        retry_after = None
+        if self._headers:
+            retry_after = self._headers.get("retry-after")
+            try:
+                retry_after = int(retry_after) if retry_after else None
+            except (TypeError, ValueError):
+                # HTTP-date 格式暂不支持，按没有返回处理
+                retry_after = None
         return FeedResponse(
             content=self._content,
             status=status,
@@ -233,4 +241,5 @@ class FeedResponseBuilder:
             mime_type=mime_type,
             feed_type=feed_type,
             use_proxy=self._use_proxy,
+            retry_after=retry_after,
         )

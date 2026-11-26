@@ -1,4 +1,5 @@
 from django.db import connection
+from django.db.models.functions import Coalesce
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone
@@ -119,7 +120,11 @@ class FeedCreation(Model):
         )
         if survival_seconds:
             deadline = timezone.now() - timezone.timedelta(seconds=survival_seconds)
-            q = q.filter(dt_created__lt=deadline)
+            # 按“最后一次尝试时间”判断：临时失败会写 dt_updated，
+            # 否则退回 PENDING 后会每分钟重试一轮；老记录没有 dt_updated 时回落到 dt_created
+            q = q.annotate(
+                last_attempt=Coalesce('dt_updated', 'dt_created')
+            ).filter(last_attempt__lt=deadline)
         id_urls = [(x.id, x.url) for x in q.only('id', 'url').all()]
         return id_urls
 

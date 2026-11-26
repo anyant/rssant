@@ -63,6 +63,8 @@ class RssantTaskService:
                 last_modified=feed['last_modified'],
                 use_proxy=feed['use_proxy'],
                 checksum_data_base64=checksum_data_base64,
+                rsshub_instance=feed['rsshub_instance'],
+                rsshub_offset=feed['rsshub_offset'],
             )
             task = WorkerTask.from_dict(
                 api=task_api,

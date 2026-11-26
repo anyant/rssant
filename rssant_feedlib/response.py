@@ -139,6 +139,7 @@ class FeedResponse:
         '_mime_type',
         '_feed_type',
         '_use_proxy',
+        '_retry_after',
     )
 
     def __init__(
@@ -152,6 +153,7 @@ class FeedResponse:
         mime_type: str = None,
         feed_type: FeedContentType = None,
         use_proxy: bool = None,
+        retry_after: int = None,
     ):
         self._content = content
         self._status = int(status if status is not None else HTTPStatus.OK.value)
@@ -162,6 +164,7 @@ class FeedResponse:
         self._mime_type = mime_type
         self._feed_type = feed_type or FeedContentType.OTHER
         self._use_proxy = use_proxy
+        self._retry_after = retry_after
 
     def __repr__(self):
         name = type(self).__name__
@@ -216,3 +219,8 @@ class FeedResponse:
     @property
     def use_proxy(self) -> bool:
         return self._use_proxy
+
+    @property
+    def retry_after(self) -> int:
+        """429 响应里的 Retry-After 秒数，没有或无法解析时为 None"""
+        return self._retry_after
