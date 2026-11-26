@@ -59,6 +59,7 @@ class HarborService:
         messages: T.list(T.str),
         feed: FeedSchema.optional,
         retryable: bool = False,
+        error_message: T.str.optional = None,
     ):
         with transaction.atomic():
             feed_dict = feed
@@ -71,6 +72,8 @@ class HarborService:
                 LOG.info(f'feed creation {feed_creation_id} is ready')
                 return
             feed_creation.message = '\n\n'.join(messages)
+            # 只有失败记录才有描述；回到 PENDING 或成功时一并清空
+            feed_creation.error_message = error_message or ''
             feed_creation.dt_updated = timezone.now()
             if not feed_dict:
                 if retryable:

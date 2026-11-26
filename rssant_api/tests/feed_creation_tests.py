@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 import pytest
@@ -147,3 +148,56 @@ class FeedCreationSoftDeleteTestCase(TestCase):
         self.assertEqual(FeedCreation.query_by_user(self.user.id), [])
         with self.assertRaises(FeedCreation.DoesNotExist):
             FeedCreation.get_by_pk(creation.id, user_id=self.user.id)
+
+
+@pytest.mark.dbtest
+class FeedCreationDetailTestCase(TestCase):
+    """失败描述只随 detail=true 的详情接口返回"""
+
+    def setUp(self):
+        self.user = User.objects.create_user('detail', password='test123456')
+        self.error_message = (
+            '这个地址不存在。检查链接是否写错，或换一个 RSS 地址试试。'
+        )
+        self.creation = FeedCreation(
+            user=self.user,
+            url='https://example.com/missing',
+            status=FeedStatus.ERROR,
+            message='查找日志',
+            error_message=self.error_message,
+        )
+        self.creation.save()
+        assert self.client.login(username='detail', password='test123456')
+
+    def _post(self, api, data):
+        return self.client.post(
+            '/api/v1/' + api,
+            data=json.dumps(data),
+            content_type='application/json',
+        )
+
+    def test_get_creation_detail_returns_error_message(self):
+        response = self._post(
+            'feed.get_creation', {'id': self.creation.id, 'detail': True}
+        )
+        assert response.status_code == 200, response.content
+        data = response.json()
+        assert data['message'] == '查找日志'
+        assert data['error_message'] == self.error_message
+
+    def test_get_creation_without_detail_has_empty_error_message(self):
+        response = self._post(
+            'feed.get_creation', {'id': self.creation.id, 'detail': False}
+        )
+        assert response.status_code == 200, response.content
+        # 输出 schema 会把 optional 字符串补成空串，和 message 一致；不含失败描述
+        assert response.json()['error_message'] == ''
+
+    def test_query_creation_has_empty_error_message(self):
+        response = self._post(
+            'feed.query_creation', {'limit': 100, 'detail': True}
+        )
+        assert response.status_code == 200, response.content
+        items = response.json()['feed_creations']
+        assert len(items) == 1
+        assert items[0]['error_message'] == ''

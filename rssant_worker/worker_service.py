@@ -62,6 +62,8 @@ from rssant_feedlib.rsshub import (
     route_of,
 )
 
+from .feed_creation_error import describe_feed_creation_error
+
 LOG = logging.getLogger(__name__)
 
 
@@ -158,6 +160,7 @@ class WorkerService:
         with FeedFinder(url, **options) as finder:
             use_proxy = is_use_proxy_url(url)
             found = finder.find(use_proxy=use_proxy)
+            first_response = finder.first_response
         try:
             feed = _parse_found(found) if found else None
         except (Invalid, FeedParserError) as ex:
@@ -169,6 +172,8 @@ class WorkerService:
             messages=messages,
             feed=feed,
         )
+        if feed is None:
+            result['error_message'] = describe_feed_creation_error(first_response)
         SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
 
     def _find_rsshub_feed(self, feed_creation_id, url, rsshub):
@@ -254,6 +259,8 @@ class WorkerService:
             feed=None,
             retryable=not permanent,
         )
+        if permanent:
+            result['error_message'] = summary + '换一个 RSS 地址试试。'
         SERVICE_CLIENT.call('harbor_rss.save_feed_creation_result', result)
 
     def _read_rsshub(self, url, timeout, use_proxy=False):

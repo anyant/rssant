@@ -80,12 +80,14 @@ def do_save_feed_creation_result(
     messages: T.list(T.str),
     feed: FeedSchema.optional,
     retryable: T.bool.default(False),
+    error_message: T.str.optional,
 ):
     HARBOR_SERVICE.save_feed_creation_result(
         feed_creation_id=feed_creation_id,
         messages=messages,
         feed=feed,
         retryable=retryable,
+        error_message=error_message,
     )
 
 

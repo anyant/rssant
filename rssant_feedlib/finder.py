@@ -214,6 +214,8 @@ class FeedFinder:
         self._links = {start_url: ScoredLink(start_url, 1.0)}
         self._visited = set()
         self._guessed = False
+        # 第一个响应：添加订阅失败时用它判断原因，后续猜测地址和代理重试不覆盖
+        self.first_response = None
 
     @property
     def has_proxy(self):
@@ -236,6 +238,8 @@ class FeedFinder:
     def _read(self, url, current_try, use_proxy=False):
         self._visited.add(url)
         res = self.reader.read(url, use_proxy=use_proxy)
+        if self.first_response is None:
+            self.first_response = res
         if res.ok and current_try == 0 and res.url != url:
             # 发生了重定向，重新设置start_url
             try:

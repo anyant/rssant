@@ -1,3 +1,4 @@
+import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -7,6 +8,13 @@ import pytest
 import rssant_feedlib.rsshub as rsshub_module
 import rssant_worker.worker_service as worker_service
 from rssant_common.dns_service import DNSService
+from rssant_worker.feed_creation_error import (
+    ACCESS_DENIED,
+    CONNECTION_ERROR,
+    HTML_PAGE,
+    NOT_A_FEED,
+    NOT_FOUND,
+)
 
 FEED_XML = b"""<?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0">
@@ -263,6 +271,9 @@ def test_find_rsshub_all_404_is_permanent(patched):
     assert result['feed'] is None
     assert result['retryable'] is False
     assert '404' in result['messages'][0]
+    assert result['error_message'] == (
+        'RSSHub 路由不存在（404），可能已经下线或改名。换一个 RSS 地址试试。'
+    )
 
 
 def test_find_rsshub_transient_failure_is_retryable(patched):
@@ -278,6 +289,7 @@ def test_find_rsshub_transient_failure_is_retryable(patched):
     assert result['feed'] is None
     assert result['retryable'] is True
     assert '已排入自动重试' in result['messages'][0]
+    assert 'error_message' not in result
 
 
 class _PrivateHostConfig:
@@ -479,3 +491,62 @@ def test_find_rsshub_budget_exhausted_is_retryable(patched):
     # 预算分支的总结文案，区别于普通的“超时、限流或实例不可用”
     assert '个实例后超时' in result['messages'][0]
     assert '已排入自动重试' in result['messages'][0]
+    assert 'error_message' not in result
+
+
+# ---- 普通 URL 查找失败：error_message ----
+
+def _find_legacy(server_or_url):
+    url = server_or_url.url + '/page' if hasattr(server_or_url, 'url') else server_or_url
+    worker_service.WorkerService().find_feed(feed_creation_id=7, url=url)
+    return worker_service.SERVICE_CLIENT.calls_of(
+        'harbor_rss.save_feed_creation_result'
+    )[0]
+
+
+def test_find_legacy_404_sets_error_message(patched):
+    server = _Server({})
+    with server:
+        result = _find_legacy(server)
+    assert result['feed'] is None
+    assert result['error_message'] == NOT_FOUND
+
+
+def test_find_legacy_403_sets_error_message(patched):
+    server = _Server({'/page': [(403, {'Content-Type': 'text/html'}, b'denied')]})
+    with server:
+        result = _find_legacy(server)
+    assert result['error_message'] == ACCESS_DENIED
+
+
+def test_find_legacy_html_sets_error_message(patched):
+    server = _Server({'/page': [html_response()]})
+    with server:
+        result = _find_legacy(server)
+    assert result['error_message'] == HTML_PAGE
+
+
+def test_find_legacy_not_a_feed_sets_error_message(patched):
+    server = _Server({'/page': [(200, {'Content-Type': 'text/plain'}, b'just text')]})
+    with server:
+        result = _find_legacy(server)
+    assert result['error_message'] == NOT_A_FEED
+
+
+def test_find_legacy_connection_error_sets_error_message(patched):
+    # 借一个刚释放的本地端口，连接会被拒绝
+    sock = socket.socket()
+    sock.bind(('127.0.0.1', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    result = _find_legacy('http://127.0.0.1:%d/page' % port)
+    assert result['feed'] is None
+    assert result['error_message'] == CONNECTION_ERROR
+
+
+def test_find_legacy_success_has_no_error_message(patched):
+    server = _Server({'/page': [feed_response()]})
+    with server:
+        result = _find_legacy(server)
+    assert result['feed'] is not None
+    assert 'error_message' not in result
