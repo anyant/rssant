@@ -251,6 +251,22 @@ class ExportTestCase(TestCase):
         response = self.client.get('/api/v1/feed/{}/export/stories'.format(feed_id))
         self.assertIn(response.status_code, (400, 403, 404))
 
+    def test_feed_export_has_content_length(self):
+        make_story(self.feed, 1)
+        response = self.client.get('/api/v1/feed/{}/export/stories'.format(
+            encode(self.user.id, self.feed.id)))
+        self.assertEqual(response.status_code, 200)
+        body = b''.join(response.streaming_content)
+        self.assertEqual(int(response['Content-Length']), len(body))
+        self.assertGreater(len(body), 0)
+
+    def test_feed_export_not_subscribed_returns_400(self):
+        feed = make_feed('https://not-subscribed.example.com/feed.xml', total_storys=1)
+        response = self.client.get('/api/v1/feed/{}/export/stories'.format(
+            encode(self.user.id, feed.id)))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['message'], '订阅不存在')
+
 
 @pytest.mark.dbtest
 class TokenAndAgentDocTestCase(TestCase):
