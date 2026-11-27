@@ -1,6 +1,7 @@
 import logging
 import time
 import datetime
+import typing
 
 from django.utils import timezone
 from django.db import transaction
@@ -91,6 +92,31 @@ class StoryService:
         except Story.DoesNotExist:
             return None
         return self.to_common(story)
+
+    def batch_get_by_offset(self, feed_id, offsets, detail=False) -> "typing.List[CommonStory]":
+        """
+        按 offset 批量读取文章，StoryInfo 优先，兼容只有 Story 行的旧数据。
+        返回存在的文章，按 offset 升序；detail=True 时从正文存储补正文，
+        Story 行自带的正文保留。
+        """
+        offsets = list(offsets)
+        keys = [(feed_id, offset) for offset in offsets]
+        if not keys:
+            return []
+        storys = [self.to_common(x) for x in StoryInfo.batch_get(keys, detail=detail)]
+        found_offsets = {story.offset for story in storys}
+        missing_offsets = [offset for offset in offsets if offset not in found_offsets]
+        if missing_offsets:
+            q = Story.objects.filter(feed_id=feed_id, offset__in=missing_offsets)
+            storys.extend(self.to_common(x) for x in q)
+        if self._is_include_content(detail):
+            content_map = dict(self._storage.batch_get_content(keys))
+            for story in storys:
+                content = content_map.get((story.feed_id, story.offset))
+                if content is not None:
+                    story.content = content
+        storys.sort(key=lambda x: x.offset)
+        return storys
 
     def get_or_create_story(self, feed_id, offset) -> Story:
         """

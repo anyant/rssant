@@ -9,7 +9,7 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
-from rssant_api.models import Feed, FeedStatus, Story, UserFeed
+from rssant_api.models import STORY_SERVICE, Feed, FeedStatus, Story, StoryId, UserFeed
 from rssant_common.unionid import encode
 from rssant_config import CONFIG
 
@@ -69,6 +69,35 @@ class ExportTestCase(TestCase):
             dt_favorited=dt_favorited,
         ).save()
 
+    def _save_storyinfos(self, feed, count, content='同步正文 {}', summary=None, prefix='sync'):
+        """按同步抓取的方式写 StoryInfo + 正文，不创建 Story 行。"""
+        start = Feed.get_by_pk(feed.id).total_storys
+        storys = []
+        for index in range(count):
+            offset = start + index
+            story = dict(
+                unique_id='{}/{}'.format(prefix, offset),
+                title='同步文章 {}'.format(offset),
+                link='https://sync.example.com/{}.html'.format(offset),
+                content=content.format(offset) if content else '',
+                dt_published=timezone.now(),
+            )
+            if summary is not None:
+                story['summary'] = summary
+            storys.append(story)
+        STORY_SERVICE.bulk_save_by_feed(feed.id, storys, batch_size=10)
+
+    def _make_sync_feed(self, url):
+        feed = make_feed(url, total_storys=0)
+        UserFeed(user=self.user, feed=feed, dt_updated=timezone.now()).save()
+        return feed
+
+    def _export_feed(self, feed):
+        response = self.client.get('/api/v1/feed/{}/export/stories'.format(
+            encode(self.user.id, feed.id)))
+        self.assertEqual(response.status_code, 200)
+        return read_zip(response)
+
     def test_favorites_export_structure(self):
         story1 = make_story(self.feed, 1, content='<p>Hello <b>world</b></p>')
         story2 = make_story(self.feed, 2, content='')
@@ -96,6 +125,8 @@ class ExportTestCase(TestCase):
         self.assertIn('Hello **world**', zf.read(content_file).decode('utf-8'))
         article2 = [x for x in articles if x['content_missing']][0]
         self.assertIn('只有摘要', zf.read(article2['content_file']).decode('utf-8'))
+        self.assertEqual(article1['id'], StoryId.encode(story1.feed_id, story1.offset))
+        self.assertEqual(article2['id'], StoryId.encode(story2.feed_id, story2.offset))
         self.assertGreater(len(body), 0)
 
     def test_feed_export_uses_retention_window(self):
@@ -114,6 +145,84 @@ class ExportTestCase(TestCase):
         feed_data = json.loads(zf.read('feed.json'))
         self.assertEqual(len(articles), 3)
         self.assertEqual([x['title'] for x in articles], ['测试文章 7', '测试文章 8', '测试文章 9'])
+        self.assertEqual(feed_data['exported_count'], 3)
+
+    def test_feed_export_includes_unopened_storyinfo(self):
+        feed = self._make_sync_feed('https://sync.example.com/feed.xml')
+        self._save_storyinfos(feed, 5)
+        feed = Feed.get_by_pk(feed.id)
+        self.assertEqual(feed.total_storys, 5)
+        zf, _ = self._export_feed(feed)
+        articles = json.loads(zf.read('articles.json'))
+        feed_data = json.loads(zf.read('feed.json'))
+        manifest = json.loads(zf.read('manifest.json'))
+        self.assertEqual(len(articles), 5)
+        self.assertEqual(feed_data['exported_count'], 5)
+        self.assertEqual(manifest['count'], 5)
+        self.assertEqual(manifest['content_missing'], 0)
+        self.assertEqual([x['title'] for x in articles],
+                         ['同步文章 {}'.format(i) for i in range(5)])
+        self.assertEqual([x['id'] for x in articles],
+                         [StoryId.encode(feed.id, i) for i in range(5)])
+        for offset, article in enumerate(articles):
+            body = zf.read(article['content_file']).decode('utf-8')
+            self.assertIn('同步正文 {}'.format(offset), body)
+        content_files = [x for x in zf.namelist() if x.startswith('content/')]
+        self.assertEqual(len(content_files), 5)
+
+    def test_feed_export_does_not_duplicate_opened_story(self):
+        feed = self._make_sync_feed('https://sync.example.com/feed.xml')
+        self._save_storyinfos(feed, 5)
+        STORY_SERVICE.get_or_create_story(feed.id, 1)
+        self.assertEqual(Story.objects.filter(feed_id=feed.id).count(), 1)
+        feed = Feed.get_by_pk(feed.id)
+        zf, _ = self._export_feed(feed)
+        articles = json.loads(zf.read('articles.json'))
+        self.assertEqual(len(articles), 5)
+        self.assertEqual([x['title'] for x in articles],
+                         ['同步文章 {}'.format(i) for i in range(5)])
+
+    def test_feed_export_falls_back_to_story_row(self):
+        feed = self._make_sync_feed('https://sync.example.com/feed.xml')
+        self._save_storyinfos(feed, 2)
+        make_story(feed, 3, content='<p>旧正文</p>')
+        feed = Feed.get_by_pk(feed.id)
+        feed.total_storys = 4
+        feed.save()
+        zf, _ = self._export_feed(feed)
+        articles = json.loads(zf.read('articles.json'))
+        self.assertEqual([x['title'] for x in articles],
+                         ['同步文章 0', '同步文章 1', '测试文章 3'])
+        last_body = zf.read(articles[-1]['content_file']).decode('utf-8')
+        self.assertIn('旧正文', last_body)
+
+    def test_feed_export_content_missing_uses_summary(self):
+        feed = self._make_sync_feed('https://sync.example.com/feed.xml')
+        self._save_storyinfos(feed, 1, content='', summary='只有摘要')
+        self._save_storyinfos(feed, 1, content='', prefix='sync-empty')
+        feed = Feed.get_by_pk(feed.id)
+        zf, _ = self._export_feed(feed)
+        articles = json.loads(zf.read('articles.json'))
+        manifest = json.loads(zf.read('manifest.json'))
+        self.assertEqual(len(articles), 2)
+        self.assertEqual(manifest['content_missing'], 2)
+        self.assertIn('只有摘要', zf.read(articles[0]['content_file']).decode('utf-8'))
+        self.assertIn('原文内容已不可用', zf.read(articles[1]['content_file']).decode('utf-8'))
+
+    def test_feed_export_uses_retention_window_for_storyinfo(self):
+        feed = self._make_sync_feed('https://sync.example.com/feed.xml')
+        self._save_storyinfos(feed, 10)
+        feed = Feed.get_by_pk(feed.id)
+        old_retention = CONFIG.feed_story_retention
+        CONFIG.feed_story_retention = 3
+        try:
+            zf, _ = self._export_feed(feed)
+        finally:
+            CONFIG.feed_story_retention = old_retention
+        articles = json.loads(zf.read('articles.json'))
+        feed_data = json.loads(zf.read('feed.json'))
+        self.assertEqual([x['title'] for x in articles],
+                         ['同步文章 7', '同步文章 8', '同步文章 9'])
         self.assertEqual(feed_data['exported_count'], 3)
 
     def test_export_cooldown(self):
