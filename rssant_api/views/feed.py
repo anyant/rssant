@@ -375,7 +375,11 @@ def feed_import_opml(request) -> FeedImportResultSchema:
 def feed_export_stories(request, feed_id: T.feed_unionid.object):
     """单个订阅的保留文章打包导出"""
     check_unionid(request.user, feed_id)
-    return export_response(request.user, lambda: build_feed_zip(request.user, feed_id))
+    try:
+        return export_response(
+            request.user, lambda: build_feed_zip(request.user, feed_id))
+    except FeedNotFoundError:
+        return Response({"message": "订阅不存在"}, status=400)
 
 
 @DeprecatedFeedView.get('feed/opml')

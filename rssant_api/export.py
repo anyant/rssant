@@ -250,4 +250,12 @@ def export_response(user, builder):
     except Exception:
         release_export_cooldown(user)
         raise
-    return FileResponse(tmp, content_type='application/zip', as_attachment=True, filename=filename)
+    tmp.seek(0, io.SEEK_END)
+    size = tmp.tell()
+    tmp.seek(0)
+    response = FileResponse(
+        tmp, content_type='application/zip', as_attachment=True, filename=filename)
+    # FileResponse 只对绝对路径的文件设置 Content-Length，TemporaryFile 没有；
+    # 不补的话慢网下浏览器看不到总大小和进度。
+    response['Content-Length'] = str(size)
+    return response
