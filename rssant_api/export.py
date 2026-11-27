@@ -17,7 +17,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, JsonResponse
 from openpyxl import Workbook
 
-from rssant_api.models import Feed, Story, UnionFeed, UserFeed, UserStory
+from rssant_api.models import STORY_SERVICE, Feed, StoryId, UnionFeed, UserFeed, UserStory
 from rssant_common.validator import FeedUnionId
 from rssant_config import CONFIG
 
@@ -68,7 +68,7 @@ def _story_markdown(story) -> str:
 
 def _story_article(story, feed_id, feed_title, feed_url, favorited_at, content_file: str) -> dict:
     return dict(
-        id=story.id,
+        id=StoryId.encode(story.feed_id, story.offset),
         title=story.title,
         url=story.link,
         author=story.author,
@@ -198,9 +198,8 @@ def build_feed_zip(user, feed_unionid):
     articles = []
     for offset in range(begin, feed.total_storys, FEED_BATCH_SIZE):
         end = min(offset + FEED_BATCH_SIZE, feed.total_storys)
-        storys = Story.objects.filter(
-            feed_id=feed.id, offset__gte=offset, offset__lt=end
-        ).order_by('offset')
+        storys = STORY_SERVICE.batch_get_by_offset(
+            feed.id, list(range(offset, end)), detail=True)
         for story in storys:
             articles.append((
                 _story_article(story, feed.id, union_feed.title, feed.url, None, ''),
