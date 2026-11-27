@@ -25,10 +25,11 @@ FeedImportItem = namedtuple('FeedImportItem', 'url, title, group')
 
 
 class UnionFeed:
-    def __init__(self, feed, user_feed, detail=False):
+    def __init__(self, feed, user_feed, detail=False, num_read_storys=0):
         self._feed = feed
         self._user_feed = user_feed
         self._detail = detail
+        self._num_read_storys = num_read_storys
 
     @cached_property
     def id(self):
@@ -93,8 +94,17 @@ class UnionFeed:
         return self._user_feed.story_offset
 
     @property
+    def num_read_storys(self):
+        return self._num_read_storys
+
+    @property
     def num_unread_storys(self):
-        return self._feed.total_storys - self._user_feed.story_offset
+        num_unread = (
+            self._feed.total_storys
+            - self._user_feed.story_offset
+            - self._num_read_storys
+        )
+        return max(0, num_unread)
 
     @staticmethod
     def _union_dt_updated(dt_1, dt_2):
@@ -214,21 +224,47 @@ class UnionFeed:
             user_feed = q.get()
         except UserFeed.DoesNotExist as ex:
             raise FeedNotFoundError(str(ex)) from ex
-        return UnionFeed(user_feed.feed, user_feed, detail=detail)
+        num_read_map = UnionFeed._query_num_read_storys(user_id, [feed_id])
+        return UnionFeed(
+            user_feed.feed,
+            user_feed,
+            detail=detail,
+            num_read_storys=num_read_map.get(feed_id, 0),
+        )
 
     @staticmethod
     def bulk_delete(feed_ids):
         return Feed.objects.filter(id__in=list(feed_ids)).delete()
 
     @staticmethod
-    def _merge_user_feeds(user_feeds, detail=False):
+    def _query_num_read_storys(user_id, feed_ids=None):
+        """统计每个源在批量游标之后、单篇标记已读的篇数"""
+        from django.db.models import Count, F
+
+        from .story import UserStory
+        q = UserStory.objects.filter(user_id=user_id, is_read=True)
+        if feed_ids is not None:
+            q = q.filter(feed_id__in=list(feed_ids))
+        q = q.filter(offset__gte=F('user_feed__story_offset'))
+        rows = q.values('feed_id').annotate(num_read=Count('id'))
+        return {x['feed_id']: x['num_read'] for x in rows}
+
+    @staticmethod
+    def _merge_user_feeds(user_feeds, detail=False, num_read_map=None):
+        num_read_map = num_read_map or {}
+
         def sort_union_feeds(x):
             return (bool(x.dt_updated), x.dt_updated, x.id)
 
         union_feeds = []
         for user_feed in user_feeds:
             union_feeds.append(
-                UnionFeed(user_feed.feed, user_feed, detail=detail)
+                UnionFeed(
+                    user_feed.feed,
+                    user_feed,
+                    detail=detail,
+                    num_read_storys=num_read_map.get(user_feed.feed_id, 0),
+                )
             )
         return list(sorted(union_feeds, key=sort_union_feeds, reverse=True))
 
@@ -246,8 +282,10 @@ class UnionFeed:
             if only_publish:
                 q = q.filter(is_publish=True)
             q = q.defer(*exclude_fields)
+            user_feeds = list(q.all())
+            num_read_map = UnionFeed._query_num_read_storys(user_id)
             union_feeds = UnionFeed._merge_user_feeds(
-                list(q.all()), detail=detail
+                user_feeds, detail=detail, num_read_map=num_read_map
             )
             return len(union_feeds), union_feeds, []
         hints = {x['id'].feed_id: x['dt_updated'] for x in hints}
@@ -273,7 +311,13 @@ class UnionFeed:
             user_id=user_id, feed_id__in=updates
         )
         q = q.defer(*exclude_fields)
-        union_feeds = UnionFeed._merge_user_feeds(list(q.all()), detail=detail)
+        updated_feeds = list(q.all())
+        num_read_map = UnionFeed._query_num_read_storys(
+            user_id, [x.feed_id for x in updated_feeds]
+        )
+        union_feeds = UnionFeed._merge_user_feeds(
+            updated_feeds, detail=detail, num_read_map=num_read_map
+        )
         return total, union_feeds, deteted_ids
 
     @staticmethod

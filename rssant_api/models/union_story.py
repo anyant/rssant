@@ -114,6 +114,12 @@ class UnionStory:
         return self._user_story.is_watched
 
     @property
+    def is_read(self):
+        if self._user_story:
+            return self._user_story.is_read
+        return False
+
+    @property
     def dt_watched(self):
         if not self._user_story:
             return None
@@ -156,6 +162,7 @@ class UnionStory:
             sentence_count=self.sentence_count,
             has_mathjax=self.has_mathjax,
             is_watched=self.is_watched,
+            is_read=self.is_read,
             is_favorited=self.is_favorited,
         )
         detail = Detail.from_schema(self._detail, StoryDetailSchema)
@@ -267,7 +274,7 @@ class UnionStory:
         q = UserStory.objects.filter(
             user_id=user_id, feed_id=feed_id, offset__in=offset_s
         )
-        q = q.exclude(is_favorited=False, is_watched=False)
+        q = q.exclude(is_favorited=False, is_watched=False, is_read=False)
         user_storys = list(q.all())
         return user_storys
 
@@ -380,7 +387,7 @@ class UnionStory:
         q = UserStory.objects.filter(
             user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids
         )
-        q = q.exclude(is_favorited=False, is_watched=False)
+        q = q.exclude(is_favorited=False, is_watched=False, is_read=False)
         user_storys = list(q.all())
         union_storys = UnionStory._merge_storys(
             storys, user_storys, user_id=user_id, detail=detail
@@ -546,3 +553,45 @@ class UnionStory:
         return UnionStory.set_watched_by_id(
             story_unionid, is_watched=is_watched
         )
+
+    @staticmethod
+    def _set_read_by_id(story_unionid, is_read=True):
+        """标记单篇已读。只写 UserStory.is_read，不碰 is_watched 和 Story.is_user_marked。"""
+        user_id, feed_id, offset = story_unionid
+        try:
+            # 大部分文章只有 StoryInfo，UserStory.story 是必填外键，需要补一条 Story 记录；
+            # 不设置 is_user_marked，文章仍然会按 retention 清理。
+            story = STORY_SERVICE.get_or_create_story(feed_id, offset)
+        except Story.DoesNotExist:
+            raise StoryNotFoundError()
+        user_feed = UserFeed.objects.only('id', 'user_id', 'feed_id').get(
+            user_id=user_id, feed_id=feed_id
+        )
+        with transaction.atomic():
+            try:
+                user_story = UserStory.get_by_offset(
+                    user_id, feed_id, offset, detail=False
+                )
+            except UserStory.DoesNotExist:
+                user_story = UserStory(
+                    user_id=user_id,
+                    feed_id=feed_id,
+                    user_feed_id=user_feed.id,
+                    story_id=story.id,
+                    offset=offset,
+                )
+            user_story.is_read = is_read
+            user_story.save()
+        union_story = UnionStory(
+            story,
+            user_id=user_id,
+            user_feed_id=user_feed.id,
+            user_story=user_story,
+            detail=False,
+        )
+        return union_story
+
+    @staticmethod
+    def set_read_by_feed_offset(feed_unionid, offset, is_read=True):
+        story_unionid = StoryUnionId(*feed_unionid, offset)
+        return UnionStory._set_read_by_id(story_unionid, is_read=is_read)

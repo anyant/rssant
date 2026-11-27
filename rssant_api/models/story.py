@@ -1,12 +1,12 @@
-from django.utils import timezone
 from django.db import connection, transaction
+from django.utils import timezone
 from validr import T
 
-from rssant_common.detail import Detail
 from rssant_api.monthly_story_count import MonthlyStoryCount
-from .helper import Model, ContentHashMixin, JSONField, models, optional, User
-from .feed import Feed, UserFeed
+from rssant_common.detail import Detail
 
+from .feed import Feed, UserFeed
+from .helper import ContentHashMixin, JSONField, Model, User, models, optional
 
 MONTH_18 = timezone.timedelta(days=18 * 30)
 ONE_MONTH = timezone.timedelta(days=30)
@@ -362,6 +362,7 @@ class UserStory(Model):
     dt_created = models.DateTimeField(auto_now_add=True, help_text="创建时间")
     is_watched = models.BooleanField(default=False)
     dt_watched = models.DateTimeField(**optional, help_text="关注时间")
+    is_read = models.BooleanField(default=False, help_text="是否已读")
     is_favorited = models.BooleanField(default=False)
     dt_favorited = models.DateTimeField(**optional, help_text="标星时间")
 
