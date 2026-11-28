@@ -298,7 +298,10 @@ class FeedWakeupTestCase(TestCase):
         self.user = User.objects.create_user('wakeup', password='test123456')
 
     def _feed(self, url, status=FeedStatus.ERROR, dt_checked=None, subscribe=True):
-        feed = make_feed(url, status=status, dt_checked=dt_checked or timezone.now())
+        # 默认 2 小时前检查过，避开唤醒的 min_age_seconds 过滤
+        if dt_checked is None:
+            dt_checked = timezone.now() - timezone.timedelta(hours=2)
+        feed = make_feed(url, status=status, dt_checked=dt_checked)
         if subscribe:
             UserFeed(
                 user=self.user, feed=feed, dt_updated=timezone.now()
@@ -356,6 +359,19 @@ class FeedWakeupTestCase(TestCase):
         self._feed(
             'https://rsshub.app/c', dt_checked=now - timezone.timedelta(hours=1)
         )
-        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2)
+        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2, min_age_seconds=1800)
         assert feed_ids == [old.id, mid.id]
         assert remaining == 1
+
+    def test_wakeup_skips_recently_checked(self):
+        now = timezone.now()
+        old = self._feed(
+            'https://rsshub.app/old', dt_checked=now - timezone.timedelta(hours=2)
+        )
+        recent = self._feed(
+            'https://rsshub.app/recent', dt_checked=now - timezone.timedelta(minutes=10)
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10)
+        assert feed_ids == [old.id]
+        recent.refresh_from_db()
+        assert recent.dt_checked is not None
