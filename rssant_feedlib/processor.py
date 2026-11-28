@@ -503,6 +503,19 @@ def _has_cdata(content: str):
     return '<![CDATA[' in content and ']]' in content
 
 
+def story_html_to_markdown(content):
+    """把文章 HTML 转成 Markdown，供 AI 阅读和导出使用。"""
+    if (not content) or (not content.strip()):
+        return ""
+    import html2text
+
+    parser = html2text.HTML2Text()
+    parser.body_width = 0
+    parser.ignore_images = False
+    parser.ignore_links = False
+    return parser.handle(content).strip()
+
+
 def story_html_to_text(content, clean=True):
     """
     >>> content = '''<html><body>

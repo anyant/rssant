@@ -29,6 +29,7 @@ from rssant_common.image_token import ImageToken
 from rssant_config import CONFIG
 from rssant_feedlib import FeedResponseStatus
 from rssant_feedlib.fulltext import FulltextAcceptStrategy
+from rssant_feedlib.processor import story_html_to_markdown
 
 from .helper import check_unionid
 from .publish import PublishView, is_only_publish, require_publish_user
@@ -42,6 +43,7 @@ StorySchema = T.dict(
     id=T.story_unionid,
     feed=T.dict(
         id=T.feed_unionid,
+        title=T.str.optional,
     ),
     offset=T.int,
     user=T.dict(
@@ -122,18 +124,24 @@ def story_query_recent(
     request,
     feed_ids: T.list(T.feed_unionid.object).optional,
     days: T.int.min(1).max(30).default(14),
+    unread_only: T.bool.default(False),
+    per_feed_limit: T.int.min(1).max(10).default(3),
+    limit: T.int.min(1).max(200).default(100),
     detail: StoryDetailSchema,
 ) -> StoryResultSchema:
     check_unionid(request.user, feed_ids)
-    storys = UnionStory.query_recent_by_user(
+    total, storys = UnionStory.query_recent_by_user(
         user_id=request.user.id,
         feed_unionids=feed_ids,
         days=days,
+        limit=limit,
+        per_feed_limit=per_feed_limit,
+        unread_only=unread_only,
         detail=detail,
     )
     storys = [x.to_dict() for x in storys]
     return dict(
-        total=len(storys),
+        total=total,
         size=len(storys),
         storys=storys,
     )
@@ -151,6 +159,8 @@ def story_query_batch(
         )
     ),
     detail: StoryDetailSchema,
+    content: T.bool.default(False),
+    content_format: T.enum('html,markdown').default('html'),
 ) -> StoryResultSchema:
     feed_union_ids = [x['feed_id'] for x in storys]
     check_unionid(request.user, feed_union_ids)
@@ -168,9 +178,14 @@ def story_query_batch(
         for i in range(item['limit']):
             story_keys.append((feed_id, offset + i))
     storys = UnionStory.batch_get_by_feed_offset(
-        story_keys=story_keys, user_id=request.user.id, detail=detail
+        story_keys=story_keys, user_id=request.user.id, detail=detail,
+        content=content,
     )
-    storys = [x.to_dict() for x in storys]
+    storys = [x.to_dict(content=content) for x in storys]
+    if content and content_format == 'markdown':
+        for x in storys:
+            if x.get('content'):
+                x['content'] = story_html_to_markdown(x['content'])
     return dict(
         total=len(storys),
         size=len(storys),
@@ -187,6 +202,7 @@ def story_get_by_offset(
     offset: T.int.min(0),
     detail: StoryDetailSchema,
     set_readed: T.bool.default(False),
+    content_format: T.enum('html,markdown').default('html'),
 ) -> StorySchema:
     """Story detail"""
     user = require_publish_user(request)
@@ -214,6 +230,8 @@ def story_get_by_offset(
         offset=offset,
     ).encode(secret=CONFIG.image_token_secret)
     ret = story.to_dict()
+    if content_format == 'markdown' and ret.get('content'):
+        ret['content'] = story_html_to_markdown(ret['content'])
     ret.update(image_token=image_token)
     return ret
 
