@@ -31,10 +31,11 @@ WORKDIR /app
 COPY etc/apt-sources.list /etc/apt/sources.list
 RUN apt-get update && \
     apt-get install -y ca-certificates && update-ca-certificates && \
-    apt-get install -y curl gnupg nginx && \
-    apt-get install -y postgresql-common && \
-    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt-get install -y postgresql-11 && \
+    apt-get install -y curl gnupg && \
+    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg && \
+    echo "deb https://apt-archive.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    apt-get update && \
+    apt-get install -y nginx postgresql-common postgresql-11 && \
     rm -rf /var/lib/apt/lists/*
 # fix DNS pollution of local network
 COPY etc/resolv.conf /etc/resolv.conf
