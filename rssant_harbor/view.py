@@ -112,7 +112,12 @@ def do_update_feed_info(
     feed: FeedInfoSchema,
     rsshub_offset: T.int.optional,
     rsshub_cooling: T.list(
-        T.dict(url=T.url, cooldown_seconds=T.int.optional)
+        T.dict(
+            url=T.url,
+            reason=T.str.optional,
+            retry_after=T.int.optional,
+            cooldown_seconds=T.int.optional,
+        )
     ).optional,
 ):
     HARBOR_SERVICE.update_feed_info(

@@ -48,7 +48,6 @@ from rssant_feedlib.processor import (
     story_readability,
 )
 from rssant_feedlib.rsshub import (
-    COOLDOWN_SECONDS,
     FIND_ATTEMPT_TIMEOUT,
     FIND_BUDGET_SECONDS,
     SYNC_ATTEMPT_TIMEOUT,
@@ -462,13 +461,16 @@ class WorkerService:
             is_too_many_requests = (
                 response.status == HTTPStatus.TOO_MANY_REQUESTS.value
             )
-            if candidate.instance and (is_transport_error or is_too_many_requests):
+            if candidate.instance and is_transport_error:
+                cooling_updates.append(
+                    dict(url=candidate.instance, reason='transport')
+                )
+            elif candidate.instance and is_too_many_requests:
                 cooling_updates.append(
                     dict(
                         url=candidate.instance,
-                        cooldown_seconds=(
-                            response.retry_after or COOLDOWN_SECONDS
-                        ),
+                        reason='rate_limit',
+                        retry_after=response.retry_after,
                     )
                 )
             raw_result = self._parse_rsshub_response(response)

@@ -323,6 +323,49 @@ class Feed(Model, ContentHashMixin):
                 feeds.append(dict(zip(columns, row)))
         return feeds
 
+    @staticmethod
+    def wakeup_rsshub_feeds(limit=120) -> tuple:
+        """
+        唤醒 RSSHub 存量错误源：把 dt_checked 置空，调度器下一轮就会重新检查。
+
+        只取 error 且至少有一个订阅者的源；候选主机和 worker 的 RSSHub 判定一致
+        （主机含 rsshub，或属于公共实例清单）。返回 (feed_ids, remaining)，
+        remaining 是本批之后还没唤醒的数量。
+        """
+        from rssant_feedlib.rsshub import public_hosts
+
+        hosts = sorted(public_hosts())
+        placeholders = ', '.join(['%s'] * len(hosts))
+        sql = f"""
+        WITH t AS (
+            SELECT id, _version, count(*) OVER () AS total
+            FROM rssant_api_feed AS feed
+            WHERE status = %s
+              AND dt_checked IS NOT NULL
+              AND EXISTS (
+                  SELECT 1 FROM rssant_api_userfeed AS uf WHERE uf.feed_id = feed.id
+              )
+              AND (
+                  lower(split_part(split_part(feed.url, '//', 2), '/', 1)) LIKE '%%rsshub%%'
+                  OR lower(split_part(split_part(feed.url, '//', 2), '/', 1)) IN ({placeholders})
+              )
+            ORDER BY dt_checked, id
+            LIMIT %s
+        )
+        UPDATE rssant_api_feed AS feed
+        SET dt_checked = NULL, _version=feed._version+1
+        FROM t
+        WHERE feed.id=t.id AND feed._version=t._version
+        RETURNING feed.id, t.total
+        """
+        params = [FeedStatus.ERROR, *hosts, limit]
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+        feed_ids = [row[0] for row in rows]
+        total = rows[0][1] if rows else 0
+        return feed_ids, total - len(feed_ids)
+
     @classmethod
     def _query_feeds_by_reverse_url(cls, begin=None, limit=1000) -> list:
         if begin:

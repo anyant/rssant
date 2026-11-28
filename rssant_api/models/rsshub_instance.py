@@ -13,6 +13,9 @@ class RsshubInstance(Model):
     只在传输层失败（连接/超时/DNS/SSL）和 429 时写入冷却：
     任何 HTTP 响应（403/404/5xx/200 非 Feed）都可能是路由级问题，
     冷却整个实例会误伤它在其他路由上的能力。
+
+    传输层失败分级：第一次 60 秒，冷却到期后再失败升到 15 分钟；
+    冷却中的并发失败不叠加（避免一波突发超时把实例按住 15 分钟）。
     """
 
     class Meta:
@@ -45,6 +48,27 @@ class RsshubInstance(Model):
             url=url, defaults=dict(cooldown_until=cooldown_until)
         )
         return cooldown_until
+
+    @classmethod
+    def escalate_cooldown(cls, url: str):
+        """传输层失败：首次 60 秒；冷却到期后再失败 15 分钟；冷却中不改动"""
+        from rssant_feedlib.rsshub import (
+            COOLDOWN_FIRST_SECONDS,
+            COOLDOWN_SECONDS,
+        )
+
+        now = timezone.now()
+        first_until = now + timezone.timedelta(seconds=COOLDOWN_FIRST_SECONDS)
+        cls.objects.get_or_create(url=url, defaults=dict(cooldown_until=first_until))
+        escalated_until = now + timezone.timedelta(seconds=COOLDOWN_SECONDS)
+        cls.objects.filter(url=url).update(
+            cooldown_until=models.Case(
+                models.When(cooldown_until__isnull=True, then=models.Value(first_until)),
+                models.When(cooldown_until__lte=now, then=models.Value(escalated_until)),
+                default=models.F('cooldown_until'),
+                output_field=models.DateTimeField(),
+            )
+        )
 
     @classmethod
     def clear_cooldown(cls, url: str):

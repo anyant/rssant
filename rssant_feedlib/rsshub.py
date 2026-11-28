@@ -76,7 +76,8 @@ MAX_ATTEMPTS_PRIVATE = 3
 WINDOW_SIZE = 3
 OFFSET_STEP = 3
 
-# 实例冷却：传输层失败固定 15 分钟，429 按 Retry-After，最长 30 分钟
+# 实例冷却：传输层失败首次 60 秒，冷却到期后再失败升到 15 分钟；429 按 Retry-After，最长 30 分钟
+COOLDOWN_FIRST_SECONDS = 60
 COOLDOWN_SECONDS = 15 * 60
 MAX_COOLDOWN_SECONDS = 30 * 60
 

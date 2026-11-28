@@ -291,10 +291,20 @@ class HarborService:
             feed.dt_updated = timezone.now()
             feed.save()
         for item in rsshub_cooling or []:
-            RsshubInstance.set_cooldown(
-                item['url'],
-                item.get('cooldown_seconds') or COOLDOWN_SECONDS,
-            )
+            reason = item.get('reason')
+            if reason == 'transport':
+                RsshubInstance.escalate_cooldown(item['url'])
+            elif reason == 'rate_limit':
+                RsshubInstance.set_cooldown(
+                    item['url'],
+                    item.get('retry_after') or COOLDOWN_SECONDS,
+                )
+            else:
+                # 滚动发布期间旧版本 worker 只传 cooldown_seconds
+                RsshubInstance.set_cooldown(
+                    item['url'],
+                    item.get('cooldown_seconds') or COOLDOWN_SECONDS,
+                )
 
     def update_story(
         self,
