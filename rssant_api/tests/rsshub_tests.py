@@ -13,6 +13,7 @@ from rssant_api.models import (
     FeedStatus,
     FeedUrlMap,
     RsshubInstance,
+    UserFeed,
 )
 from rssant_config import CONFIG
 from rssant_harbor.harbor_service import HARBOR_SERVICE
@@ -57,6 +58,41 @@ class RsshubInstanceTestCase(TestCase):
             cooldown_until=timezone.now() - timezone.timedelta(seconds=1)
         )
         assert RsshubInstance.cooling_urls() == set()
+
+    def test_escalate_first_failure_cools_60_seconds(self):
+        url = 'https://rsshub.gneko.io'
+        RsshubInstance.escalate_cooldown(url)
+        row = RsshubInstance.objects.get(url=url)
+        seconds = (row.cooldown_until - timezone.now()).total_seconds()
+        assert 55 < seconds <= 61
+
+    def test_escalate_does_not_extend_active_cooldown(self):
+        url = 'https://rsshub.gneko.io'
+        until = RsshubInstance.set_cooldown(url, 600)
+        RsshubInstance.escalate_cooldown(url)
+        row = RsshubInstance.objects.get(url=url)
+        assert abs((row.cooldown_until - until).total_seconds()) < 1
+
+    def test_escalate_after_success_clears_cools_60_seconds(self):
+        # 成功清零后（cooldown_until 为 NULL）再失败，仍按首次 60 秒
+        url = 'https://rsshub.gneko.io'
+        RsshubInstance.set_cooldown(url, 60)
+        RsshubInstance.clear_cooldown(url)
+        RsshubInstance.escalate_cooldown(url)
+        row = RsshubInstance.objects.get(url=url)
+        seconds = (row.cooldown_until - timezone.now()).total_seconds()
+        assert 55 < seconds <= 61
+
+    def test_escalate_after_expiry_cools_15_minutes(self):
+        url = 'https://rsshub.gneko.io'
+        RsshubInstance.set_cooldown(url, 1)
+        RsshubInstance.objects.filter(url=url).update(
+            cooldown_until=timezone.now() - timezone.timedelta(seconds=1)
+        )
+        RsshubInstance.escalate_cooldown(url)
+        row = RsshubInstance.objects.get(url=url)
+        seconds = (row.cooldown_until - timezone.now()).total_seconds()
+        assert 895 < seconds <= 901
 
 
 @pytest.mark.dbtest
@@ -149,7 +185,7 @@ class FeedRsshubStateTestCase(TestCase):
             feed_id=feed.id,
             feed=dict(status=FeedStatus.ERROR, warnings='RSSHub 实例暂不可用'),
             rsshub_offset=3,
-            rsshub_cooling=[dict(url=url, cooldown_seconds=60)],
+            rsshub_cooling=[dict(url=url, reason='rate_limit', retry_after=60)],
         )
         feed.refresh_from_db()
         assert feed.rsshub_offset == 3
@@ -164,7 +200,7 @@ class FeedRsshubStateTestCase(TestCase):
             feed=dict(status=FeedStatus.ERROR, warnings='RSSHub 实例暂不可用'),
             rsshub_offset=3,
             rsshub_cooling=[
-                dict(url='https://rss.wudifeixue.com', cooldown_seconds=60)
+                dict(url='https://rss.wudifeixue.com', reason='transport')
             ],
         )
         response = client.post(
@@ -238,3 +274,53 @@ class FeedRsshubStateTestCase(TestCase):
         assert feed.rsshub_instance == instance
         assert RsshubInstance.cooling_urls() == set()
         assert feed.status == FeedStatus.READY
+
+
+@pytest.mark.dbtest
+class FeedWakeupTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user('wakeup', password='test123456')
+
+    def _feed(self, url, status=FeedStatus.ERROR, dt_checked=None, subscribe=True):
+        feed = make_feed(url, status=status, dt_checked=dt_checked or timezone.now())
+        if subscribe:
+            UserFeed(
+                user=self.user, feed=feed, dt_updated=timezone.now()
+            ).save()
+        return feed
+
+    def test_wakeup_only_error_with_subscriber(self):
+        public = self._feed('https://rsshub.app/v2ex/topics/hot')
+        private = self._feed('https://vcrsshub.vercel.app/bilibili/user/video/1')
+        self._feed('https://rsshub.app/weibo/user/2', subscribe=False)
+        self._feed('https://rsshub.app/zhihu/daily', status=FeedStatus.READY)
+        self._feed('https://blog.example.com/feed.xml')
+        queued = make_feed(
+            'https://rsshub.app/queued', status=FeedStatus.ERROR, dt_checked=None
+        )
+        UserFeed(
+            user=self.user, feed=queued, dt_updated=timezone.now()
+        ).save()
+        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=10)
+        assert set(feed_ids) == {public.id, private.id}
+        assert remaining == 0
+        for feed in (public, private):
+            feed.refresh_from_db()
+            assert feed.dt_checked is None
+        queued.refresh_from_db()
+        assert queued.dt_checked is None
+
+    def test_wakeup_orders_by_dt_checked_and_respects_limit(self):
+        now = timezone.now()
+        old = self._feed(
+            'https://rsshub.app/a', dt_checked=now - timezone.timedelta(hours=3)
+        )
+        mid = self._feed(
+            'https://rsshub.app/b', dt_checked=now - timezone.timedelta(hours=2)
+        )
+        self._feed(
+            'https://rsshub.app/c', dt_checked=now - timezone.timedelta(hours=1)
+        )
+        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2)
+        assert feed_ids == [old.id, mid.id]
+        assert remaining == 1

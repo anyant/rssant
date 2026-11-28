@@ -211,7 +211,32 @@ def test_sync_rsshub_429_cools_instance(patched):
         'harbor_rss.update_feed_info'
     )[0]
     assert data['rsshub_cooling'] == [
-        dict(url=server.url, cooldown_seconds=60)
+        dict(url=server.url, reason='rate_limit', retry_after=60)
+    ]
+
+
+def test_sync_rsshub_transport_error_cools_instance(patched):
+    server = _Server({ROUTE: [feed_response()]}, delay=2)
+    with server:
+        patched.setattr(worker_service, 'get_instances', lambda: [server.url])
+        patched.setattr(worker_service, 'SYNC_ATTEMPT_TIMEOUT', 0.5)
+        worker_service.WorkerService().sync_feed(
+            feed_id=0,
+            url=RSSHUB_URL,
+            use_proxy=False,
+            checksum_data_base64=None,
+            content_hash_base64=None,
+            etag=None,
+            last_modified=None,
+            is_refresh=False,
+            rsshub_instance=None,
+            rsshub_offset=0,
+        )
+    data = worker_service.SERVICE_CLIENT.calls_of(
+        'harbor_rss.update_feed_info'
+    )[0]
+    assert data['rsshub_cooling'] == [
+        dict(url=server.url, reason='transport')
     ]
 
 

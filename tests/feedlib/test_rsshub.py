@@ -133,20 +133,6 @@ def test_offset_step():
     assert next_offset(3) == 6
 
 
-def test_wakeup_sql_covers_all_public_hosts():
-    # 唤醒 SQL 的主机清单必须和代码里的公共主机一致，避免漏唤醒
-    import re
-    from pathlib import Path
-
-    from rssant_feedlib.rsshub import _PUBLIC_HOSTS
-
-    path = Path(__file__).resolve().parents[2] / 'scripts' / 'rsshub_wakeup.sql'
-    sql = path.read_text(encoding='utf-8')
-    quoted = set(re.findall(r"'([a-z0-9][a-z0-9.-]+)'", sql))
-    missing = set(_PUBLIC_HOSTS) - quoted
-    assert not missing, missing
-
-
 def test_rotation_covers_all_instances():
     # 每次失败 offset 加 3：任意起点下，ceil(n/3) 次检查覆盖全部实例
     instances = list('abcdef')
