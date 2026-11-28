@@ -11,7 +11,6 @@ import zipfile
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 
-import html2text
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, JsonResponse
@@ -20,6 +19,7 @@ from openpyxl import Workbook
 from rssant_api.models import STORY_SERVICE, Feed, StoryId, UnionFeed, UserFeed, UserStory
 from rssant_common.validator import FeedUnionId
 from rssant_config import CONFIG
+from rssant_feedlib.processor import story_html_to_markdown
 
 EXPORT_FORMAT = 'rssant-zip-v1'
 EXPORT_COOLDOWN_SECONDS = 60
@@ -36,13 +36,7 @@ def _format_dt(dt) -> str:
 
 
 def _html_to_markdown(content: str) -> str:
-    if not content:
-        return ''
-    parser = html2text.HTML2Text()
-    parser.body_width = 0
-    parser.ignore_images = False
-    parser.ignore_links = False
-    return parser.handle(content).strip()
+    return story_html_to_markdown(content)
 
 
 def _slug(title: str, max_length: int = 40) -> str:

@@ -24,13 +24,16 @@ _DATE_LAST_HTML_SUMMARY = timezone.datetime(2020, 8, 1, tzinfo=timezone.utc)
 
 class UnionStory:
     def __init__(
-        self, story, *, user_id, user_feed_id, user_story=None, detail=False
+        self, story, *, user_id, user_feed_id, user_story=None, detail=False,
+        story_offset=0, feed_title=None,
     ):
         self._story = story
         self._user_id = user_id
         self._user_feed_id = user_feed_id
         self._user_story = user_story
         self._detail = detail
+        self._story_offset = story_offset or 0
+        self._feed_title = feed_title
 
     @cached_property
     def id(self):
@@ -115,9 +118,9 @@ class UnionStory:
 
     @property
     def is_read(self):
-        if self._user_story:
-            return self._user_story.is_read
-        return False
+        if self._user_story and self._user_story.is_read:
+            return True
+        return self.offset < self._story_offset
 
     @property
     def dt_watched(self):
@@ -152,10 +155,13 @@ class UnionStory:
         return self._story.content
 
     def to_dict(self):
+        feed = dict(id=self.feed_id)
+        if self._feed_title:
+            feed['title'] = self._feed_title
         ret = dict(
             id=self.id,
             user=dict(id=self.user_id),
-            feed=dict(id=self.feed_id),
+            feed=feed,
             offset=self.offset,
             title=self.title,
             link=self.link,
@@ -173,7 +179,9 @@ class UnionStory:
     @staticmethod
     def _check_user_feed_by_story_unionid(story_unionid, only_publish=False):
         user_id, feed_id, offset = story_unionid
-        q = UserFeed.objects.only('id').filter(
+        q = UserFeed.objects.select_related('feed').only(
+            'id', 'story_offset', 'feed__title',
+        ).filter(
             user_id=user_id, feed_id=feed_id
         )
         if only_publish:
@@ -182,11 +190,11 @@ class UnionStory:
             user_feed = q.get()
         except UserFeed.DoesNotExist:
             raise StoryNotFoundError()
-        return user_feed.id
+        return user_feed
 
     @staticmethod
     def get_by_id(story_unionid, detail=False, only_publish=False):
-        user_feed_id = UnionStory._check_user_feed_by_story_unionid(
+        user_feed = UnionStory._check_user_feed_by_story_unionid(
             story_unionid, only_publish=only_publish
         )
         user_id, feed_id, offset = story_unionid
@@ -206,9 +214,11 @@ class UnionStory:
         return UnionStory(
             story,
             user_id=user_id,
-            user_feed_id=user_feed_id,
+            user_feed_id=user_feed.id,
             user_story=user_story,
             detail=detail,
+            story_offset=user_feed.story_offset,
+            feed_title=user_feed.feed.title,
         )
 
     @staticmethod
@@ -226,8 +236,16 @@ class UnionStory:
         user_storys_map_fallback = {x.story_id: x for x in user_storys}
         if user_feeds:
             user_feeds_map = {x.feed_id: x.id for x in user_feeds}
+            story_offsets = {x.feed_id: x.story_offset for x in user_feeds}
+            feed_titles = {x.feed_id: x.feed.title for x in user_feeds}
         else:
             user_feeds_map = {x.feed_id: x.user_feed_id for x in user_storys}
+            feed_ids = {story.feed_id for story in storys}
+            feed_meta = UserFeed.objects.select_related('feed').filter(
+                user_id=user_id, feed_id__in=feed_ids
+            ).only('feed_id', 'story_offset', 'feed__title')
+            story_offsets = {x.feed_id: x.story_offset for x in feed_meta}
+            feed_titles = {x.feed_id: x.feed.title for x in feed_meta}
         ret = []
         for story in storys:
             user_story = user_storys_map.get((story.feed_id, story.offset))
@@ -245,6 +263,8 @@ class UnionStory:
                     user_feed_id=user_feed_id,
                     user_story=user_story,
                     detail=detail,
+                    story_offset=story_offsets.get(story.feed_id, 0),
+                    feed_title=feed_titles.get(story.feed_id),
                 )
             )
         return ret
@@ -341,30 +361,94 @@ class UnionStory:
 
     @classmethod
     def query_recent_by_user(
-        cls, user_id, feed_unionids=None, days=14, limit=100, detail=False
+        cls, user_id, feed_unionids=None, days=14, limit=100,
+        per_feed_limit=3, unread_only=False, detail=False,
     ):
-        """
-        Deprecated since 1.4.2, use batch_get_by_feed_offset instead
+        """最近新增：按收录时间取时间窗内的文章，每个订阅最多 per_feed_limit 篇。
+
+        Returns: (total, storys)
         """
         if (not feed_unionids) and feed_unionids is not None:
-            return []  # when feed_unionids is empty list, return empty list
+            return 0, []  # when feed_unionids is empty list, return empty list
+        since = timezone.now() - timezone.timedelta(days=days)
+        q = UserFeed.objects.select_related('feed').filter(
+            user_id=user_id, feed__dt_updated__gte=since,
+        )
         if feed_unionids:
             feed_ids = [x.feed_id for x in feed_unionids]
-            feed_ids = cls._query_user_feed_ids(user_id, feed_ids)
-        else:
-            feed_ids = cls._query_user_feed_ids(user_id)
-        dt_begin = timezone.now() - timezone.timedelta(days=days)
-        q = Story.objects.filter(feed_id__in=feed_ids).filter(
-            dt_published__gte=dt_begin
+            q = q.filter(feed_id__in=feed_ids)
+        q = q.only(
+            'feed_id', 'story_offset', 'feed__id', 'feed__title',
+            'feed__total_storys', 'feed__retention_offset',
         )
-        detail = Detail.from_schema(detail, StoryDetailSchema)
-        q = q.defer(*detail.exclude_fields)
-        q = q.order_by('-dt_published')[:limit]
-        storys = list(q.all())
-        union_storys = cls._query_union_storys(
-            user_id=user_id, storys=storys, detail=detail
+        user_feeds = list(q.all())
+        if not user_feeds:
+            return 0, []
+        detail_obj = Detail.from_schema(detail, StoryDetailSchema)
+        candidates = []
+        for user_feed in user_feeds:
+            feed = user_feed.feed
+            total = feed.total_storys or 0
+            if total <= 0:
+                continue
+            high = total - 1
+            low = max(feed.retention_offset or 0, total - 300)
+            if high < low:
+                continue
+            infos = StoryInfo.objects.filter(
+                pk__gte=StoryId.encode(feed.id, low),
+                pk__lte=StoryId.encode(feed.id, high),
+                dt_created__gte=since,
+            ).order_by('-pk')
+            if not detail_obj:
+                infos = infos.defer(*STORY_INFO_DETAIL_FEILDS)
+            candidates.extend(
+                (STORY_SERVICE.to_common(info), user_feed) for info in infos
+            )
+        if not candidates:
+            return 0, []
+        offsets_by_feed = {}
+        for story, user_feed in candidates:
+            offsets_by_feed.setdefault(story.feed_id, []).append(story.offset)
+        user_storys = []
+        for feed_id, offsets in offsets_by_feed.items():
+            user_storys.extend(
+                UserStory.objects.filter(
+                    user_id=user_id, feed_id=feed_id, offset__in=offsets,
+                ).exclude(is_favorited=False, is_watched=False, is_read=False)
+            )
+        read_keys = {
+            (x.feed_id, x.offset) for x in user_storys if x.is_read
+        }
+        picked_by_feed = {}
+        for story, user_feed in candidates:
+            if unread_only:
+                if story.offset < user_feed.story_offset:
+                    continue
+                if (story.feed_id, story.offset) in read_keys:
+                    continue
+            picked_by_feed.setdefault(story.feed_id, []).append((story, user_feed))
+        picked = []
+        for items in picked_by_feed.values():
+            items.sort(
+                key=lambda x: (x[0].dt_published or x[0].dt_created, x[0].offset),
+                reverse=True,
+            )
+            picked.extend(items[:per_feed_limit])
+        total = len(picked)
+        picked.sort(
+            key=lambda x: (x[0].dt_published or x[0].dt_created, x[0].offset),
+            reverse=True,
         )
-        return union_storys
+        picked = picked[:limit]
+        union_storys = cls._merge_storys(
+            [x[0] for x in picked],
+            user_storys,
+            user_feeds=user_feeds,
+            user_id=user_id,
+            detail=detail,
+        )
+        return total, union_storys
 
     @classmethod
     def _query_user_feed_ids(cls, user_id, feed_ids=None):
@@ -435,9 +519,12 @@ class UnionStory:
         return storys
 
     @classmethod
-    def batch_get_by_feed_offset(cls, user_id, story_keys, detail=False):
+    def batch_get_by_feed_offset(
+        cls, user_id, story_keys, detail=False, content=False,
+    ):
         """
         story_keys: List[Tuple[feed_id, offset]]
+        content: 是否从正文存储读取 content（正文较重，按需开启）
         """
         story_keys = cls._validate_story_keys(user_id, story_keys)
         if not story_keys:
@@ -449,6 +536,19 @@ class UnionStory:
             storys.extend(
                 Story.batch_get_by_offset(remain_story_keys, detail=detail)
             )
+        if content:
+            offsets_by_feed = {}
+            for story_key in story_keys:
+                feed_id, offset = story_key
+                offsets_by_feed.setdefault(feed_id, []).append(offset)
+            content_map = {}
+            for feed_id, offsets in offsets_by_feed.items():
+                for story in STORY_SERVICE.batch_get_by_offset(
+                    feed_id, offsets, detail=True
+                ):
+                    content_map[(feed_id, story.offset)] = story.content
+            for story in storys:
+                story.content = content_map.get((story.feed_id, story.offset))
         union_storys = cls._query_union_storys_by_offset(
             user_id=user_id, storys=storys, detail=detail
         )
@@ -491,7 +591,9 @@ class UnionStory:
         story = STORY_SERVICE.set_user_marked(feed_id, offset)
         if not story:
             story = Story.get_by_offset(feed_id, offset, detail=False)
-        user_feed = UserFeed.objects.only('id', 'user_id', 'feed_id').get(
+        user_feed = UserFeed.objects.select_related('feed').only(
+            'id', 'user_id', 'feed_id', 'story_offset', 'feed__title',
+        ).get(
             user_id=user_id, feed_id=feed_id
         )
         user_feed_id = user_feed.id
@@ -527,6 +629,8 @@ class UnionStory:
             user_feed_id=user_feed_id,
             user_story=user_story,
             detail=False,
+            story_offset=user_feed.story_offset,
+            feed_title=user_feed.feed.title,
         )
         return union_story
 
@@ -564,7 +668,9 @@ class UnionStory:
             story = STORY_SERVICE.get_or_create_story(feed_id, offset)
         except Story.DoesNotExist:
             raise StoryNotFoundError()
-        user_feed = UserFeed.objects.only('id', 'user_id', 'feed_id').get(
+        user_feed = UserFeed.objects.select_related('feed').only(
+            'id', 'user_id', 'feed_id', 'story_offset', 'feed__title',
+        ).get(
             user_id=user_id, feed_id=feed_id
         )
         with transaction.atomic():
@@ -588,6 +694,8 @@ class UnionStory:
             user_feed_id=user_feed.id,
             user_story=user_story,
             detail=False,
+            story_offset=user_feed.story_offset,
+            feed_title=user_feed.feed.title,
         )
         return union_story
 
