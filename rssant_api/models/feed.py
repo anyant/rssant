@@ -244,23 +244,38 @@ class Feed(Model, ContentHashMixin):
         return q.filter(url=url).first()
 
     @staticmethod
-    def take_outdated(outdate_seconds=300, timeout_seconds=None, limit=300):
+    def take_outdated(
+        outdate_seconds=300, timeout_seconds=None, limit=300, exclude_hosts=None
+    ):
         feeds = Feed.take_outdated_feeds(
             outdate_seconds=outdate_seconds,
             timeout_seconds=timeout_seconds,
             limit=limit,
+            exclude_hosts=exclude_hosts,
         )
         return [x['feed_id'] for x in feeds]
 
     @staticmethod
-    def take_outdated_feeds(outdate_seconds=300, timeout_seconds=None, limit=300):
+    def take_outdated_feeds(
+        outdate_seconds=300, timeout_seconds=None, limit=300, exclude_hosts=None
+    ):
         """
         outdate_seconds: 正常检查时间间隔
         timeout_seconds: 异常检查时间间隔
+        exclude_hosts: 不认领的主机；RSSHub 实例全部冷却时用来跳过公共实例池的源
         """
         if not timeout_seconds:
             timeout_seconds = 3 * outdate_seconds
         statuses = [FeedStatus.READY, FeedStatus.ERROR]
+        exclude_sql = ''
+        exclude_params = []
+        if exclude_hosts:
+            placeholders = ', '.join(['%s'] * len(exclude_hosts))
+            exclude_sql = (
+                "AND lower(split_part(split_part(feed.url, '//', 2), '/', 1))"
+                f" NOT IN ({placeholders})"
+            )
+            exclude_params = sorted(exclude_hosts)
         # 单个SQL实现查询并更新，再加上 _version 字段乐观锁，可避免并发情况下重复读
         sql_check_update = f"""
         WITH t AS (
@@ -285,6 +300,7 @@ class Feed(Model, ContentHashMixin):
                     OR
                     (NOW() - dt_checked > %s * freeze_level * '1s'::interval)
                 ))
+            {exclude_sql}
             ORDER BY id LIMIT %s
         )
         UPDATE rssant_api_feed AS feed
@@ -302,6 +318,7 @@ class Feed(Model, ContentHashMixin):
             statuses,
             outdate_seconds,
             timeout_seconds,
+            *exclude_params,
             limit,
             FeedStatus.PENDING,
             timezone.now(),
@@ -324,14 +341,17 @@ class Feed(Model, ContentHashMixin):
         return feeds
 
     @staticmethod
-    def wakeup_rsshub_feeds(limit=120) -> tuple:
+    def wakeup_rsshub_feeds(limit=120, checked_before=None) -> tuple:
         """
         唤醒 RSSHub 存量错误源：把 dt_checked 置空，调度器下一轮就会重新检查。
 
         只取 error 且至少有一个订阅者的源；候选主机和 worker 的 RSSHub 判定一致
-        （主机含 rsshub，或属于公共实例清单）。返回 (feed_ids, remaining)，
-        remaining 是本批之后还没唤醒的数量。
+        （主机含 rsshub，或属于公共实例清单）。checked_before 是本次唤醒的启动时刻，
+        只取启动前检查过的源，唤醒后再次失败的源不会在本次运行里被反复认领。
+        返回 (feed_ids, remaining)，remaining 是本批之后还没唤醒的数量。
         """
+        if checked_before is None:
+            checked_before = timezone.now()
         from rssant_feedlib.rsshub import public_hosts
 
         hosts = sorted(public_hosts())
@@ -342,6 +362,7 @@ class Feed(Model, ContentHashMixin):
             FROM rssant_api_feed AS feed
             WHERE status = %s
               AND dt_checked IS NOT NULL
+              AND dt_checked < %s
               AND EXISTS (
                   SELECT 1 FROM rssant_api_userfeed AS uf WHERE uf.feed_id = feed.id
               )
@@ -358,7 +379,7 @@ class Feed(Model, ContentHashMixin):
         WHERE feed.id=t.id AND feed._version=t._version
         RETURNING feed.id, t.total
         """
-        params = [FeedStatus.ERROR, *hosts, limit]
+        params = [FeedStatus.ERROR, checked_before, *hosts, limit]
         with connection.cursor() as cursor:
             cursor.execute(sql, params)
             rows = cursor.fetchall()

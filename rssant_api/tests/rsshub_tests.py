@@ -16,6 +16,7 @@ from rssant_api.models import (
     UserFeed,
 )
 from rssant_config import CONFIG
+from rssant_feedlib.rsshub import get_instances, public_hosts
 from rssant_harbor.harbor_service import HARBOR_SERVICE
 from rssant_harbor.schema import validate_feed_output
 
@@ -277,12 +278,30 @@ class FeedRsshubStateTestCase(TestCase):
 
 
 @pytest.mark.dbtest
+class RsshubTaskServiceTestCase(TestCase):
+    def test_has_available_instances(self):
+        from rssant_harbor.task_service import RssantTaskService
+
+        service = RssantTaskService()
+        instances = get_instances()
+        assert service._has_available_instances() is True
+        for url in instances:
+            RsshubInstance.set_cooldown(url, 60)
+        assert service._has_available_instances() is False
+        RsshubInstance.clear_cooldown(instances[0])
+        assert service._has_available_instances() is True
+
+
+@pytest.mark.dbtest
 class FeedWakeupTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('wakeup', password='test123456')
 
     def _feed(self, url, status=FeedStatus.ERROR, dt_checked=None, subscribe=True):
-        feed = make_feed(url, status=status, dt_checked=dt_checked or timezone.now())
+        # 默认 2 小时前检查过，避开唤醒的 min_age_seconds 过滤
+        if dt_checked is None:
+            dt_checked = timezone.now() - timezone.timedelta(hours=2)
+        feed = make_feed(url, status=status, dt_checked=dt_checked)
         if subscribe:
             UserFeed(
                 user=self.user, feed=feed, dt_updated=timezone.now()
@@ -310,6 +329,25 @@ class FeedWakeupTestCase(TestCase):
         queued.refresh_from_db()
         assert queued.dt_checked is None
 
+    def test_take_outdated_excludes_public_hosts(self):
+        # 实例全部冷却时不认领公共实例池的源，自建源和其他源照常
+        public = make_feed('https://rsshub.app/guard/a', dt_checked=None)
+        private = make_feed('https://my-rsshub.example.com/guard', dt_checked=None)
+        plain = make_feed('https://blog.example.com/feed.xml', dt_checked=None)
+        feed_ids = Feed.take_outdated(
+            300, limit=10, exclude_hosts=public_hosts()
+        )
+        assert public.id not in feed_ids
+        assert private.id in feed_ids
+        assert plain.id in feed_ids
+        public.refresh_from_db()
+        assert public.dt_checked is None
+
+    def test_take_outdated_without_exclude_claims_public_hosts(self):
+        public = make_feed('https://rsshub.app/guard/a', dt_checked=None)
+        feed_ids = Feed.take_outdated(300, limit=10)
+        assert public.id in feed_ids
+
     def test_wakeup_orders_by_dt_checked_and_respects_limit(self):
         now = timezone.now()
         old = self._feed(
@@ -324,3 +362,33 @@ class FeedWakeupTestCase(TestCase):
         feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2)
         assert feed_ids == [old.id, mid.id]
         assert remaining == 1
+
+    def test_wakeup_only_takes_feeds_checked_before_run_start(self):
+        cutoff = timezone.now() - timezone.timedelta(minutes=5)
+        old = self._feed(
+            'https://rsshub.app/old',
+            dt_checked=cutoff - timezone.timedelta(hours=1),
+        )
+        recent = self._feed(
+            'https://rsshub.app/recent',
+            dt_checked=cutoff + timezone.timedelta(minutes=1),
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=cutoff)
+        assert feed_ids == [old.id]
+        recent.refresh_from_db()
+        assert recent.dt_checked is not None
+
+    def test_wakeup_does_not_repeat_within_run(self):
+        run_start = timezone.now()
+        feed = self._feed(
+            'https://rsshub.app/once',
+            dt_checked=run_start - timezone.timedelta(hours=1),
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=run_start)
+        assert feed.id in feed_ids
+        # 唤醒后失败，dt_checked 刷新到本次运行期间
+        Feed.objects.filter(id=feed.id).update(
+            dt_checked=timezone.now(), status=FeedStatus.ERROR
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=run_start)
+        assert feed.id not in feed_ids

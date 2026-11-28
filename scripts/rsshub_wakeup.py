@@ -39,9 +39,13 @@ def available_instances() -> int:
 
 @click.command()
 def main():
+    from django.utils import timezone
+
     import rssant_common.django_setup  # noqa:F401
     from rssant_api.models import Feed
 
+    # 只唤醒启动前检查过的源；本次运行里检查过的源不再重复唤醒，存量排空后自然退出
+    run_start = timezone.now()
     total = 0
     while True:
         available = available_instances()
@@ -54,7 +58,9 @@ def main():
             time.sleep(WAIT_SECONDS)
             continue
         limit = available * BATCH_PER_INSTANCE
-        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=limit)
+        feed_ids, remaining = Feed.wakeup_rsshub_feeds(
+            limit=limit, checked_before=run_start
+        )
         if not feed_ids:
             break
         total += len(feed_ids)
