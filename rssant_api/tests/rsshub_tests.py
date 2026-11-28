@@ -359,19 +359,36 @@ class FeedWakeupTestCase(TestCase):
         self._feed(
             'https://rsshub.app/c', dt_checked=now - timezone.timedelta(hours=1)
         )
-        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2, min_age_seconds=1800)
+        feed_ids, remaining = Feed.wakeup_rsshub_feeds(limit=2)
         assert feed_ids == [old.id, mid.id]
         assert remaining == 1
 
-    def test_wakeup_skips_recently_checked(self):
-        now = timezone.now()
+    def test_wakeup_only_takes_feeds_checked_before_run_start(self):
+        cutoff = timezone.now() - timezone.timedelta(minutes=5)
         old = self._feed(
-            'https://rsshub.app/old', dt_checked=now - timezone.timedelta(hours=2)
+            'https://rsshub.app/old',
+            dt_checked=cutoff - timezone.timedelta(hours=1),
         )
         recent = self._feed(
-            'https://rsshub.app/recent', dt_checked=now - timezone.timedelta(minutes=10)
+            'https://rsshub.app/recent',
+            dt_checked=cutoff + timezone.timedelta(minutes=1),
         )
-        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10)
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=cutoff)
         assert feed_ids == [old.id]
         recent.refresh_from_db()
         assert recent.dt_checked is not None
+
+    def test_wakeup_does_not_repeat_within_run(self):
+        run_start = timezone.now()
+        feed = self._feed(
+            'https://rsshub.app/once',
+            dt_checked=run_start - timezone.timedelta(hours=1),
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=run_start)
+        assert feed.id in feed_ids
+        # 唤醒后失败，dt_checked 刷新到本次运行期间
+        Feed.objects.filter(id=feed.id).update(
+            dt_checked=timezone.now(), status=FeedStatus.ERROR
+        )
+        feed_ids, _ = Feed.wakeup_rsshub_feeds(limit=10, checked_before=run_start)
+        assert feed.id not in feed_ids
