@@ -25,6 +25,9 @@ from .helper import (
 RETENTION_READER_DAYS = 90
 RETENTION_INACTIVE_FEED = 30
 
+# 无订阅坏源归档时写入 warnings，便于人工识别；重新订阅时会清空
+ORPHAN_FEED_ARCHIVE_WARNING = '无订阅者且长期同步失败，已归档'
+
 
 class FeedStatus:
     """
@@ -487,6 +490,142 @@ class Feed(Model, ContentHashMixin):
     @classmethod
     def unfreeze_by_id(cls, feed_id: int):
         Feed.objects.filter(pk=feed_id).update(freeze_level=1)
+
+    def revive(self):
+        """把已归档的源恢复为待抓取，重新订阅、导入、加入发现页时调用"""
+        if self.status == FeedStatus.DISCARD:
+            self.status = FeedStatus.PENDING
+            self.warnings = None
+        self.dt_checked = None
+        self.freeze_level = 1
+        self.save()
+
+    @classmethod
+    def revive_by_ids(cls, feed_ids) -> int:
+        """批量恢复已归档的源，只改状态和调度字段，不删行"""
+        feed_ids = list(feed_ids)
+        if not feed_ids:
+            return 0
+        return cls.objects.filter(
+            pk__in=feed_ids, status=FeedStatus.DISCARD
+        ).update(
+            status=FeedStatus.PENDING,
+            dt_checked=None,
+            warnings=None,
+            freeze_level=1,
+            _updated=timezone.now(),
+            _version=models.F('_version') + 1,
+        )
+
+    @classmethod
+    def archive_orphan_feeds(cls, limit=500, older_than_days=90) -> int:
+        """归档无订阅且长期没有成功同步的源，返回本批数量。
+
+        只改 status/warnings，保留行；重新订阅时由 revive 恢复。
+        发现页里的源不归档：它们即使没有订阅，也要保持可抓取。
+        """
+        sql = """
+        WITH picked AS (
+            SELECT f.id
+            FROM rssant_api_feed AS f
+            WHERE f.status = ANY(%s)
+              AND f.dt_synced < NOW() - %s * INTERVAL '1 day'
+              AND NOT EXISTS (
+                  SELECT 1 FROM rssant_api_userfeed AS uf
+                  WHERE uf.feed_id = f.id
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM rssant_api_discoverfeed AS d
+                  WHERE d.feed_id = f.id AND d.deleted_at IS NULL
+              )
+            ORDER BY f.id
+            LIMIT %s
+        )
+        UPDATE rssant_api_feed AS f
+        SET status = %s,
+            warnings = %s,
+            _updated = NOW(),
+            _version = f._version + 1
+        FROM picked
+        WHERE f.id = picked.id
+        RETURNING f.id
+        """
+        params = [
+            [FeedStatus.ERROR, FeedStatus.PENDING],
+            older_than_days,
+            limit,
+            FeedStatus.DISCARD,
+            ORPHAN_FEED_ARCHIVE_WARNING,
+        ]
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            return len(cursor.fetchall())
+
+    @classmethod
+    def orphan_feed_counts(cls, older_than_days=90) -> dict:
+        """统计待归档的无订阅坏源，按 status 分组"""
+        sql = """
+        SELECT f.status, count(*)
+        FROM rssant_api_feed AS f
+        WHERE f.status = ANY(%s)
+          AND f.dt_synced < NOW() - %s * INTERVAL '1 day'
+          AND NOT EXISTS (
+              SELECT 1 FROM rssant_api_userfeed AS uf
+              WHERE uf.feed_id = f.id
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM rssant_api_discoverfeed AS d
+              WHERE d.feed_id = f.id AND d.deleted_at IS NULL
+          )
+        GROUP BY f.status
+        """
+        params = [[FeedStatus.ERROR, FeedStatus.PENDING], older_than_days]
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            return {status: count for status, count in cursor.fetchall()}
+
+    @classmethod
+    def count_discard_with_subscribers(cls) -> int:
+        """统计仍然有订阅者的 discard 源，脚本会把这些源恢复为 pending"""
+        sql = """
+        SELECT count(*)
+        FROM rssant_api_feed AS f
+        WHERE f.status = %s
+          AND EXISTS (
+              SELECT 1 FROM rssant_api_userfeed AS uf
+              WHERE uf.feed_id = f.id
+          )
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [FeedStatus.DISCARD])
+            return cursor.fetchone()[0]
+
+    @classmethod
+    def revive_discard_with_subscribers(cls) -> int:
+        """恢复仍有订阅者的 discard 源，返回恢复数量。
+
+        这个条件本身就是清理的兜底：归档后如果有用户订阅，会被恢复；
+        历史上已经处于 discard 但有订阅者的源（29 条）也一并恢复。
+        """
+        sql = """
+        UPDATE rssant_api_feed AS f
+        SET status = %s,
+            dt_checked = NULL,
+            warnings = NULL,
+            freeze_level = 1,
+            _updated = NOW(),
+            _version = f._version + 1
+        WHERE f.status = %s
+          AND EXISTS (
+              SELECT 1 FROM rssant_api_userfeed AS uf
+              WHERE uf.feed_id = f.id
+          )
+        RETURNING f.id
+        """
+        params = [FeedStatus.PENDING, FeedStatus.DISCARD]
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            return len(cursor.fetchall())
 
     @staticmethod
     def refresh_freeze_level():

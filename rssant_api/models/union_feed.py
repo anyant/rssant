@@ -429,9 +429,8 @@ class UnionFeed:
             if user_feed:
                 raise FeedExistError('already exists')
             user_feed = UserFeed(user_id=user_id, feed=feed)
-            # 新订阅立刻抓一次，避免订到刚被清理过的源看到空白
-            feed.dt_checked = None
-            feed.unfreeze()
+            # 新订阅立刻抓一次；如果源已被清理归档，同时恢复状态
+            feed.revive()
             user_feed.save()
             return UnionFeed(feed, user_feed), None
         else:
@@ -481,13 +480,20 @@ class UnionFeed:
         new_user_feeds = []
         feed_creations = []
         unfreeze_feed_ids = set()
+        revive_feed_ids = set()
         for url in urls:
             feed = feed_map.get(url_map.get(url))
             if feed:
+                if feed.status == FeedStatus.DISCARD:
+                    revive_feed_ids.add(feed.id)
                 if feed.id in user_feed_map:
                     continue
                 new_user_feed_ids.add(feed.id)
-                if feed.freeze_level and feed.freeze_level > 1:
+                if (
+                    feed.status != FeedStatus.DISCARD
+                    and feed.freeze_level
+                    and feed.freeze_level > 1
+                ):
                     unfreeze_feed_ids.add(feed.id)
             else:
                 import_item = import_map.get(url)
@@ -531,6 +537,8 @@ class UnionFeed:
         # 执行写入数据
         UserFeed.objects.bulk_create(new_user_feeds, batch_size=batch_size)
         FeedCreation.objects.bulk_create(feed_creations, batch_size=batch_size)
+        if revive_feed_ids:
+            Feed.revive_by_ids(revive_feed_ids)
         if unfreeze_feed_ids:
             Feed.objects.filter(pk__in=unfreeze_feed_ids).update(
                 freeze_level=1
