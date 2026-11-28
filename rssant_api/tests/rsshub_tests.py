@@ -73,6 +73,16 @@ class RsshubInstanceTestCase(TestCase):
         row = RsshubInstance.objects.get(url=url)
         assert abs((row.cooldown_until - until).total_seconds()) < 1
 
+    def test_escalate_after_success_clears_cools_60_seconds(self):
+        # 成功清零后（cooldown_until 为 NULL）再失败，仍按首次 60 秒
+        url = 'https://rsshub.gneko.io'
+        RsshubInstance.set_cooldown(url, 60)
+        RsshubInstance.clear_cooldown(url)
+        RsshubInstance.escalate_cooldown(url)
+        row = RsshubInstance.objects.get(url=url)
+        seconds = (row.cooldown_until - timezone.now()).total_seconds()
+        assert 55 < seconds <= 61
+
     def test_escalate_after_expiry_cools_15_minutes(self):
         url = 'https://rsshub.gneko.io'
         RsshubInstance.set_cooldown(url, 1)
