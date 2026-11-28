@@ -214,6 +214,8 @@ class DiscoverService:
         category = DiscoverCategory.objects.filter(slug=category_slug).first()
         if category is None or category.deleted_at is not None:
             raise DiscoverError('分类不存在或已删除')
+        if feed.status == FeedStatus.DISCARD:
+            feed.revive()
         item = DiscoverFeed.objects.filter(feed=feed, category=category).first()
         if item is None:
             item = DiscoverFeed(
