@@ -1,8 +1,6 @@
-deb https://mirrors.aliyun.com/debian/ bullseye main non-free contrib
-deb-src https://mirrors.aliyun.com/debian/ bullseye main non-free contrib
-deb https://mirrors.aliyun.com/debian-security/ bullseye-security main
-deb-src https://mirrors.aliyun.com/debian-security/ bullseye-security main
-deb https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib
-deb-src https://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib
-deb https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib
-deb-src https://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib
+deb [check-valid-until=no] https://archive.debian.org/debian bullseye main non-free contrib
+deb-src [check-valid-until=no] https://archive.debian.org/debian bullseye main non-free contrib
+deb [check-valid-until=no] https://archive.debian.org/debian-security bullseye-security main
+deb-src [check-valid-until=no] https://archive.debian.org/debian-security bullseye-security main
+deb [check-valid-until=no] https://archive.debian.org/debian bullseye-updates main non-free contrib
+deb-src [check-valid-until=no] https://archive.debian.org/debian bullseye-updates main non-free contrib
