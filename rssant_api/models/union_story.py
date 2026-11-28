@@ -154,7 +154,8 @@ class UnionStory:
     def content(self):
         return self._story.content
 
-    def to_dict(self):
+    def to_dict(self, content=False):
+        """content=True 时无论 detail 取值都返回正文。"""
         feed = dict(id=self.feed_id)
         if self._feed_title:
             feed['title'] = self._feed_title
@@ -174,6 +175,8 @@ class UnionStory:
         detail = Detail.from_schema(self._detail, StoryDetailSchema)
         for k in detail.include_fields:
             ret[k] = getattr(self, k)
+        if content:
+            ret['content'] = self.content
         return ret
 
     @staticmethod
@@ -460,23 +463,6 @@ class UnionStory:
         user_feeds = list(q.all())
         feed_ids = [x.feed_id for x in user_feeds]
         return feed_ids
-
-    @classmethod
-    def _query_union_storys(cls, user_id, storys, detail):
-        """
-        Deprecated since 1.5.0
-        """
-        story_ids = [x.id for x in storys]
-        feed_ids = list(set([x.feed_id for x in storys]))
-        q = UserStory.objects.filter(
-            user_id=user_id, feed_id__in=feed_ids, story_id__in=story_ids
-        )
-        q = q.exclude(is_favorited=False, is_watched=False, is_read=False)
-        user_storys = list(q.all())
-        union_storys = UnionStory._merge_storys(
-            storys, user_storys, user_id=user_id, detail=detail
-        )
-        return union_storys
 
     @classmethod
     def _query_union_storys_by_offset(cls, user_id, storys, detail):

@@ -156,6 +156,21 @@ class StoryRecentTestCase(TestCase):
         }).json()
         assert not data['storys'][0].get('content')
 
+    def test_query_batch_content_without_detail(self):
+        """content=true 时 detail=false 也要返回正文（Markdown）。"""
+        keys = [{
+            'feed_id': encode(self.user.id, self.feed.id),
+            'offset': 4, 'limit': 1,
+        }]
+        data = self._post('/api/v1/story.query_batch', {
+            'storys': keys, 'detail': False, 'content': True,
+            'content_format': 'markdown',
+        }).json()
+        story = data['storys'][0]
+        assert 'content recent 4' in story['content']
+        assert '<p>' not in story['content']
+        assert not story.get('summary')
+
     def test_list_detail_true_has_no_content(self):
         data = self._post('/api/v1/story.query', {
             'feed_id': encode(self.user.id, self.feed.id),

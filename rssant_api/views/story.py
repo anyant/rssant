@@ -181,7 +181,7 @@ def story_query_batch(
         story_keys=story_keys, user_id=request.user.id, detail=detail,
         content=content,
     )
-    storys = [x.to_dict() for x in storys]
+    storys = [x.to_dict(content=content) for x in storys]
     if content and content_format == 'markdown':
         for x in storys:
             if x.get('content'):

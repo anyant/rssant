@@ -104,13 +104,13 @@ size 最大 100；offset 省略时从阅读位置开始；detail=true 返回 sum
 POST /story.query_batch
 Body: {"storys": [{"feed_id": "<unionid>", "offset": 0, "limit": 1}], "detail": true, "content": true, "content_format": "markdown"}
 limit 最大 10（每个订阅一段连续文章）；detail=true 返回 summary；
-content=true 才从正文存储读取 content（默认 false）；content_format=html（默认）或 markdown。
+content=true 才从正文存储读取 content（默认 false），带不带 detail 都会返回 content；content_format=html（默认）或 markdown，转 Markdown 同样不受 detail 影响。
 一次取 10-15 篇，不要逐篇 story.get。
 
 ### 单篇
 POST /story.get
 Body: {"feed_id": "<unionid>", "offset": 0, "detail": true, "set_readed": false, "content_format": "html"}
-offset 必填；set_readed=true 会推进阅读位置。
+offset 必填；set_readed=true 会推进阅读位置。content_format 只在 detail=true 时生效。
 
 ### 全文
 POST /story.fetch_fulltext
