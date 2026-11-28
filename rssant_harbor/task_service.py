@@ -3,11 +3,18 @@ import random
 from threading import RLock
 from typing import Optional
 
-from rssant_api.models import Feed, FeedCreation, FeedStatus, WorkerTask
+from rssant_api.models import (
+    Feed,
+    FeedCreation,
+    FeedStatus,
+    RsshubInstance,
+    WorkerTask,
+)
 from rssant_api.models.worker_task import WorkerTaskExpired, WorkerTaskPriority
 from rssant_common.base64 import UrlsafeBase64
 from rssant_common.throttle import throttle
 from rssant_config import CONFIG
+from rssant_feedlib.rsshub import get_instances, public_hosts
 
 LOG = logging.getLogger(__name__)
 
@@ -46,11 +53,24 @@ class RssantTaskService:
             task = self._pick_task()
             return task
 
+    @staticmethod
+    def _has_available_instances() -> bool:
+        """RSSHub 实例是否还有没在冷却的"""
+        instances = set(get_instances())
+        cooling = RsshubInstance.cooling_urls()
+        return bool(instances - cooling)
+
     @throttle(seconds=10)
     def _fetch_sync_feed_task(self):
         rand_sec = random.random() * CHECK_FEED_SECONDS / 10
         outdate_seconds = CHECK_FEED_SECONDS + rand_sec
-        feeds = Feed.take_outdated_feeds(outdate_seconds, limit=100)
+        # 实例全部冷却时不认领公共实例池的源，等冷却结束再抓，避免落到 0 候选被冻结
+        exclude_hosts = None
+        if not self._has_available_instances():
+            exclude_hosts = public_hosts()
+        feeds = Feed.take_outdated_feeds(
+            outdate_seconds, limit=100, exclude_hosts=exclude_hosts
+        )
         LOG.info('found {} feeds need sync'.format(len(feeds)))
         for feed in feeds:
             task_api = 'worker_rss.sync_feed'

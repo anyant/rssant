@@ -11,6 +11,11 @@ from rssant_feedlib.rsshub import (
 )
 
 
+def test_default_instances_excludes_known_blocked_host():
+    # liumingye 按出口 IP 屏蔽（生产 9,353 次尝试 0 成功），不再放进默认池
+    assert 'https://rsshub.liumingye.cn' not in DEFAULT_INSTANCES
+
+
 def test_parse_public_instance():
     route = parse_rsshub_url('https://rsshub.app/github/trending/daily/any')
     assert route.is_public

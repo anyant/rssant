@@ -19,7 +19,6 @@ CANONICAL_BASE = 'https://rsshub.app'
 DEFAULT_INSTANCES = (
     'https://rsshub.rss.tips',
     'https://rsshub.gneko.io',
-    'https://rsshub.liumingye.cn',
     'https://rsshub-balancer.virworks.moe',
     'https://rss.wudifeixue.com',
     'https://rsshub.rssforever.com',

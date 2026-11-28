@@ -16,6 +16,7 @@ from rssant_api.models import (
     UserFeed,
 )
 from rssant_config import CONFIG
+from rssant_feedlib.rsshub import get_instances, public_hosts
 from rssant_harbor.harbor_service import HARBOR_SERVICE
 from rssant_harbor.schema import validate_feed_output
 
@@ -277,6 +278,21 @@ class FeedRsshubStateTestCase(TestCase):
 
 
 @pytest.mark.dbtest
+class RsshubTaskServiceTestCase(TestCase):
+    def test_has_available_instances(self):
+        from rssant_harbor.task_service import RssantTaskService
+
+        service = RssantTaskService()
+        instances = get_instances()
+        assert service._has_available_instances() is True
+        for url in instances:
+            RsshubInstance.set_cooldown(url, 60)
+        assert service._has_available_instances() is False
+        RsshubInstance.clear_cooldown(instances[0])
+        assert service._has_available_instances() is True
+
+
+@pytest.mark.dbtest
 class FeedWakeupTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('wakeup', password='test123456')
@@ -309,6 +325,25 @@ class FeedWakeupTestCase(TestCase):
             assert feed.dt_checked is None
         queued.refresh_from_db()
         assert queued.dt_checked is None
+
+    def test_take_outdated_excludes_public_hosts(self):
+        # 实例全部冷却时不认领公共实例池的源，自建源和其他源照常
+        public = make_feed('https://rsshub.app/guard/a', dt_checked=None)
+        private = make_feed('https://my-rsshub.example.com/guard', dt_checked=None)
+        plain = make_feed('https://blog.example.com/feed.xml', dt_checked=None)
+        feed_ids = Feed.take_outdated(
+            300, limit=10, exclude_hosts=public_hosts()
+        )
+        assert public.id not in feed_ids
+        assert private.id in feed_ids
+        assert plain.id in feed_ids
+        public.refresh_from_db()
+        assert public.dt_checked is None
+
+    def test_take_outdated_without_exclude_claims_public_hosts(self):
+        public = make_feed('https://rsshub.app/guard/a', dt_checked=None)
+        feed_ids = Feed.take_outdated(300, limit=10)
+        assert public.id in feed_ids
 
     def test_wakeup_orders_by_dt_checked_and_respects_limit(self):
         now = timezone.now()
